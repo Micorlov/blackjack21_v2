@@ -53,7 +53,7 @@ lib/
 | `audioplayers` | Sound effect playback |
 | `cupertino_icons` | iOS-style icons |
 
-Dev: `flutter_test`, `flutter_lints`.
+Dev: `flutter_test`, `flutter_lints`, `integration_test`.
 
 ## Assets
 
@@ -82,6 +82,15 @@ flutter analyze
 flutter test
 ```
 
+Layout work that has to be judged against real fonts and real device metrics — which widget
+tests, running on the fallback test font, cannot show — has a driver test that walks the app
+from onboarding to a dealt round and then holds the table still:
+
+```bash
+flutter test integration_test/table_shot_test.dart -d <device-id>
+# while it holds: xcrun simctl io <device-id> screenshot shot.png
+```
+
 ## Changelog
 
 ### 2026-08-01
@@ -98,6 +107,15 @@ flutter test
   installed on Michael's iPhone and committed to the local git repo automatically, with the
   install result and commit subject reported back. Also recorded the project Language Rule
   (Hebrew in, English out).
+- fix: a friend's seat plate no longer changes size with the number of cards in their hand. The
+  card fan and the name plate shared one `FittedBox`, so a long hand (six cards plus a BUST
+  badge) overflowed the seat's width, got scaled down, and left a shorter card row — which meant
+  that seat's plate was scaled down less than everyone else's and rendered ~8.5% larger in both
+  dimensions. The card row is now pinned to one card's height, so card count can't drive plate
+  size. Measured on device: all four plates are within 1px of each other, was 40px apart.
+- test: added `integration_test/table_shot_test.dart`, a driver test that walks from onboarding
+  to a dealt round and holds the table still, so seat layout can be checked against real fonts
+  and real device metrics instead of the widget-test fallback font.
 - fix: all four friend seat plates are now exactly the same size. The far pair was drawn in a
   narrower slot (186 vs 196) and scaled to 0.9 as a perspective hint, which made two
   identically-built plates read as two different components. Both rows now use one 196-wide
