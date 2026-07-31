@@ -15,6 +15,9 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
 - **Progression** — stats screen, shop, onboarding and story overlays
 - **Sound effects** — deal, chip, turn, win, lose, push, and blackjack cues, plus spoken
   "Stand"/"Bust" voice lines when an NPC seat finishes its turn
+- **Spoken results** — every settled hand plays its outcome tone and then says the result:
+  "Big win" on a blackjack, "Player wins the pot" when you sweep the table, otherwise
+  "Player wins" or "Player loses". A push gets the tone only
 - **Haptics** — selection/light/medium/heavy impact and vibrate feedback, toggleable in settings,
   including a tap for each NPC seat's stand/bust
 
@@ -54,12 +57,23 @@ Dev: `flutter_test`, `flutter_lints`.
 
 ## Assets
 
-`assets/sfx/` — `deal.wav`, `chip.wav`, `turn.wav`, `win.wav`, `lose.wav`, `push.wav`,
-`blackjack.wav`, `npc_stand.wav`, `npc_bust.wav`. Registered under `flutter: assets:` in
-`pubspec.yaml`. The `npc_*` clips are synthesized speech (macOS `say`, Samantha voice) rather
-than tones, so opponent seats read as a spoken "Stand"/"Bust" call-out. Both are mono 16-bit
-44.1kHz, peaking at -6.5 dBFS, and must contain the whole word with its natural decay — a clip
-cut short mid-syllable plays as an unintelligible click.
+`assets/sfx/` holds two kinds of clip, all registered wholesale by the `- assets/sfx/` entry
+under `flutter: assets:` in `pubspec.yaml` — a new file in the folder needs no pubspec change.
+
+| Kind | Files | Plays on |
+|---|---|---|
+| Tones | `deal.wav`, `chip.wav`, `turn.wav`, `win.wav`, `lose.wav`, `push.wav`, `blackjack.wav` | Dealing, betting, your turn, and hand outcomes |
+| NPC voice | `npc_stand.wav`, `npc_bust.wav` | An opponent seat standing or busting |
+| Result voice | `player_win.wav`, `player_lose.wav`, `big_win.wav`, `player_pot.wav` | Your settled hand, 700ms after its tone |
+
+Voice clips are synthesized speech (macOS `say`, Samantha voice) rather than tones, so the
+table reads as spoken call-outs. All are mono 16-bit 44.1kHz and peak-normalised to -6.5 dBFS
+so no one line is louder than the rest.
+
+Every clip must contain its whole word and decay naturally — a file cut short mid-syllable
+still loads and plays, it just sounds like an unintelligible click, which is how a truncated
+`npc_stand.wav` shipped once. `test/sfx_assets_test.dart` guards against that: it reads each
+WAV and fails any clip still sounding above 10% of its own peak in its final 10ms.
 
 ## Testing
 
@@ -71,6 +85,15 @@ flutter test
 ## Changelog
 
 ### 2026-08-01
+- feat: settled hands are now announced out loud. After the outcome tone the table says
+  "Big win" on a blackjack, "Player wins the pot" when you take the sweep pot, and otherwise
+  "Player wins" or "Player loses"; a push stays tone-only. Four new clips in `assets/sfx/`,
+  and `SoundPlayer` gained a second `AudioPlayer` so the tone and the call-out play on
+  separate channels instead of cutting each other off.
+- test: added `test/sfx_assets_test.dart`, which reads every WAV in `assets/sfx/` and fails
+  any clip that is still sounding above 10% of its peak in its final 10ms — the truncation
+  that made the "Stand" line unintelligible, caught at the asset level where the app cannot
+  detect it.
 - docs: added a mandatory Delivery Rule to `CLAUDE.md` — every fix and every feature is now
   installed on Michael's iPhone and committed to the local git repo automatically, with the
   install result and commit subject reported back. Also recorded the project Language Rule
