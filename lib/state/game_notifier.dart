@@ -10,7 +10,9 @@ import '../models/game_state.dart';
 import '../models/hand.dart';
 import '../models/playing_card.dart';
 import '../models/social_models.dart';
+import '../models/table_pot.dart';
 import '../services/sound_player.dart';
+import '../services/spoken_amount.dart';
 import '../utils/formatters.dart';
 
 class _SeatResult {
@@ -46,6 +48,8 @@ class GameNotifier extends StateNotifier<GameState> {
   Timer? _adWatchTimer;
   Timer? _adCooldownTimer;
   Timer? _voiceTimer;
+  Timer? _potTimer;
+  Timer? _celebrationTimer;
 
   @override
   void dispose() {
@@ -55,6 +59,8 @@ class GameNotifier extends StateNotifier<GameState> {
     _adWatchTimer?.cancel();
     _adCooldownTimer?.cancel();
     _voiceTimer?.cancel();
+    _potTimer?.cancel();
+    _celebrationTimer?.cancel();
     unawaited(_sound.dispose());
     super.dispose();
   }
@@ -72,6 +78,22 @@ class GameNotifier extends StateNotifier<GameState> {
   /// follows it rather than talking over it. Matches `blackjack.wav`, the
   /// longest of the outcome tones at 0.70s.
   static const _kVoiceLead = Duration(milliseconds: 700);
+
+  /// Length of `player_pot.wav` ("Player wins the pot"), 1.14s.
+  static const _kPotVoiceLength = Duration(milliseconds: 1150);
+
+  /// Drum flourish once the pot call-out has finished. Sweeping the table is
+  /// the best result a round can produce, so it gets more than a tone. Plays
+  /// on the tone channel, which the voice line does not use, so the two never
+  /// cut each other off even if the timing drifts.
+  void _celebrateSweep() {
+    if (!state.soundOn) return;
+    _celebrationTimer?.cancel();
+    _celebrationTimer = Timer(
+      _kVoiceLead + _kPotVoiceLength,
+      () => _playSfx(GameSfx.potCelebration),
+    );
+  }
 
   /// Speaks the hand's result [_kVoiceLead] after the outcome tone. Re-checks
   /// `soundOn` when the timer fires, so muting mid-hand also mutes the pending
@@ -115,7 +137,34 @@ class GameNotifier extends StateNotifier<GameState> {
   void _notifyPlayerTurn() {
     _playSfx(GameSfx.turn);
     _hapticTurnAlert();
+    _announceTablePot();
   }
+
+  /// Reads the dealer pill out loud — "Table pot, three hundred seventy five
+  /// dollars" — now that every opponent seat has played and the figure has
+  /// stopped moving. Reads the same [TablePot] the pill renders, so the two
+  /// can never disagree.
+  void _announceTablePot() {
+    if (!state.soundOn) return;
+    final pot = TablePot.live(state);
+    final amount = spokenAmountWords(pot.amount);
+    if (amount.isEmpty) return;
+
+    _potTimer?.cancel();
+    _potTimer = Timer(_kPotAnnouncementLead, () {
+      if (!state.soundOn) return;
+      unawaited(
+        _sound.playWords([
+          pot.isSweep ? 'sweep_pot' : 'table_pot',
+          ...amount,
+          'dollars',
+        ]),
+      );
+    });
+  }
+
+  /// Held back so the turn cue (`turn.wav`, 0.60s) finishes first.
+  static const _kPotAnnouncementLead = Duration(milliseconds: 700);
 
   PlayingCard _drawCard() {
     if (_shoe.length < 15) _shoe = BlackjackRules.buildShoe(kDeckCount, _rng);
@@ -618,7 +667,12 @@ class GameNotifier extends StateNotifier<GameState> {
       _hapticHeavy();
     } else if (messageType == MessageType.win) {
       _playSfx(GameSfx.win);
-      _playVoice(heroTakesPot ? GameVoice.playerPot : GameVoice.playerWin);
+      if (heroTakesPot) {
+        _playVoice(GameVoice.playerPot);
+        _celebrateSweep();
+      } else {
+        _playVoice(GameVoice.playerWin);
+      }
       _hapticMedium();
     } else if (messageType == MessageType.lose) {
       _playSfx(GameSfx.lose);

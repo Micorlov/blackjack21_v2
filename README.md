@@ -17,7 +17,10 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   "Stand"/"Bust" voice lines when an NPC seat finishes its turn
 - **Spoken results** — every settled hand plays its outcome tone and then says the result:
   "Big win" on a blackjack, "Player wins the pot" when you sweep the table, otherwise
-  "Player wins" or "Player loses". A push gets the tone only
+  "Player wins" or "Player lost". A push gets the tone only, and taking the pot is followed
+  by a drum flourish
+- **Spoken pot** — once every opponent seat has played and the figure has stopped moving, the
+  dealer pill is read aloud: "Table pot, three hundred seventy five dollars"
 - **Haptics** — selection/light/medium/heavy impact and vibrate feedback, toggleable in settings,
   including a tap for each NPC seat's stand/bust
 
@@ -34,10 +37,10 @@ flutter run
 lib/
 ├── main.dart
 ├── data/          # static game data
-├── models/        # enums, game_state, hand, playing_card, social_models
+├── models/        # enums, game_state, hand, playing_card, social_models, table_pot
 ├── screens/       # lobby, table, friends, settings, shop, stats, onboarding
 │   └── table/     # table sub-panels (felt, betting, action, chat, settlement, …)
-├── services/      # sound_player
+├── services/      # sound_player, spoken_amount
 ├── state/         # game_notifier (Riverpod)
 ├── theme/         # app_colors, app_text_styles
 ├── utils/         # formatters, leaderboard
@@ -65,6 +68,17 @@ under `flutter: assets:` in `pubspec.yaml` — a new file in the folder needs no
 | Tones | `deal.wav`, `chip.wav`, `turn.wav`, `win.wav`, `lose.wav`, `push.wav`, `blackjack.wav` | Dealing, betting, your turn, and hand outcomes |
 | NPC voice | `npc_stand.wav`, `npc_bust.wav` | An opponent seat standing or busting |
 | Result voice | `player_win.wav`, `player_lose.wav`, `big_win.wav`, `player_pot.wav` | Your settled hand, 700ms after its tone |
+| Celebration | `pot_celebration.wav` | After the pot call-out — a synthesized drum roll, downbeat and major triad |
+| Number words | `num/*.wav` — 0-19, the tens, `hundred`, `thousand`, `dollars`, `table_pot`, `sweep_pot` | Stitched into the spoken pot figure |
+
+`assets/sfx/num/` needs its own `pubspec.yaml` entry: Flutter's asset folders are **not**
+recursive, so a nested folder left out of the manifest is silently missing at runtime.
+
+Pot figures are arbitrary multiples of the table minimum, so the sentence cannot be
+pre-recorded. `spoken_amount.dart` turns the amount into words, and `SoundPlayer.playWords`
+joins those clips into a single WAV in memory (45ms of silence between words) and plays it
+through one `BytesSource` — playing them as separate calls would need each to report
+completion before the next, and any gap would land mid-sentence.
 
 Voice clips are synthesized speech (macOS `say`, Samantha voice) rather than tones, so the
 table reads as spoken call-outs. All are mono 16-bit 44.1kHz and peak-normalised to -6.5 dBFS
@@ -94,6 +108,21 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 ## Changelog
 
 ### 2026-08-01
+- feat: the table pot is now read aloud once every opponent seat has played and the figure has
+  stopped moving — "Table pot, three hundred seventy five dollars", or "Sweep pot …" when a
+  seat has already forfeited its bet and the pill switches figures. Amounts are arbitrary
+  multiples of the table minimum, so instead of pre-recording sentences each number word is
+  its own clip in `assets/sfx/num/`; `spoken_amount.dart` picks the words and
+  `SoundPlayer.playWords` joins them into one WAV in memory.
+- feat: taking the sweep pot is now followed by a drum flourish (`pot_celebration.wav`) once
+  the "Player wins the pot" call-out finishes — a synthesized roll, downbeat and major triad.
+- refactor: the pot figure moved out of `TableCalc` into `models/table_pot.dart`, so the pill
+  and the spoken call-out read the same number instead of each computing its own.
+- fix: the losing call-out now says "Player lost" rather than "Player loses".
+- test: added `test/spoken_amount_test.dart` covering the number-to-words reading and
+  asserting every word any reachable pot amount can produce has a clip on disk — a missing
+  one is silent at runtime. `test/sfx_assets_test.dart` now walks `assets/sfx/` recursively so
+  the number words get the same truncation guard as everything else.
 - feat: settled hands are now announced out loud. After the outcome tone the table says
   "Big win" on a blackjack, "Player wins the pot" when you take the sweep pot, and otherwise
   "Player wins" or "Player loses"; a push stays tone-only. Four new clips in `assets/sfx/`,

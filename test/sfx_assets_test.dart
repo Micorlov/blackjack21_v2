@@ -30,6 +30,11 @@ const _voiceClips = {
   'player_pot.wav',
 };
 
+/// Number words are stitched into one another mid-sentence, so a truncated or
+/// over-trimmed one is even more audible than a standalone line — but they are
+/// single words, and short ones like "two" run well under the voice-line floor.
+const double _minWordSeconds = 0.12;
+
 /// Mono 16-bit PCM samples plus the sample rate, read out of a RIFF/WAVE file.
 class _Wav {
   const _Wav(this.samples, this.sampleRate);
@@ -84,8 +89,10 @@ _Wav _readWav(File file) {
 }
 
 void main() {
+  // Recursive: the spoken number words live in assets/sfx/num/, and they are
+  // stitched into sentences, so they need the same guarantees.
   final files = Directory('assets/sfx')
-      .listSync()
+      .listSync(recursive: true)
       .whereType<File>()
       .where((f) => f.path.endsWith('.wav'))
       .toList()
@@ -99,6 +106,7 @@ void main() {
 
   for (final file in files) {
     final name = file.uri.pathSegments.last;
+    final isWord = file.path.contains('/num/');
 
     group(name, () {
       test('decays instead of being cut off', () {
@@ -113,9 +121,10 @@ void main() {
         );
       });
 
-      if (_voiceClips.contains(name)) {
+      if (_voiceClips.contains(name) || isWord) {
         test('is long enough to hold a spoken word', () {
-          expect(_readWav(file).seconds, greaterThan(_minVoiceSeconds),
+          final floor = isWord ? _minWordSeconds : _minVoiceSeconds;
+          expect(_readWav(file).seconds, greaterThan(floor),
               reason: '$name is too short to contain its call-out');
         });
       }

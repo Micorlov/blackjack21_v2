@@ -5,6 +5,7 @@ import '../../models/game_state.dart';
 import '../../models/hand.dart';
 import '../../models/playing_card.dart';
 import '../../models/social_models.dart';
+import '../../models/table_pot.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/formatters.dart';
 
@@ -31,12 +32,6 @@ class TableCalc {
     return '$soft ${BlackjackRules.handValue(h.cards)}';
   }
 
-  static bool _seatLost(NpcSeat n, int? dealerShown) {
-    final v = BlackjackRules.handValue(n.cards);
-    if (v > 21) return true;
-    if (dealerShown != null) return dealerShown <= 21 && v <= dealerShown;
-    return false;
-  }
 
   /// The "closest to 21" table-sweep indicator shown above the dealer while a
   /// round is live: every bet already forfeited by a seat that busted or lost
@@ -45,11 +40,8 @@ class TableCalc {
     final liveSeats = s.npcSeats.where((n) => n.cards.isNotEmpty).toList();
     final dealerShown = s.holeRevealed ? BlackjackRules.handValue(s.dealerHand) : null;
 
-    var sweepPot = 0;
-    for (final n in liveSeats) {
-      if (_seatLost(n, dealerShown)) sweepPot += n.bet;
-    }
-    final hasSweepPot = sweepPot > 0;
+    final pot = TablePot.live(s);
+    final hasSweepPot = pot.isSweep;
 
     var heroLiveTotal = 0;
     for (final h in s.hands) {
@@ -60,7 +52,7 @@ class TableCalc {
 
     var rivalLiveBest = 0;
     for (final n in liveSeats) {
-      if (_seatLost(n, dealerShown)) continue;
+      if (TablePot.seatLost(n, dealerShown)) continue;
       final v = BlackjackRules.handValue(n.cards);
       if (v > rivalLiveBest) rivalLiveBest = v;
     }
@@ -80,14 +72,9 @@ class TableCalc {
         ? _settledPotLabel(sweep)
         : (hasSweepPot ? 'SWEEP POT' : 'TABLE POT');
 
-    var npcBetTotal = 0;
-    for (final n in s.npcSeats) {
-      npcBetTotal += n.bet;
-    }
-    final heroBet = s.hands.isNotEmpty ? (s.hands.first.bet != 0 ? s.hands.first.bet : s.bet) : s.bet;
     final potValueLabel = atSettlement
         ? '\$${formatChips(sweep?.totalWin ?? 0)}'
-        : '\$${formatChips(hasSweepPot ? sweepPot : npcBetTotal + heroBet)}';
+        : '\$${formatChips(pot.amount)}';
 
     return MidRoundPot(
       hasSweepPot: hasSweepPot,
