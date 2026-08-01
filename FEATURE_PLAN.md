@@ -47,8 +47,9 @@ the app. Until then, the plan stays fully inside the free-team constraints.
 ## Phase 0 — Finish what's in flight
 
 **Daily bonus** (uncommitted in the working tree): once-per-24h free-chips claim with a
-scheduled local reminder. Finish the lobby claim UI, add unit tests for the pure timing
-logic in `lib/utils/daily_bonus.dart` (it has none yet), update the README, and ship it.
+scheduled local reminder. The pure timing logic in `lib/utils/daily_bonus.dart` is already
+covered by 11 tests in `test/daily_bonus_test.dart`. Finish the lobby claim UI, update the
+README, and ship it.
 
 ## Phase 1 — Foundation: the game must remember
 
