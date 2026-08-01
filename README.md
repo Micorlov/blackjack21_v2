@@ -111,6 +111,9 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 ## Changelog
 
 ### 2026-08-01
+- fix: the two right-hand friend seats now line up in one straight column. The bottom-right seat
+  was anchored to the right edge of the felt but collapsed toward the *left* of its slot whenever
+  its plate shrank to fit, so it sat indented from the seat above it
 - docs: the delivery rule now installs with `xcrun devicectl device install app` instead of
   `flutter install`. `flutter install` uninstalls the app first, and because the app is signed
   with a free personal Apple team, iOS dropped the developer-trust entry on every uninstall —

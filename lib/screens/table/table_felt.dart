@@ -33,11 +33,16 @@ class _SeatPos {
 /// plate renders at exactly the same size. The design shrank the far pair to
 /// 0.9 for a perspective hint, but that made two identically-built plates read
 /// as two different components, which is worse than the lost depth cue.
+///
+/// [_SeatPos.originLeft] has to match the edge its slot is anchored to. A plate
+/// that shrinks inside its slot collapses toward that origin, so a right-hand
+/// seat left on the default `true` drifts away from the table's right edge and
+/// leaves the two right-hand plates visibly out of line with each other.
 const List<_SeatPos> _kSeatPositions = [
   _SeatPos(left: 0, top: 164, width: 196),
   _SeatPos(right: 0, top: 164, width: 196, originLeft: false),
   _SeatPos(left: 0, top: 262, width: 196),
-  _SeatPos(right: 0, top: 262, width: 196),
+  _SeatPos(right: 0, top: 262, width: 196, originLeft: false),
 ];
 
 /// Height of one seat slot: a card row (38) over a name plate (~50), plus a

@@ -445,6 +445,35 @@ void main() {
             }
           }
         });
+
+        // The four seats read as two columns, so the pair on each side has to
+        // share one vertical edge. A plate that shrinks inside its slot
+        // collapses toward the slot's origin, and a seat anchored to the wrong
+        // origin drifts inward — leaving one plate visibly indented from the
+        // one above it.
+        testWidgets("$label keeps each side's seats in one straight column", (tester) async {
+          final details = await _pumpTable(tester, entry.value, device, textScale);
+          final exception = tester.takeException();
+          expect(exception, isNull, reason: _describe(exception, details));
+
+          final seatFinder = find.byType(SeatPlate);
+          final seatRects = <Rect>[
+            for (var i = 0; i < seatFinder.evaluate().length; i++) tester.getRect(seatFinder.at(i)),
+          ];
+          if (seatRects.length < 4) return;
+
+          // Seats alternate left, right, left, right (`rightSide: i.isOdd`).
+          expect(
+            seatRects[2].left,
+            closeTo(seatRects[0].left, 0.5),
+            reason: 'left-hand seats are out of line on $label: ${seatRects[0]} vs ${seatRects[2]}',
+          );
+          expect(
+            seatRects[3].right,
+            closeTo(seatRects[1].right, 0.5),
+            reason: 'right-hand seats are out of line on $label: ${seatRects[1]} vs ${seatRects[3]}',
+          );
+        });
       }
     }
   }
