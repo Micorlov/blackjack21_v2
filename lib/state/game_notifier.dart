@@ -15,11 +15,13 @@ import '../models/hand.dart';
 import '../models/playing_card.dart';
 import '../models/social_models.dart';
 import '../models/table_pot.dart';
+import '../services/daily_bonus_store.dart';
 import '../services/local_notifier.dart';
 import '../services/social_service.dart';
 import '../services/sound_player.dart';
 import '../services/spoken_amount.dart';
 import '../utils/comeback.dart';
+import '../utils/daily_bonus.dart';
 import '../utils/formatters.dart';
 import '../utils/points.dart';
 
@@ -52,7 +54,12 @@ class GameNotifier extends StateNotifier<GameState> {
   final SoundPlayer _sound = SoundPlayer();
   final SocialService _social = SocialService();
   final LocalNotifier _notifs = LocalNotifier();
+  final DailyBonusStore _bonusStore = DailyBonusStore();
   StreamSubscription<List<Friend>>? _groupSub;
+  StreamSubscription<List<Friend>>? _hourlySub;
+  StreamSubscription<List<Friend>>? _dailySub;
+  String _hourlySubKey = '';
+  String _dailySubKey = '';
   Timer? _heartbeatTimer;
 
   /// True once a live (non-empty) member snapshot has arrived, so the first
@@ -80,6 +87,8 @@ class GameNotifier extends StateNotifier<GameState> {
     _celebrationTimer?.cancel();
     _heartbeatTimer?.cancel();
     unawaited(_groupSub?.cancel());
+    unawaited(_hourlySub?.cancel());
+    unawaited(_dailySub?.cancel());
     unawaited(_sound.dispose());
     super.dispose();
   }
@@ -196,16 +205,26 @@ class GameNotifier extends StateNotifier<GameState> {
   // ---------------------------------------------------------------------
 
   Future<void> _initSocial() async {
-    final ok = await _social.ensureSignedIn();
-    if (!mounted || !ok) return;
+    // Sign-in is kicked off immediately, same as before notifications
+    // existed here; notifications and the daily-bonus restore then run
+    // alongside it rather than blocking on it, so both still work offline.
+    final signInFuture = _social.ensureSignedIn();
     await _notifs.init();
     if (!mounted) return;
+    await _restoreDailyBonus();
+    if (!mounted) return;
+    final ok = await signInFuture;
+    if (!mounted || !ok) return;
     final user = FirebaseAuth.instance.currentUser;
     if (user != null && !user.isAnonymous && !state.signedIn) {
       // A Google session survived from a previous launch — restore identity.
       state = state.copyWith(signedIn: true, displayName: user.displayName ?? 'Player', photoUrl: user.photoURL);
     }
-    state = state.copyWith(socialReady: true);
+    state = state.copyWith(socialReady: true, heroUid: _social.uid);
+    _subscribeGlobals();
+    // Publish immediately so this player exists on the world list from the
+    // first launch, not only after the first settled hand.
+    _reportScore();
     final code = await _social.fetchMyGroupCode();
     if (!mounted) return;
     if (code != null) _subscribeGroup(code);
@@ -258,8 +277,12 @@ class GameNotifier extends StateNotifier<GameState> {
     }
 
     _groupLive = members.isNotEmpty;
-    // Alone in the group → practice bots keep the table lively.
-    state = state.copyWith(friends: members.isEmpty ? kInitialFriends : members);
+    // Alone in the group → practice bots keep the table lively, but
+    // `friendsAreLive` stays false so friend lists can tell bots from people.
+    state = state.copyWith(
+      friends: members.isEmpty ? kInitialFriends : members,
+      friendsAreLive: members.isNotEmpty,
+    );
   }
 
   void _notifyOvertaken(List<RankedPlayer> hourly, List<RankedPlayer> daily) {
@@ -288,15 +311,39 @@ class GameNotifier extends StateNotifier<GameState> {
         heroDayKey: dayKey,
       );
     }
-    _reportScoreIfGrouped();
+    _subscribeGlobals();
+    _reportScore();
   }
 
-  void _reportScoreIfGrouped() {
-    final code = state.groupCode;
-    if (code == null || !state.socialReady) return;
+  /// (Re)subscribes the world top-10 streams; called at init and again from
+  /// the heartbeat so a new hour/day swaps in a fresh query.
+  void _subscribeGlobals() {
+    final now = DateTime.now();
+    final hourKey = hourKeyOf(now);
+    final dayKey = dayKeyOf(now);
+    if (_hourlySubKey != hourKey) {
+      _hourlySubKey = hourKey;
+      unawaited(_hourlySub?.cancel());
+      _hourlySub = _social.watchTopPlayers(hourly: true, periodKey: hourKey).listen(
+        (players) => state = state.copyWith(globalHourly: players),
+        onError: (Object e) => debugPrint('world hourly stream error: $e'),
+      );
+    }
+    if (_dailySubKey != dayKey) {
+      _dailySubKey = dayKey;
+      unawaited(_dailySub?.cancel());
+      _dailySub = _social.watchTopPlayers(hourly: false, periodKey: dayKey).listen(
+        (players) => state = state.copyWith(globalDaily: players),
+        onError: (Object e) => debugPrint('world daily stream error: $e'),
+      );
+    }
+  }
+
+  void _reportScore() {
+    if (!state.socialReady) return;
     unawaited(
       _social.reportScore(
-        code: code,
+        code: state.groupCode,
         name: _playerName,
         chips: state.chips,
         hourly: state.heroHourlyPoints,
@@ -322,7 +369,7 @@ class GameNotifier extends StateNotifier<GameState> {
       return;
     }
     if (state.groupCode == null) _subscribeGroup(code);
-    _reportScoreIfGrouped();
+    _reportScore();
 
     final text = Uri.encodeComponent(
       '🃏 Come play Blackjack 21 with me!\n'
@@ -360,7 +407,7 @@ class GameNotifier extends StateNotifier<GameState> {
     }
     state = state.copyWith(friendCodeInput: '', referralsCount: state.referralsCount + 1);
     _subscribeGroup(code);
-    _reportScoreIfGrouped();
+    _reportScore();
     _showToast('Joined group $code!');
     _playSfx(GameSfx.win);
     _hapticMedium();
@@ -412,7 +459,7 @@ class GameNotifier extends StateNotifier<GameState> {
         photoUrl: user?.photoURL ?? account.photoUrl,
         screen: AppScreen.lobby,
       );
-      _reportScoreIfGrouped();
+      _reportScore();
     } on FirebaseAuthException {
       _showToast('Google sign-in failed. Please try again.');
     }
@@ -546,10 +593,42 @@ class GameNotifier extends StateNotifier<GameState> {
     });
   }
 
+  // ---------------------------------------------------------------------
+  // Daily bonus: once-per-24h chips claim + scheduled reminder
+  // ---------------------------------------------------------------------
+
+  /// Restores the persisted last-claim time on launch, then re-arms the
+  /// reminder — the fixed notification id makes re-scheduling idempotent, so
+  /// this also heals a reminder lost to a reinstall.
+  Future<void> _restoreDailyBonus() async {
+    final last = await _bonusStore.loadLastClaim();
+    if (!mounted || last == null) return;
+    state = state.copyWith(lastDailyBonusClaimAt: last);
+    await _syncDailyBonusReminder();
+  }
+
+  /// Keeps at most one pending "daily chips ready" notification, matching the
+  /// current cooldown and the Settings "Daily reminder" toggle.
+  Future<void> _syncDailyBonusReminder() async {
+    final now = DateTime.now();
+    final last = state.lastDailyBonusClaimAt;
+    if (!state.notifDaily || last == null || isDailyBonusReady(last, now)) {
+      await _notifs.cancelDailyBonusReminder();
+      return;
+    }
+    await _notifs.scheduleDailyBonusReminder(
+      after: last.add(kDailyBonusCooldown).difference(now),
+      chips: kDailyBonusChips,
+    );
+  }
+
   void claimDailyBonus() {
-    if (state.dailyBonusClaimed) return;
-    state = state.copyWith(chips: state.chips + 250, dailyBonusClaimed: true);
-    _showToast('+250 chips claimed!');
+    final now = DateTime.now();
+    if (!isDailyBonusReady(state.lastDailyBonusClaimAt, now)) return;
+    state = state.copyWith(chips: state.chips + kDailyBonusChips, lastDailyBonusClaimAt: now);
+    unawaited(_bonusStore.saveLastClaim(now));
+    unawaited(_syncDailyBonusReminder());
+    _showToast('+$kDailyBonusChips chips claimed!');
     _playSfx(GameSfx.win);
     _hapticMedium();
   }
@@ -996,7 +1075,7 @@ class GameNotifier extends StateNotifier<GameState> {
       heroHourKey: hourKey,
       heroDayKey: dayKey,
     );
-    _reportScoreIfGrouped();
+    _reportScore();
   }
 
   void nextHand() {
@@ -1168,7 +1247,11 @@ class GameNotifier extends StateNotifier<GameState> {
   void toggleTableChat() => state = state.copyWith(tableChatOpen: !state.tableChatOpen, tableMenuOpen: false);
   void toggleNotifSocial() => state = state.copyWith(notifSocial: !state.notifSocial);
   void toggleNotifLeaderboard() => state = state.copyWith(notifLeaderboard: !state.notifLeaderboard);
-  void toggleNotifDaily() => state = state.copyWith(notifDaily: !state.notifDaily);
+  void toggleNotifDaily() {
+    state = state.copyWith(notifDaily: !state.notifDaily);
+    // Off cancels the pending reminder; on re-arms it mid-cooldown.
+    unawaited(_syncDailyBonusReminder());
+  }
 }
 
 final gameProvider = StateNotifierProvider<GameNotifier, GameState>((ref) => GameNotifier());

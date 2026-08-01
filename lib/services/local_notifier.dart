@@ -1,19 +1,28 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
+
+import 'notification_support.dart';
 
 /// Thin wrapper around [FlutterLocalNotificationsPlugin] for leaderboard
-/// alerts ("Maya just passed you").
+/// alerts ("Maya just passed you") and the scheduled daily-bonus reminder.
 ///
-/// These are *local* notifications fired while the app process is alive.
-/// True remote push (app fully closed) needs an APNs entitlement that a free
-/// personal Apple team cannot sign, so this is the strongest mechanism this
-/// signing setup allows.
+/// These are *local* notifications. True remote push needs an APNs
+/// entitlement that a free personal Apple team cannot sign, so this is the
+/// strongest mechanism this signing setup allows. Scheduled notifications
+/// still fire when the app is closed — the OS delivers them, no process
+/// needed.
 class LocalNotifier {
+  /// Fixed id for the daily-bonus reminder so re-scheduling always replaces
+  /// the previous pending one instead of stacking up.
+  static const int _kDailyBonusNotifId = 210;
+
   final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
   bool _ready = false;
 
   Future<void> init() async {
+    if (!notificationsSupported) return;
     try {
       const settings = InitializationSettings(
         android: AndroidInitializationSettings('@mipmap/ic_launcher'),
@@ -53,6 +62,51 @@ class LocalNotifier {
       );
     } on PlatformException catch (e) {
       debugPrint('LocalNotifier.show failed: ${e.code}');
+    }
+  }
+
+  /// Schedules the "daily chips are ready" reminder [after] from now,
+  /// replacing any reminder already pending.
+  ///
+  /// The date is built in UTC on purpose: iOS receives the full ISO-8601
+  /// instant and converts it to device-local calendar components itself, and
+  /// Android receives the UTC wall clock labelled as UTC — so the reminder
+  /// fires at the right moment without needing the device's IANA zone name.
+  Future<void> scheduleDailyBonusReminder({required Duration after, required int chips}) async {
+    if (!_ready) return;
+    try {
+      await _plugin.zonedSchedule(
+        id: _kDailyBonusNotifId,
+        title: 'Your daily chips are ready!',
+        body: 'Claim your free $chips chips and grab a seat at the table.',
+        scheduledDate: tz.TZDateTime.now(tz.UTC).add(after),
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'daily_bonus',
+            'Daily bonus',
+            channelDescription: 'Reminder when the free daily chips are ready to claim',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(presentAlert: true, presentBanner: true, presentSound: true),
+        ),
+        // Inexact keeps Android off the SCHEDULE_EXACT_ALARM permission; a
+        // few minutes of drift is meaningless for a 24-hour bonus.
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      );
+    } on PlatformException catch (e) {
+      debugPrint('LocalNotifier.scheduleDailyBonusReminder failed: ${e.code}');
+    }
+  }
+
+  /// Cancels a pending daily-bonus reminder (bonus claimable again, or the
+  /// user switched the daily reminder off in Settings).
+  Future<void> cancelDailyBonusReminder() async {
+    if (!_ready) return;
+    try {
+      await _plugin.cancel(id: _kDailyBonusNotifId);
+    } on PlatformException catch (e) {
+      debugPrint('LocalNotifier.cancelDailyBonusReminder failed: ${e.code}');
     }
   }
 }

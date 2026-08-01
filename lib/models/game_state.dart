@@ -80,7 +80,10 @@ class GameState {
   final StatsSummary stats;
   final SessionSummary session;
   final List<RoundResult> history;
-  final bool dailyBonusClaimed;
+  /// Moment of the last daily-bonus claim (persisted across launches by
+  /// DailyBonusStore); null means never claimed. Readiness is derived via
+  /// `isDailyBonusReady` in utils/daily_bonus.dart.
+  final DateTime? lastDailyBonusClaimAt;
   final String toast;
   final String reactionFloat;
   final int reactionId;
@@ -125,6 +128,10 @@ class GameState {
   final String heroHourKey;
   final String heroDayKey;
   final bool badgeHourly;
+  final String? heroUid;
+  final bool friendsAreLive;
+  final List<Friend> globalHourly;
+  final List<Friend> globalDaily;
 
   const GameState({
     this.screen = AppScreen.onboarding,
@@ -145,7 +152,7 @@ class GameState {
     this.stats = const StatsSummary(),
     this.session = const SessionSummary(),
     this.history = const [],
-    this.dailyBonusClaimed = false,
+    this.lastDailyBonusClaimAt,
     this.toast = '',
     this.reactionFloat = '',
     this.reactionId = 0,
@@ -159,7 +166,9 @@ class GameState {
     this.soundOn = true,
     this.notifSocial = true,
     this.notifLeaderboard = true,
-    this.notifDaily = false,
+    // On by default so the daily-chips reminder works out of the box; the
+    // Settings "Daily reminder" toggle turns it off.
+    this.notifDaily = true,
     this.avatarColor = const Color(0xFF1E7D5D),
     this.tournamentJoined = false,
     this.referralsCount = 0,
@@ -190,6 +199,10 @@ class GameState {
     this.heroHourKey = '',
     this.heroDayKey = '',
     this.badgeHourly = true,
+    this.heroUid,
+    this.friendsAreLive = false,
+    this.globalHourly = const [],
+    this.globalDaily = const [],
   });
 
   GameState copyWith({
@@ -211,7 +224,7 @@ class GameState {
     StatsSummary? stats,
     SessionSummary? session,
     List<RoundResult>? history,
-    bool? dailyBonusClaimed,
+    Object? lastDailyBonusClaimAt = _unset,
     String? toast,
     String? reactionFloat,
     int? reactionId,
@@ -256,6 +269,10 @@ class GameState {
     String? heroHourKey,
     String? heroDayKey,
     bool? badgeHourly,
+    Object? heroUid = _unset,
+    bool? friendsAreLive,
+    List<Friend>? globalHourly,
+    List<Friend>? globalDaily,
   }) {
     return GameState(
       screen: screen ?? this.screen,
@@ -276,7 +293,9 @@ class GameState {
       stats: stats ?? this.stats,
       session: session ?? this.session,
       history: history ?? this.history,
-      dailyBonusClaimed: dailyBonusClaimed ?? this.dailyBonusClaimed,
+      lastDailyBonusClaimAt: identical(lastDailyBonusClaimAt, _unset)
+          ? this.lastDailyBonusClaimAt
+          : lastDailyBonusClaimAt as DateTime?,
       toast: toast ?? this.toast,
       reactionFloat: reactionFloat ?? this.reactionFloat,
       reactionId: reactionId ?? this.reactionId,
@@ -321,6 +340,10 @@ class GameState {
       heroHourKey: heroHourKey ?? this.heroHourKey,
       heroDayKey: heroDayKey ?? this.heroDayKey,
       badgeHourly: badgeHourly ?? this.badgeHourly,
+      heroUid: identical(heroUid, _unset) ? this.heroUid : heroUid as String?,
+      friendsAreLive: friendsAreLive ?? this.friendsAreLive,
+      globalHourly: globalHourly ?? this.globalHourly,
+      globalDaily: globalDaily ?? this.globalDaily,
     );
   }
 }

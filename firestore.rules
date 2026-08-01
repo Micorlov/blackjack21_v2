@@ -17,6 +17,13 @@ service cloud.firestore {
       allow list: if isAdmin();
     }
 
+    // Global leaderboard — every player publishes their own row; anyone
+    // signed in can read the standings.
+    match /leaderboard/{uid} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
     // Friends groups. Codes are shared over WhatsApp; any signed-in player
     // holding a code may look the group up and read its scoreboard, but a
     // member row can only be written by the player it belongs to. The admin

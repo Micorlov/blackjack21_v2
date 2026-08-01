@@ -115,9 +115,10 @@ class SocialService {
     }, SetOptions(merge: true));
   }
 
-  /// Publishes the player's current scoreboard row to the group.
+  /// Publishes the player's current scoreboard row: always to the world
+  /// `leaderboard`, and additionally to the friends group when [code] is set.
   Future<void> reportScore({
-    required String code,
+    String? code,
     required String name,
     required int chips,
     required int hourly,
@@ -127,19 +128,41 @@ class SocialService {
   }) async {
     final u = uid;
     if (u == null) return;
+    final row = {
+      'name': name,
+      'chips': chips,
+      'hourly': hourly,
+      'daily': daily,
+      'hourKey': hourKey,
+      'dayKey': dayKey,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
     try {
-      await _db.collection('groups').doc(code).collection('players').doc(u).set({
-        'name': name,
-        'chips': chips,
-        'hourly': hourly,
-        'daily': daily,
-        'hourKey': hourKey,
-        'dayKey': dayKey,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+      await _db.collection('leaderboard').doc(u).set(row, SetOptions(merge: true));
+      if (code != null) {
+        await _db.collection('groups').doc(code).collection('players').doc(u).set(row, SetOptions(merge: true));
+      }
     } on FirebaseException catch (e) {
       debugPrint('SocialService.reportScore failed: ${e.code}');
     }
+  }
+
+  /// Live top players worldwide for one period key (`2026-08-01T19` hourly /
+  /// `2026-08-01` daily), best score first. Backed by the composite indexes
+  /// in `firestore.indexes.json`.
+  Stream<List<Friend>> watchTopPlayers({required bool hourly, required String periodKey, int limitTo = 10}) {
+    return _db
+        .collection('leaderboard')
+        .where(hourly ? 'hourKey' : 'dayKey', isEqualTo: periodKey)
+        .orderBy(hourly ? 'hourly' : 'daily', descending: true)
+        .limit(limitTo)
+        .snapshots()
+        .map((snap) {
+          final now = DateTime.now();
+          final hk = hourKeyOf(now);
+          final dk = dayKeyOf(now);
+          return [for (final doc in snap.docs) _friendFromDoc(doc.id, doc.data(), now, hk, dk)];
+        });
   }
 
   /// Live view of the *other* members of [code], mapped into the [Friend]

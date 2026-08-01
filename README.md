@@ -16,7 +16,12 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   push the bet past the maximum is refused, and DEAL stays locked until the bet reaches the minimum
 - **Live friends groups** — invite friends over WhatsApp with a 6-character group code; everyone
   who joins the code shares one Firestore-backed group and appears live in the friends list,
-  leaderboard, and table seats (guests get anonymous Firebase accounts, so no sign-in is required)
+  leaderboard, and table seats (guests get anonymous Firebase accounts, so no sign-in is required).
+  The friends standings list only ever shows real people who joined by code — never the practice
+  bots — and offers an inline WhatsApp invite button while you have nobody to race
+- **World leaderboard** — swipe the standings panel at the table between three pages: FRIENDS,
+  WORLD · THIS HOUR, and WORLD · TODAY. The world pages are the live global top players by
+  hourly and daily points; your own row stays visible even when you are outside the top
 - **Always-visible rank strip** — a ticker above every screen, including the table, showing your
   live position vs your friends' hourly or daily points and who you're chasing (tap to flip
   hourly ↔ daily)
@@ -57,7 +62,8 @@ lib/
 ├── models/        # enums, game_state, hand, playing_card, social_models, table_pot
 ├── screens/       # lobby, table, friends, settings, shop, stats, onboarding
 │   └── table/     # table sub-panels (felt, betting, action, chat, settlement, …)
-├── services/      # sound_player, spoken_amount, social_service (Firestore), local_notifier
+├── services/      # sound_player, spoken_amount, social_service (Firestore), local_notifier,
+│                  #   notification_support (web-safe "can we notify here?" check)
 ├── state/         # game_notifier (Riverpod)
 ├── theme/         # app_colors, app_text_styles
 ├── utils/         # formatters, leaderboard, points (hourly/daily buckets), comeback
@@ -128,6 +134,19 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 ```
 
 ## Changelog
+
+### 2026-08-02 (2)
+- feat: the table standings panel is now swipeable across three pages — FRIENDS, WORLD · THIS
+  HOUR, and WORLD · TODAY — so the race against real players worldwide is one swipe away
+- feat: the FRIENDS page lists only real people who joined through a WhatsApp invite code; the
+  practice bots no longer pad it. With no friends yet the page says so and offers the WhatsApp
+  invite button inline
+- feat: every player now publishes their score to a global `leaderboard` collection, read back
+  live as the world top list for the current hour and day (composite indexes in
+  `firestore.indexes.json`, rules in `firestore.rules`)
+- fix: notifications are asked for only where a plugin is actually registered (iOS/Android, never
+  under `flutter test`), via a web-safe conditional-import check in `notification_support.dart` —
+  touching the plugin under test threw a `LateInitializationError` no `on` clause could catch
 
 ### 2026-08-02
 - docs: added [FEATURE_PLAN.md](FEATURE_PLAN.md) — a prioritized roadmap of 30 candidate

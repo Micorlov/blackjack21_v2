@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ import '../models/social_models.dart';
 import '../state/game_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../utils/daily_bonus.dart';
 import '../utils/formatters.dart';
 import '../utils/leaderboard.dart';
 import '../widgets/avatar_circle.dart';
@@ -165,14 +167,39 @@ class _StoriesRow extends StatelessWidget {
   }
 }
 
-class _DailyBonusCard extends StatelessWidget {
+class _DailyBonusCard extends StatefulWidget {
   final GameState state;
   final GameNotifier notifier;
 
   const _DailyBonusCard({required this.state, required this.notifier});
 
   @override
+  State<_DailyBonusCard> createState() => _DailyBonusCardState();
+}
+
+class _DailyBonusCardState extends State<_DailyBonusCard> {
+  /// Ticks the countdown label and flips the card back to "Claim" the moment
+  /// the 24-hour cooldown runs out, without any state change elsewhere.
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticker = Timer.periodic(const Duration(seconds: 30), (_) => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final lastClaim = widget.state.lastDailyBonusClaimAt;
+    final ready = isDailyBonusReady(lastClaim, now);
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -191,23 +218,39 @@ class _DailyBonusCard extends StatelessWidget {
                 style: AppText.mono(13, weight: FontWeight.w700, letterSpacing: 1.3, color: AppColors.gold),
               ),
               const SizedBox(height: 4),
-              Text('+250 chips', style: AppText.mono(22, weight: FontWeight.w700)),
+              Text('+$kDailyBonusChips chips', style: AppText.mono(22, weight: FontWeight.w700)),
             ],
           ),
-          if (!state.dailyBonusClaimed)
+          if (ready)
             SizedBox(
               width: 110,
-              child: GoldButton(label: 'Claim', onPressed: notifier.claimDailyBonus, verticalPadding: 16, fontSize: 16),
+              child: GoldButton(
+                label: 'Claim',
+                onPressed: widget.notifier.claimDailyBonus,
+                verticalPadding: 16,
+                fontSize: 16,
+              ),
             )
           else
-            Row(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.check_circle, color: AppColors.win, size: 18),
-                const SizedBox(width: 6),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.check_circle, color: AppColors.win, size: 18),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Claimed',
+                      style: AppText.sora(15, weight: FontWeight.w800, color: AppColors.win),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
                 Text(
-                  'Claimed',
-                  style: AppText.sora(15, weight: FontWeight.w800, color: AppColors.win),
+                  'Next in ${dailyBonusCountdownLabel(lastClaim!, now)}',
+                  style: AppText.sora(12.5, weight: FontWeight.w700, color: AppColors.textMuted),
                 ),
               ],
             ),
