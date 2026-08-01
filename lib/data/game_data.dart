@@ -98,6 +98,19 @@ const List<Friend> kInitialFriends = [
   Friend(id: 'f4', name: 'Priya N.', chips: 3120, online: false, dailyScore: 540, hourlyScore: 0),
 ];
 
+/// Chip denominations the betting tray can offer, lowest first.
+const List<int> kChipDenoms = [25, 50, 100, 500, 1000];
+
+/// The chips a given table is allowed to offer. A chip worth more than the
+/// table maximum can never form a legal bet, so it is never shown — a $500
+/// table must not hand the player a $1,000 chip. At least the smallest chip
+/// always survives so the tray is never empty.
+List<int> chipDenomsFor(TableStake? stake) {
+  if (stake == null) return kChipDenoms;
+  final allowed = kChipDenoms.where((d) => d <= stake.max).toList();
+  return allowed.isEmpty ? [kChipDenoms.first] : allowed;
+}
+
 const List<TableStake> kTables = [
   TableStake(key: 'bronze', name: 'Bronze Table', min: 25, max: 500, tint: AppColors.win, tintDim: Color(0x264FAE8E)),
   TableStake(

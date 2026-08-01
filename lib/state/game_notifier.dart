@@ -322,6 +322,11 @@ class GameNotifier extends StateNotifier<GameState> {
       _showToast('Not enough chips');
       return;
     }
+    final tableMax = state.stake?.max;
+    if (tableMax != null && state.bet + amount > tableMax) {
+      _showToast('Table maximum is \$${formatChips(tableMax)}');
+      return;
+    }
     state = state.copyWith(bet: state.bet + amount);
     _playSfx(GameSfx.chip);
     _hapticSelection();
@@ -332,7 +337,10 @@ class GameNotifier extends StateNotifier<GameState> {
   void dealRound() {
     final bet = state.bet;
     final chips = state.chips;
+    final stake = state.stake;
     if (state.phase != RoundPhase.betting || bet <= 0 || bet > chips) return;
+    // The table limits are a rule, not decoration: a bet outside them never deals.
+    if (stake != null && (bet < stake.min || bet > stake.max)) return;
 
     final npcSeats = _dealNpcCards();
     final playerCards = [_drawCard(), _drawCard()];

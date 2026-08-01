@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/game_data.dart';
 import '../../state/game_notifier.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
+import '../../utils/formatters.dart';
 import '../../widgets/buttons.dart';
 
-const List<int> _kChipDenoms = [25, 50, 100, 500, 1000];
-
-/// Betting-phase bottom panel: current bet readout, the 5 denomination
-/// chips, CLEAR/DEAL row, and (when broke) a complimentary-chips button.
+/// Betting-phase bottom panel: current bet readout, the denomination chips the
+/// table allows, CLEAR/DEAL row, and (when broke) a complimentary-chips button.
 class TableBettingPanel extends ConsumerWidget {
   const TableBettingPanel({super.key});
 
@@ -17,7 +17,12 @@ class TableBettingPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(gameProvider);
     final notifier = ref.read(gameProvider.notifier);
-    final dealDisabled = !(state.bet > 0 && state.bet <= state.chips);
+    final stake = state.stake;
+    final denoms = chipDenomsFor(stake);
+    final tableMin = stake?.min ?? 0;
+    final tableMax = stake?.max;
+    final belowTableMin = state.bet < tableMin;
+    final dealDisabled = !(state.bet > 0 && state.bet <= state.chips) || belowTableMin;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -36,6 +41,13 @@ class TableBettingPanel extends ConsumerWidget {
             ],
           ),
         ),
+        if (belowTableMin) ...[
+          const SizedBox(height: 4),
+          Text(
+            'Table minimum \$${formatChips(tableMin)}',
+            style: AppText.mono(12, letterSpacing: 0.8, color: AppColors.textMuted),
+          ),
+        ],
         const SizedBox(height: 12),
         // Five 60px chips plus gaps need 336px; a 360px phone leaves 332px of
         // content width, so the tray shrinks as a unit and stays centered.
@@ -45,13 +57,15 @@ class TableBettingPanel extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              for (var i = 0; i < _kChipDenoms.length; i++) ...[
+              for (var i = 0; i < denoms.length; i++) ...[
                 if (i > 0) const SizedBox(width: 9),
                 ChipButton(
-                  amount: _kChipDenoms[i],
-                  color: AppColors.chipColors[_kChipDenoms[i]]!,
-                  disabled: (state.bet + _kChipDenoms[i]) > state.chips,
-                  onPressed: () => notifier.placeBet(_kChipDenoms[i]),
+                  amount: denoms[i],
+                  color: AppColors.chipColors[denoms[i]]!,
+                  disabled:
+                      (state.bet + denoms[i]) > state.chips ||
+                      (tableMax != null && (state.bet + denoms[i]) > tableMax),
+                  onPressed: () => notifier.placeBet(denoms[i]),
                 ),
               ],
             ],
