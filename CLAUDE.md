@@ -12,16 +12,30 @@ Hebrew input is normal — it is never a request to switch reply language.
 1. **Install a fresh build on the phone** — Michael's iPhone, wireless:
 
    ```bash
-   flutter build ios --release && flutter install -d 00008130-001C79DC0061401C
+   flutter build ios --release && \
+     xcrun devicectl device install app \
+       --device 001F6FE4-6A74-5A55-B2AC-F370BD8A3351 \
+       build/ios/iphoneos/Runner.app
    ```
 
-   **Both commands are required.** `flutter install` on its own does *not* rebuild — it ships
+   **Both commands are required.** The install step does *not* rebuild — on its own it ships
    whatever `build/ios/iphoneos/Runner.app` already contains, which silently installs a stale
    binary and makes the fix look like it did not work.
 
-   Run `flutter devices` first if the id ever changes. The phone must be unlocked and on the same
+   **Never use `flutter install`.** It uninstalls the app before installing it
+   (`flutter_tools/lib/src/commands/install.dart`). The signing identity here is a *free* personal
+   Apple team, and iOS deletes the "Developer App" trust entry as soon as the last app from that
+   developer leaves the device — so every `flutter install` re-triggers the **Untrusted Developer**
+   alert. `devicectl` upgrades in place, so the trust survives.
+
+   Device ids: `001F6FE4-6A74-5A55-B2AC-F370BD8A3351` is the CoreDevice id used by `devicectl`;
+   `00008130-001C79DC0061401C` is the hardware UDID used by `flutter`/`flutter devices`. Run
+   `xcrun devicectl list devices` if the id ever changes. The phone must be unlocked and on the same
    network. If the install fails (device offline, code signing, locked screen), say so explicitly —
    never report a change as delivered when it was only committed.
+
+   The free provisioning profile expires **7 days** after each build, after which the installed app
+   refuses to launch until a fresh build is installed. This is expected, not a bug.
 
 2. **Commit locally** — `git add` + `git commit` in this repo only. **Never `git push`** unless the
    user asks for it in that same message.

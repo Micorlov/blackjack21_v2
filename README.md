@@ -11,6 +11,9 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   splits/doubles, and settlement panels
 - **"Closest to 21" sweep pot** — seats that bust or lose to the dealer forfeit their bets to
   the best surviving hand; every settled hand names who took the pot, or says there was none
+- **Enforced table limits** — each table's posted `$min – $max` is a real rule: the betting tray
+  only offers chips a table can legally take (no $1,000 chip at a $500 table), a chip that would
+  push the bet past the maximum is refused, and DEAL stays locked until the bet reaches the minimum
 - **Social** — friends, lobby, chat panel, leaderboard, seat plates with avatars
 - **Progression** — stats screen, shop, onboarding and story overlays
 - **Sound effects** — deal, chip, turn, win, lose, push, and blackjack cues, plus spoken
@@ -108,6 +111,18 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 ## Changelog
 
 ### 2026-08-01
+- docs: the delivery rule now installs with `xcrun devicectl device install app` instead of
+  `flutter install`. `flutter install` uninstalls the app first, and because the app is signed
+  with a free personal Apple team, iOS dropped the developer-trust entry on every uninstall —
+  which is why the phone showed "Untrusted Developer" after each delivery. `devicectl` upgrades
+  in place, so the trust survives
+- fix: a table's posted limits are now enforced instead of being decoration. The betting tray
+  hides chips worth more than the table maximum (the Bronze `$25 – $500` table no longer offers a
+  $1,000 chip), a chip that would take the bet over the maximum is greyed out and refused with a
+  "Table maximum is $500" toast, and DEAL is disabled — with a "Table minimum" hint — until the
+  bet reaches the table minimum
+- test: added `test/table_limits_test.dart` covering `chipDenomsFor`, the maximum guard in
+  `placeBet`, and the minimum guard in `dealRound`
 - fix: the pot is only ever called a sweep pot now. The dealer pill's call-out always opens
   with "Sweep pot …" instead of switching to "Table pot …" while every seat is still in, and
   a swept hand says "Player wins the sweep pot" rather than "Player wins the pot"
