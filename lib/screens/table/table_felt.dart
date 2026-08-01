@@ -158,6 +158,7 @@ class TableFelt extends ConsumerWidget {
         avatarBg: AppColors.seatColors[i % AppColors.seatColors.length],
         takesPot: takesPot,
         sweepTotalWin: state.sweepInfo?.totalWin ?? 0,
+        hourly: state.badgeHourly,
       );
       final pos = _kSeatPositions[i];
       final alignment = pos.originLeft ? Alignment.topLeft : Alignment.topRight;

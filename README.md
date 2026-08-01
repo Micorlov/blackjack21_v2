@@ -129,6 +129,14 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 
 ## Changelog
 
+### 2026-08-01 (3)
+- feat: every seat plate at the table now shows that friend's live points next to their chip
+  stack, green when up and red when down, for the same period (hourly/daily) the rank strip is
+  showing — tap the strip to flip both together
+- feat: the betting panel is more compact (single-line bet readout, smaller chip tray and
+  buttons) and gains a friends table: everyone in the race ranked by the current
+  hourly/daily points, with your own row in gold
+
 ### 2026-08-01 (2)
 - feat: the app is now social-first — invite friends into a live group over WhatsApp with a
   6-character code; group members appear in the friends list, leaderboard, and table seats with

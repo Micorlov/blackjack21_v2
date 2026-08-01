@@ -29,6 +29,8 @@ class SeatPlateData {
   final String initial;
   final String name;
   final String stackLabel;
+  final String pointsLabel;
+  final Color pointsColor;
   final Color avatarBg;
   final bool acting;
   final List<PlayingCard> cards;
@@ -50,6 +52,8 @@ class SeatPlateData {
     required this.initial,
     required this.name,
     required this.stackLabel,
+    required this.pointsLabel,
+    required this.pointsColor,
     required this.avatarBg,
     required this.acting,
     required this.cards,
@@ -76,13 +80,19 @@ class SeatPlateData {
     required Color avatarBg,
     required bool takesPot,
     required int sweepTotalWin,
+    required bool hourly,
   }) {
     final hasCards = npc != null && npc.cards.isNotEmpty;
     final npcTotal = hasCards ? BlackjackRules.handValue(npc.cards) : 0;
+    // The friend's points for the period the rank strip is showing, so the
+    // seats and the strip always talk about the same race.
+    final points = hourly ? friend.hourlyScore : friend.dailyScore;
     return SeatPlateData(
       initial: friend.initial,
       name: friend.firstName,
       stackLabel: formatChips(friend.chips),
+      pointsLabel: '${points >= 0 ? '+' : '-'}\$${formatChips(points.abs())}',
+      pointsColor: points >= 0 ? AppColors.winLight : AppColors.loseSoft,
       avatarBg: avatarBg,
       acting: acting,
       cards: npc?.cards ?? const [],
@@ -260,11 +270,25 @@ class SeatPlate extends StatelessWidget {
                       : null,
                 ),
                 _plateLine(
-                  label: Text(
-                    data.stackLabel,
-                    style: AppText.mono(17, weight: FontWeight.w700, color: Colors.white),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  label: Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          data.stackLabel,
+                          style: AppText.mono(17, weight: FontWeight.w700, color: Colors.white),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        data.pointsLabel,
+                        style: AppText.mono(12, weight: FontWeight.w700, color: data.pointsColor),
+                        maxLines: 1,
+                      ),
+                    ],
                   ),
                   trailing: data.hasStatus && data.showBet ? _betDot(fontSize: 12, dotSize: 8) : null,
                 ),
