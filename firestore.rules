@@ -1,16 +1,29 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Each player's membership pointer — private to its owner.
+    // The web admin panel (github.com/Micorlov/blackjack21-admin) signs in
+    // with Google under this email and gets read-only visibility across all
+    // groups and players. Keep in sync with ADMIN_EMAILS in that repo's
+    // src/lib/config.ts.
+    function isAdmin() {
+      return request.auth != null && request.auth.token.email == 'micorlov@gmail.com';
+    }
+
+    // Each player's membership pointer — private to its owner, readable by
+    // the admin panel.
     match /players/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      allow write: if request.auth != null && request.auth.uid == uid;
+      allow list: if isAdmin();
     }
 
     // Friends groups. Codes are shared over WhatsApp; any signed-in player
     // holding a code may look the group up and read its scoreboard, but a
-    // member row can only be written by the player it belongs to.
+    // member row can only be written by the player it belongs to. The admin
+    // panel can additionally list every group.
     match /groups/{code} {
       allow get: if request.auth != null;
+      allow list: if isAdmin();
       allow create: if request.auth != null && request.resource.data.createdBy == request.auth.uid;
 
       match /players/{uid} {
