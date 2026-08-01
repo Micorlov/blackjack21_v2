@@ -15,6 +15,7 @@ import '../models/hand.dart';
 import '../models/playing_card.dart';
 import '../models/social_models.dart';
 import '../models/table_pot.dart';
+import '../services/game_store.dart';
 import '../services/local_notifier.dart';
 import '../services/social_service.dart';
 import '../services/sound_player.dart';
@@ -45,13 +46,15 @@ class _SeatResult {
 class GameNotifier extends StateNotifier<GameState> {
   GameNotifier() : super(const GameState(friends: kInitialFriends)) {
     _shoe = BlackjackRules.buildShoe(kDeckCount, _rng);
-    unawaited(_initSocial());
+    unawaited(_boot());
   }
 
   final Random _rng = Random();
   final SoundPlayer _sound = SoundPlayer();
   final SocialService _social = SocialService();
   final LocalNotifier _notifs = LocalNotifier();
+  final GameStore _store = GameStore();
+  Timer? _saveTimer;
   StreamSubscription<List<Friend>>? _groupSub;
   Timer? _heartbeatTimer;
 
@@ -68,8 +71,19 @@ class GameNotifier extends StateNotifier<GameState> {
   Timer? _potTimer;
   Timer? _celebrationTimer;
 
+  /// Long enough to absorb a burst of state changes, short enough that a
+  /// force-quit right after a hand still finds the result on disk.
+  static const Duration _kSaveDebounce = Duration(milliseconds: 600);
+
   @override
   void dispose() {
+    // A save still waiting out its debounce would be lost with the timer, so
+    // flush it first — that pending write is the hand just played.
+    if (_saveTimer?.isActive ?? false) {
+      _saveTimer!.cancel();
+      unawaited(_store.save(_snapshot()));
+    }
+    _saveTimer?.cancel();
     _npcTimer?.cancel();
     _toastTimer?.cancel();
     _reactTimer?.cancel();
@@ -194,6 +208,71 @@ class GameNotifier extends StateNotifier<GameState> {
   // ---------------------------------------------------------------------
   // Social: live friends group, invites, score sync, overtake alerts
   // ---------------------------------------------------------------------
+
+  /// Restore the saved player *before* any social work starts. `_initSocial`
+  /// ends up publishing this player's row to the group, and publishing the
+  /// default $1,000 stack before the real one loads would show friends a
+  /// bankroll that never existed.
+  Future<void> _boot() async {
+    await _hydrate();
+    if (!mounted) return;
+    await _initSocial();
+  }
+
+  Future<void> _hydrate() async {
+    final saved = await _store.load();
+    if (saved == null || !mounted) return;
+    final now = DateTime.now();
+    final hourKey = hourKeyOf(now);
+    final dayKey = dayKeyOf(now);
+    state = state.copyWith(
+      chips: saved.chips,
+      stats: saved.stats,
+      history: saved.history,
+      // Points saved in an earlier hour/day are worth nothing now — the same
+      // rollover the heartbeat applies, so a relaunch cannot resurrect a
+      // finished period's score.
+      heroHourlyPoints: rolledPoints(saved.hourlyPoints, saved.hourKey, hourKey),
+      heroDailyPoints: rolledPoints(saved.dailyPoints, saved.dayKey, dayKey),
+      heroHourKey: hourKey,
+      heroDayKey: dayKey,
+      soundOn: saved.soundOn,
+      hapticsOn: saved.hapticsOn,
+      notifSocial: saved.notifSocial,
+      notifLeaderboard: saved.notifLeaderboard,
+      notifDaily: saved.notifDaily,
+      themeChoice: saved.themeChoice,
+      cardBackSkin: saved.cardBackSkin,
+      avatarFrameGold: saved.avatarFrameGold,
+      claimedTiers: saved.claimedTiers,
+    );
+  }
+
+  SavedGame _snapshot() => SavedGame(
+    chips: state.chips,
+    stats: state.stats,
+    history: state.history,
+    hourlyPoints: state.heroHourlyPoints,
+    dailyPoints: state.heroDailyPoints,
+    hourKey: state.heroHourKey,
+    dayKey: state.heroDayKey,
+    soundOn: state.soundOn,
+    hapticsOn: state.hapticsOn,
+    notifSocial: state.notifSocial,
+    notifLeaderboard: state.notifLeaderboard,
+    notifDaily: state.notifDaily,
+    themeChoice: state.themeChoice,
+    cardBackSkin: state.cardBackSkin,
+    avatarFrameGold: state.avatarFrameGold,
+    claimedTiers: state.claimedTiers,
+  );
+
+  /// Coalesces the writes a fast player generates — settling a hand, flipping
+  /// a toggle and buying a skin inside the same second become one disk write.
+  void _scheduleSave() {
+    _saveTimer?.cancel();
+    _saveTimer = Timer(_kSaveDebounce, () => unawaited(_store.save(_snapshot())));
+  }
 
   Future<void> _initSocial() async {
     final ok = await _social.ensureSignedIn();
@@ -549,6 +628,7 @@ class GameNotifier extends StateNotifier<GameState> {
   void claimDailyBonus() {
     if (state.dailyBonusClaimed) return;
     state = state.copyWith(chips: state.chips + 250, dailyBonusClaimed: true);
+    _scheduleSave();
     _showToast('+250 chips claimed!');
     _playSfx(GameSfx.win);
     _hapticMedium();
@@ -997,6 +1077,7 @@ class GameNotifier extends StateNotifier<GameState> {
       heroDayKey: dayKey,
     );
     _reportScoreIfGrouped();
+    _scheduleSave();
   }
 
   void nextHand() {
@@ -1028,7 +1109,10 @@ class GameNotifier extends StateNotifier<GameState> {
     );
   }
 
-  void resetBankroll() => state = state.copyWith(chips: kStartingChips);
+  void resetBankroll() {
+    state = state.copyWith(chips: kStartingChips);
+    _scheduleSave();
+  }
 
   // ---------------------------------------------------------------------
   // Stats / leaderboard tabs
@@ -1057,6 +1141,7 @@ class GameNotifier extends StateNotifier<GameState> {
   void claimTier(String id, int need, int reward) {
     if (state.referralsCount < need || state.claimedTiers.contains(id)) return;
     state = state.copyWith(chips: state.chips + reward, claimedTiers: [...state.claimedTiers, id]);
+    _scheduleSave();
     _showToast('+$reward chips claimed!');
   }
 
@@ -1110,9 +1195,15 @@ class GameNotifier extends StateNotifier<GameState> {
   // ---------------------------------------------------------------------
 
   void selectAvatarColor(Color color) => state = state.copyWith(avatarColor: color);
-  void selectCardBack(String id) => state = state.copyWith(cardBackSkin: id);
+  void selectCardBack(String id) {
+    state = state.copyWith(cardBackSkin: id);
+    _scheduleSave();
+  }
   void selectFelt(String id) => state = state.copyWith(themeChoice: id);
-  void setAvatarFrame(bool gold) => state = state.copyWith(avatarFrameGold: gold);
+  void setAvatarFrame(bool gold) {
+    state = state.copyWith(avatarFrameGold: gold);
+    _scheduleSave();
+  }
 
   void toggleLike1() => state = state.copyWith(
     highlight1Liked: !state.highlight1Liked,
@@ -1150,25 +1241,43 @@ class GameNotifier extends StateNotifier<GameState> {
     });
   }
 
-  void selectThemeDefault() => state = state.copyWith(themeChoice: 'default');
-  void selectThemeOcean() => state = state.copyWith(themeChoice: 'ocean');
-  void selectThemeEmber() => state = state.copyWith(themeChoice: 'ember');
+  void _setTheme(String choice) {
+    state = state.copyWith(themeChoice: choice);
+    _scheduleSave();
+  }
+
+  void selectThemeDefault() => _setTheme('default');
+  void selectThemeOcean() => _setTheme('ocean');
+  void selectThemeEmber() => _setTheme('ember');
   void toggleHaptics() {
     final next = !state.hapticsOn;
     state = state.copyWith(hapticsOn: next);
     if (next) HapticFeedback.mediumImpact();
+    _scheduleSave();
   }
 
   void toggleSound() {
     final next = !state.soundOn;
     state = state.copyWith(soundOn: next);
     if (next) unawaited(_sound.play(GameSfx.chip));
+    _scheduleSave();
   }
   void toggleTableMenu() => state = state.copyWith(tableMenuOpen: !state.tableMenuOpen);
   void toggleTableChat() => state = state.copyWith(tableChatOpen: !state.tableChatOpen, tableMenuOpen: false);
-  void toggleNotifSocial() => state = state.copyWith(notifSocial: !state.notifSocial);
-  void toggleNotifLeaderboard() => state = state.copyWith(notifLeaderboard: !state.notifLeaderboard);
-  void toggleNotifDaily() => state = state.copyWith(notifDaily: !state.notifDaily);
+  void toggleNotifSocial() {
+    state = state.copyWith(notifSocial: !state.notifSocial);
+    _scheduleSave();
+  }
+
+  void toggleNotifLeaderboard() {
+    state = state.copyWith(notifLeaderboard: !state.notifLeaderboard);
+    _scheduleSave();
+  }
+
+  void toggleNotifDaily() {
+    state = state.copyWith(notifDaily: !state.notifDaily);
+    _scheduleSave();
+  }
 }
 
 final gameProvider = StateNotifierProvider<GameNotifier, GameState>((ref) => GameNotifier());
