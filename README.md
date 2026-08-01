@@ -31,6 +31,11 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   notification ("Maya just passed you on the hourly leaderboard"). Honors the Settings →
   leaderboard-notifications toggle. These are local notifications (app running); remote push
   needs an APNs entitlement a free personal Apple team cannot sign
+- **Daily chips claim** — +250 chips on a rolling 24-hour cooldown from your last claim, persisted
+  across launches (`shared_preferences`) so restarting the app can't re-arm it early. The lobby's
+  Daily Bonus card shows a live "Next in 23h 59m" countdown while it's on cooldown, and a scheduled
+  local notification ("Your daily chips are ready!") fires the moment it unlocks — even if the app
+  is closed. Honors the Settings → Daily reminder toggle
 - **Comeback dealing** — short-stacked or on a two-loss streak, your opening hand is the best of
   3 candidate pairs from the real shoe instead of one blind draw, so sessions last longer
 - **Social table** — friends, lobby, chat panel, leaderboard, seat plates with avatars
@@ -63,10 +68,12 @@ lib/
 ├── screens/       # lobby, table, friends, settings, shop, stats, onboarding
 │   └── table/     # table sub-panels (felt, betting, action, chat, settlement, …)
 ├── services/      # sound_player, spoken_amount, social_service (Firestore), local_notifier,
-│                  #   notification_support (web-safe "can we notify here?" check)
+│                  #   notification_support (web-safe "can we notify here?" check),
+│                  #   daily_bonus_store (persists the last claim time)
 ├── state/         # game_notifier (Riverpod)
 ├── theme/         # app_colors, app_text_styles
-├── utils/         # formatters, leaderboard, points (hourly/daily buckets), comeback
+├── utils/         # formatters, leaderboard, points (hourly/daily buckets), comeback,
+│                  #   daily_bonus (pure 24h-cooldown timing logic)
 └── widgets/       # shared UI (buttons, overlays, cards, nav bar, rank_strip)
 ```
 
@@ -82,7 +89,9 @@ lib/
 | `google_sign_in` | Google account picker for sign-in |
 | `cloud_firestore` | Friends groups and live hourly/daily score sync |
 | `url_launcher` | Opens WhatsApp with the prefilled group invite |
-| `flutter_local_notifications` | "Friend passed you" leaderboard alerts |
+| `flutter_local_notifications` | "Friend passed you" leaderboard alerts and the daily-bonus reminder |
+| `shared_preferences` | Persists the last daily-bonus claim time across launches |
+| `timezone` | Builds the `TZDateTime` the daily-bonus reminder is scheduled against |
 
 Dev: `flutter_test`, `flutter_lints`, `integration_test`.
 
@@ -134,6 +143,15 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 ```
 
 ## Changelog
+
+### 2026-08-02 (3)
+- feat: the daily chips claim now runs on a real, persisted 24-hour cooldown instead of a
+  once-ever flag — restarting the app can't re-arm it early, the lobby's Daily Bonus card shows
+  a live countdown while it's on cooldown, and a scheduled local notification ("Your daily chips
+  are ready!") fires the moment it unlocks, even with the app closed. Off by default is no longer
+  possible to get stuck in — the Settings → Daily reminder toggle now defaults on
+- test: added `test/daily_bonus_test.dart` covering the cooldown/readiness/countdown logic in
+  `utils/daily_bonus.dart`
 
 ### 2026-08-02 (2)
 - feat: the table standings panel is now swipeable across three pages — FRIENDS, WORLD · THIS
