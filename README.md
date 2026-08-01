@@ -129,6 +129,14 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 
 ## Changelog
 
+### 2026-08-02
+- docs: added [FEATURE_PLAN.md](FEATURE_PLAN.md) — a prioritized roadmap of 30 candidate
+  features, each scored by three independent judges on player value, feasibility under the
+  free-Apple-team/Firebase-free-tier constraints, and fit with the friends-race identity.
+  Phased so persistence lands first (chips and stats currently reset on every launch), then
+  the fake social surfaces are replaced with real ones, then the sweep-pot moments get their
+  celebration
+
 ### 2026-08-01 (3)
 - feat: every seat plate at the table now shows that friend's live points next to their chip
   stack, green when up and red when down, for the same period (hourly/daily) the rank strip is
