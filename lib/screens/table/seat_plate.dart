@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../models/playing_card.dart';
@@ -11,6 +13,14 @@ import '../../widgets/playing_card_widget.dart';
 /// pinned to [_kCardHeight] so a long hand can never change the seat's height.
 const double _kCardWidth = 27;
 const double _kCardHeight = 38;
+
+/// How far each card in a fan sits from the one before it. [_kCardStep] is the
+/// relaxed spacing (a 3px overlap); a hand too wide for its seat tightens the
+/// step toward [_kCardMinStep] instead of scaling the cards down, so a seat
+/// holding five cards still draws them the same size as a seat holding two.
+/// Cards overlap left-to-right, so the tightened edge still shows each rank.
+const double _kCardStep = 24;
+const double _kCardMinStep = 11;
 
 /// Display-ready data for one friend seat plate around the felt, derived
 /// from a [Friend] + its matching [NpcSeat] (mirrors `seatPlates` in the JS
@@ -110,7 +120,12 @@ class SeatPlate extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (data.showCards) ...[_cardsRow(), const SizedBox(height: 4)],
+        // The card row keeps its space even with no cards to show. Dropping it
+        // between hands would let the plate ride up to the top of the seat's
+        // slot and slide under the dealer's cards during settlement, and would
+        // make every plate jump as a round starts and ends.
+        SizedBox(height: _kCardHeight, child: data.showCards ? _cardsRow() : null),
+        const SizedBox(height: 4),
         _plateRow(),
       ],
     );
@@ -133,10 +148,14 @@ class SeatPlate extends StatelessWidget {
           children: [
             if (badge != null && data.rightSide) ...[badge, const SizedBox(width: 6)],
             Flexible(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: data.rightSide ? Alignment.centerRight : Alignment.centerLeft,
-                child: _cardsFan(),
+              child: LayoutBuilder(
+                // The fan needs to know how much room is actually left beside
+                // the badge before it can decide how tightly to overlap.
+                builder: (context, constraints) => FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: data.rightSide ? Alignment.centerRight : Alignment.centerLeft,
+                  child: _cardsFan(constraints.maxWidth),
+                ),
               ),
             ),
             if (badge != null && !data.rightSide) ...[const SizedBox(width: 6), badge],
@@ -146,17 +165,28 @@ class SeatPlate extends StatelessWidget {
     );
   }
 
-  Widget _cardsFan() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        for (var i = 0; i < data.cards.length; i++)
-          Transform.translate(
-            offset: Offset(i == 0 ? 0 : -3.0, 0),
-            child: PlayingCardFace(card: data.cards[i], width: _kCardWidth, height: _kCardHeight),
-          ),
-      ],
+  /// The hand, overlapped just enough to fit [available] at full card size.
+  /// Falling back to a tighter overlap keeps every seat's cards the same size;
+  /// only a hand too long even for [_kCardMinStep] reaches the caller's
+  /// `FittedBox` and gets scaled.
+  Widget _cardsFan(double available) {
+    final count = data.cards.length;
+    final step = count < 2
+        ? 0.0
+        : math.min(_kCardStep, math.max(_kCardMinStep, (available - _kCardWidth) / (count - 1)));
+    return SizedBox(
+      width: _kCardWidth + (count - 1) * step,
+      height: _kCardHeight,
+      child: Stack(
+        children: [
+          // Painted in deal order, so each card overlaps the one before it.
+          for (var i = 0; i < count; i++)
+            Positioned(
+              left: i * step,
+              child: PlayingCardFace(card: data.cards[i], width: _kCardWidth, height: _kCardHeight),
+            ),
+        ],
+      ),
     );
   }
 
