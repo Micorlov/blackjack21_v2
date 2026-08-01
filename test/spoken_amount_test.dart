@@ -55,7 +55,7 @@ void main() {
 
     // Pot figures are always multiples of the $25 table minimum, but stepping
     // by 1 over the reachable range costs nothing and covers every word.
-    final needed = <String>{'table_pot', 'sweep_pot', 'dollars'};
+    final needed = <String>{'sweep_pot', 'dollars'};
     for (var amount = 1; amount <= 20000; amount++) {
       needed.addAll(spokenAmountWords(amount));
     }

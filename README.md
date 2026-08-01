@@ -16,11 +16,11 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
 - **Sound effects** — deal, chip, turn, win, lose, push, and blackjack cues, plus spoken
   "Stand"/"Bust" voice lines when an NPC seat finishes its turn
 - **Spoken results** — every settled hand plays its outcome tone and then says the result:
-  "Big win" on a blackjack, "Player wins the pot" when you sweep the table, otherwise
+  "Big win" on a blackjack, "Player wins the sweep pot" when you sweep the table, otherwise
   "Player wins" or "Player lost". A push gets the tone only, and taking the pot is followed
   by a drum flourish
 - **Spoken pot** — once every opponent seat has played and the figure has stopped moving, the
-  dealer pill is read aloud: "Table pot, three hundred seventy five dollars"
+  dealer pill is read aloud: "Sweep pot, three hundred seventy five dollars"
 - **Haptics** — selection/light/medium/heavy impact and vibrate feedback, toggleable in settings,
   including a tap for each NPC seat's stand/bust
 
@@ -69,7 +69,7 @@ under `flutter: assets:` in `pubspec.yaml` — a new file in the folder needs no
 | NPC voice | `npc_stand.wav`, `npc_bust.wav` | An opponent seat standing or busting |
 | Result voice | `player_win.wav`, `player_lose.wav`, `big_win.wav`, `player_pot.wav` | Your settled hand, 700ms after its tone |
 | Celebration | `pot_celebration.wav` | After the pot call-out — a synthesized drum roll, downbeat and major triad |
-| Number words | `num/*.wav` — 0-19, the tens, `hundred`, `thousand`, `dollars`, `table_pot`, `sweep_pot` | Stitched into the spoken pot figure |
+| Number words | `num/*.wav` — 0-19, the tens, `hundred`, `thousand`, `dollars`, `sweep_pot` | Stitched into the spoken pot figure |
 
 `assets/sfx/num/` needs its own `pubspec.yaml` entry: Flutter's asset folders are **not**
 recursive, so a nested folder left out of the manifest is silently missing at runtime.
@@ -108,6 +108,14 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 ## Changelog
 
 ### 2026-08-01
+- fix: the pot is only ever called a sweep pot now. The dealer pill's call-out always opens
+  with "Sweep pot …" instead of switching to "Table pot …" while every seat is still in, and
+  a swept hand says "Player wins the sweep pot" rather than "Player wins the pot"
+  (`player_pot.wav` re-recorded in the same Samantha voice, 1.14s → 1.51s, so the drum
+  flourish waits for the longer line). The now-unused `num/table_pot.wav` clip was removed
+- fix: a friend seat's cards now stay the same size no matter how many it holds. A long hand
+  overlaps its cards more tightly instead of shrinking them, and the card row keeps its space
+  between hands so the plate no longer rides up under the dealer's cards during settlement.
 - feat: the table pot is now read aloud once every opponent seat has played and the figure has
   stopped moving — "Table pot, three hundred seventy five dollars", or "Sweep pot …" when a
   seat has already forfeited its bet and the pill switches figures. Amounts are arbitrary

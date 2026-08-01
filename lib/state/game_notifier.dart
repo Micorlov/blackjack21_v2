@@ -79,8 +79,8 @@ class GameNotifier extends StateNotifier<GameState> {
   /// longest of the outcome tones at 0.70s.
   static const _kVoiceLead = Duration(milliseconds: 700);
 
-  /// Length of `player_pot.wav` ("Player wins the pot"), 1.14s.
-  static const _kPotVoiceLength = Duration(milliseconds: 1150);
+  /// Length of `player_pot.wav` ("Player wins the sweep pot"), 1.51s.
+  static const _kPotVoiceLength = Duration(milliseconds: 1520);
 
   /// Drum flourish once the pot call-out has finished. Sweeping the table is
   /// the best result a round can produce, so it gets more than a tone. Plays
@@ -140,10 +140,11 @@ class GameNotifier extends StateNotifier<GameState> {
     _announceTablePot();
   }
 
-  /// Reads the dealer pill out loud — "Table pot, three hundred seventy five
+  /// Reads the dealer pill out loud — "Sweep pot, three hundred seventy five
   /// dollars" — now that every opponent seat has played and the figure has
   /// stopped moving. Reads the same [TablePot] the pill renders, so the two
-  /// can never disagree.
+  /// can never disagree about the figure. The call-out always opens with
+  /// "sweep pot", whichever figure the pill happens to be showing.
   void _announceTablePot() {
     if (!state.soundOn) return;
     final pot = TablePot.live(state);
@@ -155,7 +156,7 @@ class GameNotifier extends StateNotifier<GameState> {
       if (!state.soundOn) return;
       unawaited(
         _sound.playWords([
-          pot.isSweep ? 'sweep_pot' : 'table_pot',
+          'sweep_pot',
           ...amount,
           'dollars',
         ]),
