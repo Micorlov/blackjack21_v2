@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../data/game_data.dart';
 import '../models/enums.dart';
@@ -11,9 +15,13 @@ import '../models/hand.dart';
 import '../models/playing_card.dart';
 import '../models/social_models.dart';
 import '../models/table_pot.dart';
+import '../services/local_notifier.dart';
+import '../services/social_service.dart';
 import '../services/sound_player.dart';
 import '../services/spoken_amount.dart';
+import '../utils/comeback.dart';
 import '../utils/formatters.dart';
+import '../utils/points.dart';
 
 class _SeatResult {
   final String name;
@@ -37,10 +45,19 @@ class _SeatResult {
 class GameNotifier extends StateNotifier<GameState> {
   GameNotifier() : super(const GameState(friends: kInitialFriends)) {
     _shoe = BlackjackRules.buildShoe(kDeckCount, _rng);
+    unawaited(_initSocial());
   }
 
   final Random _rng = Random();
   final SoundPlayer _sound = SoundPlayer();
+  final SocialService _social = SocialService();
+  final LocalNotifier _notifs = LocalNotifier();
+  StreamSubscription<List<Friend>>? _groupSub;
+  Timer? _heartbeatTimer;
+
+  /// True once a live (non-empty) member snapshot has arrived, so the first
+  /// snapshot after subscribing never fires overtake alerts.
+  bool _groupLive = false;
   List<PlayingCard> _shoe = [];
   Timer? _npcTimer;
   Timer? _toastTimer;
@@ -61,6 +78,8 @@ class GameNotifier extends StateNotifier<GameState> {
     _voiceTimer?.cancel();
     _potTimer?.cancel();
     _celebrationTimer?.cancel();
+    _heartbeatTimer?.cancel();
+    unawaited(_groupSub?.cancel());
     unawaited(_sound.dispose());
     super.dispose();
   }
@@ -173,15 +192,238 @@ class GameNotifier extends StateNotifier<GameState> {
   }
 
   // ---------------------------------------------------------------------
+  // Social: live friends group, invites, score sync, overtake alerts
+  // ---------------------------------------------------------------------
+
+  Future<void> _initSocial() async {
+    final ok = await _social.ensureSignedIn();
+    if (!mounted || !ok) return;
+    await _notifs.init();
+    if (!mounted) return;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null && !user.isAnonymous && !state.signedIn) {
+      // A Google session survived from a previous launch — restore identity.
+      state = state.copyWith(signedIn: true, displayName: user.displayName ?? 'Player', photoUrl: user.photoURL);
+    }
+    state = state.copyWith(socialReady: true);
+    final code = await _social.fetchMyGroupCode();
+    if (!mounted) return;
+    if (code != null) _subscribeGroup(code);
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 60), (_) => _heartbeat());
+  }
+
+  /// Leaderboard name: the Google name when signed in, otherwise a stable
+  /// guest tag derived from the anonymous uid so two guests never collide.
+  String get _playerName {
+    if (state.signedIn) return state.displayName;
+    final u = _social.uid;
+    return (u == null || u.length < 4) ? 'Guest' : 'Guest ${u.substring(0, 4).toUpperCase()}';
+  }
+
+  void _subscribeGroup(String code) {
+    unawaited(_groupSub?.cancel());
+    _groupLive = false;
+    state = state.copyWith(groupCode: code);
+    _groupSub = _social.watchMembers(code).listen(
+      _onGroupUpdate,
+      // A broken stream (offline, rules) must not kill the game; the last
+      // known friends list simply stays on screen until it recovers.
+      onError: (Object e) => debugPrint('group stream error: $e'),
+    );
+  }
+
+  void _onGroupUpdate(List<Friend> members) {
+    final now = DateTime.now();
+    final heroId = _social.uid ?? 'hero';
+    final heroHourly = rolledPoints(state.heroHourlyPoints, state.heroHourKey, hourKeyOf(now));
+    final heroDaily = rolledPoints(state.heroDailyPoints, state.heroDayKey, dayKeyOf(now));
+
+    List<RankedPlayer> ranked(List<Friend> fs, int heroPts, {required bool hourly}) => [
+      for (final f in fs) RankedPlayer(id: f.id, name: f.firstName, points: hourly ? f.hourlyScore : f.dailyScore),
+      RankedPlayer(id: heroId, name: 'You', points: heroPts),
+    ];
+
+    if (_groupLive && state.notifLeaderboard) {
+      final overHourly = overtakers(
+        before: ranked(state.friends, heroHourly, hourly: true),
+        after: ranked(members, heroHourly, hourly: true),
+        heroId: heroId,
+      );
+      final overDaily = overtakers(
+        before: ranked(state.friends, heroDaily, hourly: false),
+        after: ranked(members, heroDaily, hourly: false),
+        heroId: heroId,
+      );
+      _notifyOvertaken(overHourly, overDaily);
+    }
+
+    _groupLive = members.isNotEmpty;
+    // Alone in the group → practice bots keep the table lively.
+    state = state.copyWith(friends: members.isEmpty ? kInitialFriends : members);
+  }
+
+  void _notifyOvertaken(List<RankedPlayer> hourly, List<RankedPlayer> daily) {
+    if (hourly.isEmpty && daily.isEmpty) return;
+    final leadName = (hourly.isNotEmpty ? hourly : daily).first.name;
+    final period = hourly.isNotEmpty ? 'hourly' : 'daily';
+    final count = {for (final p in [...hourly, ...daily]) p.id}.length;
+    final body = count == 1
+        ? '$leadName just passed you on the $period leaderboard. Win your spot back!'
+        : '$count friends just passed you on the leaderboard. Win your spot back!';
+    _showToast(body);
+    unawaited(_notifs.show('You lost your spot!', body));
+  }
+
+  /// Once a minute: roll stale point buckets and refresh this player's row
+  /// (which also keeps the "online" dot alive for friends).
+  void _heartbeat() {
+    final now = DateTime.now();
+    final hourKey = hourKeyOf(now);
+    final dayKey = dayKeyOf(now);
+    if (hourKey != state.heroHourKey || dayKey != state.heroDayKey) {
+      state = state.copyWith(
+        heroHourlyPoints: rolledPoints(state.heroHourlyPoints, state.heroHourKey, hourKey),
+        heroDailyPoints: rolledPoints(state.heroDailyPoints, state.heroDayKey, dayKey),
+        heroHourKey: hourKey,
+        heroDayKey: dayKey,
+      );
+    }
+    _reportScoreIfGrouped();
+  }
+
+  void _reportScoreIfGrouped() {
+    final code = state.groupCode;
+    if (code == null || !state.socialReady) return;
+    unawaited(
+      _social.reportScore(
+        code: code,
+        name: _playerName,
+        chips: state.chips,
+        hourly: state.heroHourlyPoints,
+        daily: state.heroDailyPoints,
+        hourKey: state.heroHourKey,
+        dayKey: state.heroDayKey,
+      ),
+    );
+  }
+
+  /// Creates the group on first use, then opens WhatsApp with a ready-to-send
+  /// invite so the user can drop it into any group chat.
+  Future<void> shareInviteWhatsApp() async {
+    if (!state.socialReady) {
+      _showToast('No connection — try again in a moment');
+      return;
+    }
+    var code = state.groupCode;
+    code ??= await _social.createGroup(_playerName, _rng);
+    if (!mounted) return;
+    if (code == null) {
+      _showToast('Could not create your group — try again');
+      return;
+    }
+    if (state.groupCode == null) _subscribeGroup(code);
+    _reportScoreIfGrouped();
+
+    final text = Uri.encodeComponent(
+      '🃏 Come play Blackjack 21 with me!\n'
+      'Join my friends table and try to beat my hourly score.\n\n'
+      'Group code: $code\n\n'
+      'Open Blackjack 21 → Friends → Join a friends group → enter $code',
+    );
+    final opened = await _openExternal(Uri.parse('https://wa.me/?text=$text'));
+    if (!opened) _showToast('Could not open WhatsApp');
+  }
+
+  Future<bool> _openExternal(Uri uri) async {
+    try {
+      return await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  Future<void> joinGroupByCode() async {
+    final code = state.friendCodeInput.trim().toUpperCase();
+    if (code.length != SocialService.codeLength) {
+      _showToast('Enter the ${SocialService.codeLength}-character group code');
+      return;
+    }
+    if (!state.socialReady) {
+      _showToast('No connection — try again in a moment');
+      return;
+    }
+    final ok = await _social.joinGroup(code, _playerName);
+    if (!mounted) return;
+    if (!ok) {
+      _showToast('Group $code not found');
+      return;
+    }
+    state = state.copyWith(friendCodeInput: '', referralsCount: state.referralsCount + 1);
+    _subscribeGroup(code);
+    _reportScoreIfGrouped();
+    _showToast('Joined group $code!');
+    _playSfx(GameSfx.win);
+    _hapticMedium();
+  }
+
+  void toggleBadgePeriod() => state = state.copyWith(badgeHourly: !state.badgeHourly);
+
+  /// Comeback dealing: when the hero is short-stacked or on a losing streak,
+  /// the opening hand is the best of [kComebackTries] candidate pairs instead
+  /// of one blind draw. See `utils/comeback.dart` for the mechanics.
+  int _comebackTries() {
+    final minBet = state.stake?.min ?? kChipDenoms.first;
+    final shortStack = state.chips < minBet * kComebackMinBetCover;
+    final h = state.history;
+    final losingStreak =
+        h.length >= kComebackLossStreak &&
+        h.sublist(h.length - kComebackLossStreak).every((r) => r == RoundResult.loss);
+    return (shortStack || losingStreak) ? kComebackTries : 1;
+  }
+
+  // ---------------------------------------------------------------------
   // Navigation / auth
   // ---------------------------------------------------------------------
 
-  void signInGoogle() => state = state.copyWith(signedIn: true, displayName: 'Alex Rivera', screen: AppScreen.lobby);
+  Future<void> signInGoogle() async {
+    final GoogleSignInAccount account;
+    try {
+      account = await GoogleSignIn.instance.authenticate();
+    } on GoogleSignInException catch (e) {
+      if (e.code != GoogleSignInExceptionCode.canceled) {
+        _showToast('Google sign-in failed. Please try again.');
+      }
+      return;
+    }
 
-  void playGuest() => state = state.copyWith(signedIn: false, displayName: 'Guest', screen: AppScreen.lobby);
+    final idToken = account.authentication.idToken;
+    if (idToken == null) {
+      _showToast('Google sign-in failed. Please try again.');
+      return;
+    }
 
-  void signOutUser() {
-    state = state.copyWith(signedIn: false, displayName: 'Guest');
+    try {
+      final credential = GoogleAuthProvider.credential(idToken: idToken);
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final user = userCredential.user;
+      state = state.copyWith(
+        signedIn: true,
+        displayName: user?.displayName ?? account.displayName ?? 'Player',
+        photoUrl: user?.photoURL ?? account.photoUrl,
+        screen: AppScreen.lobby,
+      );
+      _reportScoreIfGrouped();
+    } on FirebaseAuthException {
+      _showToast('Google sign-in failed. Please try again.');
+    }
+  }
+
+  void playGuest() =>
+      state = state.copyWith(signedIn: false, displayName: 'Guest', photoUrl: null, screen: AppScreen.lobby);
+
+  Future<void> signOutUser() async {
+    await Future.wait([GoogleSignIn.instance.signOut(), FirebaseAuth.instance.signOut()]);
+    state = state.copyWith(signedIn: false, displayName: 'Guest', photoUrl: null);
     _showToast('Signed out');
   }
 
@@ -343,7 +585,8 @@ class GameNotifier extends StateNotifier<GameState> {
     if (stake != null && (bet < stake.min || bet > stake.max)) return;
 
     final npcSeats = _dealNpcCards();
-    final playerCards = [_drawCard(), _drawCard()];
+    if (_shoe.length < 15) _shoe = BlackjackRules.buildShoe(kDeckCount, _rng);
+    final playerCards = drawStartingPair(_shoe, tries: _comebackTries());
     final dealerCards = [_drawCard(), _drawCard()];
     final newChips = chips - bet;
     final dealerUpIsAce = dealerCards[0].rank == 'A';
@@ -632,11 +875,12 @@ class GameNotifier extends StateNotifier<GameState> {
       final n = state.npcSeats[i];
       if (n.cards.isEmpty) continue;
       final v = BlackjackRules.handValue(n.cards);
-      final f = state.friends[i];
+      // Live friends can change mid-round; never index past the current list.
+      final seatName = i < state.friends.length ? state.friends[i].firstName : 'Player';
       final dealerBust = dealerVal > 21;
       seatResults.add(
         _SeatResult(
-          name: f.firstName,
+          name: seatName,
           bet: n.bet,
           total: v,
           lost: v > 21 || (!dealerBust && v <= dealerVal),
@@ -714,6 +958,14 @@ class GameNotifier extends StateNotifier<GameState> {
     final streakWin = winsDelta > 0 && lossesDelta == 0;
     final newStreak = streakWin ? state.stats.currentStreak + 1 : 0;
 
+    // Hourly/daily point buckets roll over when the clock period changed
+    // since the last hand, then absorb this round's net result.
+    final now = DateTime.now();
+    final hourKey = hourKeyOf(now);
+    final dayKey = dayKeyOf(now);
+    final heroHourly = rolledPoints(state.heroHourlyPoints, state.heroHourKey, hourKey) + sessionNetDelta;
+    final heroDaily = rolledPoints(state.heroDailyPoints, state.heroDayKey, dayKey) + sessionNetDelta;
+
     state = state.copyWith(
       chips: state.chips + chipsDelta,
       phase: RoundPhase.settlement,
@@ -739,7 +991,12 @@ class GameNotifier extends StateNotifier<GameState> {
         wins: state.session.wins + winsDelta,
         net: state.session.net + sessionNetDelta,
       ),
+      heroHourlyPoints: heroHourly,
+      heroDailyPoints: heroDaily,
+      heroHourKey: hourKey,
+      heroDayKey: dayKey,
     );
+    _reportScoreIfGrouped();
   }
 
   void nextHand() {
@@ -790,12 +1047,6 @@ class GameNotifier extends StateNotifier<GameState> {
 
   void onFriendCodeInput(String value) => state = state.copyWith(friendCodeInput: value.toUpperCase());
 
-  void addFriendByCode() {
-    final code = state.friendCodeInput.trim();
-    if (code.isEmpty) return;
-    _showToast('Friend request sent to $code');
-    state = state.copyWith(friendCodeInput: '', referralsCount: state.referralsCount + 1);
-  }
 
   void joinTournament() {
     if (state.tournamentJoined) return;
@@ -826,7 +1077,6 @@ class GameNotifier extends StateNotifier<GameState> {
     _showToast('Gifted 100 chips to ${friend?.name ?? 'friend'}!');
   }
 
-  void shareInviteLink() => _showToast('Invite link copied to clipboard');
 
   // ---------------------------------------------------------------------
   // Stories

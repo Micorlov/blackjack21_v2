@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "445894203200",
+    "project_id": "blackjack21-v2",
+    "storage_bucket": "blackjack21-v2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:445894203200:android:443961c8ebc5627a2d0ca5",
+        "android_client_info": {
+          "package_name": "com.micorlov.blackjack21_v2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "445894203200-od9us9ivqslgc4d6geeh4lgon19ccu8t.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.micorlov.blackjack21_v2",
+            "certificate_hash": "03fe2828cc343a965d6c1fc5e8ef0280fd95ad16"
+          }
+        },
+        {
+          "client_id": "445894203200-ln5m4vun1jv85ir2gnrgg3ird7j9tvs2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBiDHIzlVbH_InUf64XFY0hInYlUBIrd8s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "445894203200-ln5m4vun1jv85ir2gnrgg3ird7j9tvs2.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "445894203200-jtjnu5ih0uommsfd3ru507mridgnki23.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.micorlov.blackjack21V2"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

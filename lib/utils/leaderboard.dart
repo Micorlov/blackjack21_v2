@@ -4,6 +4,7 @@ import '../models/enums.dart';
 import '../models/game_state.dart';
 import '../theme/app_colors.dart';
 import 'formatters.dart';
+import 'points.dart';
 
 class LeaderboardEntry {
   final int rank;
@@ -51,7 +52,12 @@ List<LeaderboardEntry> buildLeaderboard(GameState s) {
     return (n >= 0 ? '+\$' : '-\$') + formatChips(n.abs());
   }
 
-  final selfScore = scoreFor(chips: s.chips, dailyScore: s.session.net, hourlyScore: (s.session.net / 3).round());
+  final now = DateTime.now();
+  final selfScore = scoreFor(
+    chips: s.chips,
+    dailyScore: rolledPoints(s.heroDailyPoints, s.heroDayKey, dayKeyOf(now)),
+    hourlyScore: rolledPoints(s.heroHourlyPoints, s.heroHourKey, hourKeyOf(now)),
+  );
 
   final sources = <_RankSource>[
     ...s.friends.map(

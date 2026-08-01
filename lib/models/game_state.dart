@@ -65,6 +65,7 @@ class GameState {
   final AppScreen screen;
   final bool signedIn;
   final String displayName;
+  final String? photoUrl;
   final int chips;
   final TableStake? stake;
   final int bet;
@@ -117,11 +118,19 @@ class GameState {
   final int highlight2Count;
   final String? activeStoryId;
   final List<String> viewedStories;
+  final bool socialReady;
+  final String? groupCode;
+  final int heroHourlyPoints;
+  final int heroDailyPoints;
+  final String heroHourKey;
+  final String heroDayKey;
+  final bool badgeHourly;
 
   const GameState({
     this.screen = AppScreen.onboarding,
     this.signedIn = false,
     this.displayName = 'Guest',
+    this.photoUrl,
     this.chips = 1000,
     this.stake,
     this.bet = 0,
@@ -174,12 +183,20 @@ class GameState {
     this.highlight2Count = 12,
     this.activeStoryId,
     this.viewedStories = const [],
+    this.socialReady = false,
+    this.groupCode,
+    this.heroHourlyPoints = 0,
+    this.heroDailyPoints = 0,
+    this.heroHourKey = '',
+    this.heroDayKey = '',
+    this.badgeHourly = true,
   });
 
   GameState copyWith({
     AppScreen? screen,
     bool? signedIn,
     String? displayName,
+    Object? photoUrl = _unset,
     int? chips,
     Object? stake = _unset,
     int? bet,
@@ -232,11 +249,19 @@ class GameState {
     int? highlight2Count,
     Object? activeStoryId = _unset,
     List<String>? viewedStories,
+    bool? socialReady,
+    Object? groupCode = _unset,
+    int? heroHourlyPoints,
+    int? heroDailyPoints,
+    String? heroHourKey,
+    String? heroDayKey,
+    bool? badgeHourly,
   }) {
     return GameState(
       screen: screen ?? this.screen,
       signedIn: signedIn ?? this.signedIn,
       displayName: displayName ?? this.displayName,
+      photoUrl: identical(photoUrl, _unset) ? this.photoUrl : photoUrl as String?,
       chips: chips ?? this.chips,
       stake: identical(stake, _unset) ? this.stake : stake as TableStake?,
       bet: bet ?? this.bet,
@@ -289,6 +314,13 @@ class GameState {
       highlight2Count: highlight2Count ?? this.highlight2Count,
       activeStoryId: identical(activeStoryId, _unset) ? this.activeStoryId : activeStoryId as String?,
       viewedStories: viewedStories ?? this.viewedStories,
+      socialReady: socialReady ?? this.socialReady,
+      groupCode: identical(groupCode, _unset) ? this.groupCode : groupCode as String?,
+      heroHourlyPoints: heroHourlyPoints ?? this.heroHourlyPoints,
+      heroDailyPoints: heroDailyPoints ?? this.heroDailyPoints,
+      heroHourKey: heroHourKey ?? this.heroHourKey,
+      heroDayKey: heroDayKey ?? this.heroDayKey,
+      badgeHourly: badgeHourly ?? this.badgeHourly,
     );
   }
 }

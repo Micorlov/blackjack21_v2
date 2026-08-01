@@ -26,7 +26,7 @@ class FriendsScreen extends ConsumerWidget {
     final state = ref.watch(gameProvider);
     final notifier = ref.read(gameProvider.notifier);
 
-    final inviteCode = 'BJ21${state.signedIn ? 'VX' : 'GT'}';
+    final inviteCode = state.groupCode ?? '· · · · · ·';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
@@ -35,7 +35,7 @@ class FriendsScreen extends ConsumerWidget {
         children: [
           const ScreenTitle('Friends'),
 
-          const SectionLabel('Your invite code'),
+          const SectionLabel('Your friends group'),
           Container(
             decoration: panelDecoration(),
             padding: const EdgeInsets.all(16),
@@ -46,8 +46,16 @@ class FriendsScreen extends ConsumerWidget {
                   textAlign: TextAlign.center,
                   style: AppText.mono(28, weight: FontWeight.w700, color: AppColors.gold, letterSpacing: 3.36),
                 ),
+                const SizedBox(height: 8),
+                Text(
+                  state.groupCode == null
+                      ? 'Invite friends on WhatsApp — everyone who joins with your code plays on your live leaderboard.'
+                      : 'Friends who enter this code appear live below.',
+                  textAlign: TextAlign.center,
+                  style: AppText.sora(13, color: AppColors.textMuted),
+                ),
                 const SizedBox(height: 14),
-                GoldButton(label: 'Share invite link', onPressed: notifier.shareInviteLink),
+                GoldButton(label: 'Invite via WhatsApp', onPressed: notifier.shareInviteWhatsApp),
               ],
             ),
           ),
@@ -55,7 +63,7 @@ class FriendsScreen extends ConsumerWidget {
           const SectionLabel('Referral rewards'),
           _DividedPanel(rows: [for (final tier in kReferralTierDefs) _referralRow(state, notifier, tier)]),
 
-          const SectionLabel('Add a friend'),
+          const SectionLabel('Join a friends group'),
           Container(
             decoration: panelDecoration(),
             padding: const EdgeInsets.all(16),
@@ -70,7 +78,7 @@ class FriendsScreen extends ConsumerWidget {
                     textCapitalization: TextCapitalization.characters,
                     style: AppText.sora(17, weight: FontWeight.w700, letterSpacing: 1.36),
                     decoration: InputDecoration(
-                      hintText: "Friend's code",
+                      hintText: 'Group code',
                       hintStyle: AppText.sora(17, weight: FontWeight.w700, color: AppColors.textFaint),
                       filled: true,
                       fillColor: AppColors.surface,
@@ -92,7 +100,7 @@ class FriendsScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                _OutlinedPillButton(label: 'Add', onTap: notifier.addFriendByCode),
+                _OutlinedPillButton(label: 'Join', onTap: notifier.joinGroupByCode),
               ],
             ),
           ),
@@ -224,7 +232,10 @@ class FriendsScreen extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(f.name, style: AppText.sora(16, weight: FontWeight.w700)),
-              Text('\$${formatChips(f.chips)}', style: AppText.sora(14, color: AppColors.textMuted)),
+              Text(
+                '\$${formatChips(f.chips)} · ${f.dailyScore >= 0 ? '+' : '-'}\$${formatChips(f.dailyScore.abs())} today',
+                style: AppText.sora(14, color: AppColors.textMuted),
+              ),
             ],
           ),
         ),

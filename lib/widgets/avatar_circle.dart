@@ -3,18 +3,28 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
-/// Circular initial avatar, optionally wrapped in the gold "frame" ring.
+/// Circular avatar, optionally wrapped in the gold "frame" ring. Shows
+/// [photoUrl] when present (falling back to the initial on load failure),
+/// otherwise shows [initial].
 class AvatarCircle extends StatelessWidget {
   final String initial;
   final Color color;
   final double size;
   final bool goldRing;
+  final String? photoUrl;
 
-  const AvatarCircle({super.key, required this.initial, required this.color, this.size = 40, this.goldRing = false});
+  const AvatarCircle({
+    super.key,
+    required this.initial,
+    required this.color,
+    this.size = 40,
+    this.goldRing = false,
+    this.photoUrl,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final avatar = Container(
+    final initialsAvatar = Container(
       width: size,
       height: size,
       decoration: BoxDecoration(shape: BoxShape.circle, color: color),
@@ -24,6 +34,18 @@ class AvatarCircle extends StatelessWidget {
         style: AppText.sora(size * 0.42, weight: FontWeight.w800, color: AppColors.goldInk),
       ),
     );
+    final photoUrl = this.photoUrl;
+    final avatar = photoUrl == null
+        ? initialsAvatar
+        : ClipOval(
+            child: Image.network(
+              photoUrl,
+              width: size,
+              height: size,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => initialsAvatar,
+            ),
+          );
     if (!goldRing) return avatar;
     return Container(
       padding: const EdgeInsets.all(2),

@@ -1,6 +1,9 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
+import 'firebase_options.dart';
 import 'models/enums.dart';
 import 'screens/friends_screen.dart';
 import 'screens/lobby_screen.dart';
@@ -14,9 +17,13 @@ import 'theme/app_colors.dart';
 import 'theme/app_text_styles.dart';
 import 'widgets/bottom_nav_bar.dart';
 import 'widgets/overlays.dart';
+import 'widgets/rank_strip.dart';
 import 'widgets/story_overlay.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await GoogleSignIn.instance.initialize();
   runApp(const ProviderScope(child: BlackjackApp()));
 }
 
@@ -108,6 +115,7 @@ class AppShell extends ConsumerWidget {
           children: [
             Column(
               children: [
+                const RankStrip(),
                 Expanded(child: _buildScreen(state.screen)),
                 if (showNav) AppBottomNavBar(current: state.screen, onSelect: onNavSelect),
               ],

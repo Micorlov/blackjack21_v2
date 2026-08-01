@@ -35,6 +35,7 @@ class SettingsScreen extends ConsumerWidget {
             avatarColor: state.avatarColor,
             avatarFrameGold: state.avatarFrameGold,
             displayName: state.displayName,
+            photoUrl: state.photoUrl,
             onSignIn: notifier.signInGoogle,
             onSignOut: notifier.signOutUser,
           ),
@@ -89,6 +90,7 @@ class _AccountPanel extends StatelessWidget {
   final Color avatarColor;
   final bool avatarFrameGold;
   final String displayName;
+  final String? photoUrl;
   final VoidCallback onSignIn;
   final VoidCallback onSignOut;
 
@@ -98,6 +100,7 @@ class _AccountPanel extends StatelessWidget {
     required this.avatarColor,
     required this.avatarFrameGold,
     required this.displayName,
+    required this.photoUrl,
     required this.onSignIn,
     required this.onSignOut,
   });
@@ -117,7 +120,13 @@ class _AccountPanel extends StatelessWidget {
       children: [
         Row(
           children: [
-            AvatarCircle(initial: avatarInitial, color: avatarColor, size: 44, goldRing: avatarFrameGold),
+            AvatarCircle(
+              initial: avatarInitial,
+              color: avatarColor,
+              size: 44,
+              goldRing: avatarFrameGold,
+              photoUrl: photoUrl,
+            ),
             const SizedBox(width: 10),
             Text(displayName, style: AppText.sora(16, weight: FontWeight.w700)),
           ],

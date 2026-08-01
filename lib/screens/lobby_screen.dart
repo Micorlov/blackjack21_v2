@@ -75,6 +75,7 @@ class _HeaderRow extends StatelessWidget {
           color: state.avatarColor,
           size: 40,
           goldRing: state.avatarFrameGold,
+          photoUrl: state.photoUrl,
         ),
         const SizedBox(width: 10),
         Expanded(

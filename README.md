@@ -14,7 +14,21 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
 - **Enforced table limits** — each table's posted `$min – $max` is a real rule: the betting tray
   only offers chips a table can legally take (no $1,000 chip at a $500 table), a chip that would
   push the bet past the maximum is refused, and DEAL stays locked until the bet reaches the minimum
-- **Social** — friends, lobby, chat panel, leaderboard, seat plates with avatars
+- **Live friends groups** — invite friends over WhatsApp with a 6-character group code; everyone
+  who joins the code shares one Firestore-backed group and appears live in the friends list,
+  leaderboard, and table seats (guests get anonymous Firebase accounts, so no sign-in is required)
+- **Always-visible rank strip** — a ticker above every screen, including the table, showing your
+  live position vs your friends' hourly or daily points and who you're chasing (tap to flip
+  hourly ↔ daily)
+- **Hourly & daily points** — net chips won roll into real per-hour and per-day buckets that reset
+  on the clock and sync to the group after every hand and once a minute
+- **Overtake alerts** — when a friend's score passes yours, you get an in-app toast plus a local
+  notification ("Maya just passed you on the hourly leaderboard"). Honors the Settings →
+  leaderboard-notifications toggle. These are local notifications (app running); remote push
+  needs an APNs entitlement a free personal Apple team cannot sign
+- **Comeback dealing** — short-stacked or on a two-loss streak, your opening hand is the best of
+  3 candidate pairs from the real shoe instead of one blind draw, so sessions last longer
+- **Social table** — friends, lobby, chat panel, leaderboard, seat plates with avatars
 - **Progression** — stats screen, shop, onboarding and story overlays
 - **Sound effects** — deal, chip, turn, win, lose, push, and blackjack cues, plus spoken
   "Stand"/"Bust" voice lines when an NPC seat finishes its turn
@@ -43,11 +57,11 @@ lib/
 ├── models/        # enums, game_state, hand, playing_card, social_models, table_pot
 ├── screens/       # lobby, table, friends, settings, shop, stats, onboarding
 │   └── table/     # table sub-panels (felt, betting, action, chat, settlement, …)
-├── services/      # sound_player, spoken_amount
+├── services/      # sound_player, spoken_amount, social_service (Firestore), local_notifier
 ├── state/         # game_notifier (Riverpod)
 ├── theme/         # app_colors, app_text_styles
-├── utils/         # formatters, leaderboard
-└── widgets/       # shared UI (buttons, overlays, cards, nav bar)
+├── utils/         # formatters, leaderboard, points (hourly/daily buckets), comeback
+└── widgets/       # shared UI (buttons, overlays, cards, nav bar, rank_strip)
 ```
 
 ## Dependencies
@@ -58,6 +72,11 @@ lib/
 | `google_fonts` | Typography |
 | `audioplayers` | Sound effect playback |
 | `cupertino_icons` | iOS-style icons |
+| `firebase_core` / `firebase_auth` | Firebase app + Google/anonymous sign-in |
+| `google_sign_in` | Google account picker for sign-in |
+| `cloud_firestore` | Friends groups and live hourly/daily score sync |
+| `url_launcher` | Opens WhatsApp with the prefilled group invite |
+| `flutter_local_notifications` | "Friend passed you" leaderboard alerts |
 
 Dev: `flutter_test`, `flutter_lints`, `integration_test`.
 
@@ -109,6 +128,19 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 ```
 
 ## Changelog
+
+### 2026-08-01 (2)
+- feat: the app is now social-first — invite friends into a live group over WhatsApp with a
+  6-character code; group members appear in the friends list, leaderboard, and table seats with
+  real hourly/daily points synced through Firestore after every hand
+- feat: an always-visible rank strip above every screen (table included) shows your live position
+  vs your friends' hourly or daily points and the next player to catch; tap flips the period
+- feat: overtake alerts — a toast plus a local notification the moment a friend's hourly or daily
+  score passes yours (gated by the existing leaderboard-notifications setting)
+- feat: comeback dealing — when short-stacked or two losses down, the opening hand is the best of
+  three candidate pairs from the real shoe, keeping sessions alive longer
+- feat: Google sign-in on the onboarding screen (restores on relaunch); guests play under an
+  anonymous Firebase identity so they can join groups too
 
 ### 2026-08-01
 - fix: the two right-hand friend seats now line up in one straight column. The bottom-right seat
