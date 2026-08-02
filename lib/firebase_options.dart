@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -65,5 +62,13 @@ class DefaultFirebaseOptions {
     androidClientId: '445894203200-od9us9ivqslgc4d6geeh4lgon19ccu8t.apps.googleusercontent.com',
     iosClientId: '445894203200-jtjnu5ih0uommsfd3ru507mridgnki23.apps.googleusercontent.com',
     iosBundleId: 'com.micorlov.blackjack21V2',
+  );
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyCAGCUA2CZ5-iNihZZc8VMuZ4cL-rURzN8',
+    appId: '1:445894203200:web:ed564fe74a5f26e02d0ca5',
+    messagingSenderId: '445894203200',
+    projectId: 'blackjack21-v2',
+    authDomain: 'blackjack21-v2.firebaseapp.com',
+    storageBucket: 'blackjack21-v2.firebasestorage.app',
   );
 }

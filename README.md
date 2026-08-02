@@ -69,12 +69,21 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   dealer pill is read aloud: "Sweep pot, three hundred seventy five dollars"
 - **Haptics** — selection/light/medium/heavy impact and vibrate feedback, toggleable in settings,
   including a tap for each NPC seat's stand/bust
+- **Web version** — runs in the browser at https://blackjack21-v2.web.app, auto-deployed by
+  GitHub Actions on every push to `main`. Google sign-in is required on web (guest mode has no
+  Firebase account behind it, so it's mobile/desktop only there)
 
 ## Getting Started
 
 ```bash
 flutter pub get
 flutter run
+```
+
+Run the web build locally:
+
+```bash
+flutter run -d chrome
 ```
 
 ## Project Structure
@@ -165,6 +174,16 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 ```
 
 ## Changelog
+
+### 2026-08-03
+- feat: add a web version — Flutter Web is now a supported platform. Registered a Firebase Web
+  app (`flutterfire configure`), wired the auto-created Google OAuth web client into
+  `web/index.html` so "Continue with Google" works in the browser, and added a mobile viewport
+  meta tag so it renders correctly on phone browsers too. "Play as Guest" is hidden on web only,
+  since guest mode has no Firebase account behind it — web visitors must sign in with Google
+- chore: deploy the web build to Firebase Hosting automatically via GitHub Actions
+  (`.github/workflows/firebase-hosting-merge.yml`) on every push to `main`, authenticated with a
+  scoped service account set up through `firebase init hosting:github`
 
 ### 2026-08-02 (9)
 - fix: a friends group with fewer than 4 real members left the table looking sparse — only as

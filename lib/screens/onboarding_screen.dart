@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -144,14 +145,18 @@ class OnboardingScreen extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    TextLinkButton(
-                      label: 'Play as Guest',
-                      onPressed: () => notifier.playGuest(),
-                      color: const Color(0xFFC7C3B7),
-                      fontSize: 16,
-                      underline: true,
-                    ),
+                    // Guest mode is local-only (no Firebase account), so it's
+                    // hidden on web where sign-in is required.
+                    if (!kIsWeb) ...[
+                      const SizedBox(height: 12),
+                      TextLinkButton(
+                        label: 'Play as Guest',
+                        onPressed: () => notifier.playGuest(),
+                        color: const Color(0xFFC7C3B7),
+                        fontSize: 16,
+                        underline: true,
+                      ),
+                    ],
                   ],
                 ),
               ),
