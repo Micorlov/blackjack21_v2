@@ -59,6 +59,13 @@ const double _kSeatsBottom = 362;
 /// between them. Anything tighter than this and the block scales itself down.
 const double _kHeroMinHeight = 217;
 
+/// Same block before any cards are dealt (the betting phase): no card row and
+/// no gap beneath it, just the bet circle over the name plate. Reserving the
+/// full [_kHeroMinHeight] this early forces the whole felt canvas — every
+/// seat plate, avatar, and badge on it — to scale down for a card row that
+/// isn't on screen yet.
+const double _kHeroMinHeightNoCards = 128;
+
 /// The felt Stack: dealer cluster + up to 4 friend seat plates + the hero's
 /// own hand, over a radial-gradient oval table.
 ///
@@ -82,9 +89,13 @@ class TableFelt extends ConsumerWidget {
 
   /// Vertical extent the felt's contents occupy in this phase. Settlement
   /// hides the hero's hand (the bottom result card recaps it instead), so the
-  /// seat rows are the whole story.
-  static double _requiredHeight(GameState state) =>
-      state.phase == RoundPhase.settlement ? _kSeatsBottom : _kSeatsBottom + _kHeroMinHeight;
+  /// seat rows are the whole story. Before the deal (betting phase) the hero
+  /// block has no cards yet, so it only needs [_kHeroMinHeightNoCards].
+  static double _requiredHeight(GameState state) {
+    if (state.phase == RoundPhase.settlement) return _kSeatsBottom;
+    final hasCards = state.hands.any((h) => h.cards.isNotEmpty);
+    return _kSeatsBottom + (hasCards ? _kHeroMinHeight : _kHeroMinHeightNoCards);
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

@@ -150,6 +150,15 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 
 ## Changelog
 
+### 2026-08-02 (6)
+- fix: the felt (dealer badge, seat plates, avatars, bet chip badges) rendered noticeably small
+  on real phones during the betting phase — its whole canvas is scaled to fit the space the
+  `Expanded` felt slot is actually given, but that slot's required height always reserved room
+  for the hero's card row even before any cards were dealt, forcing the felt to scale down (as
+  low as ~0.66x on an iPhone 15/16) for space it wasn't using yet. The betting-phase reservation
+  now drops the unused card row, landing the felt at ~0.85x on standard phones and a full 1.0x
+  (no shrink at all) on an iPhone 15 Pro Max
+
 ### 2026-08-02 (5)
 - fix: upgraded Flutter from stable 3.44.8 to beta 3.47.0-0.3.pre to fix a crash on iOS 26 —
   the engine's `VSyncClient`/`CADisplayLink` initialization caused a null-pointer `SIGSEGV`
