@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:blackjack21_v2/data/tutorial_data.dart';
 import 'package:blackjack21_v2/models/enums.dart';
 import 'package:blackjack21_v2/models/game_state.dart';
 import 'package:blackjack21_v2/services/game_store.dart';
@@ -37,6 +38,8 @@ SavedGame sample({
   cardBackSkin: 'midnight',
   avatarFrameGold: true,
   claimedTiers: const ['tier1'],
+  tutorialRoundsSeen: 2,
+  tutorialDismissed: false,
 );
 
 void main() {
@@ -62,6 +65,8 @@ void main() {
       expect(restored.cardBackSkin, 'midnight');
       expect(restored.avatarFrameGold, isTrue);
       expect(restored.claimedTiers, ['tier1']);
+      expect(restored.tutorialRoundsSeen, 2);
+      expect(restored.tutorialDismissed, isFalse);
     });
 
     test('survives a JSON encode/decode hop', () {
@@ -79,6 +84,24 @@ void main() {
       expect(restored.themeChoice, defaults.themeChoice);
       expect(restored.history, isEmpty);
       expect(restored.claimedTiers, isEmpty);
+      expect(restored.tutorialRoundsSeen, 0);
+      expect(restored.tutorialDismissed, isFalse);
+    });
+
+    test('a player saved before the tutorial existed is not re-tutored', () {
+      // No tutorial keys, but hands on the clock: those hands stand in for
+      // lessons, so a veteran never gets coaching cards after an update.
+      final veteran = SavedGame.fromJson(<String, Object?>{
+        'v': 1,
+        'stats': {'handsPlayed': 40},
+      });
+      final novice = SavedGame.fromJson(<String, Object?>{
+        'v': 1,
+        'stats': {'handsPlayed': 1},
+      });
+
+      expect(veteran.tutorialRoundsSeen, kTutorialRounds);
+      expect(novice.tutorialRoundsSeen, 1);
     });
 
     test('ignores values of the wrong type instead of throwing', () {

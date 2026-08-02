@@ -9,6 +9,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../data/game_data.dart';
+import '../data/tutorial_data.dart';
 import '../models/enums.dart';
 import '../models/game_state.dart';
 import '../models/hand.dart';
@@ -254,6 +255,8 @@ class GameNotifier extends StateNotifier<GameState> {
       cardBackSkin: saved.cardBackSkin,
       avatarFrameGold: saved.avatarFrameGold,
       claimedTiers: saved.claimedTiers,
+      tutorialRoundsSeen: saved.tutorialRoundsSeen,
+      tutorialDismissed: saved.tutorialDismissed,
     );
   }
 
@@ -274,6 +277,8 @@ class GameNotifier extends StateNotifier<GameState> {
     cardBackSkin: state.cardBackSkin,
     avatarFrameGold: state.avatarFrameGold,
     claimedTiers: state.claimedTiers,
+    tutorialRoundsSeen: state.tutorialRoundsSeen,
+    tutorialDismissed: state.tutorialDismissed,
   );
 
   /// Coalesces the writes a fast player generates — settling a hand, flipping
@@ -1160,6 +1165,11 @@ class GameNotifier extends StateNotifier<GameState> {
   }
 
   void nextHand() {
+    // The tutorial advances here rather than at settlement, so the last card
+    // of a hand is still the recap of the hand the player just finished.
+    final tutorialSeen = min(state.tutorialRoundsSeen + 1, kTutorialRounds);
+    final tutorialAdvanced = tutorialSeen != state.tutorialRoundsSeen;
+
     const speakers = ['Maya T.', 'Jordan K.'];
     final speaker = speakers[_rng.nextInt(speakers.length)];
     final line = kChatPool[_rng.nextInt(kChatPool.length)];
@@ -1185,7 +1195,32 @@ class GameNotifier extends StateNotifier<GameState> {
       roundStake: 0,
       roundHandNet: 0,
       sweepInfo: null,
+      tutorialRoundsSeen: tutorialSeen,
     );
+    // Only the first few hands move this, so veterans pay no extra disk write.
+    if (tutorialAdvanced) _scheduleSave();
+  }
+
+  // ---------------------------------------------------------------------
+  // Tutorial — the coached first hands and their off/replay switches
+  // ---------------------------------------------------------------------
+
+  /// "Skip" on the coach card. The cards stop immediately and stay off until
+  /// the player replays the tutorial from Settings.
+  void skipTutorial() {
+    if (state.tutorialDismissed) return;
+    state = state.copyWith(tutorialDismissed: true);
+    _scheduleSave();
+    _hapticSelection();
+    _showToast('Tutorial off — replay it any time from Settings');
+  }
+
+  /// Settings → "Replay the tutorial": back to lesson one from the next bet.
+  void restartTutorial() {
+    state = state.copyWith(tutorialRoundsSeen: 0, tutorialDismissed: false);
+    _scheduleSave();
+    _hapticSelection();
+    _showToast('Tutorial on — deal a hand to start it');
   }
 
   void resetBankroll() {

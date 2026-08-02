@@ -45,6 +45,17 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   friends' group. Point buckets still roll over on the clock, so a relaunch can never resurrect
   a finished hour's score, and the rebuy offer now appears whenever your stack falls below the
   table minimum rather than only at exactly zero
+- **Three-hand tutorial** — a new player's first three hands are coached by a card above the
+  action panel, one lesson per hand: playing a hand (bet → hit/stand → result), reading the
+  dealer's up-card and what a push is, then the bigger moves (double/split/surrender) and the
+  sweep pot. The card changes with the phase, explains insurance whenever the dealer shows an
+  Ace, and quotes the real minimum of whichever table you walked into. "Skip" turns it off; the
+  progress is saved, so a relaunch resumes at the right lesson and a player who already has
+  hands on the clock is never re-tutored
+- **How to play guide** — a full rules reference (goal, card values, every move, dealer rules,
+  payouts, the sweep pot, chips and limits) in a bottom sheet, reachable from Settings → Help
+  and from "Full rules" on the tutorial card without leaving a hand in progress. Settings → Help
+  also replays the three-hand tutorial
 - **Progression** — stats screen, shop, onboarding and story overlays
 - **Sound effects** — deal, chip, turn, win, lose, push, and blackjack cues, plus spoken
   "Stand"/"Bust" voice lines when an NPC seat finishes its turn
@@ -69,7 +80,7 @@ flutter run
 ```
 lib/
 ├── main.dart
-├── data/          # static game data
+├── data/          # static game data, tutorial_data (3 lessons + "How to play" guide copy)
 ├── models/        # enums, game_state, hand, playing_card, social_models, table_pot
 ├── screens/       # lobby, table, friends, settings, shop, stats, onboarding
 │   └── table/     # table sub-panels (felt, betting, action, chat, settlement, …)
@@ -79,8 +90,10 @@ lib/
 ├── state/         # game_notifier (Riverpod)
 ├── theme/         # app_colors, app_text_styles
 ├── utils/         # formatters, leaderboard, points (hourly/daily buckets), comeback,
-│                  #   daily_bonus (pure 24h-cooldown timing logic)
-└── widgets/       # shared UI (buttons, overlays, cards, nav bar, rank_strip)
+│                  #   daily_bonus (pure 24h-cooldown timing logic),
+│                  #   tutorial (pure "which coaching card, if any, right now?")
+└── widgets/       # shared UI (buttons, overlays, cards, nav bar, rank_strip,
+                   #   tutorial_coach_card, how_to_play_sheet)
 ```
 
 ## Dependencies
@@ -149,6 +162,18 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 ```
 
 ## Changelog
+
+### 2026-08-02 (8)
+- feat: a first-run tutorial coaches the first three hands from a card above the action panel —
+  one lesson per hand (play a hand → read the dealer → bigger moves and the sweep pot), with the
+  text changing by phase, an insurance explanation whenever the dealer shows an Ace, and the real
+  table minimum quoted in place. Skippable from the card, replayable from Settings → Help, and
+  saved to disk so a relaunch resumes at the right lesson
+- feat: a "How to play" guide sheet (goal, card values, moves, dealer rules, payouts, the sweep
+  pot, chips and limits) opens from Settings → Help, or from "Full rules" on the tutorial card
+  without disturbing a hand in progress
+- chore: `tutorialRoundsSeen` and `tutorialDismissed` join the saved-game blob; a save written
+  before the tutorial existed falls back to hands played, so existing players are never re-tutored
 
 ### 2026-08-02 (7)
 - fix: the felt's scale factor was capped at 1.0x, so on phones with more room than the

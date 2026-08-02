@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/game_data.dart';
+import '../data/tutorial_data.dart';
 import '../state/game_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/avatar_circle.dart';
 import '../widgets/buttons.dart';
+import '../widgets/how_to_play_sheet.dart';
 import '../widgets/panel_card.dart';
 
 /// Settings screen — account, avatar color, appearance, sound/haptics,
@@ -65,6 +67,22 @@ class SettingsScreen extends ConsumerWidget {
               _ToggleRowData('Social', state.notifSocial, notifier.toggleNotifSocial),
               _ToggleRowData('Leaderboard', state.notifLeaderboard, notifier.toggleNotifLeaderboard),
               _ToggleRowData('Daily reminder', state.notifDaily, notifier.toggleNotifDaily),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const SectionLabel('Help'),
+          _LinkPanel(
+            rows: [
+              _LinkRowData(
+                label: 'How to play',
+                sublabel: 'Rules, moves, payouts and the sweep pot',
+                onTap: () => showHowToPlaySheet(context),
+              ),
+              _LinkRowData(
+                label: 'Replay the tutorial',
+                sublabel: 'Coaching cards on your next $kTutorialRounds hands',
+                onTap: notifier.restartTutorial,
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -327,6 +345,60 @@ class _TogglePanel extends StatelessWidget {
                   Text(rows[i].label, style: AppText.sora(16, weight: FontWeight.w600)),
                   Switch(value: rows[i].value, activeThumbColor: AppColors.gold, onChanged: (_) => rows[i].onToggle()),
                 ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LinkRowData {
+  final String label;
+  final String sublabel;
+  final VoidCallback onTap;
+
+  const _LinkRowData({required this.label, required this.sublabel, required this.onTap});
+}
+
+/// Panel of tappable label + sublabel rows with a chevron, separated by
+/// hairlines — the same shape as [_TogglePanel], for actions rather than
+/// switches.
+class _LinkPanel extends StatelessWidget {
+  final List<_LinkRowData> rows;
+
+  const _LinkPanel({required this.rows});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: panelDecoration(),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          for (var i = 0; i < rows.length; i++)
+            InkWell(
+              onTap: rows[i].onTap,
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 15),
+                decoration: BoxDecoration(
+                  border: i < rows.length - 1 ? const Border(bottom: BorderSide(color: AppColors.border)) : null,
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(rows[i].label, style: AppText.sora(16, weight: FontWeight.w600)),
+                          const SizedBox(height: 2),
+                          Text(rows[i].sublabel, style: AppText.sora(13, color: AppColors.textMuted)),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.chevron_right, color: AppColors.textLabel),
+                  ],
+                ),
               ),
             ),
         ],

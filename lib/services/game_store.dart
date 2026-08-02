@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../data/tutorial_data.dart';
 import '../models/enums.dart';
 import '../models/game_state.dart';
 
@@ -40,6 +41,8 @@ class SavedGame {
   final String cardBackSkin;
   final bool avatarFrameGold;
   final List<String> claimedTiers;
+  final int tutorialRoundsSeen;
+  final bool tutorialDismissed;
 
   const SavedGame({
     required this.chips,
@@ -58,6 +61,8 @@ class SavedGame {
     required this.cardBackSkin,
     required this.avatarFrameGold,
     required this.claimedTiers,
+    required this.tutorialRoundsSeen,
+    required this.tutorialDismissed,
   });
 
   Map<String, Object?> toJson() => {
@@ -91,6 +96,8 @@ class SavedGame {
     'cardBackSkin': cardBackSkin,
     'avatarFrameGold': avatarFrameGold,
     'claimedTiers': claimedTiers,
+    'tutorialRoundsSeen': tutorialRoundsSeen,
+    'tutorialDismissed': tutorialDismissed,
   };
 
   /// Every field falls back to the [GameState] default it mirrors, so a blob
@@ -100,11 +107,12 @@ class SavedGame {
     const defaults = GameState();
     final stats = json['stats'];
     final statsMap = stats is Map ? stats : const {};
+    final handsPlayed = _int(statsMap['handsPlayed'], 0);
 
     return SavedGame(
       chips: _int(json['chips'], defaults.chips),
       stats: StatsSummary(
-        handsPlayed: _int(statsMap['handsPlayed'], 0),
+        handsPlayed: handsPlayed,
         wins: _int(statsMap['wins'], 0),
         losses: _int(statsMap['losses'], 0),
         pushes: _int(statsMap['pushes'], 0),
@@ -126,6 +134,11 @@ class SavedGame {
       cardBackSkin: _str(json['cardBackSkin'], defaults.cardBackSkin),
       avatarFrameGold: _bool(json['avatarFrameGold'], defaults.avatarFrameGold),
       claimedTiers: _strings(json['claimedTiers']),
+      // A blob written before the tutorial existed has no progress to restore,
+      // and re-teaching a player who has already played hands would be worse
+      // than skipping it — so hands played stands in for lessons seen.
+      tutorialRoundsSeen: _int(json['tutorialRoundsSeen'], handsPlayed.clamp(0, kTutorialRounds)),
+      tutorialDismissed: _bool(json['tutorialDismissed'], defaults.tutorialDismissed),
     );
   }
 

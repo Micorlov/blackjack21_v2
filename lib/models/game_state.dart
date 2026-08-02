@@ -133,6 +133,15 @@ class GameState {
   final List<Friend> globalHourly;
   final List<Friend> globalDaily;
 
+  /// Hands the first-run tutorial has already coached, which doubles as the
+  /// index of the lesson now showing. Advanced by `nextHand()` and capped at
+  /// `kTutorialRounds`, after which the coach card stops appearing.
+  final int tutorialRoundsSeen;
+
+  /// True once the player pressed "Skip" — the tutorial then stays off until
+  /// they replay it from Settings.
+  final bool tutorialDismissed;
+
   const GameState({
     this.screen = AppScreen.onboarding,
     this.signedIn = false,
@@ -203,6 +212,8 @@ class GameState {
     this.friendsAreLive = false,
     this.globalHourly = const [],
     this.globalDaily = const [],
+    this.tutorialRoundsSeen = 0,
+    this.tutorialDismissed = false,
   });
 
   GameState copyWith({
@@ -273,6 +284,8 @@ class GameState {
     bool? friendsAreLive,
     List<Friend>? globalHourly,
     List<Friend>? globalDaily,
+    int? tutorialRoundsSeen,
+    bool? tutorialDismissed,
   }) {
     return GameState(
       screen: screen ?? this.screen,
@@ -344,6 +357,8 @@ class GameState {
       friendsAreLive: friendsAreLive ?? this.friendsAreLive,
       globalHourly: globalHourly ?? this.globalHourly,
       globalDaily: globalDaily ?? this.globalDaily,
+      tutorialRoundsSeen: tutorialRoundsSeen ?? this.tutorialRoundsSeen,
+      tutorialDismissed: tutorialDismissed ?? this.tutorialDismissed,
     );
   }
 }
