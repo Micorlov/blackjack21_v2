@@ -8,6 +8,7 @@ import '../../models/enums.dart';
 import '../../models/game_state.dart';
 import '../../state/game_notifier.dart';
 import '../../theme/app_colors.dart';
+import '../../utils/table_seats.dart';
 import 'dealer_area.dart';
 import 'hero_hand_area.dart';
 import 'seat_plate.dart';
@@ -155,9 +156,10 @@ class TableFelt extends ConsumerWidget {
 
   List<Widget> _seatPlates(GameState state) {
     final widgets = <Widget>[];
-    final count = math.min(4, state.friends.length);
+    final seats = tableSeats(state);
+    final count = math.min(4, seats.length);
     for (var i = 0; i < count; i++) {
-      final friend = state.friends[i];
+      final friend = seats[i];
       final npc = i < state.npcSeats.length ? state.npcSeats[i] : null;
       final takesPot =
           state.phase == RoundPhase.settlement &&

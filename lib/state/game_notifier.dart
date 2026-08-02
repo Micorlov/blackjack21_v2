@@ -26,6 +26,7 @@ import '../utils/comeback.dart';
 import '../utils/daily_bonus.dart';
 import '../utils/formatters.dart';
 import '../utils/points.dart';
+import '../utils/table_seats.dart';
 
 class _SeatResult {
   final String name;
@@ -586,7 +587,7 @@ class GameNotifier extends StateNotifier<GameState> {
 
   List<NpcSeat> _rollNpcSeats(int minBet) {
     const mults = [1, 1, 2, 2, 4];
-    return state.friends.map((_) => NpcSeat(bet: minBet * mults[_rng.nextInt(mults.length)])).toList();
+    return tableSeats(state).map((_) => NpcSeat(bet: minBet * mults[_rng.nextInt(mults.length)])).toList();
   }
 
   List<NpcSeat> _dealNpcCards() {
@@ -1035,12 +1036,13 @@ class GameNotifier extends StateNotifier<GameState> {
     // "Closest to 21" — beat the dealer with the best live hand at the table
     // and sweep every bet the other seats lost.
     final seatResults = <_SeatResult>[];
+    final seats = tableSeats(state);
     for (var i = 0; i < state.npcSeats.length; i++) {
       final n = state.npcSeats[i];
       if (n.cards.isEmpty) continue;
       final v = BlackjackRules.handValue(n.cards);
       // Live friends can change mid-round; never index past the current list.
-      final seatName = i < state.friends.length ? state.friends[i].firstName : 'Player';
+      final seatName = i < seats.length ? seats[i].firstName : 'Player';
       final dealerBust = dealerVal > 21;
       seatResults.add(
         _SeatResult(

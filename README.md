@@ -18,7 +18,9 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   who joins the code shares one Firestore-backed group and appears live in the friends list,
   leaderboard, and table seats (guests get anonymous Firebase accounts, so no sign-in is required).
   The friends standings list only ever shows real people who joined by code — never the practice
-  bots — and offers an inline WhatsApp invite button while you have nobody to race
+  bots — and offers an inline WhatsApp invite button while you have nobody to race. The table
+  itself always seats 4 opponents (hero + 4 = 5 players in the room): real friends fill seats
+  first, and practice bots pad any seats a small group leaves empty
 - **World leaderboard** — swipe the standings panel at the table between three pages: FRIENDS,
   WORLD · THIS HOUR, and WORLD · TODAY. The world pages are the live global top players by
   hourly and daily points; your own row stays visible even when you are outside the top
@@ -91,7 +93,8 @@ lib/
 ├── theme/         # app_colors, app_text_styles
 ├── utils/         # formatters, leaderboard, points (hourly/daily buckets), comeback,
 │                  #   daily_bonus (pure 24h-cooldown timing logic),
-│                  #   tutorial (pure "which coaching card, if any, right now?")
+│                  #   tutorial (pure "which coaching card, if any, right now?"),
+│                  #   table_seats (pads real friends to 4 table seats with practice bots)
 └── widgets/       # shared UI (buttons, overlays, cards, nav bar, rank_strip,
                    #   tutorial_coach_card, how_to_play_sheet)
 ```
@@ -162,6 +165,15 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 ```
 
 ## Changelog
+
+### 2026-08-02 (9)
+- fix: a friends group with fewer than 4 real members left the table looking sparse — only as
+  many seats were dealt and rendered as there were real friends, so two friends meant a
+  three-player room (hero + 2) instead of a full table. The room now always seats 4 opponents:
+  real friends fill seats first, and practice bots pad whatever is left, so hero + 4 seats = 5
+  players every time. The friends list, rank strip, and leaderboards are unaffected — they still
+  show only real friends, never the padding bots (new `tableSeats()` helper in
+  `lib/utils/table_seats.dart`, covered by `test/table_seats_test.dart`)
 
 ### 2026-08-02 (8)
 - feat: a first-run tutorial coaches the first three hands from a card above the action panel —

@@ -8,6 +8,7 @@ import '../../models/social_models.dart';
 import '../../models/table_pot.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/formatters.dart';
+import '../../utils/table_seats.dart';
 
 /// Pure, stateless calculations mirroring the derived fields the JS design's
 /// `renderVals()` computed for the table screen (dealer total, mid-round
@@ -140,7 +141,7 @@ class TableCalc {
         sub: 'BET \$${formatChips(info.winnerBet)} + POT \$${formatChips(info.pot)}',
       );
     }
-    final idx = s.friends.indexWhere((f) => f.firstName == info.winner);
+    final idx = tableSeats(s).indexWhere((f) => f.firstName == info.winner);
     return PotWinnerInfo(
       initial: info.winner.isNotEmpty ? info.winner[0].toUpperCase() : '?',
       avatarBg: AppColors.seatColors[(idx < 0 ? 0 : idx) % AppColors.seatColors.length],

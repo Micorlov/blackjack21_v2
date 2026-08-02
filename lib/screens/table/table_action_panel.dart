@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/enums.dart';
 import '../../models/game_state.dart';
 import '../../state/game_notifier.dart';
+import '../../utils/table_seats.dart';
 import '../../widgets/tutorial_coach_card.dart';
 import 'table_betting_panel.dart';
 import 'table_chat_panel.dart';
@@ -49,7 +50,8 @@ class TableActionPanel extends ConsumerWidget {
 
   String _actingName(GameState state) {
     final seat = state.actingSeat;
-    if (seat == null || seat >= state.friends.length) return 'Table';
-    return state.friends[seat].firstName;
+    final seats = tableSeats(state);
+    if (seat == null || seat >= seats.length) return 'Table';
+    return seats[seat].firstName;
   }
 }
