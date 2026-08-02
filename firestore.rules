@@ -17,6 +17,15 @@ service cloud.firestore {
       allow list: if isAdmin();
     }
 
+    // The admin panel pulls every group's scoreboard at once via a
+    // collectionGroup('players') query (top-level players/{uid} plus every
+    // groups/{code}/players/{uid}). The path-specific rules above and below
+    // individually grant the admin access at each location, but Firestore
+    // requires a recursive-wildcard rule to authorize the query itself.
+    match /{path=**}/players/{uid} {
+      allow list: if isAdmin();
+    }
+
     // Global leaderboard — every player publishes their own row; anyone
     // signed in can read the standings.
     match /leaderboard/{uid} {
