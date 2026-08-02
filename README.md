@@ -150,6 +150,11 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 
 ## Changelog
 
+### 2026-08-02 (5)
+- fix: upgraded Flutter from stable 3.44.8 to beta 3.47.0-0.3.pre to fix a crash on iOS 26 —
+  the engine's `VSyncClient`/`CADisplayLink` initialization caused a null-pointer `SIGSEGV`
+  immediately on launch on devices running iPhone OS 26.3.1
+
 ### 2026-08-02 (4)
 - feat: the daily chips claim now runs on a real, persisted 24-hour cooldown instead of a
   once-ever flag — restarting the app can't re-arm it early, the lobby's Daily Bonus card shows
