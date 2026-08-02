@@ -150,6 +150,14 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 
 ## Changelog
 
+### 2026-08-02 (7)
+- fix: the felt's scale factor was capped at 1.0x, so on phones with more room than the
+  393pt-wide design assumes (e.g. an iPhone 15 Pro Max, per the previous entry) the felt sat
+  pinned at its native design size instead of growing into the extra space, leaving visible
+  black margin around the table. The cap is removed — the felt now scales up to fill whatever
+  space the `Expanded` felt slot actually gives it, same as it already scaled down on smaller
+  phones
+
 ### 2026-08-02 (6)
 - fix: the felt (dealer badge, seat plates, avatars, bet chip badges) rendered noticeably small
   on real phones during the betting phase — its whole canvas is scaled to fit the space the

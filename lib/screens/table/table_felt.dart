@@ -109,7 +109,10 @@ class TableFelt extends ConsumerWidget {
         if (available.width <= 0 || available.height <= 0) return const SizedBox.shrink();
 
         final required = _requiredHeight(state);
-        final scale = math.min(1.0, math.min(available.width / _designWidth, available.height / required));
+        // No upper cap: on a device with more room than the 393-wide design
+        // assumes, the felt should grow to fill it rather than sit pinned at
+        // 1:1 pixel scale with black space around it.
+        final scale = math.min(available.width / _designWidth, available.height / required);
         final canvas = Size(available.width / scale, available.height / scale);
 
         return ClipRect(
