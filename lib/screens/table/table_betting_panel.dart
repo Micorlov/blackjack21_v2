@@ -6,9 +6,11 @@ import '../../models/game_state.dart';
 import '../../state/game_notifier.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
+import '../../utils/flags.dart';
 import '../../utils/formatters.dart';
-import '../../utils/points.dart';
+import '../../utils/world_standings.dart';
 import '../../widgets/buttons.dart';
+import 'world_leaderboard_screen.dart';
 
 /// Betting-phase bottom panel: current bet readout, the denomination chips the
 /// table allows, CLEAR/DEAL row, and (when broke) a complimentary-chips button.
@@ -128,13 +130,13 @@ class TableBettingPanel extends ConsumerWidget {
   }
 }
 
-typedef _StandingsRow = ({String name, int points, bool isSelf});
-
 /// Swipeable standings inside the betting panel, three pages:
 /// 1. FRIENDS — only real people who joined via the WhatsApp invite code
 ///    (with an inline invite button when there is nobody yet),
 /// 2. WORLD · THIS HOUR — live top players anywhere by hourly points,
 /// 3. WORLD · TODAY — the same race over the whole day.
+/// Tapping the card opens [WorldLeaderboardScreen] with the full, uncapped
+/// list for whichever page is currently showing.
 class _FriendsMiniTable extends StatefulWidget {
   final GameState state;
   final GameNotifier notifier;
@@ -158,63 +160,69 @@ class _FriendsMiniTableState extends State<_FriendsMiniTable> {
     super.dispose();
   }
 
+  void _openFullList(BuildContext context) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => WorldLeaderboardScreen(initialTab: _page)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = widget.state;
-    return Container(
-      padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.35),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.18)),
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
         borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Row(
+        onTap: () => _openFullList(context),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
+          decoration: BoxDecoration(
+            color: Colors.black.withValues(alpha: 0.35),
+            border: Border.all(color: AppColors.gold.withValues(alpha: 0.18)),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
             children: [
-              Text(
-                _titles[_page],
-                style: AppText.sora(10, weight: FontWeight.w800, color: AppColors.textFaint, letterSpacing: 1),
-              ),
-              const Spacer(),
-              for (var i = 0; i < _titles.length; i++) ...[
-                if (i > 0) const SizedBox(width: 4),
-                Container(
-                  width: 5,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: i == _page ? AppColors.gold : AppColors.border,
+              Row(
+                children: [
+                  Text(
+                    _titles[_page],
+                    style: AppText.sora(10, weight: FontWeight.w800, color: AppColors.textFaint, letterSpacing: 1),
                   ),
+                  const Spacer(),
+                  for (var i = 0; i < _titles.length; i++) ...[
+                    if (i > 0) const SizedBox(width: 4),
+                    Container(
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: i == _page ? AppColors.gold : AppColors.border,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(width: 6),
+                  Icon(Icons.open_in_full, size: 11, color: AppColors.textFaint),
+                ],
+              ),
+              const SizedBox(height: 4),
+              SizedBox(
+                // The rows are text, so the page has to grow with the user's
+                // font scale — a fixed height clips the last row at large type.
+                height: 96 * (MediaQuery.textScalerOf(context).scale(12) / 12).clamp(1.0, 1.3),
+                child: PageView(
+                  controller: _controller,
+                  onPageChanged: (p) => setState(() => _page = p),
+                  children: [
+                    _friendsPage(s),
+                    _worldPage(s, hourly: true),
+                    _worldPage(s, hourly: false),
+                  ],
                 ),
-              ],
+              ),
             ],
           ),
-          const SizedBox(height: 4),
-          SizedBox(
-            // The rows are text, so the page has to grow with the user's font
-            // scale — a fixed height clips the last row at large type.
-            height: 96 * (MediaQuery.textScalerOf(context).scale(12) / 12).clamp(1.0, 1.3),
-            child: PageView(
-              controller: _controller,
-              onPageChanged: (p) => setState(() => _page = p),
-              children: [
-                _friendsPage(s),
-                _worldPage(s, hourly: true),
-                _worldPage(s, hourly: false),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
-  }
-
-  int _heroPoints(GameState s, {required bool hourly}) {
-    final now = DateTime.now();
-    return hourly
-        ? rolledPoints(s.heroHourlyPoints, s.heroHourKey, hourKeyOf(now))
-        : rolledPoints(s.heroDailyPoints, s.heroDayKey, dayKeyOf(now));
   }
 
   /// Real invited friends only — the practice bots never appear here. With no
@@ -245,46 +253,19 @@ class _FriendsMiniTableState extends State<_FriendsMiniTable> {
         ],
       );
     }
-    final hourly = s.badgeHourly;
-    final rows = [
-      for (final f in s.friends) (name: f.firstName, points: hourly ? f.hourlyScore : f.dailyScore, isSelf: false),
-      (name: 'You', points: _heroPoints(s, hourly: hourly), isSelf: true),
-    ]..sort((a, b) => b.points.compareTo(a.points));
-    return _standings(rows);
+    return _standings(friendsStandingsRows(s));
   }
 
-  /// Live world top list. The hero's row is highlighted when present; when
-  /// outside the top, it is appended unranked so your own score stays visible.
+  /// Live world top list, always padded to [_kMaxRows] with filler bots so
+  /// the card never looks sparse while the real player base is still small.
   Widget _worldPage(GameState s, {required bool hourly}) {
-    final source = hourly ? s.globalHourly : s.globalDaily;
-    if (source.isEmpty) {
-      return Center(
-        child: Text(
-          'Nobody on the world list ${hourly ? 'this hour' : 'today'} yet.\nDeal a hand and claim #1!',
-          textAlign: TextAlign.center,
-          style: AppText.sora(11, color: AppColors.textMuted),
-        ),
-      );
-    }
-    final rows = [
-      for (final f in source)
-        (
-          name: f.id == s.heroUid ? 'You' : f.firstName,
-          points: hourly ? f.hourlyScore : f.dailyScore,
-          isSelf: f.id == s.heroUid,
-        ),
-    ];
-    var selfAppended = false;
-    if (!rows.any((r) => r.isSelf)) {
-      rows.add((name: 'You', points: _heroPoints(s, hourly: hourly), isSelf: true));
-      selfAppended = true;
-    }
-    return _standings(rows, selfUnranked: selfAppended);
+    final w = worldStandings(s, hourly: hourly, minCount: _kMaxRows);
+    return _standings(w.rows, selfUnranked: w.selfUnranked);
   }
 
   /// Ranked rows capped at [_kMaxRows], always keeping the hero's row visible
   /// (it replaces the last visible row when it falls below the cut).
-  Widget _standings(List<_StandingsRow> rows, {bool selfUnranked = false}) {
+  Widget _standings(List<StandingsRow> rows, {bool selfUnranked = false}) {
     var visible = [for (var i = 0; i < rows.length; i++) (rank: i + 1, row: rows[i])];
     final selfIdx = visible.indexWhere((e) => e.row.isSelf);
     if (visible.length > _kMaxRows) {
@@ -307,6 +288,8 @@ class _FriendsMiniTableState extends State<_FriendsMiniTable> {
                     style: AppText.mono(11, weight: FontWeight.w700, color: e.rank == 1 ? AppColors.gold : AppColors.textFaint),
                   ),
                 ),
+                Text(flagForId(e.row.id), style: const TextStyle(fontSize: 12)),
+                const SizedBox(width: 5),
                 Expanded(
                   child: Text(
                     e.row.name,
