@@ -39,6 +39,12 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
 - **Comeback dealing** — short-stacked or on a two-loss streak, your opening hand is the best of
   3 candidate pairs from the real shoe instead of one blind draw, so sessions last longer
 - **Social table** — friends, lobby, chat panel, leaderboard, seat plates with avatars
+- **Progress that survives a relaunch** — your bankroll, all-time stats, recent-hand history,
+  live hourly/daily points, settings and shop cosmetics are written to disk after every settled
+  hand and every settings change, then restored before the app publishes anything to your
+  friends' group. Point buckets still roll over on the clock, so a relaunch can never resurrect
+  a finished hour's score, and the rebuy offer now appears whenever your stack falls below the
+  table minimum rather than only at exactly zero
 - **Progression** — stats screen, shop, onboarding and story overlays
 - **Sound effects** — deal, chip, turn, win, lose, push, and blackjack cues, plus spoken
   "Stand"/"Bust" voice lines when an NPC seat finishes its turn
@@ -90,7 +96,7 @@ lib/
 | `cloud_firestore` | Friends groups and live hourly/daily score sync |
 | `url_launcher` | Opens WhatsApp with the prefilled group invite |
 | `flutter_local_notifications` | "Friend passed you" leaderboard alerts and the daily-bonus reminder |
-| `shared_preferences` | Persists the last daily-bonus claim time across launches |
+| `shared_preferences` | Saves the bankroll, stats, points and settings between launches (`game_store`), and the last daily-bonus claim time (`daily_bonus_store`) |
 | `timezone` | Builds the `TZDateTime` the daily-bonus reminder is scheduled against |
 
 Dev: `flutter_test`, `flutter_lints`, `integration_test`.
@@ -144,7 +150,7 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 
 ## Changelog
 
-### 2026-08-02 (3)
+### 2026-08-02 (4)
 - feat: the daily chips claim now runs on a real, persisted 24-hour cooldown instead of a
   once-ever flag — restarting the app can't re-arm it early, the lobby's Daily Bonus card shows
   a live countdown while it's on cooldown, and a scheduled local notification ("Your daily chips
@@ -153,7 +159,7 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 - test: added `test/daily_bonus_test.dart` covering the cooldown/readiness/countdown logic in
   `utils/daily_bonus.dart`
 
-### 2026-08-02 (2)
+### 2026-08-02 (3)
 - feat: the table standings panel is now swipeable across three pages — FRIENDS, WORLD · THIS
   HOUR, and WORLD · TODAY — so the race against real players worldwide is one swipe away
 - feat: the FRIENDS page lists only real people who joined through a WhatsApp invite code; the
@@ -165,6 +171,24 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 - fix: notifications are asked for only where a plugin is actually registered (iOS/Android, never
   under `flutter test`), via a web-safe conditional-import check in `notification_support.dart` —
   touching the plugin under test threw a `LateInitializationError` no `on` clause could catch
+
+### 2026-08-02 (2)
+- feat: the game finally remembers you. Chips, all-time stats, recent-hand history, the live
+  hourly/daily point buckets, every settings toggle and your shop cosmetics now persist to
+  `shared_preferences` through the new `lib/services/game_store.dart`, and are restored before
+  `_initSocial()` publishes your row — so friends never see the placeholder $1,000 stack that a
+  relaunch used to invent. Saved buckets are re-rolled against the current hour/day on load, so
+  a finished period's score cannot come back from disk. This was the #1 item in
+  [FEATURE_PLAN.md](FEATURE_PLAN.md): every restart previously wiped the bankroll the whole
+  friends race is scored on
+- fix: the rebuy offer appears whenever the stack is below the table minimum, not only at
+  exactly $0. With a bankroll that survives relaunch, a player stranded at $10 on the
+  `$25 – $500` Bronze table could otherwise never bet again
+- test: added `test/game_store_test.dart` — 12 tests covering the save/load round trip, missing
+  and wrong-typed keys falling back to `GameState` defaults, unreadable history entries being
+  dropped rather than guessed (a wrong result would silently change whether comeback dealing
+  fires), history trimming keeping the newest hands, and unknown-schema and corrupted blobs
+  degrading to "nothing saved" instead of throwing
 
 ### 2026-08-02
 - docs: added [FEATURE_PLAN.md](FEATURE_PLAN.md) — a prioritized roadmap of 30 candidate

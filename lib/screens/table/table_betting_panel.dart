@@ -104,7 +104,11 @@ class TableBettingPanel extends ConsumerWidget {
             ),
           ],
         ),
-        if (state.chips == 0) ...[
+        // Below the table minimum the player cannot legally bet, so the rebuy
+        // has to appear before the stack literally hits zero — with a bankroll
+        // that now survives relaunch, a stranded $10 would otherwise be a
+        // permanent dead end.
+        if (state.chips < (state.stake?.min ?? kStartingChips)) ...[
           const SizedBox(height: 8),
           SizedBox(
             width: double.infinity,
