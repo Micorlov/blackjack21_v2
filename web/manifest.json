@@ -1,11 +1,11 @@
 {
-    "name": "blackjack21_v2",
-    "short_name": "blackjack21_v2",
+    "name": "Blackjack 21",
+    "short_name": "Blackjack 21",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0b3d29",
+    "theme_color": "#0b3d29",
+    "description": "Multiplayer blackjack with friends — live leaderboards, WhatsApp invites, and a daily chip bonus.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
