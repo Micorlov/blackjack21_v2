@@ -175,6 +175,11 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 
 ## Changelog
 
+### 2026-08-03 (3)
+- test: cover `OnboardingScreen`'s web-only guest-mode hiding — added an injectable `isWeb`
+  constructor param (defaults to the real `kIsWeb`) so `test/onboarding_screen_test.dart` can
+  pump both branches directly, instead of only being reachable via the web test runner
+
 ### 2026-08-03 (2)
 - refactor: drop the custom `<meta name="viewport">` tag from `web/index.html` — verified on
   a real mobile viewport that Flutter Web's own bootstrap script replaces any existing viewport

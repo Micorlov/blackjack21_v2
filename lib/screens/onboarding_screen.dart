@@ -12,7 +12,10 @@ import '../widgets/buttons.dart';
 /// (lines 26-40): radial felt background, gold "21" mark, title, subtitle,
 /// Google sign-in, guest link, and a fixed terms disclaimer.
 class OnboardingScreen extends ConsumerWidget {
-  const OnboardingScreen({super.key});
+  const OnboardingScreen({super.key, this.isWeb = kIsWeb});
+
+  /// Overridable for tests; defaults to the real platform.
+  final bool isWeb;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -147,7 +150,7 @@ class OnboardingScreen extends ConsumerWidget {
                     ),
                     // Guest mode is local-only (no Firebase account), so it's
                     // hidden on web where sign-in is required.
-                    if (!kIsWeb) ...[
+                    if (!isWeb) ...[
                       const SizedBox(height: 12),
                       TextLinkButton(
                         label: 'Play as Guest',
