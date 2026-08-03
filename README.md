@@ -108,7 +108,7 @@ lib/
 │                  #   tutorial (pure "which coaching card, if any, right now?"),
 │                  #   table_seats (pads real friends to 4 table seats with practice bots)
 └── widgets/       # shared UI (buttons, overlays, cards, nav bar, rank_strip,
-                   #   tutorial_coach_card, how_to_play_sheet)
+                   #   tutorial_coach_card, how_to_play_sheet, web_viewport_scaler)
 ```
 
 ## Dependencies
@@ -184,6 +184,20 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 ```
 
 ## Changelog
+
+### 2026-08-03 (6)
+- fix: the web app rendered at native 1:1 CSS-pixel size, so on a desktop browser it sat as a small
+  mobile-width column pinned to the top-left corner with most of the window left empty — text and
+  the onboarding art read far smaller than on the phone app. Added
+  `widgets/web_viewport_scaler.dart`, which scales the whole app up on web (native platforms are
+  untouched) using the same design-canvas + `Transform.scale` technique `TableFelt` already uses
+  for the table: it derives a scale from the viewport width (capped so a very short window can't
+  starve non-scrolling screens of height, and capped overall at 2.5x so it doesn't blow up on
+  ultra-wide monitors), then overrides `MediaQuery`'s size so every screen still lays out against
+  its normal ~393px-wide design metrics. Also centered `OnboardingScreen`'s content horizontally
+  (it was relying on `Stack`'s default top-left alignment, which only looked centered because the
+  viewport used to be exactly as wide as the content) and made it scroll instead of overflow if a
+  short/wide web window leaves it less height than it needs
 
 ### 2026-08-03 (5)
 - fix: "Continue with Google" silently did nothing on web — `GoogleSignIn.authenticate()` throws

@@ -19,6 +19,7 @@ import 'widgets/bottom_nav_bar.dart';
 import 'widgets/overlays.dart';
 import 'widgets/rank_strip.dart';
 import 'widgets/story_overlay.dart';
+import 'widgets/web_viewport_scaler.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -39,12 +40,17 @@ class BlackjackApp extends StatelessWidget {
         useMaterial3: true,
         brightness: Brightness.dark,
         scaffoldBackgroundColor: AppColors.surface,
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.gold, brightness: Brightness.dark),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: AppColors.gold,
+          brightness: Brightness.dark,
+        ),
         textTheme: TextTheme(bodyMedium: AppText.sora(15)),
         switchTheme: SwitchThemeData(
           thumbColor: WidgetStateProperty.all(Colors.white),
           trackColor: WidgetStateProperty.resolveWith(
-            (states) => states.contains(WidgetState.selected) ? AppColors.gold : AppColors.border,
+            (states) => states.contains(WidgetState.selected)
+                ? AppColors.gold
+                : AppColors.border,
           ),
         ),
       ),
@@ -53,7 +59,7 @@ class BlackjackApp extends StatelessWidget {
       builder: (context, child) => MediaQuery.withClampedTextScaling(
         minScaleFactor: 1,
         maxScaleFactor: 1.3,
-        child: child ?? const SizedBox.shrink(),
+        child: WebViewportScaler(child: child ?? const SizedBox.shrink()),
       ),
       home: const AppShell(),
     );
@@ -86,7 +92,8 @@ class AppShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(gameProvider);
     final notifier = ref.read(gameProvider.notifier);
-    final showNav = state.screen != AppScreen.table && state.screen != AppScreen.onboarding;
+    final showNav =
+        state.screen != AppScreen.table && state.screen != AppScreen.onboarding;
 
     void onNavSelect(AppScreen screen) {
       switch (screen) {
@@ -117,12 +124,17 @@ class AppShell extends ConsumerWidget {
               children: [
                 const RankStrip(),
                 Expanded(child: _buildScreen(state.screen)),
-                if (showNav) AppBottomNavBar(current: state.screen, onSelect: onNavSelect),
+                if (showNav)
+                  AppBottomNavBar(current: state.screen, onSelect: onNavSelect),
               ],
             ),
             ToastBanner(text: state.toast),
-            ReactionFloatOverlay(text: state.reactionFloat, triggerId: state.reactionId),
-            if (state.activeStoryId != null) const Positioned.fill(child: StoryOverlay()),
+            ReactionFloatOverlay(
+              text: state.reactionFloat,
+              triggerId: state.reactionId,
+            ),
+            if (state.activeStoryId != null)
+              const Positioned.fill(child: StoryOverlay()),
           ],
         ),
       ),

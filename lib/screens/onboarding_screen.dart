@@ -42,7 +42,11 @@ class OnboardingScreen extends ConsumerWidget {
                 angle: -15 * 3.14159265 / 180,
                 child: Text(
                   '♠',
-                  style: TextStyle(fontSize: 220, height: 1, color: Colors.white.withValues(alpha: 0.03)),
+                  style: TextStyle(
+                    fontSize: 220,
+                    height: 1,
+                    color: Colors.white.withValues(alpha: 0.03),
+                  ),
                 ),
               ),
             ),
@@ -53,117 +57,171 @@ class OnboardingScreen extends ConsumerWidget {
                 angle: 12 * 3.14159265 / 180,
                 child: Text(
                   '♦',
-                  style: TextStyle(fontSize: 240, height: 1, color: AppColors.gold.withValues(alpha: 0.05)),
+                  style: TextStyle(
+                    fontSize: 240,
+                    height: 1,
+                    color: AppColors.gold.withValues(alpha: 0.05),
+                  ),
                 ),
               ),
             ),
             SafeArea(
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 88,
-                      height: 88,
-                      margin: const EdgeInsets.only(bottom: 22),
-                      decoration: BoxDecoration(
-                        gradient: AppColors.goldGradient,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.goldDark.withValues(alpha: 0.3),
-                            blurRadius: 30,
-                            offset: const Offset(0, 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 28,
+                  vertical: 32,
+                ),
+                // LayoutBuilder + Center: the Column below is intrinsically
+                // narrower than this Stack child's own bounds (it isn't
+                // stretched), so without an explicit Center it renders
+                // pinned to the Stack's default top-left alignment instead
+                // of the middle of the screen. ConstrainedBox + scroll view
+                // keeps it centered when it fits, and merely scrollable
+                // instead of overflowing when a short/wide web viewport
+                // doesn't leave it enough height.
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    return Center(
+                      child: SingleChildScrollView(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minHeight: constraints.maxHeight,
                           ),
-                        ],
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        '21',
-                        style: AppText.mono(33, weight: FontWeight.w700, color: AppColors.goldInk),
-                      ),
-                    ),
-                    Text('Blackjack 21', textAlign: TextAlign.center, style: AppText.serifItalic(48, height: 1.05)),
-                    const SizedBox(height: 10),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 280),
-                      child: Text(
-                        'Beat the dealer, climb the leaderboard, and challenge your friends at the table.',
-                        textAlign: TextAlign.center,
-                        style: AppText.sora(18, color: AppColors.textPrimary.withValues(alpha: 0.85), height: 1.55),
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 300),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: GoogleSignInButton(
-                          child: Material(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(14),
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(14),
-                              onTap: () => notifier.signInGoogle(),
-                              child: Padding(
-                                padding: const EdgeInsets.all(15),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      width: 20,
-                                      height: 20,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: Colors.white,
-                                        border: Border.all(color: const Color(0xFFE4E4E4)),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 88,
+                                height: 88,
+                                margin: const EdgeInsets.only(bottom: 22),
+                                decoration: BoxDecoration(
+                                  gradient: AppColors.goldGradient,
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.goldDark.withValues(
+                                        alpha: 0.3,
                                       ),
-                                      alignment: Alignment.center,
-                                      child: const Text(
-                                        'G',
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w800,
-                                          color: Color(0xFF4285F4),
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 10),
-                                    Flexible(
-                                      child: Text(
-                                        'Continue with Google',
-                                        textAlign: TextAlign.center,
-                                        overflow: TextOverflow.ellipsis,
-                                        maxLines: 1,
-                                        style: const TextStyle(
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.w800,
-                                          color: Color(0xFF1A1A1A),
-                                        ),
-                                      ),
+                                      blurRadius: 30,
+                                      offset: const Offset(0, 10),
                                     ),
                                   ],
                                 ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  '21',
+                                  style: AppText.mono(
+                                    33,
+                                    weight: FontWeight.w700,
+                                    color: AppColors.goldInk,
+                                  ),
+                                ),
                               ),
-                            ),
+                              Text(
+                                'Blackjack 21',
+                                textAlign: TextAlign.center,
+                                style: AppText.serifItalic(48, height: 1.05),
+                              ),
+                              const SizedBox(height: 10),
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: 280,
+                                ),
+                                child: Text(
+                                  'Beat the dealer, climb the leaderboard, and challenge your friends at the table.',
+                                  textAlign: TextAlign.center,
+                                  style: AppText.sora(
+                                    18,
+                                    color: AppColors.textPrimary.withValues(
+                                      alpha: 0.85,
+                                    ),
+                                    height: 1.55,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 40),
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(
+                                  maxWidth: 300,
+                                ),
+                                child: SizedBox(
+                                  width: double.infinity,
+                                  child: GoogleSignInButton(
+                                    child: Material(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(14),
+                                      child: InkWell(
+                                        borderRadius: BorderRadius.circular(14),
+                                        onTap: () => notifier.signInGoogle(),
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(15),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Container(
+                                                width: 20,
+                                                height: 20,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  color: Colors.white,
+                                                  border: Border.all(
+                                                    color: const Color(
+                                                      0xFFE4E4E4,
+                                                    ),
+                                                  ),
+                                                ),
+                                                alignment: Alignment.center,
+                                                child: const Text(
+                                                  'G',
+                                                  style: TextStyle(
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: Color(0xFF4285F4),
+                                                  ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 10),
+                                              Flexible(
+                                                child: Text(
+                                                  'Continue with Google',
+                                                  textAlign: TextAlign.center,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  maxLines: 1,
+                                                  style: const TextStyle(
+                                                    fontSize: 17,
+                                                    fontWeight: FontWeight.w800,
+                                                    color: Color(0xFF1A1A1A),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              // Guest mode is local-only (no Firebase account), so it's
+                              // hidden on web where sign-in is required.
+                              if (!isWeb) ...[
+                                const SizedBox(height: 12),
+                                TextLinkButton(
+                                  label: 'Play as Guest',
+                                  onPressed: () => notifier.playGuest(),
+                                  color: const Color(0xFFC7C3B7),
+                                  fontSize: 16,
+                                  underline: true,
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                       ),
-                    ),
-                    // Guest mode is local-only (no Firebase account), so it's
-                    // hidden on web where sign-in is required.
-                    if (!isWeb) ...[
-                      const SizedBox(height: 12),
-                      TextLinkButton(
-                        label: 'Play as Guest',
-                        onPressed: () => notifier.playGuest(),
-                        color: const Color(0xFFC7C3B7),
-                        fontSize: 16,
-                        underline: true,
-                      ),
-                    ],
-                  ],
+                    );
+                  },
                 ),
               ),
             ),
@@ -174,7 +232,10 @@ class OnboardingScreen extends ConsumerWidget {
               child: Text(
                 'By continuing you agree to the Terms & Privacy Policy.',
                 textAlign: TextAlign.center,
-                style: AppText.sora(13, color: AppColors.textPrimary.withValues(alpha: 0.5)),
+                style: AppText.sora(
+                  13,
+                  color: AppColors.textPrimary.withValues(alpha: 0.5),
+                ),
               ),
             ),
           ],
