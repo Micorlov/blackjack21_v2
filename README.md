@@ -198,10 +198,19 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
   `web-zoom-323x560` entry to the table layout suite, so the exact canvas a phone browser produces
   is now covered across every round phase at both 1.0x and 1.3x system text scale
 - known limitation: the felt itself (seat plates, dealer, hero hand) is **not** affected by this
-  zoom and renders at the same size as before. Its four seats are edge-anchored 196px slots — two
-  of them span 392px of the 393px design width — so the felt rescales itself to whatever the real
-  viewport width is, which no outer zoom can change. Making that text larger needs a change to the
-  seat-plate design itself, not to the scaler
+  zoom and renders at the same size as before. The felt scales by
+  `min(width / 393, height / requiredHeight)`, and on every viewport that matters it is the
+  *height* term that wins — the bottom action panel may take up to 62% of the screen, so the felt
+  is routinely left with far less height than the ~490 design px its contents ask for. The surplus
+  width is then spent widening the canvas (`width / scale`), which only pushes the two seat columns
+  further apart, and the plates stay small.
+  **Do not try to fix this by growing the seat slots on a wide canvas.** A wide canvas is a
+  *symptom* of being height-starved, not evidence of spare room: growing the slots raises
+  `requiredHeight`, which lowers the very scale it was meant to raise. That was tried on
+  2026-08-03 and made the felt ~18% smaller on a 1280x800 browser; it was reverted unshipped.
+  The only lever that helps is *reducing* the felt's required height — e.g. laying the four seats
+  out in one row instead of two on wide viewports, which would trade the wasted width for scale
+  across the whole felt. That is a real redesign and is not done
 
 ### 2026-08-03 (6)
 - fix: the web app rendered at native 1:1 CSS-pixel size, so on a desktop browser it sat as a small
