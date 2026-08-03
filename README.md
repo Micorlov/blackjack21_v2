@@ -175,6 +175,11 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 
 ## Changelog
 
+### 2026-08-03 (2)
+- refactor: drop the custom `<meta name="viewport">` tag from `web/index.html` — verified on
+  a real mobile viewport that Flutter Web's own bootstrap script replaces any existing viewport
+  tag at runtime, so the custom one never took effect and was dead code
+
 ### 2026-08-03
 - feat: add a web version — Flutter Web is now a supported platform. Registered a Firebase Web
   app (`flutterfire configure`), wired the auto-created Google OAuth web client into
