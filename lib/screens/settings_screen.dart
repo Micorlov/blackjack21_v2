@@ -8,6 +8,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/avatar_circle.dart';
 import '../widgets/buttons.dart';
+import '../widgets/google_signin_button.dart';
 import '../widgets/how_to_play_sheet.dart';
 import '../widgets/panel_card.dart';
 
@@ -128,7 +129,9 @@ class _AccountPanel extends StatelessWidget {
     return Container(
       decoration: panelDecoration(),
       padding: const EdgeInsets.all(16),
-      child: signedIn ? _buildSignedIn() : GoldButton(label: 'Sign in', onPressed: onSignIn),
+      child: signedIn
+          ? _buildSignedIn()
+          : GoogleSignInButton(child: GoldButton(label: 'Sign in', onPressed: onSignIn)),
     );
   }
 

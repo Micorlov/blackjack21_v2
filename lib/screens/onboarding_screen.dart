@@ -6,6 +6,7 @@ import '../state/game_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/buttons.dart';
+import '../widgets/google_signin_button.dart';
 
 /// Sign-in / guest-entry screen shown before a player reaches the lobby.
 /// Ported 1:1 from the `isOnboarding` block in `Blackjack 21 v2.dc.html`
@@ -98,50 +99,52 @@ class OnboardingScreen extends ConsumerWidget {
                       constraints: const BoxConstraints(maxWidth: 300),
                       child: SizedBox(
                         width: double.infinity,
-                        child: Material(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(14),
-                          child: InkWell(
+                        child: GoogleSignInButton(
+                          child: Material(
+                            color: Colors.white,
                             borderRadius: BorderRadius.circular(14),
-                            onTap: () => notifier.signInGoogle(),
-                            child: Padding(
-                              padding: const EdgeInsets.all(15),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Container(
-                                    width: 20,
-                                    height: 20,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: Colors.white,
-                                      border: Border.all(color: const Color(0xFFE4E4E4)),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: const Text(
-                                      'G',
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w800,
-                                        color: Color(0xFF4285F4),
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(14),
+                              onTap: () => notifier.signInGoogle(),
+                              child: Padding(
+                                padding: const EdgeInsets.all(15),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Container(
+                                      width: 20,
+                                      height: 20,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: Colors.white,
+                                        border: Border.all(color: const Color(0xFFE4E4E4)),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: const Text(
+                                        'G',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFF4285F4),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Flexible(
-                                    child: Text(
-                                      'Continue with Google',
-                                      textAlign: TextAlign.center,
-                                      overflow: TextOverflow.ellipsis,
-                                      maxLines: 1,
-                                      style: const TextStyle(
-                                        fontSize: 17,
-                                        fontWeight: FontWeight.w800,
-                                        color: Color(0xFF1A1A1A),
+                                    const SizedBox(width: 10),
+                                    Flexible(
+                                      child: Text(
+                                        'Continue with Google',
+                                        textAlign: TextAlign.center,
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                        style: const TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.w800,
+                                          color: Color(0xFF1A1A1A),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ),

@@ -50,6 +50,13 @@ class _SeatResult {
 class GameNotifier extends StateNotifier<GameState> {
   GameNotifier() : super(const GameState(friends: kInitialFriends)) {
     _shoe = BlackjackRules.buildShoe(kDeckCount, _rng);
+    // `authenticate()` throws UnimplementedError on web — Google Identity
+    // Services requires its own rendered button there (see
+    // widgets/google_signin_button_web.dart), and delivers the result
+    // through this stream instead of a return value.
+    if (kIsWeb) {
+      _authEventsSub = GoogleSignIn.instance.authenticationEvents.listen(_handleAuthEvent);
+    }
     unawaited(_boot());
   }
 
@@ -60,6 +67,7 @@ class GameNotifier extends StateNotifier<GameState> {
   final DailyBonusStore _bonusStore = DailyBonusStore();
   final GameStore _store = GameStore();
   Timer? _saveTimer;
+  StreamSubscription<GoogleSignInAuthenticationEvent>? _authEventsSub;
   StreamSubscription<List<Friend>>? _groupSub;
   StreamSubscription<List<Friend>>? _hourlySub;
   StreamSubscription<List<Friend>>? _dailySub;
@@ -102,6 +110,7 @@ class GameNotifier extends StateNotifier<GameState> {
     _potTimer?.cancel();
     _celebrationTimer?.cancel();
     _heartbeatTimer?.cancel();
+    unawaited(_authEventsSub?.cancel());
     unawaited(_groupSub?.cancel());
     unawaited(_hourlySub?.cancel());
     unawaited(_dailySub?.cancel());
@@ -517,6 +526,8 @@ class GameNotifier extends StateNotifier<GameState> {
   // Navigation / auth
   // ---------------------------------------------------------------------
 
+  /// Mobile/desktop only — web's `authenticate()` throws `UnimplementedError`
+  /// and instead delivers its result through [_handleAuthEvent].
   Future<void> signInGoogle() async {
     final GoogleSignInAccount account;
     try {
@@ -527,7 +538,16 @@ class GameNotifier extends StateNotifier<GameState> {
       }
       return;
     }
+    await _completeGoogleSignIn(account);
+  }
 
+  void _handleAuthEvent(GoogleSignInAuthenticationEvent event) {
+    if (event is GoogleSignInAuthenticationEventSignIn) {
+      unawaited(_completeGoogleSignIn(event.user));
+    }
+  }
+
+  Future<void> _completeGoogleSignIn(GoogleSignInAccount account) async {
     final idToken = account.authentication.idToken;
     if (idToken == null) {
       _showToast('Google sign-in failed. Please try again.');

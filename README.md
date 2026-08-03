@@ -121,6 +121,7 @@ lib/
 | `cupertino_icons` | iOS-style icons |
 | `firebase_core` / `firebase_auth` | Firebase app + Google/anonymous sign-in |
 | `google_sign_in` | Google account picker for sign-in |
+| `google_sign_in_web` | Renders Google's own Identity Services button on web — `authenticate()` isn't supported there |
 | `cloud_firestore` | Friends groups and live hourly/daily score sync |
 | `url_launcher` | Opens WhatsApp with the prefilled group invite |
 | `flutter_local_notifications` | "Friend passed you" leaderboard alerts and the daily-bonus reminder |
@@ -183,6 +184,19 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 ```
 
 ## Changelog
+
+### 2026-08-03 (5)
+- fix: "Continue with Google" silently did nothing on web — `GoogleSignIn.authenticate()` throws
+  `UnimplementedError` there (confirmed via an unminified stack trace: "authenticate is not
+  supported on the web. Instead, use renderButton to create a sign-in widget"), and that error
+  type wasn't caught by the existing `GoogleSignInException` handler, so it failed silently.
+  Added `widgets/google_signin_button.dart` — a platform-conditional wrapper that renders Google's
+  own Identity Services button on web (`google_sign_in_web`'s `renderButton`) instead of our
+  custom one, since GIS requires its own DOM-rendered button. The result now arrives through
+  `GoogleSignIn.instance.authenticationEvents`, which `GameNotifier` subscribes to on web only
+  (mobile keeps calling `authenticate()` directly, unchanged). Also fixed a real misconfiguration
+  found along the way: the OAuth client's Authorized JavaScript origins was missing
+  `https://blackjack21-v2.web.app` entirely
 
 ### 2026-08-03 (4)
 - feat: the web app now shares with a proper branded link preview instead of the generic Flutter
