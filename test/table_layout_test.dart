@@ -34,7 +34,14 @@ class _Device {
 
 /// Phone sizes the app realistically ships to, from the smallest still-supported
 /// screen (iPhone SE 1 / small Androids) up to a tablet.
+///
+/// `web-zoom-323x560` is not a device: it is the *canvas* `WebViewportScaler`
+/// hands the app inside a 430x745 phone browser (an iPhone 15 Pro Max in
+/// Safari) once its legibility zoom is applied. The zoom buys larger text by
+/// shrinking the canvas, so the canvas has to be covered here exactly like a
+/// real screen size — it is shorter than any physical device in this list.
 const List<_Device> _devices = [
+  _Device('web-zoom-323x560', Size(323, 560), topPadding: 20),
   _Device('small-320x568', Size(320, 568), topPadding: 20),
   _Device('android-360x640', Size(360, 640)),
   _Device('android-360x800', Size(360, 800), bottomPadding: 24),

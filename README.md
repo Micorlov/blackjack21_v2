@@ -185,6 +185,24 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 
 ## Changelog
 
+### 2026-08-03 (7)
+- fix: the web app's text was still too small on a phone browser for this app's 60+ players. The
+  previous entry's zoom pinned the canvas to the 393 design width, so a 430-wide phone browser
+  zoomed by only 1.09 — invisible in practice, which is why it read as "no change" on a phone even
+  though desktop looked right. `WebViewportScaler` now bounds the zoom by *canvas floors* instead:
+  it never hands the app a canvas narrower or shorter than 320x560, the smallest size
+  `table_layout_test.dart` already proves the layout survives. A phone browser now zooms ~1.33x
+  (header, phase pills, bet amount, chip buttons, CLEAR/DEAL, lobby and every panel are all a third
+  larger); desktop is mathematically unchanged, since height already drove the scale there.
+  Added `test/web_viewport_scaler_test.dart` (calibration + canvas-floor guarantees) and a
+  `web-zoom-323x560` entry to the table layout suite, so the exact canvas a phone browser produces
+  is now covered across every round phase at both 1.0x and 1.3x system text scale
+- known limitation: the felt itself (seat plates, dealer, hero hand) is **not** affected by this
+  zoom and renders at the same size as before. Its four seats are edge-anchored 196px slots — two
+  of them span 392px of the 393px design width — so the felt rescales itself to whatever the real
+  viewport width is, which no outer zoom can change. Making that text larger needs a change to the
+  seat-plate design itself, not to the scaler
+
 ### 2026-08-03 (6)
 - fix: the web app rendered at native 1:1 CSS-pixel size, so on a desktop browser it sat as a small
   mobile-width column pinned to the top-left corner with most of the window left empty — text and
