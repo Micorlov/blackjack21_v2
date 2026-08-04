@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="index, follow">
+  <title>Privacy Policy — Blackjack 21</title>
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0c1a12;
+      --surface: #12261a;
+      --border: #2a4535;
+      --gold: #e8c574;
+      --text: #f2ede1;
+      --text-dim: #b9c3ba;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 50% -10%, #17301f 0%, var(--bg) 55%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+    }
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 5rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+    .brand img { width: 40px; height: 40px; border-radius: 10px; }
+    .brand span { font-weight: 700; font-size: 1.1rem; letter-spacing: 0.02em; }
+    h1 {
+      font-size: 1.9rem;
+      margin: 0 0 0.25rem;
+      color: var(--gold);
+    }
+    .updated { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2.5rem; }
+    h2 {
+      font-size: 1.15rem;
+      color: var(--gold);
+      margin-top: 2.5rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+    }
+    p, li { color: var(--text); }
+    ul { padding-left: 1.25rem; }
+    a { color: var(--gold); }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+      margin-top: 1rem;
+    }
+    footer { margin-top: 3rem; color: var(--text-dim); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand">
+      <img src="icons/Icon-192.png" alt="">
+      <span>Blackjack 21</span>
+    </div>
+
+    <h1>Privacy Policy</h1>
+    <p class="updated">Last updated: August 4, 2026</p>
+
+    <p>
+      Blackjack 21 ("the app") is a free, virtual-chip card game. It does not involve
+      real money, real-money gambling, or any way to cash out — the chips have no
+      monetary value and cannot be purchased with or exchanged for real currency.
+      This page explains what data the app collects and how it is used.
+    </p>
+
+    <h2>Account & sign-in</h2>
+    <p>You can play in two ways:</p>
+    <ul>
+      <li><strong>Guest play</strong> — the app creates an anonymous account for
+        your device via Firebase Authentication. No personal information is
+        collected.</li>
+      <li><strong>Google Sign-In (optional)</strong> — if you choose to sign in
+        with Google, the app receives your Google account's display name and
+        profile photo. This is used only to show your name/avatar to other
+        players in leaderboards and friend groups.</li>
+    </ul>
+
+    <h2>What we store</h2>
+    <p>The app stores game data in Firebase (Firestore), tied to your account id:</p>
+    <ul>
+      <li>Your display name and avatar (visible to other players in your friend
+        group and on leaderboards)</li>
+      <li>Your chip balance, stats, and leaderboard score</li>
+      <li>Friend-group membership (a 6-character code shared with people you
+        invite)</li>
+    </ul>
+    <p>We do not collect your email address, phone number, precise location, or
+      payment information — the app has no in-app purchases or payment features
+      of any kind.</p>
+
+    <h2>Notifications</h2>
+    <p>If you allow notifications, the app schedules them <strong>entirely on
+      your device</strong> (a daily chip-bonus reminder and an alert when a
+      friend passes your leaderboard score). These are not sent from a server
+      and no notification content is transmitted off your device.</p>
+
+    <h2>Advertising & analytics</h2>
+    <p>The app does not contain any advertising SDK and does not show real ads.
+      It does not use any analytics or crash-reporting SDK.</p>
+
+    <h2>Data sharing</h2>
+    <p>We do not sell your data. Data is shared only with Google Firebase, our
+      backend infrastructure provider, to operate the app (authentication,
+      database, hosting). It is never shared with advertisers or other third
+      parties.</p>
+
+    <h2>Data deletion</h2>
+    <p>To request deletion of your account and associated data, email us at
+      the address below with your in-app display name or friend-group code so
+      we can locate your record. We will delete it within 30 days.</p>
+
+    <h2>Children</h2>
+    <p>Blackjack 21 is not directed at children and simulates casino-style
+      betting with virtual chips; it is not intended for users who do not meet
+      the minimum age required by their app store's content rating.</p>
+
+    <h2>Changes to this policy</h2>
+    <p>If this policy changes, the "Last updated" date above will change and,
+      for material changes, we'll note it in the app's release notes.</p>
+
+    <div class="card">
+      <strong>Contact</strong>
+      <p style="margin-bottom:0">
+        Questions or data-deletion requests:
+        <a href="mailto:micorlov@gmail.com">micorlov@gmail.com</a>
+      </p>
+    </div>
+
+    <footer>Blackjack 21 · <a href="/">blackjack21-v2.web.app</a></footer>
+  </main>
+</body>
+</html>

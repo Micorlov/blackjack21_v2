@@ -138,6 +138,11 @@ variants) are the matching browser-tab and PWA/home-screen icons. All five are g
 one-off Pillow script (not checked in) rather than hand-drawn — regenerate by re-running the same
 casino-green/gold Ace-of-Spades-and-"21" design if the branding ever changes.
 
+`web/privacy-policy.html` is a standalone static page (not part of the Flutter app) served at
+`https://blackjack21-v2.web.app/privacy-policy.html` — it's the Privacy Policy URL required by the
+Google Play Store listing. Firebase Hosting serves static files under `web/` ahead of the SPA
+catch-all rewrite, so this loads directly without going through `index.html`.
+
 `assets/sfx/` holds two kinds of clip, all registered wholesale by the `- assets/sfx/` entry
 under `flutter: assets:` in `pubspec.yaml` — a new file in the folder needs no pubspec change.
 
@@ -184,6 +189,16 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 ```
 
 ## Changelog
+
+### 2026-08-04
+- feat: set up the Android build for Google Play submission — branded the app icon and label
+  (previously the default Flutter logo/"blackjack21_v2"), added core library desugaring
+  (required by `flutter_local_notifications`), and wired a real release signing config
+  (`android/key.properties`, gitignored) so `flutter build appbundle --release` produces a
+  properly signed `.aab` instead of debug-signing the release build
+- docs: added `web/privacy-policy.html`, a static privacy policy page hosted at
+  `blackjack21-v2.web.app/privacy-policy.html` — required for the Play Store listing; none existed
+  before despite the onboarding screen's "Terms & Privacy Policy" disclaimer text
 
 ### 2026-08-03 (7)
 - fix: the web app's text was still too small on a phone browser for this app's 60+ players. The
