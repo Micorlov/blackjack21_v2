@@ -113,6 +113,12 @@ lib/
 tool/
 ├── play_upload.py            # uploads a signed .aab to a Play track (Android Publisher API v3)
 └── release_notes_en-US.txt   # en-US release notes passed to --notes-file
+
+play-assets/                  # what the Play Store listing shows — the uploaded copies live on Play
+├── icon-512.png              # 512×512 store icon, upscaled from the 192px Android launcher icon
+├── feature-graphic.png       # 1024×500 feature graphic
+├── feature-graphic.html      # the source the feature graphic is rendered from
+└── screen-01..04.png         # phone screenshots, cropped to 2:1 (Play rejects taller than that)
 ```
 
 ### Publishing to Google Play
@@ -234,6 +240,21 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-08-06 (2)
+- feat: **Blackjack 21 is submitted to Google Play** — 16 changes are in review. The store listing is
+  complete (category Card, contact email and website, short and full description, 512px icon,
+  1024×500 feature graphic, four phone screenshots), internal testing has a tester list, and closed
+  testing — Alpha targets 176 countries plus rest-of-world with all four tester lists (113 addresses)
+  attached. Play warns the game is excluded from Korea pending its GRAC rating, which is expected for
+  a simulated-gambling title. Production is still locked: it needs 12 testers opted in to the closed
+  test for 14 days, then an application.
+- feat: added `play-assets/` — the store icon, the feature graphic and its HTML source, and four
+  phone screenshots captured off the Android emulator. Screenshots are cropped to 2:1 because Play
+  rejects anything taller, and the emulator's 1344×2992 frame is 2.23:1.
+- chore: granted the `play-publisher` service account "Manage store presence" as well, so the store
+  listing text and every image go up over the API. Uploading the images was never the problem —
+  committing the edit was, and that is the permission the commit needs.
 
 ### 2026-08-06
 - feat: the first signed release bundle is on Google Play. `1.0.0 (1)` (versionCode 1, 58.3 MB) is
