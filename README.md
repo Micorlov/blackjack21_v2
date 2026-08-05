@@ -190,6 +190,16 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 
 ## Changelog
 
+### 2026-08-05
+- chore: created the "Blackjack 21" listing in Google Play Console (`com.micorlov.blackjack21_v2`)
+  and completed all nine app-content policy declarations (privacy policy, sign-in details, ads,
+  content rating, target audience, data safety, government apps, financial features, health).
+  The content rating questionnaire honestly declares simulated gambling (it's a blackjack betting
+  game), which rates the app Teen/18+ depending on region — expected and unavoidable for this
+  genre, not a bug. Store listing title/descriptions saved; app icon, feature graphic, and
+  screenshots generated and handed off for manual upload (browser automation can't reach local
+  files outside its shared session folder); the release AAB upload has the same constraint
+
 ### 2026-08-04
 - feat: set up the Android build for Google Play submission — branded the app icon and label
   (previously the default Flutter logo/"blackjack21_v2"), added core library desugaring
