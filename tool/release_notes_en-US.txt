@@ -1,0 +1,8 @@
+First release of Blackjack 21.
+
+- Play blackjack at a five-seat table against the dealer and four opponents
+- Hit, stand, double, split and surrender, with a sweep pot when you beat the whole table
+- Three-hand tutorial for new players, plus a full "How to play" rules guide
+- Spoken results and pot call-outs
+- Friends, daily and hourly leaderboards, and live world standings
+- Sign in with Google or play as a guest

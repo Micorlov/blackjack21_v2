@@ -52,3 +52,6 @@ app.*.map.json
 
 # Claude Code local runtime state (launch.json is intentionally tracked)
 .claude/scheduled_tasks.lock
+
+# Play publishing credentials — service account key, never commit
+/android/play-service-account.json

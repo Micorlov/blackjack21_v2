@@ -109,7 +109,31 @@ lib/
 │                  #   table_seats (pads real friends to 4 table seats with practice bots)
 └── widgets/       # shared UI (buttons, overlays, cards, nav bar, rank_strip,
                    #   tutorial_coach_card, how_to_play_sheet, web_viewport_scaler)
+
+tool/
+├── play_upload.py            # uploads a signed .aab to a Play track (Android Publisher API v3)
+└── release_notes_en-US.txt   # en-US release notes passed to --notes-file
 ```
+
+### Publishing to Google Play
+
+`tool/play_upload.py` does the whole release without touching the Play Console UI — the browser
+route is a dead end here, because a release bundle is ~58 MB and browser file-upload automation
+is capped well below that.
+
+```bash
+flutter build appbundle --release && python3 tool/play_upload.py --aab build/app/outputs/bundle/release/app-release.aab --track internal --release-name "1.0.0 (1)" --notes-file tool/release_notes_en-US.txt
+```
+
+Pass `--version-code N` instead of `--aab` to put a bundle that is already on Play onto a second
+track — Play rejects a re-upload of a version code it already has. While the app is still a draft
+(never published), only `internal` accepts `--status completed`; every other track needs
+`--status draft`.
+
+Auth is a Google Cloud service account, `play-publisher@blackjack21-v2.iam.gserviceaccount.com`,
+granted "Release apps to testing tracks" and "Manage testing tracks and edit tester lists" on this
+app in Play Console. Its JSON key lives at `android/play-service-account.json` and is gitignored,
+like `android/key.properties` — neither ever gets committed.
 
 ## Dependencies
 
@@ -210,6 +234,23 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-08-06
+- feat: the first signed release bundle is on Google Play. `1.0.0 (1)` (versionCode 1, 58.3 MB) is
+  live on the **internal testing** track and staged as a **draft** on **closed testing — Alpha**.
+  Neither track is reachable yet: internal testing still needs a tester list, and closed testing
+  needs testers plus countries. Production is not an option on this account — Play answers "You
+  don't have access to production yet", which a personal developer account only clears by running
+  a closed test with 12 testers for 14 days and then applying.
+- feat: added `tool/play_upload.py` + `tool/release_notes_en-US.txt`, which upload a bundle and roll
+  out a track over the Android Publisher API. This replaces the Play Console UI for releases, and
+  it is not a convenience: a 58 MB bundle is far past what browser file-upload automation carries,
+  so the console route could not deliver the .aab at all. See **Project Structure → Publishing to
+  Google Play**.
+- chore: created the `play-publisher` service account in the `blackjack21-v2` Cloud project, enabled
+  the Google Play Android Developer API on it, and granted it "Release apps to testing tracks" and
+  "Manage testing tracks and edit tester lists" for this app. Its key is gitignored at
+  `android/play-service-account.json`.
 
 ### 2026-08-05 (2)
 - test: covered the three leaderboard utilities that had no tests at all —
