@@ -188,7 +188,37 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 # while it holds: xcrun simctl io <device-id> screenshot shot.png
 ```
 
+### Android emulator
+
+The `bj21_test` AVD needs **4 GB of RAM and hardware GPU** to run this app. It was originally
+created with `hw.ramSize = 2G` and `hw.gpu.enabled = no`, and under that configuration the
+Android 16 system image plus Play Services plus a Flutter debug build does not fit in memory:
+the kernel OOM-kills `com.android.systemui` (the screen goes black while the activity is still
+resumed) and then the app process itself, which surfaces in `flutter run` as
+`Lost connection to device`. It looks exactly like an app crash and is not one — the crash
+buffer stays empty and `logcat` shows `mem-pressure-event` instead.
+
+The AVD config now carries the fix, so `flutter emulators --launch bj21_test` is enough. To
+force it explicitly, or for a fresh AVD:
+
+```bash
+emulator -avd bj21_test -memory 4096 -gpu host
+```
+
+Google sign-in returns `DEVELOPER_ERROR` on the emulator unless that machine's debug-keystore
+SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected — use it for
+emulator testing.
+
 ## Changelog
+
+### 2026-08-05 (2)
+- test: covered the three leaderboard utilities that had no tests at all —
+  `utils/leaderboard.dart`, `utils/world_standings.dart`, and `utils/flags.dart` (34 new cases in
+  `test/leaderboard_test.dart`, `test/world_standings_test.dart`, `test/flags_test.dart`). These
+  pin the ranking order, the hourly/daily/all-time score labels, stale point buckets rolling to
+  zero, the world list's filler-bot padding, and the platform-stable id→flag hash.
+- docs: recorded that the `bj21_test` Android emulator, not the app, caused the "app crashed"
+  report — see **Testing → Android emulator** below. No app code changed.
 
 ### 2026-08-05
 - chore: created the "Blackjack 21" listing in Google Play Console (`com.micorlov.blackjack21_v2`)
