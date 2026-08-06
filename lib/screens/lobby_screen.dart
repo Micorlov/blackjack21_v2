@@ -10,11 +10,13 @@ import '../models/social_models.dart';
 import '../state/game_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import '../utils/cup.dart';
 import '../utils/daily_bonus.dart';
 import '../utils/formatters.dart';
 import '../utils/leaderboard.dart';
 import '../widgets/avatar_circle.dart';
 import '../widgets/buttons.dart';
+import '../widgets/daily_bonus_dialog.dart';
 import '../widgets/panel_card.dart';
 
 /// Home / lobby screen: welcome header, stories, daily bonus, tournament
@@ -199,6 +201,8 @@ class _DailyBonusCardState extends State<_DailyBonusCard> {
     final now = DateTime.now();
     final lastClaim = widget.state.lastDailyBonusClaimAt;
     final ready = isDailyBonusReady(lastClaim, now);
+    final claimDay = nextDailyBonusStreakDay(widget.state.dailyBonusStreakDay, lastClaim, now);
+    final reward = dailyBonusRewardForDay(claimDay);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -218,7 +222,15 @@ class _DailyBonusCardState extends State<_DailyBonusCard> {
                 style: AppText.mono(13, weight: FontWeight.w700, letterSpacing: 1.3, color: AppColors.gold),
               ),
               const SizedBox(height: 4),
-              Text('+$kDailyBonusChips chips', style: AppText.mono(22, weight: FontWeight.w700)),
+              Text('+$reward chips', style: AppText.mono(22, weight: FontWeight.w700)),
+              if (widget.state.dailyBonusStreakDay > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Text(
+                    ready ? 'Day $claimDay of your streak' : 'Streak day ${widget.state.dailyBonusStreakDay} banked',
+                    style: AppText.sora(12.5, weight: FontWeight.w700, color: AppColors.textMuted),
+                  ),
+                ),
             ],
           ),
           if (ready)
@@ -226,7 +238,7 @@ class _DailyBonusCardState extends State<_DailyBonusCard> {
               width: 110,
               child: GoldButton(
                 label: 'Claim',
-                onPressed: widget.notifier.claimDailyBonus,
+                onPressed: () => showDailyBonusDialog(context),
                 verticalPadding: 16,
                 fontSize: 16,
               ),
@@ -268,63 +280,46 @@ class _TournamentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: AppColors.feltCardGradient,
-        border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'WEEKEND CUP',
-                style: AppText.mono(13, weight: FontWeight.w700, letterSpacing: 1.3, color: AppColors.gold),
-              ),
-              Text(
-                'Ends in 2d 14h',
-                style: AppText.sora(13, weight: FontWeight.w700, color: AppColors.textMuted),
-              ),
-            ],
-          ),
-          const SizedBox(height: 2),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Text(
-              '5,000 chip prize pool · 128 players joined',
-              style: AppText.sora(16, color: const Color(0xFFD8D3C6)),
+    final players = state.friends.length + 1;
+    return GestureDetector(
+      onTap: notifier.openCup,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          gradient: AppColors.feltCardGradient,
+          border: Border.all(color: AppColors.border),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'WEEKEND CUP',
+                  style: AppText.mono(13, weight: FontWeight.w700, letterSpacing: 1.3, color: AppColors.gold),
+                ),
+                Text(
+                  cupEndsLabel(DateTime.now()),
+                  style: AppText.sora(13, weight: FontWeight.w700, color: AppColors.textMuted),
+                ),
+              ],
             ),
-          ),
-          state.tournamentJoined
-              ? _DisabledFullButton(label: 'Joined')
-              : GoldButton(label: 'Join tournament', onPressed: notifier.joinTournament),
-        ],
-      ),
-    );
-  }
-}
-
-/// Full-width grey disabled button, matching the design's
-/// `background:#31403A;color:#9AA79E;` disabled-tournament-button style.
-class _DisabledFullButton extends StatelessWidget {
-  final String label;
-
-  const _DisabledFullButton({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 17),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(14)),
-      child: Text(
-        label,
-        style: AppText.sora(16, weight: FontWeight.w800, color: AppColors.textFaint),
+            const SizedBox(height: 2),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                '${formatChips(kCupPrizePool)} chip prize pool · '
+                '${players > 1 ? '$players players in your group' : 'your friends group race'}',
+                style: AppText.sora(16, color: const Color(0xFFD8D3C6)),
+              ),
+            ),
+            state.tournamentJoined
+                ? GoldButton(label: 'Play a Cup hand', onPressed: notifier.openCup)
+                : GoldButton(label: 'Join tournament', onPressed: notifier.openCup),
+          ],
+        ),
       ),
     );
   }

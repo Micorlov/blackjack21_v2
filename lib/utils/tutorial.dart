@@ -14,8 +14,8 @@ class ActiveTutorialTip {
 
   const ActiveTutorialTip({required this.lesson, required this.title, required this.body});
 
-  /// Badge text on the card, e.g. "HAND 2 OF 3".
-  String get stepLabel => 'HAND ${lesson + 1} OF $kTutorialRounds';
+  /// Badge text on the card, e.g. "COACH · HAND 2 OF 3".
+  String get stepLabel => 'COACH · HAND ${lesson + 1} OF $kTutorialRounds';
 }
 
 /// Picks the tip for the current table state, or null when nothing should be

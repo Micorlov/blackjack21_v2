@@ -27,7 +27,7 @@ void main() {
 
       expect(tip, isNotNull);
       expect(tip!.lesson, 0);
-      expect(tip.stepLabel, 'HAND 1 OF 3');
+      expect(tip.stepLabel, 'COACH · HAND 1 OF 3');
       expect(tip.title, isNotEmpty);
     });
 
@@ -48,7 +48,7 @@ void main() {
 
         expect(tip, isNotNull, reason: 'lesson $lesson should still coach');
         expect(tip!.lesson, lesson);
-        expect(tip.stepLabel, 'HAND ${lesson + 1} OF $kTutorialRounds');
+        expect(tip.stepLabel, 'COACH · HAND ${lesson + 1} OF $kTutorialRounds');
       }
     });
 

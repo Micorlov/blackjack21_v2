@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/tutorial_data.dart';
 import '../state/game_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
@@ -37,11 +38,37 @@ class TutorialCoachCard extends ConsumerWidget {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  tip.stepLabel,
-                  style: AppText.mono(10, weight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.gold),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                // Scales the whole label+dots group down on narrow screens
+                // instead of overflowing — 320-wide devices at 1.3x text
+                // scale leave the header row almost no width.
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        tip.stepLabel,
+                        style: AppText.mono(10, weight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.gold),
+                        maxLines: 1,
+                      ),
+                      const SizedBox(width: 8),
+                      // Progress dots, one per coached hand — filled through
+                      // the hand now being coached, per the design's coach card.
+                      for (var i = 0; i < kTutorialRounds; i++)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: Container(
+                            width: 6,
+                            height: 6,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: i <= tip.lesson ? AppColors.gold : AppColors.border,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
               _CardLink(label: 'Full rules', onTap: () => showHowToPlaySheet(context)),

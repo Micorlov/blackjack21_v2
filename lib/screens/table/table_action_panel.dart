@@ -7,7 +7,6 @@ import '../../state/game_notifier.dart';
 import '../../utils/table_seats.dart';
 import '../../widgets/tutorial_coach_card.dart';
 import 'table_betting_panel.dart';
-import 'table_chat_panel.dart';
 import 'table_insurance_panel.dart';
 import 'table_playing_panel.dart';
 import 'table_settlement_panel.dart';
@@ -30,7 +29,6 @@ class TableActionPanel extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (state.tableChatOpen) const TableChatPanel(),
           // Sits directly above whichever phase panel is active, so the advice
           // and the buttons it talks about are read as one block. Collapses to
           // nothing once the tutorial is done.

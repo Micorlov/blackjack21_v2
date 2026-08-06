@@ -33,14 +33,29 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   notification ("Maya just passed you on the hourly leaderboard"). Honors the Settings →
   leaderboard-notifications toggle. These are local notifications (app running); remote push
   needs an APNs entitlement a free personal Apple team cannot sign
-- **Daily chips claim** — +250 chips on a rolling 24-hour cooldown from your last claim, persisted
-  across launches (`shared_preferences`) so restarting the app can't re-arm it early. The lobby's
-  Daily Bonus card shows a live "Next in 23h 59m" countdown while it's on cooldown, and a scheduled
-  local notification ("Your daily chips are ready!") fires the moment it unlocks — even if the app
-  is closed. Honors the Settings → Daily reminder toggle
+- **Daily chips claim with a 7-day streak** — claiming opens a gold overlay with a D1–D7 streak
+  ladder: days 1–6 pay +250 chips, day 7 pays +1,000, and the ladder then restarts. A claim made
+  within 48 hours of the last one keeps the streak alive; later than that resets it to day 1. The
+  last claim time and streak day are persisted (`shared_preferences`) so restarting the app can't
+  re-arm the claim early or forget the streak. The lobby's Daily Bonus card shows the upcoming
+  day's reward and a live "Next in 23h 59m" countdown while on cooldown, and a scheduled local
+  notification quoting the right amount fires the moment it unlocks — even if the app is closed.
+  Honors the Settings → Daily reminder toggle
+- **Weekend Cup screen** — the lobby's Weekend Cup card now opens a real tournament screen: the
+  5,000-chip prize pool with a live countdown to the end of the week (Monday 00:00 local), your
+  standing in your group's daily points race, the prize table (2,000 / 1,200 / 800 / 200), and the
+  top of the table built from the same friends standings the leaderboard uses. Joining is
+  persisted, and "Play a Cup hand" drops you straight onto the Bronze table
+- **New-player tips screen** — a one-time "Four things to know" primer between onboarding and the
+  lobby for brand-new players (beat the dealer, 3:2 blackjack, the sweep pot, never go broke).
+  "Deal me in" continues into the coached first hands; "I've played before — skip" also turns the
+  tutorial off. Either way it never shows again (persisted)
 - **Comeback dealing** — short-stacked or on a two-loss streak, your opening hand is the best of
   3 candidate pairs from the real shoe instead of one blind draw, so sessions last longer
-- **Social table** — friends, lobby, chat panel, leaderboard, seat plates with avatars
+- **Social table** — friends, lobby, leaderboard, seat plates with avatars, and a table-chat
+  bottom sheet over the dimmed felt: named message bubbles (yours right-aligned in gold) plus
+  quick-reply chips (GG, Nice hand, Ouch, One more, Dealer luck) that post a real "You" bubble
+  and float the reaction over the table — canned replies only, so there is nothing to moderate
 - **Progress that survives a relaunch** — your bankroll, all-time stats, recent-hand history,
   live hourly/daily points, settings and shop cosmetics are written to disk after every settled
   hand and every settings change, then restored before the app publishes anything to your
@@ -48,7 +63,7 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   a finished hour's score, and the rebuy offer now appears whenever your stack falls below the
   table minimum rather than only at exactly zero
 - **Three-hand tutorial** — a new player's first three hands are coached by a card above the
-  action panel, one lesson per hand: playing a hand (bet → hit/stand → result), reading the
+  action panel ("COACH · HAND 1 OF 3" with progress dots), one lesson per hand: playing a hand (bet → hit/stand → result), reading the
   dealer's up-card and what a push is, then the bigger moves (double/split/surrender) and the
   sweep pot. The card changes with the phase, explains insurance whenever the dealer shows an
   Ace, and quotes the real minimum of whichever table you walked into. "Skip" turns it off; the
@@ -96,19 +111,22 @@ lib/
 ├── main.dart
 ├── data/          # static game data, tutorial_data (3 lessons + "How to play" guide copy)
 ├── models/        # enums, game_state, hand, playing_card, social_models, table_pot
-├── screens/       # lobby, table, friends, settings, shop, stats, onboarding
-│   └── table/     # table sub-panels (felt, betting, action, chat, settlement, …)
+├── screens/       # lobby, table, friends, settings, shop, stats, onboarding,
+│   │              #   tips (one-time new-player primer), cup (Weekend Cup tournament)
+│   └── table/     # table sub-panels (felt, betting, action, chat sheet, settlement, …)
 ├── services/      # sound_player, spoken_amount, social_service (Firestore), local_notifier,
 │                  #   notification_support (web-safe "can we notify here?" check),
-│                  #   daily_bonus_store (persists the last claim time)
+│                  #   daily_bonus_store (persists the last claim time + streak day)
 ├── state/         # game_notifier (Riverpod)
 ├── theme/         # app_colors, app_text_styles
 ├── utils/         # formatters, leaderboard, points (hourly/daily buckets), comeback,
-│                  #   daily_bonus (pure 24h-cooldown timing logic),
+│                  #   daily_bonus (pure cooldown + 7-day streak logic),
+│                  #   cup (pure Weekend Cup countdown/prizes),
 │                  #   tutorial (pure "which coaching card, if any, right now?"),
 │                  #   table_seats (pads real friends to 4 table seats with practice bots)
 └── widgets/       # shared UI (buttons, overlays, cards, nav bar, rank_strip,
-                   #   tutorial_coach_card, how_to_play_sheet, web_viewport_scaler)
+                   #   tutorial_coach_card, how_to_play_sheet, daily_bonus_dialog,
+                   #   web_viewport_scaler)
 
 tool/
 ├── play_upload.py            # uploads a signed .aab to a Play track (Android Publisher API v3)
@@ -240,6 +258,28 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-08-06 (4)
+- feat: **daily bonus streak** — claiming now opens a design-matched overlay with a D1–D7 ladder:
+  days 1–6 pay +250, day 7 pays +1,000, a claim within 48h keeps the streak, later resets it.
+  Streak day persists across launches and the reminder notification quotes the right amount
+- feat: **Weekend Cup screen** — the lobby card now opens a real tournament screen (live countdown
+  to Monday 00:00, your standing, prize table, top of the table from real group standings, "Play a
+  Cup hand" CTA); joining the Cup finally persists across launches
+- feat: **new-player tips screen** — one-time "Four things to know" primer after onboarding for
+  players with no hands played; skipping it as an experienced player also disables the tutorial
+- feat: **table chat redesigned as a bottom sheet** — dimmed felt, named bubbles with your own
+  right-aligned in gold, and design quick-replies (GG / Nice hand / Ouch / One more / Dealer luck)
+  that post a real "You" message; chat log grows to the last 6 lines
+- fix: **table felt themes actually restyle the table** — the Appearance choice (and the Shop's
+  Table Felt section) now repaints the screen background and the felt ellipse (Casino Green /
+  Deep Ocean / Ember); previously only the swatch check-mark moved. Felt picked in the Shop and
+  the avatar color picked in Settings are now persisted too
+- fix: the tutorial coach card badge reads "COACH · HAND x OF 3" with progress dots, per the design
+- test: streak logic (6 cases), reward ladder (2), and Weekend Cup timing/labels (9) are unit-tested
+  in `test/daily_bonus_test.dart` and the new `test/cup_test.dart`
+- docs: all of the above ships from the claude.ai/design "Blackjack 21 — All Screens" document
+  (screens 10–15 were the proposed additions)
 
 ### 2026-08-06 (3)
 - feat: **closed testing is live.** Google approved the submission and Closed testing — Alpha went

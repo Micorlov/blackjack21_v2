@@ -62,7 +62,12 @@ class FeltDef {
   final String label;
   final Color borderColor;
   final RadialGradient swatchGradient;
+
+  /// Background of the whole table screen behind the felt.
   final RadialGradient tableGradient;
+
+  /// The felt ellipse itself, inside the wooden rim.
+  final RadialGradient ovalGradient;
 
   const FeltDef({
     required this.id,
@@ -70,6 +75,7 @@ class FeltDef {
     required this.borderColor,
     required this.swatchGradient,
     required this.tableGradient,
+    required this.ovalGradient,
   });
 }
 
@@ -215,6 +221,9 @@ const List<CardBackDef> kCardBackDefs = [
   ),
 ];
 
+// The default entries reproduce exactly what table_screen.dart and
+// table_felt.dart used to hardcode, so a player who never touched the
+// Appearance setting sees a pixel-identical table.
 const List<FeltDef> kFeltDefs = [
   FeltDef(
     id: 'default',
@@ -222,10 +231,16 @@ const List<FeltDef> kFeltDefs = [
     borderColor: Color(0x59E8C77A),
     swatchGradient: RadialGradient(center: Alignment(-0.4, -0.4), colors: [Color(0xFF1E7D5D), Color(0xFF08201A)]),
     tableGradient: RadialGradient(
-      center: Alignment(0, -1),
+      center: Alignment(0, 0.92),
       radius: 1.3,
-      colors: [Color(0xFF1E7D5D), Color(0xFF0D3A2C), Color(0xFF08201A)],
-      stops: [0.0, 0.55, 1.0],
+      colors: [Color(0xFF123A2C), Color(0xFF0A1F18), Color(0xFF05100C)],
+      stops: [0.0, 0.45, 1.0],
+    ),
+    ovalGradient: RadialGradient(
+      center: Alignment(0, -0.48),
+      radius: 0.9,
+      colors: [Color(0xFF2A8F70), Color(0xFF166248), Color(0xFF0B3527), Color(0xFF082A20)],
+      stops: [0.0, 0.42, 0.78, 1.0],
     ),
   ),
   FeltDef(
@@ -234,10 +249,16 @@ const List<FeltDef> kFeltDefs = [
     borderColor: Color(0x59E8C77A),
     swatchGradient: RadialGradient(center: Alignment(-0.4, -0.4), colors: [Color(0xFF1D5F7D), Color(0xFF07161F)]),
     tableGradient: RadialGradient(
-      center: Alignment(0, -1),
+      center: Alignment(0, 0.92),
       radius: 1.3,
-      colors: [Color(0xFF1D5F7D), Color(0xFF0C2F3F), Color(0xFF07161F)],
-      stops: [0.0, 0.55, 1.0],
+      colors: [Color(0xFF0F3243), Color(0xFF081B25), Color(0xFF040D12)],
+      stops: [0.0, 0.45, 1.0],
+    ),
+    ovalGradient: RadialGradient(
+      center: Alignment(0, -0.48),
+      radius: 0.9,
+      colors: [Color(0xFF2A7C9F), Color(0xFF145A78), Color(0xFF0A2F42), Color(0xFF072230)],
+      stops: [0.0, 0.42, 0.78, 1.0],
     ),
   ),
   FeltDef(
@@ -246,10 +267,16 @@ const List<FeltDef> kFeltDefs = [
     borderColor: Color(0x59E8C77A),
     swatchGradient: RadialGradient(center: Alignment(-0.4, -0.4), colors: [Color(0xFF8A3A2C), Color(0xFF1F0C08)]),
     tableGradient: RadialGradient(
-      center: Alignment(0, -1),
+      center: Alignment(0, 0.92),
       radius: 1.3,
-      colors: [Color(0xFF8A3A2C), Color(0xFF4A1D16), Color(0xFF1F0C08)],
-      stops: [0.0, 0.55, 1.0],
+      colors: [Color(0xFF3A1B14), Color(0xFF1F0E09), Color(0xFF0E0503)],
+      stops: [0.0, 0.45, 1.0],
+    ),
+    ovalGradient: RadialGradient(
+      center: Alignment(0, -0.48),
+      radius: 0.9,
+      colors: [Color(0xFFB0503C), Color(0xFF7A3325), Color(0xFF401A11), Color(0xFF2A100A)],
+      stops: [0.0, 0.42, 0.78, 1.0],
     ),
   ),
 ];
@@ -261,4 +288,12 @@ const List<ShopPackDef> kShopPacks = [
   ShopPackDef(id: 'p4', amount: 15000, price: r'$12.99', badge: 'Best Value'),
 ];
 
-const List<String> kReactions = ['Nice!', 'So close', "Let's go!", 'Rough'];
+/// Quick-reply chips in the table chat, per the design's chat sheet.
+const List<String> kReactions = ['GG', 'Nice hand', 'Ouch', 'One more', 'Dealer luck'];
+
+/// How many chat bubbles the table keeps — old lines scroll off the log.
+const int kChatLogLimit = 6;
+
+/// The felt/appearance definition the given theme id selects, falling back
+/// to the first (Casino Green) for an unknown id.
+FeltDef feltById(String id) => kFeltDefs.firstWhere((f) => f.id == id, orElse: () => kFeltDefs.first);

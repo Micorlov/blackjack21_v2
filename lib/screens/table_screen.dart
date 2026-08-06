@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/game_data.dart';
 import '../state/game_notifier.dart';
 import 'table/table_action_panel.dart';
+import 'table/table_chat_panel.dart';
 import 'table/table_felt.dart';
 import 'table/table_header.dart';
 import 'table/table_phase_steps.dart';
@@ -19,16 +21,12 @@ class TableScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(gameProvider);
+    // The Appearance/Table-felt choice restyles the whole table, not just
+    // the swatch: this background plus the felt ellipse in TableFelt.
+    final felt = feltById(state.themeChoice);
 
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: RadialGradient(
-          center: Alignment(0, 0.92),
-          radius: 1.3,
-          colors: [Color(0xFF123A2C), Color(0xFF0A1F18), Color(0xFF05100C)],
-          stops: [0.0, 0.45, 1.0],
-        ),
-      ),
+      decoration: BoxDecoration(gradient: felt.tableGradient),
       child: LayoutBuilder(
         builder: (context, constraints) {
           // The bottom panel is content-sized, but its tallest variants
@@ -51,6 +49,7 @@ class TableScreen extends ConsumerWidget {
                 ],
               ),
               if (state.tableMenuOpen) const TableMenuDropdown(),
+              if (state.tableChatOpen) const TableChatSheet(),
             ],
           );
         },

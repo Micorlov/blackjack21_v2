@@ -43,6 +43,12 @@ class SavedGame {
   final List<String> claimedTiers;
   final int tutorialRoundsSeen;
   final bool tutorialDismissed;
+  final bool tipsSeen;
+  final bool tournamentJoined;
+
+  /// ARGB of the avatar swatch picked in Settings; 0 means "never picked",
+  /// which restores as the GameState default.
+  final int avatarColor;
 
   const SavedGame({
     required this.chips,
@@ -63,6 +69,9 @@ class SavedGame {
     required this.claimedTiers,
     required this.tutorialRoundsSeen,
     required this.tutorialDismissed,
+    this.tipsSeen = false,
+    this.tournamentJoined = false,
+    this.avatarColor = 0,
   });
 
   Map<String, Object?> toJson() => {
@@ -98,6 +107,9 @@ class SavedGame {
     'claimedTiers': claimedTiers,
     'tutorialRoundsSeen': tutorialRoundsSeen,
     'tutorialDismissed': tutorialDismissed,
+    'tipsSeen': tipsSeen,
+    'tournamentJoined': tournamentJoined,
+    'avatarColor': avatarColor,
   };
 
   /// Every field falls back to the [GameState] default it mirrors, so a blob
@@ -139,6 +151,11 @@ class SavedGame {
       // than skipping it — so hands played stands in for lessons seen.
       tutorialRoundsSeen: _int(json['tutorialRoundsSeen'], handsPlayed.clamp(0, kTutorialRounds)),
       tutorialDismissed: _bool(json['tutorialDismissed'], defaults.tutorialDismissed),
+      // A blob from before the tips screen existed belongs to a player who
+      // has already seen the lobby — never re-show them the primer.
+      tipsSeen: _bool(json['tipsSeen'], true),
+      tournamentJoined: _bool(json['tournamentJoined'], defaults.tournamentJoined),
+      avatarColor: _int(json['avatarColor'], 0),
     );
   }
 

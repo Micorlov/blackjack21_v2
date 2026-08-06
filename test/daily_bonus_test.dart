@@ -57,4 +57,46 @@ void main() {
       expect(dailyBonusCountdownLabel(claim, claim.add(kDailyBonusCooldown)), '');
     });
   });
+
+  group('nextDailyBonusStreakDay', () {
+    test('starts at day 1 when never claimed', () {
+      expect(nextDailyBonusStreakDay(0, null, claim), 1);
+    });
+
+    test('starts at day 1 when a stored day exists but no claim time', () {
+      expect(nextDailyBonusStreakDay(3, null, claim), 1);
+    });
+
+    test('advances to the next day when claimed inside the window', () {
+      final now = claim.add(const Duration(hours: 25));
+      expect(nextDailyBonusStreakDay(2, claim, now), 3);
+    });
+
+    test('still advances at exactly the 48-hour window edge', () {
+      final now = claim.add(kDailyBonusStreakWindow);
+      expect(nextDailyBonusStreakDay(2, claim, now), 3);
+    });
+
+    test('resets to day 1 once the window has lapsed', () {
+      final now = claim.add(kDailyBonusStreakWindow + const Duration(minutes: 1));
+      expect(nextDailyBonusStreakDay(6, claim, now), 1);
+    });
+
+    test('wraps back to day 1 after completing day 7', () {
+      final now = claim.add(const Duration(hours: 25));
+      expect(nextDailyBonusStreakDay(7, claim, now), 1);
+    });
+  });
+
+  group('dailyBonusRewardForDay', () {
+    test('days 1 through 6 pay the flat bonus', () {
+      for (var day = 1; day <= 6; day++) {
+        expect(dailyBonusRewardForDay(day), kDailyBonusChips);
+      }
+    });
+
+    test('day 7 pays the big bonus', () {
+      expect(dailyBonusRewardForDay(7), kDailyBonusDay7Chips);
+    });
+  });
 }

@@ -17,7 +17,9 @@ class RankStrip extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(gameProvider);
-    if (state.screen == AppScreen.onboarding) return const SizedBox.shrink();
+    if (state.screen == AppScreen.onboarding || state.screen == AppScreen.tips) {
+      return const SizedBox.shrink();
+    }
     final notifier = ref.read(gameProvider.notifier);
 
     final hourly = state.badgeHourly;

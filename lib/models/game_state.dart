@@ -84,6 +84,15 @@ class GameState {
   /// DailyBonusStore); null means never claimed. Readiness is derived via
   /// `isDailyBonusReady` in utils/daily_bonus.dart.
   final DateTime? lastDailyBonusClaimAt;
+
+  /// The streak day the last daily-bonus claim landed on (1..7); 0 means no
+  /// claim yet. The *next* claim's day and reward are derived from this via
+  /// `nextDailyBonusStreakDay` in utils/daily_bonus.dart.
+  final int dailyBonusStreakDay;
+
+  /// True once the "Four things to know" new-player tips screen has been
+  /// dismissed, so it is only ever shown once.
+  final bool tipsSeen;
   final String toast;
   final String reactionFloat;
   final int reactionId;
@@ -162,6 +171,8 @@ class GameState {
     this.session = const SessionSummary(),
     this.history = const [],
     this.lastDailyBonusClaimAt,
+    this.dailyBonusStreakDay = 0,
+    this.tipsSeen = false,
     this.toast = '',
     this.reactionFloat = '',
     this.reactionId = 0,
@@ -236,6 +247,8 @@ class GameState {
     SessionSummary? session,
     List<RoundResult>? history,
     Object? lastDailyBonusClaimAt = _unset,
+    int? dailyBonusStreakDay,
+    bool? tipsSeen,
     String? toast,
     String? reactionFloat,
     int? reactionId,
@@ -309,6 +322,8 @@ class GameState {
       lastDailyBonusClaimAt: identical(lastDailyBonusClaimAt, _unset)
           ? this.lastDailyBonusClaimAt
           : lastDailyBonusClaimAt as DateTime?,
+      dailyBonusStreakDay: dailyBonusStreakDay ?? this.dailyBonusStreakDay,
+      tipsSeen: tipsSeen ?? this.tipsSeen,
       toast: toast ?? this.toast,
       reactionFloat: reactionFloat ?? this.reactionFloat,
       reactionId: reactionId ?? this.reactionId,

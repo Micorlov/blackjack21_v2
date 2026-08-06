@@ -103,6 +103,7 @@ class TableFelt extends ConsumerWidget {
     final state = ref.watch(gameProvider);
     final midPot = TableCalc.midRoundPot(state);
     final cardBack = kCardBackDefs.firstWhere((c) => c.id == state.cardBackSkin, orElse: () => kCardBackDefs.first);
+    final felt = feltById(state.themeChoice);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -135,7 +136,7 @@ class TableFelt extends ConsumerWidget {
                   height: canvas.height,
                   child: Stack(
                     children: [
-                      _feltOval(),
+                      _feltOval(felt),
                       _topVignette(),
                       _chipTray(),
                       _discardPile(),
@@ -210,7 +211,7 @@ class TableFelt extends ConsumerWidget {
   /// `transform-origin:50% 0%` on the ellipse itself, which is what the
   /// matrix below reproduces — a flat ellipse reads as a green pill instead
   /// of a table seen from a player's seat.
-  Widget _feltOval() {
+  Widget _feltOval(FeltDef felt) {
     return Positioned(
       left: -58,
       right: -58,
@@ -245,12 +246,8 @@ class TableFelt extends ConsumerWidget {
             child: DecoratedBox(
               decoration: ShapeDecoration(
                 shape: OvalBorder(side: BorderSide(color: AppColors.gold.withValues(alpha: 0.16), width: 2)),
-                gradient: const RadialGradient(
-                  center: Alignment(0, -0.48),
-                  radius: 0.9,
-                  colors: [Color(0xFF2A8F70), Color(0xFF166248), Color(0xFF0B3527), Color(0xFF082A20)],
-                  stops: [0.0, 0.42, 0.78, 1.0],
-                ),
+                // The player's chosen felt (Casino Green / Deep Ocean / Ember).
+                gradient: felt.ovalGradient,
               ),
               // Stands in for the design's `inset 0 26px 60px` felt shadow.
               child: DecoratedBox(

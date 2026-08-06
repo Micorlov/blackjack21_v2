@@ -11,10 +11,17 @@ void main() {
     expect(find.text('Play as Guest'), findsOneWidget);
   });
 
-  testWidgets('playing as guest navigates to the lobby', (WidgetTester tester) async {
+  testWidgets('playing as guest shows the new-player tips, then the lobby', (WidgetTester tester) async {
     await tester.pumpWidget(const ProviderScope(child: BlackjackApp()));
 
     await tester.tap(find.text('Play as Guest'));
+    await tester.pumpAndSettle();
+
+    // A brand-new player gets the one-time "Four things to know" primer.
+    expect(find.text('Four things to know'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Deal me in'));
+    await tester.tap(find.text('Deal me in'));
     await tester.pumpAndSettle();
 
     expect(find.text('Welcome back'), findsOneWidget);
@@ -28,6 +35,9 @@ void main() {
   testWidgets('every bottom nav destination renders without throwing', (WidgetTester tester) async {
     await tester.pumpWidget(const ProviderScope(child: BlackjackApp()));
     await tester.tap(find.text('Play as Guest'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Deal me in'));
+    await tester.tap(find.text('Deal me in'));
     await tester.pumpAndSettle();
 
     for (final label in ['Stats', 'Friends', 'Shop', 'Settings', 'Lobby']) {

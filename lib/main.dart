@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import 'firebase_options.dart';
 import 'models/enums.dart';
+import 'screens/cup_screen.dart';
 import 'screens/friends_screen.dart';
 import 'screens/lobby_screen.dart';
 import 'screens/onboarding_screen.dart';
@@ -12,6 +13,7 @@ import 'screens/settings_screen.dart';
 import 'screens/shop_screen.dart';
 import 'screens/stats_screen.dart';
 import 'screens/table_screen.dart';
+import 'screens/tips_screen.dart';
 import 'state/game_notifier.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_text_styles.dart';
@@ -73,6 +75,10 @@ class AppShell extends ConsumerWidget {
     switch (screen) {
       case AppScreen.onboarding:
         return const OnboardingScreen();
+      case AppScreen.tips:
+        return const TipsScreen();
+      case AppScreen.cup:
+        return const CupScreen();
       case AppScreen.lobby:
         return const LobbyScreen();
       case AppScreen.table:
@@ -93,7 +99,10 @@ class AppShell extends ConsumerWidget {
     final state = ref.watch(gameProvider);
     final notifier = ref.read(gameProvider.notifier);
     final showNav =
-        state.screen != AppScreen.table && state.screen != AppScreen.onboarding;
+        state.screen != AppScreen.table &&
+        state.screen != AppScreen.onboarding &&
+        state.screen != AppScreen.tips &&
+        state.screen != AppScreen.cup;
 
     void onNavSelect(AppScreen screen) {
       switch (screen) {
@@ -108,6 +117,8 @@ class AppShell extends ConsumerWidget {
         case AppScreen.settings:
           notifier.goSettings();
         case AppScreen.onboarding:
+        case AppScreen.tips:
+        case AppScreen.cup:
         case AppScreen.table:
           break;
       }
@@ -116,7 +127,7 @@ class AppShell extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: SafeArea(
-        top: state.screen != AppScreen.onboarding,
+        top: state.screen != AppScreen.onboarding && state.screen != AppScreen.tips,
         bottom: false,
         child: Stack(
           children: [

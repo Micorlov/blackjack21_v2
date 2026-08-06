@@ -1,5 +1,5 @@
 /// Enum types mirroring string-based state fields in the JS design spec.
-enum AppScreen { onboarding, lobby, table, stats, friends, shop, settings }
+enum AppScreen { onboarding, tips, lobby, table, stats, friends, shop, settings, cup }
 
 enum RoundPhase { betting, insurance, npcs, playing, dealer, settlement }
 

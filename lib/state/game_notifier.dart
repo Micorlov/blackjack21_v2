@@ -267,6 +267,9 @@ class GameNotifier extends StateNotifier<GameState> {
       claimedTiers: saved.claimedTiers,
       tutorialRoundsSeen: saved.tutorialRoundsSeen,
       tutorialDismissed: saved.tutorialDismissed,
+      tipsSeen: saved.tipsSeen,
+      tournamentJoined: saved.tournamentJoined,
+      avatarColor: saved.avatarColor == 0 ? null : Color(saved.avatarColor),
     );
   }
 
@@ -289,6 +292,9 @@ class GameNotifier extends StateNotifier<GameState> {
     claimedTiers: state.claimedTiers,
     tutorialRoundsSeen: state.tutorialRoundsSeen,
     tutorialDismissed: state.tutorialDismissed,
+    tipsSeen: state.tipsSeen,
+    tournamentJoined: state.tournamentJoined,
+    avatarColor: state.avatarColor.toARGB32(),
   );
 
   /// Coalesces the writes a fast player generates — settling a hand, flipping
@@ -562,7 +568,7 @@ class GameNotifier extends StateNotifier<GameState> {
         signedIn: true,
         displayName: user?.displayName ?? account.displayName ?? 'Player',
         photoUrl: user?.photoURL ?? account.photoUrl,
-        screen: AppScreen.lobby,
+        screen: _postOnboardingScreen,
       );
       _reportScore();
     } on FirebaseAuthException {
@@ -571,7 +577,25 @@ class GameNotifier extends StateNotifier<GameState> {
   }
 
   void playGuest() =>
-      state = state.copyWith(signedIn: false, displayName: 'Guest', photoUrl: null, screen: AppScreen.lobby);
+      state = state.copyWith(signedIn: false, displayName: 'Guest', photoUrl: null, screen: _postOnboardingScreen);
+
+  /// Where leaving onboarding lands: brand-new players get the one-time
+  /// "Four things to know" primer first; anyone with hands on the clock (or
+  /// who already saw it) goes straight to the lobby.
+  AppScreen get _postOnboardingScreen =>
+      !state.tipsSeen && state.stats.handsPlayed == 0 ? AppScreen.tips : AppScreen.lobby;
+
+  /// Both exits of the tips screen. "I've played before — skip" also turns
+  /// the three-hand tutorial off, since the player just said they know the
+  /// game; "Deal me in" leaves it on.
+  void finishTips({bool skipTutorial = false}) {
+    state = state.copyWith(
+      tipsSeen: true,
+      screen: AppScreen.lobby,
+      tutorialDismissed: skipTutorial ? true : state.tutorialDismissed,
+    );
+    _scheduleSave();
+  }
 
   Future<void> signOutUser() async {
     await Future.wait([GoogleSignIn.instance.signOut(), FirebaseAuth.instance.signOut()]);
@@ -698,6 +722,21 @@ class GameNotifier extends StateNotifier<GameState> {
     });
   }
 
+  /// A quick-reply chip in the table chat: posts a real "You" bubble into the
+  /// chat log (capped like the NPC lines) and floats the reaction over the
+  /// table. Canned-only on purpose — no free text, no moderation surface.
+  void sendChatMessage(String text) {
+    final appended = [
+      ...state.chatMessages,
+      ChatMessage(name: 'You', text: text, id: DateTime.now().millisecondsSinceEpoch),
+    ];
+    state = state.copyWith(
+      chatMessages: appended.length > kChatLogLimit ? appended.sublist(appended.length - kChatLogLimit) : appended,
+    );
+    sendReaction(text);
+    _hapticSelection();
+  }
+
   // ---------------------------------------------------------------------
   // Daily bonus: once-per-24h chips claim + scheduled reminder
   // ---------------------------------------------------------------------
@@ -707,8 +746,9 @@ class GameNotifier extends StateNotifier<GameState> {
   /// this also heals a reminder lost to a reinstall.
   Future<void> _restoreDailyBonus() async {
     final last = await _bonusStore.loadLastClaim();
+    final streakDay = await _bonusStore.loadStreakDay();
     if (!mounted || last == null) return;
-    state = state.copyWith(lastDailyBonusClaimAt: last);
+    state = state.copyWith(lastDailyBonusClaimAt: last, dailyBonusStreakDay: streakDay);
     await _syncDailyBonusReminder();
   }
 
@@ -721,20 +761,30 @@ class GameNotifier extends StateNotifier<GameState> {
       await _notifs.cancelDailyBonusReminder();
       return;
     }
+    // Quote what a claim at the moment of unlock would actually pay — day 7
+    // of a live streak is worth 1,000, not the flat 250.
+    final unlockAt = last.add(kDailyBonusCooldown);
+    final dayAtUnlock = nextDailyBonusStreakDay(state.dailyBonusStreakDay, last, unlockAt);
     await _notifs.scheduleDailyBonusReminder(
-      after: last.add(kDailyBonusCooldown).difference(now),
-      chips: kDailyBonusChips,
+      after: unlockAt.difference(now),
+      chips: dailyBonusRewardForDay(dayAtUnlock),
     );
   }
 
   void claimDailyBonus() {
     final now = DateTime.now();
     if (!isDailyBonusReady(state.lastDailyBonusClaimAt, now)) return;
-    state = state.copyWith(chips: state.chips + kDailyBonusChips, lastDailyBonusClaimAt: now);
-    unawaited(_bonusStore.saveLastClaim(now));
+    final day = nextDailyBonusStreakDay(state.dailyBonusStreakDay, state.lastDailyBonusClaimAt, now);
+    final reward = dailyBonusRewardForDay(day);
+    state = state.copyWith(
+      chips: state.chips + reward,
+      lastDailyBonusClaimAt: now,
+      dailyBonusStreakDay: day,
+    );
+    unawaited(_bonusStore.saveClaim(now, day));
     unawaited(_syncDailyBonusReminder());
     _scheduleSave();
-    _showToast('+$kDailyBonusChips chips claimed!');
+    _showToast('+$reward chips claimed — day $day of your streak!');
     _playSfx(GameSfx.win);
     _hapticMedium();
   }
@@ -1210,7 +1260,9 @@ class GameNotifier extends StateNotifier<GameState> {
       messageType: MessageType.none,
       holeRevealed: false,
       actingSeat: null,
-      chatMessages: newMessages.length > 3 ? newMessages.sublist(newMessages.length - 3) : newMessages,
+      chatMessages: newMessages.length > kChatLogLimit
+          ? newMessages.sublist(newMessages.length - kChatLogLimit)
+          : newMessages,
       npcSeats: _rollNpcSeats(state.stake?.min ?? 25),
       sweepAmount: 0,
       roundNet: 0,
@@ -1271,8 +1323,12 @@ class GameNotifier extends StateNotifier<GameState> {
   void joinTournament() {
     if (state.tournamentJoined) return;
     state = state.copyWith(tournamentJoined: true);
+    _scheduleSave();
     _showToast("You're in! Good luck in the Weekend Cup.");
   }
+
+  /// Lobby Weekend Cup card → the tournament screen.
+  void openCup() => state = state.copyWith(screen: AppScreen.cup);
 
   void claimTier(String id, int need, int reward) {
     if (state.referralsCount < need || state.claimedTiers.contains(id)) return;
@@ -1330,12 +1386,18 @@ class GameNotifier extends StateNotifier<GameState> {
   // Shop / cosmetics / settings
   // ---------------------------------------------------------------------
 
-  void selectAvatarColor(Color color) => state = state.copyWith(avatarColor: color);
+  void selectAvatarColor(Color color) {
+    state = state.copyWith(avatarColor: color);
+    _scheduleSave();
+  }
   void selectCardBack(String id) {
     state = state.copyWith(cardBackSkin: id);
     _scheduleSave();
   }
-  void selectFelt(String id) => state = state.copyWith(themeChoice: id);
+  void selectFelt(String id) {
+    state = state.copyWith(themeChoice: id);
+    _scheduleSave();
+  }
   void setAvatarFrame(bool gold) {
     state = state.copyWith(avatarFrameGold: gold);
     _scheduleSave();
