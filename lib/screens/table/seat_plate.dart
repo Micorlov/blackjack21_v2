@@ -122,7 +122,13 @@ class SeatPlateData {
 class SeatPlate extends StatelessWidget {
   final SeatPlateData data;
 
-  const SeatPlate({super.key, required this.data});
+  /// True only in the betting phase, when no seat on the felt has cards:
+  /// the empty card row is dropped so the felt's compact layout can pull the
+  /// rows together and render everything larger. Mid-round the row keeps its
+  /// space even between cards, so plates never jump while a hand is live.
+  final bool compact;
+
+  const SeatPlate({super.key, required this.data, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
@@ -130,12 +136,14 @@ class SeatPlate extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // The card row keeps its space even with no cards to show. Dropping it
-        // between hands would let the plate ride up to the top of the seat's
-        // slot and slide under the dealer's cards during settlement, and would
-        // make every plate jump as a round starts and ends.
-        SizedBox(height: _kCardHeight, child: data.showCards ? _cardsRow() : null),
-        const SizedBox(height: 4),
+        if (!compact) ...[
+          // The card row keeps its space even with no cards to show. Dropping
+          // it mid-round would let the plate ride up to the top of the seat's
+          // slot and slide under the dealer's cards during settlement, and
+          // would make every plate jump while a hand is being played.
+          SizedBox(height: _kCardHeight, child: data.showCards ? _cardsRow() : null),
+          const SizedBox(height: 4),
+        ],
         _plateRow(),
       ],
     );

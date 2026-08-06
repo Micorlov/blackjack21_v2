@@ -259,6 +259,16 @@ emulator testing.
 
 ## Changelog
 
+### 2026-08-06 (5)
+- fix: **the betting-phase felt renders ~30% larger.** Before the deal nothing on the felt has
+  cards, yet every seat slot still reserved its empty 38px card row and the rows sat at their
+  mid-round positions — so the whole canvas asked for 490px of height, got ~300 on a phone, and
+  scaled everything down to ~0.62x (the "plates are too small" report). The betting phase now uses
+  a compact layout: card rows dropped, seat rows pulled up under the dealer, canvas height 372px.
+  The spread layout returns at deal time, under the dealing animation, and holds steady for the
+  whole hand so plates never jump mid-round. This is the "reduce the felt's required height" lever
+  the 2026-08-03 (7) known-limitation note called for, applied to the phase where players linger
+
 ### 2026-08-06 (4)
 - feat: **daily bonus streak** — claiming now opens a design-matched overlay with a D1–D7 ladder:
   days 1–6 pay +250, day 7 pays +1,000, a claim within 48h keeps the streak, later resets it.

@@ -46,14 +46,31 @@ const List<_SeatPos> _kSeatPositions = [
   _SeatPos(right: 0, top: 262, width: 196, originLeft: false),
 ];
 
+/// Betting-phase seat slots: no seat on the felt has cards yet, so the empty
+/// 38px card rows are dropped and the rows pull up toward the dealer. The
+/// point is not tidiness — a lower canvas height raises the scale the whole
+/// felt renders at, which is what makes the plates readable on a phone.
+const List<_SeatPos> _kSeatPositionsCompact = [
+  _SeatPos(left: 0, top: 116, width: 196),
+  _SeatPos(right: 0, top: 116, width: 196, originLeft: false),
+  _SeatPos(left: 0, top: 182, width: 196),
+  _SeatPos(right: 0, top: 182, width: 196, originLeft: false),
+];
+
 /// Height of one seat slot: a card row (38) over a name plate (~50), plus a
 /// few pixels of slack.
 const double _kSeatHeight = 92;
+
+/// A compact (betting) slot is just the name plate plus slack.
+const double _kSeatHeightCompact = 54;
 
 /// Vertical space the seat plates own, measured from the top of the felt
 /// canvas: the lower pair sits at y=262 and is [_kSeatHeight] tall, plus a
 /// breathing gap. The hero's hand is never allowed to grow past this line.
 const double _kSeatsBottom = 362;
+
+/// Same line in the compact betting layout: 182 + 54 + 8 of breathing room.
+const double _kSeatsBottomCompact = 244;
 
 /// Room the hero's own hand block wants below [_kSeatsBottom]: a card row
 /// (84) over the bet circle (70) over the name plate (~52), plus the gaps
@@ -94,9 +111,19 @@ class TableFelt extends ConsumerWidget {
   /// block has no cards yet, so it only needs [_kHeroMinHeightNoCards].
   static double _requiredHeight(GameState state) {
     if (state.phase == RoundPhase.settlement) return _kSeatsBottom;
+    // Betting: nothing on the felt has cards, so the compact layout applies
+    // and the canvas asks for far less height (372 vs 490) — the same screen
+    // then renders the whole felt ~30% larger.
+    if (_isCompact(state)) return _kSeatsBottomCompact + _kHeroMinHeightNoCards;
     final hasCards = state.hands.any((h) => h.cards.isNotEmpty);
     return _kSeatsBottom + (hasCards ? _kHeroMinHeight : _kHeroMinHeightNoCards);
   }
+
+  /// The compact layout is exactly the betting phase: no dealer cards, no
+  /// NPC card rows, no hero fan. From the first deal onward the spread
+  /// layout holds steady so plates never jump mid-hand; the shift back
+  /// happens at deal time, under the dealing animation.
+  static bool _isCompact(GameState state) => state.phase == RoundPhase.betting;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -143,7 +170,7 @@ class TableFelt extends ConsumerWidget {
                       DealerArea(state: state, midPot: midPot, cardBack: cardBack),
                       if (kShowFriendsAtTable) ..._seatPlates(state),
                       if (state.phase != RoundPhase.settlement)
-                        HeroHandArea(state: state, top: _kSeatsBottom),
+                        HeroHandArea(state: state, top: _isCompact(state) ? _kSeatsBottomCompact : _kSeatsBottom),
                     ],
                   ),
                 ),
@@ -157,6 +184,7 @@ class TableFelt extends ConsumerWidget {
 
   List<Widget> _seatPlates(GameState state) {
     final widgets = <Widget>[];
+    final compact = _isCompact(state);
     final seats = tableSeats(state);
     final count = math.min(4, seats.length);
     for (var i = 0; i < count; i++) {
@@ -177,7 +205,7 @@ class TableFelt extends ConsumerWidget {
         sweepTotalWin: state.sweepInfo?.totalWin ?? 0,
         hourly: state.badgeHourly,
       );
-      final pos = _kSeatPositions[i];
+      final pos = compact ? _kSeatPositionsCompact[i] : _kSeatPositions[i];
       final alignment = pos.originLeft ? Alignment.topLeft : Alignment.topRight;
       widgets.add(
         Positioned(
@@ -188,7 +216,7 @@ class TableFelt extends ConsumerWidget {
           // Every seat gets exactly its design slot. Content that runs long
           // (a seven-figure stack, a four-card hand) shrinks inside the slot
           // instead of growing down into the seat row below it.
-          height: _kSeatHeight,
+          height: compact ? _kSeatHeightCompact : _kSeatHeight,
           // Anchored at the top edge so an over-long plate shrinks upward,
           // away from the seat row directly below it.
           child: FittedBox(
@@ -196,7 +224,7 @@ class TableFelt extends ConsumerWidget {
             alignment: alignment,
             child: SizedBox(
               width: pos.width,
-              child: SeatPlate(data: data),
+              child: SeatPlate(data: data, compact: compact),
             ),
           ),
         ),
