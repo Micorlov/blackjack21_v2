@@ -241,8 +241,15 @@ emulator testing.
 
 ## Changelog
 
+### 2026-08-06 (3)
+- feat: **closed testing is live.** Google approved the submission and Closed testing — Alpha went
+  **Active** at 1:19 AM with 1.0.0 (1) "available to selected testers" in 177 countries. Testers
+  opt in at `play.google.com/apps/testing/com.micorlov.blackjack21_v2`, then install from
+  `play.google.com/store/apps/details?id=com.micorlov.blackjack21_v2`. The 14-day production clock
+  does not start until 12 of them have actually opted in — invited is not opted in.
+
 ### 2026-08-06 (2)
-- feat: **Blackjack 21 is submitted to Google Play** — 16 changes are in review. The store listing is
+- feat: **Blackjack 21 was submitted to Google Play** — 16 changes sent for review. The store listing is
   complete (category Card, contact email and website, short and full description, 512px icon,
   1024×500 feature graphic, four phone screenshots), internal testing has a tester list, and closed
   testing — Alpha targets 176 countries plus rest-of-world with all four tester lists (113 addresses)
