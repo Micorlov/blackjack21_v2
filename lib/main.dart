@@ -36,7 +36,7 @@ class BlackjackApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Blackjack 21',
+      title: '21 Sweet Pot',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,

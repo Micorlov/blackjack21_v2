@@ -89,7 +89,7 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   Firebase account behind it, so it's mobile/desktop only there)
 - **Branded link preview** — sharing the web URL (WhatsApp, iMessage, Facebook, etc.) shows a
   custom casino-themed card: an Ace of Spades and King of Hearts fanned on a felt table, the
-  "Blackjack 21" title, and a real description, instead of the generic Flutter placeholder
+  "21 Sweet Pot" title, and a real description, instead of the generic Flutter placeholder
 
 ## Getting Started
 
@@ -258,6 +258,18 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-08-06 (6)
+- feat: **renamed the app to "21 Sweet Pot"** (was "Blackjack 21" / "Blackjack21 V2"). Updated the
+  Android launcher label, iOS `CFBundleDisplayName`, the in-app title/onboarding logo text, the
+  WhatsApp invite copy, the settings notification-preview strings, the web `<title>`/PWA
+  manifest/Open Graph & Twitter card metadata, and the privacy-policy page. Left the package id
+  (`com.micorlov.blackjack21_v2`), the Firebase project, and the `blackjack21-v2.web.app` hosting
+  domain unchanged — those are internal identifiers, not the display name, and renaming them would
+  mean standing up a new Play Store listing from scratch
+- chore: bumped the app to **1.1.0 (2)** and shipped it to Google Play's internal testing track —
+  the first release since 1.0.0 (1) to include the All-Screens design doc work, the felt-sizing
+  fix, and this rename
 
 ### 2026-08-06 (5)
 - fix: **the betting-phase felt renders ~30% larger.** Before the deal nothing on the felt has

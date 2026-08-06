@@ -472,10 +472,10 @@ class GameNotifier extends StateNotifier<GameState> {
     _reportScore();
 
     final text = Uri.encodeComponent(
-      '🃏 Come play Blackjack 21 with me!\n'
+      '🃏 Come play 21 Sweet Pot with me!\n'
       'Join my friends table and try to beat my hourly score.\n\n'
       'Group code: $code\n\n'
-      'Open Blackjack 21 → Friends → Join a friends group → enter $code',
+      'Open 21 Sweet Pot → Friends → Join a friends group → enter $code',
     );
     final opened = await _openExternal(Uri.parse('https://wa.me/?text=$text'));
     if (!opened) _showToast('Could not open WhatsApp');

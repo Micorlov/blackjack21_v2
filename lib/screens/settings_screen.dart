@@ -431,7 +431,7 @@ class _ExampleAlerts extends StatelessWidget {
             child: const Icon(Icons.trending_up, size: 15, color: AppColors.gold),
           ),
           title: '3-win streak! Keep it up',
-          subtitle: 'Blackjack 21 · now',
+          subtitle: '21 Sweet Pot · now',
         ),
         const SizedBox(height: 8),
         _AlertPreviewCard(
@@ -446,7 +446,7 @@ class _ExampleAlerts extends StatelessWidget {
             ),
           ),
           title: 'Maya T. is online',
-          subtitle: 'Blackjack 21 · 2m ago',
+          subtitle: '21 Sweet Pot · 2m ago',
         ),
       ],
     );
