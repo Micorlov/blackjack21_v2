@@ -53,6 +53,14 @@ Hebrew input is normal — it is never a request to switch reply language.
 
 Doc-only changes (no code touched) skip step 1 and say so.
 
+## Android Test Distribution
+
+Step 1 above is iOS-only (Michael's own phone). Android testers are separate: they get builds
+on demand via Firebase App Distribution, **not** automatically after every change — run
+`./scripts/distribute_android.sh` when there's something worth sending them. See README →
+Distribution for the one-time tester-group setup. This does not replace step 1; both apply when
+a change ships to both platforms.
+
 ## Documentation Rule (MANDATORY)
 
 **Every future update to this project MUST update the Markdown docs in the same change.**

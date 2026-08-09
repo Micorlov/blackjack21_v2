@@ -188,7 +188,41 @@ flutter test integration_test/table_shot_test.dart -d <device-id>
 # while it holds: xcrun simctl io <device-id> screenshot shot.png
 ```
 
+## Distribution
+
+Android test builds go to friends via Firebase App Distribution instead of sideloaded APKs.
+One-time setup (Firebase console or CLI, not scripted):
+
+```bash
+firebase login
+firebase appdistribution:group:create "Testers" testers
+# then add tester emails to the "testers" group in the Firebase console:
+# Project blackjack21-v2 -> App Distribution -> Testers & groups
+```
+
+To ship a build:
+
+```bash
+./scripts/distribute_android.sh
+```
+
+This runs `flutter build apk --release` (signed via `android/key.properties` when present,
+otherwise a debug-signed fallback) and uploads it to the `testers` group with the Firebase app
+id from `firebase.json`, via the `firebase` CLI if installed or `npx firebase-tools` otherwise.
+
+iOS has no equivalent yet — Firebase App Distribution's iOS ad-hoc signing needs a paid Apple
+Developer account, same blocker as TestFlight (see `FEATURE_PLAN.md`). Michael's own iPhone
+still gets builds via the manual `devicectl` install in `CLAUDE.md`.
+
 ## Changelog
+
+### 2026-08-09
+- feat: added Firebase App Distribution for Android test builds — `scripts/distribute_android.sh`
+  builds a release APK and uploads it to a Firebase App Distribution tester group via the
+  `firebase` CLI, so friends can install test builds without a sideloaded APK. Requires a
+  one-time `testers` group created in the Firebase console (documented in the new Distribution
+  section below); iOS stays on the existing manual `devicectl` install since ad-hoc signing for
+  App Distribution needs a paid Apple Developer account, same as TestFlight
 
 ### 2026-08-04
 - feat: set up the Android build for Google Play submission — branded the app icon and label
