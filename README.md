@@ -10,7 +10,9 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
 - **Blackjack table** — multi-seat felt with dealer area, hero hand, betting, insurance,
   splits/doubles, and settlement panels
 - **"Closest to 21" sweep pot** — seats that bust or lose to the dealer forfeit their bets to
-  the best surviving hand; every settled hand names who took the pot, or says there was none
+  the best surviving hand; every settled hand names who took the pot, or says there was none.
+  The pill above the dealer only ever quotes chips that have actually been forfeited — while
+  every seat is still in it reads `NO SWEEP POT`, with no figure and no call-out
 - **Enforced table limits** — each table's posted `$min – $max` is a real rule: the betting tray
   only offers chips a table can legally take (no $1,000 chip at a $500 table), a chip that would
   push the bet past the maximum is refused, and DEAL stays locked until the bet reaches the minimum
@@ -81,11 +83,16 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   "Player wins" or "Player lost". A push gets the tone only, and taking the pot is followed
   by a drum flourish
 - **Spoken pot** — once every opponent seat has played and the figure has stopped moving, the
-  dealer pill is read aloud: "Sweep pot, three hundred seventy five dollars"
+  dealer pill is read aloud: "Sweep pot, three hundred seventy five dollars". A hand where no
+  seat has forfeited a bet has no pot to call, so nothing is said
 - **Hand-total circle** — your live card total toward 21 (the same number "Soft 19"/"Hard 17"
   already names) shows in its own circle next to the bet circle, gold-ringed normally, red when
-  busted, and is spoken aloud right after the opening deal and again after every hit, double, or
-  split card
+  busted, and is read aloud as "You have [total]" right after the opening deal and again after
+  every hit, double, or split card
+- **Voice toggle** — every spoken call-out above (hand totals, results, the sweep pot, and the
+  NPC "Stand"/"Bust" lines) can be switched off without silencing the tones, from the onboarding
+  screen before the first hand and from Settings → Sound & haptics afterwards. It sits under
+  "Sound effects", so muting sound mutes the voice too and the Settings row dims while it is off
 - **Haptics** — selection/light/medium/heavy impact and vibrate feedback, toggleable in settings,
   including a tap for each NPC seat's stand/bust
 - **Web version** — runs in the browser at https://blackjack21-v2.web.app, auto-deployed by
@@ -204,7 +211,7 @@ under `flutter: assets:` in `pubspec.yaml` — a new file in the folder needs no
 | NPC voice | `npc_stand.wav`, `npc_bust.wav` | An opponent seat standing or busting |
 | Result voice | `player_win.wav`, `player_lose.wav`, `big_win.wav`, `player_pot.wav` | Your settled hand, 700ms after its tone |
 | Celebration | `pot_celebration.wav` | After the pot call-out — a synthesized drum roll, downbeat and major triad |
-| Number words | `num/*.wav` — 0-19, the tens, `hundred`, `thousand`, `dollars`, `sweep_pot` | Stitched into the spoken pot figure |
+| Number words | `num/*.wav` — 0-19, the tens, `hundred`, `thousand`, `dollars`, `sweep_pot`, `you_have` | Stitched into the spoken pot figure and hand total |
 
 `assets/sfx/num/` needs its own `pubspec.yaml` entry: Flutter's asset folders are **not**
 recursive, so a nested folder left out of the manifest is silently missing at runtime.
@@ -299,6 +306,63 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-08-15 (12)
+- chore: **published the pending tester-list change, which is why Testers Community reported the
+  app was unreachable.** Their support mail said their users could not access 21 Sweet Pot. The
+  cause was on our side and had nothing to do with countries or the release: the two Closed
+  testing – Alpha tester edits from [2026-08-15 (3)](#2026-08-15-3) ("Add 1 email list: Testers
+  Community", "Remove email list") had cleared Google's review but were still sitting in
+  Publishing overview under **Changes ready to publish**. Managed publishing is on, so the track
+  was still serving the tester configuration published on **August 8** — the 135 community
+  addresses were never live, and the console showed **Installed audience: 0**. Clicked **Publish
+  2 changes**; the queue is now empty and the app reads *Last published on August 15, 2026*.
+  Changes reach Google Play within about an hour. The track itself was never the problem: Active,
+  1.1.0 (2) "available to selected testers", 177 countries / regions.
+- note: the track attaches testers via **Email lists** (one list, "Testers Community", 135 users),
+  not via **Google Groups**. Testers Community's mail flags the email-list route as a common
+  setup mistake, because a scraped CSV snapshot never picks up members who join their pool later.
+  Switching is a separate change — Play Console treats email lists and Google Groups as mutually
+  exclusive options, so selecting Groups drops the 135-address list and needs its own review and
+  publish cycle.
+
+### 2026-08-15 (11)
+- fix: **the table no longer promises a sweep pot that does not exist.** With every opponent
+  seat still in — all four standing, the dealer's hole card down, nothing forfeited — the pill
+  above the dealer used to read `TABLE POT $275` (every chip on the felt, including your own
+  bet) and the call-out said "Sweep pot, two hundred seventy five dollars", naming money no
+  one could win. `TablePot` now only ever counts forfeited bets: the pill reads `NO SWEEP POT`
+  with no figure until a seat busts or loses to a revealed dealer hand, then switches to
+  `SWEEP POT $x`, and the call-out stays silent until there is a pot to call. Settlement is
+  unchanged (`YOU TAKE`/`JORDAN TAKES`/`DEALER TAKES`/`NO SWEEP`).
+- test: `pot_outcome_test.dart` covers the mid-round pill and the call-out gate in both states
+
+### 2026-08-15 (10)
+- feat: **the spoken call-outs can now be switched off.** A "Voice call-outs" toggle appears in
+  two places: on the onboarding screen, as a pill under the sign-in buttons, so a player can
+  silence the table before the first hand instead of hearing it once and then hunting for the
+  setting; and in Settings → Sound & haptics, with a sublabel naming what it covers. It gates
+  every spoken clip — hand totals, settlement results, the sweep-pot figure, and the NPC
+  "Stand"/"Bust" lines — while leaving the tones alone. The switch sits under "Sound effects"
+  (voice needs the same output), so the Settings row greys out and stops taking taps while
+  sound is off. Turning it back on answers in the voice itself, "You have twenty one". The
+  sweep drum flourish, previously timed to follow the pot call-out, now follows the settlement
+  tone directly when voice is off rather than landing after a stretch of silence.
+- feat: `GameState.voiceOn` and `SavedGame.voiceOn` persist the choice in the `gameStateV1`
+  blob. Schema version is unchanged: a save written before this toggle existed has no `voiceOn`
+  key and restores as on, which is what that player has been hearing all along.
+- refactor: `settings_screen.dart`'s toggle rows moved into a `_ToggleRow` widget with optional
+  `sublabel` and `enabled`, so a row can explain itself and dim when the switch it depends on
+  is off.
+- test: `test/onboarding_screen_test.dart` covers the new toggle's default and its flip;
+  `test/game_store_test.dart` covers the round-trip and the missing-key default.
+
+### 2026-08-15 (9)
+- feat: **the hand-total circle now says "You have [total]" instead of the bare number.**
+  `tool/gen_voice.py` gained a `num/you_have.wav` clip ("You have", Kokoro `am_michael`, 0.64s,
+  tail 0.5%) and an `--only` flag so a single clip can be regenerated without re-cutting the
+  other 37; `_announceHandTotal` in `state/game_notifier.dart` now prepends `'you_have'` to the
+  spoken number words.
 
 ### 2026-08-15 (8)
 - fix: **no screen runs off the edge any more.** A whole-app layout sweep found five places
