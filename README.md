@@ -259,6 +259,15 @@ emulator testing.
 
 ## Changelog
 
+### 2026-08-15 (3)
+- chore: **added the Testers Community tester pool to the Closed testing – Alpha track.** Created a
+  developer-account email list named "Testers Community" holding the 135 addresses from
+  `https://www.testerscommunity.com/testers-emails.csv`, ticked it on the track's Testers tab, and
+  sent the change to Google for review. The track's country targeting already covered all 177
+  available countries/regions, so no change was needed there. Managed publishing is on, so once
+  Google approves, the change still has to be published manually from Publishing overview before
+  testers can install the app — until then the Play Store shows them "Item not found".
+
 ### 2026-08-15 (2)
 - fix: **Google Sign-In failed on release builds (`DEVELOPER_ERROR`).** The Firebase Android app
   only had the debug keystore's SHA-1 registered, so any build signed with the real upload keystore
