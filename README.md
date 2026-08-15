@@ -259,6 +259,18 @@ emulator testing.
 
 ## Changelog
 
+### 2026-08-15 (4)
+- chore: **submitted the app to Testers Community, starting the 14-day closed-testing clock.** Filed
+  it as "21 Sweet Pot" on the Starter plan (15 testers, 1 of 3 credits spent) with the opt-in link
+  `https://play.google.com/apps/testing/com.micorlov.blackjack21_v2`, the `play-assets/icon-512.png`
+  icon, and a tester note that no login is needed because guest play works. Their dashboard now
+  tracks it as Day 0 / 16. Testers opt in within 6 hours, so the Play Console tester-list change
+  ([2026-08-15 (3)](#2026-08-15-3)) has to clear Google's review *and* be published before then, or
+  early testers hit "Item not found".
+- note: the iOS app icon (`ios/Runner/Assets.xcassets/AppIcon.appiconset/`) is still the stock
+  Flutter logo — only the Android launcher icons and `play-assets/` were ever branded. Harmless for
+  the Play Store track, but any iOS/TestFlight build ships with the Flutter logo.
+
 ### 2026-08-15 (3)
 - chore: **added the Testers Community tester pool to the Closed testing – Alpha track.** Created a
   developer-account email list named "Testers Community" holding the 135 addresses from
