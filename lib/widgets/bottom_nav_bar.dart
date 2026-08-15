@@ -38,30 +38,38 @@ class AppBottomNavBar extends StatelessWidget {
             border: const Border(top: BorderSide(color: Colors.white10)),
           ),
           padding: const EdgeInsets.fromLTRB(4, 12, 4, 14),
-          child: Row(
-            children: _kNavItems.map((item) {
-              final active = current == item.screen;
-              final color = active ? AppColors.gold : AppColors.textFaint;
-              return Expanded(
-                child: InkWell(
-                  onTap: () => onSelect(item.screen),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 6),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(item.icon, color: color, size: 27),
-                        const SizedBox(height: 3),
-                        Text(
-                          item.label,
-                          style: AppText.sora(13, weight: FontWeight.w700, color: color),
-                        ),
-                      ],
+          // The app shell draws edge-to-edge, so the system navigation bar
+          // (gesture pill or the three-button row) is painted on top of this
+          // widget. Insetting the content — and not the container — keeps the
+          // blurred background bleeding to the screen edge while the icons and
+          // labels stay clear of the system bar instead of under it.
+          child: SafeArea(
+            top: false,
+            child: Row(
+              children: _kNavItems.map((item) {
+                final active = current == item.screen;
+                final color = active ? AppColors.gold : AppColors.textFaint;
+                return Expanded(
+                  child: InkWell(
+                    onTap: () => onSelect(item.screen),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(item.icon, color: color, size: 27),
+                          const SizedBox(height: 3),
+                          Text(
+                            item.label,
+                            style: AppText.sora(13, weight: FontWeight.w700, color: color),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
+                );
+              }).toList(),
+            ),
           ),
         ),
       ),

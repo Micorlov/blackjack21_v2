@@ -42,11 +42,7 @@ class OnboardingScreen extends ConsumerWidget {
                 angle: -15 * 3.14159265 / 180,
                 child: Text(
                   '♠',
-                  style: TextStyle(
-                    fontSize: 220,
-                    height: 1,
-                    color: Colors.white.withValues(alpha: 0.03),
-                  ),
+                  style: TextStyle(fontSize: 220, height: 1, color: Colors.white.withValues(alpha: 0.03)),
                 ),
               ),
             ),
@@ -57,20 +53,13 @@ class OnboardingScreen extends ConsumerWidget {
                 angle: 12 * 3.14159265 / 180,
                 child: Text(
                   '♦',
-                  style: TextStyle(
-                    fontSize: 240,
-                    height: 1,
-                    color: AppColors.gold.withValues(alpha: 0.05),
-                  ),
+                  style: TextStyle(fontSize: 240, height: 1, color: AppColors.gold.withValues(alpha: 0.05)),
                 ),
               ),
             ),
             SafeArea(
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 28,
-                  vertical: 32,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
                 // LayoutBuilder + Center: the Column below is intrinsically
                 // narrower than this Stack child's own bounds (it isn't
                 // stretched), so without an explicit Center it renders
@@ -84,9 +73,7 @@ class OnboardingScreen extends ConsumerWidget {
                     return Center(
                       child: SingleChildScrollView(
                         child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            minHeight: constraints.maxHeight,
-                          ),
+                          constraints: BoxConstraints(minHeight: constraints.maxHeight),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -99,9 +86,7 @@ class OnboardingScreen extends ConsumerWidget {
                                   borderRadius: BorderRadius.circular(24),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppColors.goldDark.withValues(
-                                        alpha: 0.3,
-                                      ),
+                                      color: AppColors.goldDark.withValues(alpha: 0.3),
                                       blurRadius: 30,
                                       offset: const Offset(0, 10),
                                     ),
@@ -110,11 +95,7 @@ class OnboardingScreen extends ConsumerWidget {
                                 alignment: Alignment.center,
                                 child: Text(
                                   '21',
-                                  style: AppText.mono(
-                                    33,
-                                    weight: FontWeight.w700,
-                                    color: AppColors.goldInk,
-                                  ),
+                                  style: AppText.mono(33, weight: FontWeight.w700, color: AppColors.goldInk),
                                 ),
                               ),
                               Text(
@@ -124,26 +105,20 @@ class OnboardingScreen extends ConsumerWidget {
                               ),
                               const SizedBox(height: 10),
                               ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxWidth: 280,
-                                ),
+                                constraints: const BoxConstraints(maxWidth: 280),
                                 child: Text(
                                   'Beat the dealer, climb the leaderboard, and challenge your friends at the table.',
                                   textAlign: TextAlign.center,
                                   style: AppText.sora(
                                     18,
-                                    color: AppColors.textPrimary.withValues(
-                                      alpha: 0.85,
-                                    ),
+                                    color: AppColors.textPrimary.withValues(alpha: 0.85),
                                     height: 1.55,
                                   ),
                                 ),
                               ),
                               const SizedBox(height: 40),
                               ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  maxWidth: 300,
-                                ),
+                                constraints: const BoxConstraints(maxWidth: 300),
                                 child: SizedBox(
                                   width: double.infinity,
                                   child: GoogleSignInButton(
@@ -156,8 +131,7 @@ class OnboardingScreen extends ConsumerWidget {
                                         child: Padding(
                                           padding: const EdgeInsets.all(15),
                                           child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.center,
+                                            mainAxisAlignment: MainAxisAlignment.center,
                                             children: [
                                               Container(
                                                 width: 20,
@@ -165,11 +139,7 @@ class OnboardingScreen extends ConsumerWidget {
                                                 decoration: BoxDecoration(
                                                   shape: BoxShape.circle,
                                                   color: Colors.white,
-                                                  border: Border.all(
-                                                    color: const Color(
-                                                      0xFFE4E4E4,
-                                                    ),
-                                                  ),
+                                                  border: Border.all(color: const Color(0xFFE4E4E4)),
                                                 ),
                                                 alignment: Alignment.center,
                                                 child: const Text(
@@ -186,8 +156,7 @@ class OnboardingScreen extends ConsumerWidget {
                                                 child: Text(
                                                   'Continue with Google',
                                                   textAlign: TextAlign.center,
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
+                                                  overflow: TextOverflow.ellipsis,
                                                   maxLines: 1,
                                                   style: const TextStyle(
                                                     fontSize: 17,
@@ -226,16 +195,16 @@ class OnboardingScreen extends ConsumerWidget {
               ),
             ),
             Positioned(
-              bottom: 20,
+              // A Stack sibling of the SafeArea above, so it is pinned to the
+              // physical screen edge and the SafeArea never reaches it: the
+              // edge-to-edge system navigation bar would cut this line in half.
+              bottom: 20 + MediaQuery.paddingOf(context).bottom,
               left: 28,
               right: 28,
               child: Text(
                 'By continuing you agree to the Terms & Privacy Policy.',
                 textAlign: TextAlign.center,
-                style: AppText.sora(
-                  13,
-                  color: AppColors.textPrimary.withValues(alpha: 0.5),
-                ),
+                style: AppText.sora(13, color: AppColors.textPrimary.withValues(alpha: 0.5)),
               ),
             ),
           ],

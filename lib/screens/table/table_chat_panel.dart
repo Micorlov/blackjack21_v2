@@ -38,7 +38,12 @@ class TableChatSheet extends ConsumerWidget {
             bottom: 0,
             child: Container(
               constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.62),
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 22),
+              // The shell draws edge-to-edge, so the system navigation bar
+              // overlaps this sheet's bottom edge. Padding — rather than a
+              // SafeArea around the content — keeps the rounded background
+              // bleeding to the screen edge, and it collapses to nothing while
+              // the keyboard is up, since the keyboard covers the system bar.
+              padding: EdgeInsets.fromLTRB(16, 10, 16, 22 + MediaQuery.paddingOf(context).bottom),
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -108,7 +113,10 @@ class TableChatSheet extends ConsumerWidget {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                           ),
-                          child: Text(label, style: AppText.sora(14, weight: FontWeight.w700, color: AppColors.gold)),
+                          child: Text(
+                            label,
+                            style: AppText.sora(14, weight: FontWeight.w700, color: AppColors.gold),
+                          ),
                         );
                       },
                     ),
@@ -136,9 +144,7 @@ class _ChatBubble extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
       decoration: BoxDecoration(
         color: isSelf ? AppColors.gold.withValues(alpha: 0.14) : Colors.white.withValues(alpha: 0.07),
-        border: Border.all(
-          color: isSelf ? AppColors.gold.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.1),
-        ),
+        border: Border.all(color: isSelf ? AppColors.gold.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.1)),
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(14),
           topRight: const Radius.circular(14),
@@ -161,10 +167,7 @@ class _ChatBubble extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        mainAxisAlignment: isSelf ? MainAxisAlignment.end : MainAxisAlignment.start,
-        children: [bubble],
-      ),
+      child: Row(mainAxisAlignment: isSelf ? MainAxisAlignment.end : MainAxisAlignment.start, children: [bubble]),
     );
   }
 }

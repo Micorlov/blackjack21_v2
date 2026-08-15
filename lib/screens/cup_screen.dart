@@ -55,7 +55,11 @@ class _CupScreenState extends ConsumerState<CupScreen> {
     final heroRank = standings.indexWhere((r) => r.isSelf) + 1;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+      // This screen hides the bottom nav, so nothing else keeps its last row
+      // clear of the edge-to-edge system navigation bar. Growing the scroll
+      // padding — instead of insetting the viewport — lets the list scroll
+      // fully past the system bar rather than ending underneath it.
+      padding: EdgeInsets.fromLTRB(20, 20, 20, 24 + MediaQuery.paddingOf(context).bottom),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -181,13 +185,13 @@ class _CountBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.4),
-        borderRadius: BorderRadius.circular(10),
-      ),
+      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.4), borderRadius: BorderRadius.circular(10)),
       child: Column(
         children: [
-          Text('$value', style: AppText.mono(22, weight: FontWeight.w700, color: AppColors.gold, height: 1.1)),
+          Text(
+            '$value',
+            style: AppText.mono(22, weight: FontWeight.w700, color: AppColors.gold, height: 1.1),
+          ),
           Text(unit, style: AppText.sora(11, color: AppColors.textMuted)),
         ],
       ),
@@ -310,7 +314,10 @@ class _TopTableCard extends StatelessWidget {
                     height: 22,
                     decoration: BoxDecoration(shape: BoxShape.circle, color: _medals[i % _medals.length]),
                     alignment: Alignment.center,
-                    child: Text('${i + 1}', style: AppText.sora(13, weight: FontWeight.w800, color: AppColors.goldInk)),
+                    child: Text(
+                      '${i + 1}',
+                      style: AppText.sora(13, weight: FontWeight.w800, color: AppColors.goldInk),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(

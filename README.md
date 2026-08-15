@@ -259,6 +259,21 @@ emulator testing.
 
 ## Changelog
 
+### 2026-08-15 (5)
+- fix: **the Android system navigation bar no longer covers the app's own controls.** The shell draws
+  edge-to-edge (`SafeArea(bottom: false)` in `lib/main.dart`) and nothing consumed the bottom system
+  inset, so on Android 15+ the gesture pill / three-button row was painted straight over the UI. Five
+  surfaces were affected: the bottom-nav labels (`widgets/bottom_nav_bar.dart`), the table's
+  bet/deal/hit/stand panel (`screens/table/table_action_panel.dart`, sitting 28px under the bar — its
+  buttons were partly untappable), the table chat sheet (`screens/table/table_chat_panel.dart`), the
+  Weekend Cup's last leaderboard row (`screens/cup_screen.dart`), and the onboarding terms line
+  (`screens/onboarding_screen.dart`, a `Positioned` **sibling** of that screen's `SafeArea`, so the
+  `SafeArea` never reached it). Each surface now insets its own content while its background still
+  bleeds to the screen edge.
+- test: added `test/system_inset_test.dart` — pumps a 412x915 viewport with a 48px bottom
+  `FakeViewPadding` and asserts the onboarding terms line, all five tab labels, and the table betting
+  panel stay above the system bar. All three cases fail against the pre-fix code.
+
 ### 2026-08-15 (4)
 - chore: **submitted the app to Testers Community, starting the 14-day closed-testing clock.** Filed
   it as "21 Sweet Pot" on the Starter plan (15 testers, 1 of 3 credits spent) with the opt-in link
