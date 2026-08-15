@@ -129,36 +129,56 @@ class GameNotifier extends StateNotifier<GameState> {
     unawaited(_sound.play(sfx));
   }
 
+  /// Whether a word may be spoken right now. Voice sits under the master
+  /// sound toggle, so a player who mutes the game never hears a call-out
+  /// regardless of how the voice switch is left.
+  bool get _voiceOn => state.soundOn && state.voiceOn;
+
+  /// A spoken clip that happens to live in [GameSfx] — the NPC seats'
+  /// "Stand"/"Bust" lines. Words, not tones, so they follow the voice toggle.
+  void _playSpokenSfx(GameSfx sfx) {
+    if (!_voiceOn) return;
+    unawaited(_sound.play(sfx));
+  }
+
   /// Held back so the settlement tone plays out first and the spoken result
   /// follows it rather than talking over it. Matches `blackjack.wav`, the
   /// longest of the outcome tones at 0.70s.
-  static const _kVoiceLead = Duration(milliseconds: 700);
-
-  /// Length of `player_pot.wav` ("Player wins the sweep pot"), 1.51s.
-  static const _kPotVoiceLength = Duration(milliseconds: 1520);
+  static const kVoiceLead = Duration(milliseconds: 700);
 
   /// Drum flourish once the pot call-out has finished. Sweeping the table is
-  /// the best result a round can produce, so it gets more than a tone. Plays
-  /// on the tone channel, which the voice line does not use, so the two never
-  /// cut each other off even if the timing drifts.
+  /// the best result a round can produce, so it gets more than a tone.
+  ///
+  /// With voice on, [_playVoice] schedules this itself — only the voice queue
+  /// knows when the call-out actually lands, since it may be waiting behind
+  /// the hand total from the player's last card. With voice off there is no
+  /// call-out to clear, so the flourish follows the settlement tone directly
+  /// rather than after a stretch of silence.
   void _celebrateSweep() {
-    if (!state.soundOn) return;
+    if (!state.soundOn || _voiceOn) return;
     _celebrationTimer?.cancel();
-    _celebrationTimer = Timer(
-      _kVoiceLead + _kPotVoiceLength,
-      () => _playSfx(GameSfx.potCelebration),
-    );
+    _celebrationTimer = Timer(kVoiceLead, () => _playSfx(GameSfx.potCelebration));
   }
 
-  /// Speaks the hand's result [_kVoiceLead] after the outcome tone. Re-checks
-  /// `soundOn` when the timer fires, so muting mid-hand also mutes the pending
-  /// call-out.
-  void _playVoice(GameVoice voice) {
-    if (!state.soundOn) return;
+  /// Speaks the hand's result [kVoiceLead] after the outcome tone. Re-checks
+  /// the toggles when the timer fires, so muting mid-hand also mutes the
+  /// pending call-out.
+  ///
+  /// [celebrate] chases the line with the sweep-pot drum. It is scheduled from
+  /// the moment the words actually finish rather than a fixed offset, because
+  /// the queue may have held the line back behind the hand total.
+  void _playVoice(GameVoice voice, {bool celebrate = false}) {
+    if (!_voiceOn) return;
     _voiceTimer?.cancel();
-    _voiceTimer = Timer(_kVoiceLead, () {
-      if (!state.soundOn) return;
-      unawaited(_sound.playVoice(voice));
+    _voiceTimer = Timer(kVoiceLead, () async {
+      if (!_voiceOn) return;
+      final endsAt = await _sound.playVoice(voice);
+      if (!celebrate || endsAt == null || !state.soundOn) return;
+      _celebrationTimer?.cancel();
+      _celebrationTimer = Timer(
+        endsAt.difference(DateTime.now()),
+        () => _playSfx(GameSfx.potCelebration),
+      );
     });
   }
 
@@ -204,7 +224,7 @@ class GameNotifier extends StateNotifier<GameState> {
   /// there is no sweep pot, and announcing the chips on the table as one
   /// promises a pot that does not exist.
   void _announceTablePot() {
-    if (!state.soundOn) return;
+    if (!_voiceOn) return;
     final pot = TablePot.live(state);
     if (!pot.isSweep) return;
     final amount = spokenAmountWords(pot.amount);
@@ -212,7 +232,7 @@ class GameNotifier extends StateNotifier<GameState> {
 
     _potTimer?.cancel();
     _potTimer = Timer(_kPotAnnouncementLead, () {
-      if (!state.soundOn) return;
+      if (!_voiceOn) return;
       unawaited(
         _sound.playWords([
           'sweep_pot',
@@ -231,17 +251,17 @@ class GameNotifier extends StateNotifier<GameState> {
   /// opening deal, a hit, a double, or a split. Held back so `deal.wav`
   /// (0.09s) finishes first.
   void _announceHandTotal(List<PlayingCard> cards) {
-    if (!state.soundOn) return;
+    if (!_voiceOn) return;
     final words = spokenAmountWords(BlackjackRules.handValue(cards));
     if (words.isEmpty) return;
     _handTotalTimer?.cancel();
-    _handTotalTimer = Timer(_kHandTotalVoiceLead, () {
-      if (!state.soundOn) return;
-      unawaited(_sound.playWords(words));
+    _handTotalTimer = Timer(kHandTotalVoiceLead, () {
+      if (!_voiceOn) return;
+      unawaited(_sound.playWords(['you_have', ...words]));
     });
   }
 
-  static const _kHandTotalVoiceLead = Duration(milliseconds: 350);
+  static const kHandTotalVoiceLead = Duration(milliseconds: 350);
 
   PlayingCard _drawCard() {
     if (_shoe.length < 15) _shoe = BlackjackRules.buildShoe(kDeckCount, _rng);
@@ -280,6 +300,7 @@ class GameNotifier extends StateNotifier<GameState> {
       heroHourKey: hourKey,
       heroDayKey: dayKey,
       soundOn: saved.soundOn,
+      voiceOn: saved.voiceOn,
       hapticsOn: saved.hapticsOn,
       notifSocial: saved.notifSocial,
       notifLeaderboard: saved.notifLeaderboard,
@@ -305,6 +326,7 @@ class GameNotifier extends StateNotifier<GameState> {
     hourKey: state.heroHourKey,
     dayKey: state.heroDayKey,
     soundOn: state.soundOn,
+    voiceOn: state.voiceOn,
     hapticsOn: state.hapticsOn,
     notifSocial: state.notifSocial,
     notifLeaderboard: state.notifLeaderboard,
@@ -701,7 +723,7 @@ class GameNotifier extends StateNotifier<GameState> {
       final nv = BlackjackRules.handValue(cards);
       _patchNpc(i, (seat) => seat.copyWith(cards: cards, action: nv > 21 ? 'BUST' : 'HIT'));
       if (nv > 21) {
-        _playSfx(GameSfx.npcBust);
+        _playSpokenSfx(GameSfx.npcBust);
         _hapticLight();
       }
       _npcTimer = Timer(const Duration(milliseconds: 600), () {
@@ -714,7 +736,7 @@ class GameNotifier extends StateNotifier<GameState> {
       });
     } else {
       _patchNpc(i, (seat) => seat.copyWith(action: 'STAND', done: true));
-      _playSfx(GameSfx.npcStand);
+      _playSpokenSfx(GameSfx.npcStand);
       _hapticSelection();
       _npcTimer = Timer(const Duration(milliseconds: 480), () => _stepNpc(order, k + 1));
     }
@@ -1006,7 +1028,12 @@ class GameNotifier extends StateNotifier<GameState> {
 
   void _advanceHand() {
     if (state.activeHandIndex < state.hands.length - 1) {
-      state = state.copyWith(activeHandIndex: state.activeHandIndex + 1);
+      final next = state.activeHandIndex + 1;
+      state = state.copyWith(activeHandIndex: next);
+      // The hand-total circle now belongs to the second split hand, so say its
+      // number. Without this the last thing spoken was the first hand's total
+      // while the circle on screen showed the second's.
+      _announceHandTotal(state.hands[next].cards);
       return;
     }
     final allDone = state.hands.every((h) => h.status != HandStatus.active);
@@ -1184,7 +1211,7 @@ class GameNotifier extends StateNotifier<GameState> {
     } else if (messageType == MessageType.win) {
       _playSfx(GameSfx.win);
       if (heroTakesPot) {
-        _playVoice(GameVoice.playerPot);
+        _playVoice(GameVoice.playerPot, celebrate: true);
         _celebrateSweep();
       } else {
         _playVoice(GameVoice.playerWin);
@@ -1481,10 +1508,38 @@ class GameNotifier extends StateNotifier<GameState> {
     _scheduleSave();
   }
 
+  /// Muting takes the voice queue with it — a call-out already handed to the
+  /// queue is waiting its turn there, not on a timer this class can cancel.
   void toggleSound() {
     final next = !state.soundOn;
     state = state.copyWith(soundOn: next);
-    if (next) unawaited(_sound.play(GameSfx.chip));
+    if (next) {
+      unawaited(_sound.play(GameSfx.chip));
+    } else {
+      _voiceTimer?.cancel();
+      _potTimer?.cancel();
+      _handTotalTimer?.cancel();
+      _celebrationTimer?.cancel();
+      _sound.silenceVoice();
+    }
+    _scheduleSave();
+  }
+
+  /// Turning voice back on answers in the voice itself — "You have twenty
+  /// one" — so the player hears exactly what they just switched on. Pending
+  /// call-outs are dropped when it goes off: their timers re-check the toggle,
+  /// but cancelling is what makes the table fall silent immediately.
+  void toggleVoice() {
+    final next = !state.voiceOn;
+    state = state.copyWith(voiceOn: next);
+    if (!next) {
+      _voiceTimer?.cancel();
+      _potTimer?.cancel();
+      _handTotalTimer?.cancel();
+      _sound.silenceVoice();
+    } else if (state.soundOn) {
+      unawaited(_sound.playWords(['you_have', ...spokenAmountWords(21)]));
+    }
     _scheduleSave();
   }
   void toggleTableMenu() => state = state.copyWith(tableMenuOpen: !state.tableMenuOpen);

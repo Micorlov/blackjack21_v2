@@ -30,6 +30,7 @@ SavedGame sample({
   hourKey: hourKey,
   dayKey: dayKey,
   soundOn: false,
+  voiceOn: false,
   hapticsOn: false,
   notifSocial: false,
   notifLeaderboard: false,
@@ -59,6 +60,7 @@ void main() {
       expect(restored.hourKey, '2026-08-02T00');
       expect(restored.dayKey, '2026-08-02');
       expect(restored.soundOn, isFalse);
+      expect(restored.voiceOn, isFalse);
       expect(restored.hapticsOn, isFalse);
       expect(restored.notifDaily, isTrue);
       expect(restored.themeChoice, 'ocean');
@@ -80,6 +82,9 @@ void main() {
 
       expect(restored.chips, defaults.chips);
       expect(restored.soundOn, defaults.soundOn);
+      // A blob saved before the voice toggle existed keeps the table talking,
+      // which is what that player has been hearing all along.
+      expect(restored.voiceOn, isTrue);
       expect(restored.hapticsOn, defaults.hapticsOn);
       expect(restored.themeChoice, defaults.themeChoice);
       expect(restored.history, isEmpty);

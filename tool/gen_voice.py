@@ -86,6 +86,7 @@ NUMBER_WORDS: dict[str, str] = {
     "num/thousand.wav": "thousand",
     "num/dollars.wav": "dollars",
     "num/sweep_pot.wav": "Sweep pot",
+    "num/you_have.wav": "You have",
 }
 
 CLIPS: dict[str, str] = {**VOICE_LINES, **NUMBER_WORDS}
@@ -139,8 +140,8 @@ def _clip_key(name: str) -> str:
     return name.replace("/", "__").removesuffix(".wav")
 
 
-def kokoro_synthesize(voice: str, speed: float, out_dir: Path) -> None:
-    """Writes one raw WAV per clip into `out_dir`, at Kokoro's own rate."""
+def kokoro_synthesize(voice: str, speed: float, out_dir: Path, clips: dict[str, str]) -> None:
+    """Writes one raw WAV per clip in `clips` into `out_dir`, at Kokoro's own rate."""
     python = KOKORO_HOME / "kokoro-env" / "bin" / "python"
     if not python.exists():
         raise SystemExit(
@@ -149,7 +150,7 @@ def kokoro_synthesize(voice: str, speed: float, out_dir: Path) -> None:
     if not Path(ESPEAK_DATA).is_dir():
         raise SystemExit(f"No espeak-ng data at {ESPEAK_DATA}. brew install espeak-ng")
 
-    jobs = {_clip_key(name): text for name, text in CLIPS.items()}
+    jobs = {_clip_key(name): text for name, text in clips.items()}
     jobs_file = out_dir / "jobs.json"
     jobs_file.write_text(json.dumps(jobs))
 
@@ -325,6 +326,11 @@ def main() -> int:
     parser.add_argument(
         "--list", action="store_true", help="list this machine's `say` voices and exit"
     )
+    parser.add_argument(
+        "--only", action="append",
+        help="regenerate just this clip path (e.g. num/you_have.wav) instead of the "
+             "whole set; repeatable",
+    )
     args = parser.parse_args()
 
     if args.list:
@@ -334,13 +340,15 @@ def main() -> int:
     if args.engine == "say":
         check_say_voice(args.voice)
 
+    clips = {name: CLIPS[name] for name in args.only} if args.only else CLIPS
+
     print(f"Engine: {args.engine}    Voice: {args.voice}\n")
     tmp = Path(tempfile.mkdtemp(prefix="gen_voice_"))
     try:
         if args.engine == "kokoro":
-            kokoro_synthesize(args.voice, args.speed, tmp)
+            kokoro_synthesize(args.voice, args.speed, tmp, clips)
 
-        for name, text in CLIPS.items():
+        for name, text in clips.items():
             raw = tmp / f"{_clip_key(name)}.wav"
             if args.engine == "say":
                 say_to_wav(text, args.voice, args.rate, raw)

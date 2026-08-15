@@ -59,6 +59,15 @@ class SettingsScreen extends ConsumerWidget {
             rows: [
               _ToggleRowData('Haptics', state.hapticsOn, notifier.toggleHaptics),
               _ToggleRowData('Sound effects', state.soundOn, notifier.toggleSound),
+              // Greyed out while sound is off: voice plays through the same
+              // output, so the switch would promise something it can't deliver.
+              _ToggleRowData(
+                'Voice call-outs',
+                state.voiceOn,
+                notifier.toggleVoice,
+                sublabel: 'Your hand total, results and the sweep pot, spoken aloud',
+                enabled: state.soundOn,
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -328,7 +337,21 @@ class _ToggleRowData {
   final bool value;
   final VoidCallback onToggle;
 
-  const _ToggleRowData(this.label, this.value, this.onToggle);
+  /// Optional second line explaining what the switch does, for rows whose
+  /// label alone doesn't say it.
+  final String? sublabel;
+
+  /// False for a row whose effect depends on another switch that is currently
+  /// off — the row renders dimmed and ignores taps, keeping its own value.
+  final bool enabled;
+
+  const _ToggleRowData(
+    this.label,
+    this.value,
+    this.onToggle, {
+    this.sublabel,
+    this.enabled = true,
+  });
 }
 
 /// Panel of label + `Switch` rows, separated by hairlines — used for both
@@ -351,17 +374,51 @@ class _TogglePanel extends StatelessWidget {
               decoration: BoxDecoration(
                 border: i < rows.length - 1 ? const Border(bottom: BorderSide(color: AppColors.border)) : null,
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(rows[i].label, style: AppText.sora(16, weight: FontWeight.w600)),
-                  Switch(value: rows[i].value, activeThumbColor: AppColors.gold, onChanged: (_) => rows[i].onToggle()),
-                ],
-              ),
+              child: _ToggleRow(data: rows[i]),
             ),
         ],
       ),
     );
+  }
+}
+
+class _ToggleRow extends StatelessWidget {
+  final _ToggleRowData data;
+
+  const _ToggleRow({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final sublabel = data.sublabel;
+    // Expanded, not the bare Row: the sublabel is a full sentence and ran off
+    // the panel's right edge into the switch without a flex to wrap inside.
+    final row = Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(data.label, style: AppText.sora(16, weight: FontWeight.w600)),
+              if (sublabel != null) ...[
+                const SizedBox(height: 2),
+                Text(sublabel, style: AppText.sora(13, color: AppColors.textMuted)),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(width: 12),
+        Switch(
+          value: data.value,
+          activeThumbColor: AppColors.gold,
+          onChanged: data.enabled ? (_) => data.onToggle() : null,
+        ),
+      ],
+    );
+
+    // Dimming the whole row, rather than recolouring the label and switch
+    // separately: the app theme resolves switch track colour on `selected`
+    // alone, so a disabled switch keeps its gold and reads as live otherwise.
+    return data.enabled ? row : Opacity(opacity: 0.45, child: row);
   }
 }
 

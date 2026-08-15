@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:audioplayers/audioplayers.dart';
@@ -53,6 +54,13 @@ const Map<GameVoice, String> _voiceAssets = {
 /// whatever it is playing before starting the next clip, so the two would cut
 /// each other short if they shared one player — and a settlement plays a tone
 /// and then a spoken result.
+///
+/// The voice channel is a queue, not a race. Several call-outs are scheduled
+/// from independent timers in `GameNotifier` — the hand total as a card lands,
+/// the settlement result, the sweep-pot figure — and their windows overlap: a
+/// bust schedules "You have twenty five" and "Player loses" 350ms apart, while
+/// the first line runs for over a second. Starting the second one cut the
+/// first off mid-word, so a spoken line now waits for the channel instead.
 class SoundPlayer {
   SoundPlayer() {
     _player.setReleaseMode(ReleaseMode.stop);
@@ -62,10 +70,46 @@ class SoundPlayer {
   final AudioPlayer _player = AudioPlayer();
   final AudioPlayer _voicePlayer = AudioPlayer();
 
+  /// When the voice channel finishes everything it has been handed. A line
+  /// arriving before this waits it out rather than talking over it.
+  DateTime _voiceFreeAt = DateTime.fromMillisecondsSinceEpoch(0);
+
+  /// Lines waiting their turn, held so [silenceVoice] and [dispose] can drop
+  /// them — a queued call-out must not surface after the player mutes.
+  final List<Timer> _queued = [];
+
+  /// A line held longer than this past its cue is dropped rather than queued.
+  /// By then the moment it described has passed, and announcing a hand total
+  /// after the hand has settled is worse than saying nothing.
+  static const Duration kMaxVoiceWait = Duration(seconds: 3);
+
   Future<void> play(GameSfx sfx) => _playOn(_player, _sfxAssets[sfx]!);
 
-  Future<void> playVoice(GameVoice voice) =>
-      _playOn(_voicePlayer, _voiceAssets[voice]!);
+  /// Speaks a pre-recorded line. Returns when it will have finished, so the
+  /// caller can line up whatever follows it — or null if it was dropped.
+  Future<DateTime?> playVoice(GameVoice voice) async {
+    try {
+      return await _speak(await _loadLineWav(_voiceAssets[voice]!));
+    } on PlatformException {
+      // No audio backend available (e.g. running under `flutter test`).
+      return null;
+    } on FlutterError {
+      // Asset missing from the bundle — nothing sensible to say.
+      return null;
+    }
+  }
+
+  /// Drops every queued line and stops the one in progress. Called when the
+  /// player mutes: the timers in `GameNotifier` re-check the toggle, but a
+  /// line already handed to this queue is only stoppable from here.
+  void silenceVoice() {
+    for (final timer in _queued) {
+      timer.cancel();
+    }
+    _queued.clear();
+    _voiceFreeAt = DateTime.fromMillisecondsSinceEpoch(0);
+    unawaited(_voicePlayer.stop());
+  }
 
   /// Speaks a run of number-word clips from `assets/sfx/num/` as one line,
   /// e.g. `['table_pot', 'three', 'hundred', 'seventy', 'five', 'dollars']`.
@@ -75,22 +119,64 @@ class SoundPlayer {
   /// one source — playing them as separate `play()` calls would need each to
   /// report completion before the next began, and any gap or overshoot would
   /// be audible in the middle of a sentence.
-  Future<void> playWords(List<String> words) async {
-    if (words.isEmpty) return;
+  /// Returns when the line will have finished, or null if it was dropped.
+  Future<DateTime?> playWords(List<String> words) async {
+    if (words.isEmpty) return null;
     try {
       final clips = <Uint8List>[];
       for (final word in words) {
         clips.add(await _loadWordPcm(word));
       }
-      await _voicePlayer.stop();
-      await _voicePlayer.play(
-        BytesSource(_joinClips(clips), mimeType: 'audio/wav'),
-      );
+      return await _speak(_joinClips(clips));
     } on PlatformException {
       // No audio backend available (e.g. running under `flutter test`).
+      return null;
     } on FlutterError {
       // Asset missing from the bundle — nothing sensible to say.
+      return null;
     }
+  }
+
+  /// Queues [wav] on the voice channel behind whatever is already speaking,
+  /// and reports when it will have finished. Null if the wait ran past
+  /// [kMaxVoiceWait] and the line was dropped.
+  Future<DateTime?> _speak(Uint8List wav) async {
+    final now = DateTime.now();
+    final start = _voiceFreeAt.isAfter(now) ? _voiceFreeAt : now;
+    final wait = start.difference(now);
+    if (wait > kMaxVoiceWait) return null;
+
+    final endsAt = start.add(wavDuration(wav.length));
+    _voiceFreeAt = endsAt;
+
+    if (wait <= Duration.zero) {
+      await _playBytes(wav);
+    } else {
+      late final Timer timer;
+      timer = Timer(wait, () {
+        _queued.remove(timer);
+        unawaited(_playBytes(wav));
+      });
+      _queued.add(timer);
+    }
+    return endsAt;
+  }
+
+  Future<void> _playBytes(Uint8List wav) async {
+    try {
+      await _voicePlayer.stop();
+      await _voicePlayer.play(BytesSource(wav, mimeType: 'audio/wav'));
+    } on PlatformException {
+      // No audio backend available (e.g. running under `flutter test`).
+    }
+  }
+
+  /// How long a [_kWavHeaderBytes]-headed mono 16-bit WAV of [byteLength]
+  /// plays for. The clips are all written by `tool/gen_voice.py` at
+  /// [_kSampleRate], and [_joinClips] emits the same canonical header.
+  static Duration wavDuration(int byteLength) {
+    final frames = (byteLength - _kWavHeaderBytes) ~/ _kBytesPerSample;
+    return Duration(microseconds: frames * 1000000 ~/ _kSampleRate);
   }
 
   Future<void> _playOn(AudioPlayer player, String asset) async {
@@ -101,6 +187,22 @@ class SoundPlayer {
       // No audio backend available (e.g. running under `flutter test`).
     }
   }
+
+  /// A pre-recorded voice line as a canonical-header WAV, so its length is
+  /// known from its byte count and the queue can time what follows it.
+  /// Re-wrapped rather than played straight from the asset because
+  /// `afconvert` does not always emit a plain 44-byte header.
+  Future<Uint8List> _loadLineWav(String asset) async {
+    final cached = _lineWav[asset];
+    if (cached != null) return cached;
+
+    final data = await rootBundle.load('assets/$asset');
+    final wav = _joinClips([_pcmOf(data)]);
+    _lineWav[asset] = wav;
+    return wav;
+  }
+
+  final Map<String, Uint8List> _lineWav = {};
 
   /// Raw PCM for one word clip, without its WAV header. Cached because a
   /// single announcement reuses words and every round says them again.
@@ -156,9 +258,10 @@ class SoundPlayer {
     return out.takeBytes();
   }
 
-  /// A 44-byte canonical PCM WAV header for [dataBytes] of mono 16-bit audio.
+  /// A [_kWavHeaderBytes] canonical PCM WAV header for [dataBytes] of mono
+  /// 16-bit audio.
   static Uint8List _wavHeader(int dataBytes) {
-    final header = ByteData(44);
+    final header = ByteData(_kWavHeaderBytes);
     void tag(int at, String s) {
       for (var i = 0; i < 4; i++) {
         header.setUint8(at + i, s.codeUnitAt(i));
@@ -184,9 +287,14 @@ class SoundPlayer {
 
   static const int _kSampleRate = 44100;
   static const int _kBytesPerSample = 2;
+  static const int _kWavHeaderBytes = 44;
   static const Duration _kWordGap = Duration(milliseconds: 45);
 
   Future<void> dispose() async {
+    for (final timer in _queued) {
+      timer.cancel();
+    }
+    _queued.clear();
     await _player.dispose();
     await _voicePlayer.dispose();
   }

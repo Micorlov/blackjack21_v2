@@ -33,6 +33,7 @@ class SavedGame {
   final String hourKey;
   final String dayKey;
   final bool soundOn;
+  final bool voiceOn;
   final bool hapticsOn;
   final bool notifSocial;
   final bool notifLeaderboard;
@@ -59,6 +60,7 @@ class SavedGame {
     required this.hourKey,
     required this.dayKey,
     required this.soundOn,
+    required this.voiceOn,
     required this.hapticsOn,
     required this.notifSocial,
     required this.notifLeaderboard,
@@ -97,6 +99,7 @@ class SavedGame {
     'hourKey': hourKey,
     'dayKey': dayKey,
     'soundOn': soundOn,
+    'voiceOn': voiceOn,
     'hapticsOn': hapticsOn,
     'notifSocial': notifSocial,
     'notifLeaderboard': notifLeaderboard,
@@ -138,6 +141,7 @@ class SavedGame {
       hourKey: _str(json['hourKey'], ''),
       dayKey: _str(json['dayKey'], ''),
       soundOn: _bool(json['soundOn'], defaults.soundOn),
+      voiceOn: _bool(json['voiceOn'], defaults.voiceOn),
       hapticsOn: _bool(json['hapticsOn'], defaults.hapticsOn),
       notifSocial: _bool(json['notifSocial'], defaults.notifSocial),
       notifLeaderboard: _bool(json['notifLeaderboard'], defaults.notifLeaderboard),

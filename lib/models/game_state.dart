@@ -104,6 +104,11 @@ class GameState {
   final String themeChoice;
   final bool hapticsOn;
   final bool soundOn;
+
+  /// Spoken call-outs only — hand totals, settlement results, the sweep-pot
+  /// figure, and the NPC "Stand"/"Bust" lines. Nested under [soundOn]: muting
+  /// sound silences the voice too, so both must be on for a word to be said.
+  final bool voiceOn;
   final bool notifSocial;
   final bool notifLeaderboard;
   final bool notifDaily;
@@ -184,6 +189,7 @@ class GameState {
     this.themeChoice = 'default',
     this.hapticsOn = true,
     this.soundOn = true,
+    this.voiceOn = true,
     this.notifSocial = true,
     this.notifLeaderboard = true,
     // On by default so the daily-chips reminder works out of the box; the
@@ -260,6 +266,7 @@ class GameState {
     String? themeChoice,
     bool? hapticsOn,
     bool? soundOn,
+    bool? voiceOn,
     bool? notifSocial,
     bool? notifLeaderboard,
     bool? notifDaily,
@@ -335,6 +342,7 @@ class GameState {
       themeChoice: themeChoice ?? this.themeChoice,
       hapticsOn: hapticsOn ?? this.hapticsOn,
       soundOn: soundOn ?? this.soundOn,
+      voiceOn: voiceOn ?? this.voiceOn,
       notifSocial: notifSocial ?? this.notifSocial,
       notifLeaderboard: notifLeaderboard ?? this.notifLeaderboard,
       notifDaily: notifDaily ?? this.notifDaily,

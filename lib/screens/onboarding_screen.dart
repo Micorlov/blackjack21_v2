@@ -21,6 +21,9 @@ class OnboardingScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(gameProvider.notifier);
+    // Only the voice flag is watched: this screen is otherwise static, and
+    // rebuilding it on every chip or friend update would be wasted work.
+    final voiceOn = ref.watch(gameProvider.select((s) => s.voiceOn));
 
     return SizedBox.expand(
       child: DecoratedBox(
@@ -185,6 +188,15 @@ class OnboardingScreen extends ConsumerWidget {
                                   underline: true,
                                 ),
                               ],
+                              // Offered up front because the table talks from
+                              // the very first hand — a player who wants it
+                              // silent shouldn't have to hear it once and then
+                              // go hunting through Settings.
+                              const SizedBox(height: 28),
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 300),
+                                child: _VoiceToggle(value: voiceOn, onToggle: notifier.toggleVoice),
+                              ),
                             ],
                           ),
                         ),
@@ -208,6 +220,60 @@ class OnboardingScreen extends ConsumerWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The one setting offered before the player is in: whether the table speaks.
+/// A translucent pill rather than a Settings-style panel row, so it reads as
+/// an option on the felt instead of a form field.
+class _VoiceToggle extends StatelessWidget {
+  final bool value;
+  final VoidCallback onToggle;
+
+  const _VoiceToggle({required this.value, required this.onToggle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black.withValues(alpha: 0.22),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onToggle,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 6, 8, 6),
+          child: Row(
+            children: [
+              Icon(
+                value ? Icons.volume_up_rounded : Icons.volume_off_rounded,
+                size: 20,
+                color: value ? AppColors.gold : AppColors.textPrimary.withValues(alpha: 0.55),
+              ),
+              const SizedBox(width: 10),
+              // Expanded, not Flexible: it pins the switch to the pill's right
+              // edge instead of leaving dead space after it, and still lets a
+              // large text scale wrap the label rather than overflow.
+              Expanded(
+                child: Text(
+                  'Voice call-outs',
+                  style: AppText.sora(
+                    15,
+                    weight: FontWeight.w700,
+                    color: AppColors.textPrimary.withValues(alpha: value ? 0.95 : 0.6),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Switch(
+                value: value,
+                activeThumbColor: AppColors.gold,
+                onChanged: (_) => onToggle(),
+              ),
+            ],
+          ),
         ),
       ),
     );
