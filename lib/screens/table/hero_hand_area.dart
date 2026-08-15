@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../models/enums.dart';
 import '../../models/game_state.dart';
 import '../../models/hand.dart';
+import '../../models/playing_card.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/formatters.dart';
@@ -72,7 +73,14 @@ class _HeroHandBlock extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (n > 0) ...[_cardsFan(n), const SizedBox(height: 5)],
-        _betCircle(betAmount),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            _betCircle(betAmount),
+            if (n > 0) ...[const SizedBox(width: 10), _handTotalCircle()],
+          ],
+        ),
         const SizedBox(height: 5),
         _plate(betAmount),
       ],
@@ -127,6 +135,35 @@ class _HeroHandBlock extends StatelessWidget {
               ],
             )
           : Text('BET', style: AppText.mono(11, letterSpacing: 1, color: AppColors.gold.withValues(alpha: 0.5))),
+    );
+  }
+
+  /// The running card total toward 21 — the same number [TableCalc.handLabelFor]
+  /// renders as "Soft 19"/"Hard 17" text in [_plate], surfaced here as its own
+  /// circle so it reads at a glance. [GameNotifier] speaks this number aloud
+  /// as each card lands.
+  Widget _handTotalCircle() {
+    final busted = hand.status == HandStatus.busted;
+    final blackjack = hand.status == HandStatus.blackjack;
+    final value = BlackjackRules.handValue(hand.cards);
+    final ringColor = busted
+        ? AppColors.lose.withValues(alpha: 0.6)
+        : blackjack
+            ? AppColors.gold
+            : AppColors.gold.withValues(alpha: 0.45);
+    final numberColor = busted ? AppColors.loseLight : AppColors.gold;
+    return Container(
+      width: 70,
+      height: 70,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: ringColor, width: 2),
+        gradient: RadialGradient(
+          colors: [AppColors.gold.withValues(alpha: 0.1), Colors.black.withValues(alpha: 0.28)],
+        ),
+      ),
+      alignment: Alignment.center,
+      child: Text('$value', style: AppText.mono(26, weight: FontWeight.w800, color: numberColor)),
     );
   }
 

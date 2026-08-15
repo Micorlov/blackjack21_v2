@@ -87,6 +87,7 @@ class GameNotifier extends StateNotifier<GameState> {
   Timer? _voiceTimer;
   Timer? _potTimer;
   Timer? _celebrationTimer;
+  Timer? _handTotalTimer;
 
   /// Long enough to absorb a burst of state changes, short enough that a
   /// force-quit right after a hand still finds the result on disk.
@@ -109,6 +110,7 @@ class GameNotifier extends StateNotifier<GameState> {
     _voiceTimer?.cancel();
     _potTimer?.cancel();
     _celebrationTimer?.cancel();
+    _handTotalTimer?.cancel();
     _heartbeatTimer?.cancel();
     unawaited(_authEventsSub?.cancel());
     unawaited(_groupSub?.cancel());
@@ -219,6 +221,23 @@ class GameNotifier extends StateNotifier<GameState> {
 
   /// Held back so the turn cue (`turn.wav`, 0.60s) finishes first.
   static const _kPotAnnouncementLead = Duration(milliseconds: 700);
+
+  /// Speaks the hero's new hand total — the number shown in the hand-total
+  /// circle in [HeroHandArea] — right after a card lands, whether from the
+  /// opening deal, a hit, a double, or a split. Held back so `deal.wav`
+  /// (0.09s) finishes first.
+  void _announceHandTotal(List<PlayingCard> cards) {
+    if (!state.soundOn) return;
+    final words = spokenAmountWords(BlackjackRules.handValue(cards));
+    if (words.isEmpty) return;
+    _handTotalTimer?.cancel();
+    _handTotalTimer = Timer(_kHandTotalVoiceLead, () {
+      if (!state.soundOn) return;
+      unawaited(_sound.playWords(words));
+    });
+  }
+
+  static const _kHandTotalVoiceLead = Duration(milliseconds: 350);
 
   PlayingCard _drawCard() {
     if (_shoe.length < 15) _shoe = BlackjackRules.buildShoe(kDeckCount, _rng);
@@ -829,6 +848,7 @@ class GameNotifier extends StateNotifier<GameState> {
 
     _playSfx(GameSfx.deal);
     _hapticMedium();
+    _announceHandTotal(playerCards);
 
     if (dealerUpIsAce) {
       state = state.copyWith(
@@ -919,6 +939,7 @@ class GameNotifier extends StateNotifier<GameState> {
     state = state.copyWith(hands: newHands);
     _playSfx(GameSfx.deal);
     _hapticLight();
+    _announceHandTotal(newHand.cards);
     if (newHand.status == HandStatus.busted) _advanceHand();
   }
 
@@ -946,6 +967,7 @@ class GameNotifier extends StateNotifier<GameState> {
     state = state.copyWith(hands: newHands, chips: state.chips - hand.bet);
     _playSfx(GameSfx.deal);
     _hapticMedium();
+    _announceHandTotal(newHand.cards);
     _advanceHand();
   }
 
@@ -964,6 +986,7 @@ class GameNotifier extends StateNotifier<GameState> {
     state = state.copyWith(hands: [handA, handB], activeHandIndex: 0, chips: state.chips - hand.bet);
     _playSfx(GameSfx.deal);
     _hapticMedium();
+    _announceHandTotal(handA.cards);
   }
 
   void playerSurrender() {

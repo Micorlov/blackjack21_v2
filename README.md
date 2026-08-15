@@ -82,6 +82,10 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   by a drum flourish
 - **Spoken pot** — once every opponent seat has played and the figure has stopped moving, the
   dealer pill is read aloud: "Sweep pot, three hundred seventy five dollars"
+- **Hand-total circle** — your live card total toward 21 (the same number "Soft 19"/"Hard 17"
+  already names) shows in its own circle next to the bet circle, gold-ringed normally, red when
+  busted, and is spoken aloud right after the opening deal and again after every hit, double, or
+  split card
 - **Haptics** — selection/light/medium/heavy impact and vibrate feedback, toggleable in settings,
   including a tap for each NPC seat's stand/bust
 - **Web version** — runs in the browser at https://blackjack21-v2.web.app, auto-deployed by
@@ -258,6 +262,16 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-08-15 (6)
+- feat: **added a hand-total circle showing the hero's live card total, spoken aloud as it
+  changes.** `screens/table/hero_hand_area.dart` gains a new gold-ringed circle next to the bet
+  circle displaying `BlackjackRules.handValue(hand.cards)` (red-ringed on bust) — the same number
+  the "Soft 19"/"Hard 17" text already names, now visible at a glance. `state/game_notifier.dart`
+  speaks the total via the existing `SoundPlayer.playWords`/`spokenAmountWords` number-clip
+  pipeline (English), 350ms after `deal.wav` so the tone finishes first, gated on `soundOn` exactly
+  like the other voice call-outs: after the opening two-card deal, and again after every hit,
+  double, and split.
 
 ### 2026-08-15 (5)
 - fix: **the Android system navigation bar no longer covers the app's own controls.** The shell draws
