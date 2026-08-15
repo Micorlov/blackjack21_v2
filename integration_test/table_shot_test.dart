@@ -21,6 +21,19 @@ void main() {
     await tester.tap(find.text('Play as Guest'));
     await tester.pumpAndSettle();
 
+    // A player with no hands behind them lands on the tips primer first, so the
+    // lobby is not reachable until it is dismissed. Skipping also keeps the
+    // tutorial overlay off the table.
+    final skipTips = find.text("I've played before — skip");
+    if (skipTips.evaluate().isNotEmpty) {
+      // The link sits below the tip cards, off-screen on shorter devices, so a
+      // plain tap lands on nothing.
+      await tester.ensureVisible(skipTips);
+      await tester.pumpAndSettle();
+      await tester.tap(skipTips);
+      await tester.pumpAndSettle();
+    }
+
     // Lobby: the first table tile in the "choose your table" list.
     await tester.tap(find.text('Bronze Table').first);
     await tester.pumpAndSettle();

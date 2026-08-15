@@ -259,6 +259,14 @@ emulator testing.
 
 ## Changelog
 
+### 2026-08-15
+- fix: **startup no longer hangs forever on a stalled Firebase/Google Sign-In init.** Both calls
+  used to be awaited with no timeout, so a wiped install where `GoogleSignIn.instance.initialize()`
+  never resolved left the player stuck on the launch splash with no UI and no error. Each init now
+  has an 8-second timeout and failures are swallowed with a debug log — the game still plays offline
+  against bots and guest play still works even if Firebase/Google Sign-In never come up. Updated the
+  table-shot integration test to dismiss the "skip tips" primer before reaching the lobby.
+
 ### 2026-08-06 (6)
 - feat: **renamed the app to "21 Sweet Pot"** (was "Blackjack 21" / "Blackjack21 V2"). Updated the
   Android launcher label, iOS `CFBundleDisplayName`, the in-app title/onboarding logo text, the

@@ -23,11 +23,35 @@ import 'widgets/rank_strip.dart';
 import 'widgets/story_overlay.dart';
 import 'widgets/web_viewport_scaler.dart';
 
+/// Neither service is needed to render the first frame — the game plays offline
+/// against built-in bots and sign-in is offered, not forced. Awaiting them
+/// unbounded meant a stalled init left the player on the launch splash forever,
+/// with no UI and no error: on a wiped install `GoogleSignIn.initialize` was
+/// observed never returning. Bounding each one turns that into a slow start
+/// rather than a dead app.
+const _startupInitTimeout = Duration(seconds: 8);
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  await GoogleSignIn.instance.initialize();
+  await _initServices();
   runApp(const ProviderScope(child: BlackjackApp()));
+}
+
+Future<void> _initServices() async {
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    ).timeout(_startupInitTimeout);
+  } catch (error) {
+    debugPrint('Firebase init did not complete, continuing offline: $error');
+    return;
+  }
+
+  try {
+    await GoogleSignIn.instance.initialize().timeout(_startupInitTimeout);
+  } catch (error) {
+    debugPrint('Google sign-in init did not complete, guest play still works: $error');
+  }
 }
 
 class BlackjackApp extends StatelessWidget {
