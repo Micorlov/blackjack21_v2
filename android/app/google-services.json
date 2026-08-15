@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "445894203200-c7g2u6rl24t12rqgj1bv8c41ggshc92q.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.micorlov.blackjack21_v2",
+            "certificate_hash": "a67066fe5a8de5a95a23b2ced09ed461822cbd93"
+          }
+        },
+        {
           "client_id": "445894203200-od9us9ivqslgc4d6geeh4lgon19ccu8t.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

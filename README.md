@@ -259,6 +259,16 @@ emulator testing.
 
 ## Changelog
 
+### 2026-08-15 (2)
+- fix: **Google Sign-In failed on release builds (`DEVELOPER_ERROR`).** The Firebase Android app
+  only had the debug keystore's SHA-1 registered, so any build signed with the real upload keystore
+  (`~/.android-keys/blackjack21_v2_upload.jks`) had no matching OAuth client and Google rejected the
+  sign-in. Registered the upload keystore's SHA-1 and SHA-256 fingerprints on the Firebase Android
+  app and pulled the refreshed `google-services.json` into the project. Google Play App Signing uses
+  a separate certificate for Play-distributed installs — its fingerprint still needs to be added the
+  same way, from Play Console → Setup → App integrity → App signing, or this will resurface for
+  users who install from Play rather than a sideloaded build.
+
 ### 2026-08-15
 - fix: **startup no longer hangs forever on a stalled Firebase/Google Sign-In init.** Both calls
   used to be awaited with no timeout, so a wiped install where `GoogleSignIn.instance.initialize()`
