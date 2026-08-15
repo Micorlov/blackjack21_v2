@@ -161,9 +161,13 @@ flutter build appbundle --release && python3 tool/play_upload.py --aab build/app
 ```
 
 Pass `--version-code N` instead of `--aab` to put a bundle that is already on Play onto a second
-track — Play rejects a re-upload of a version code it already has. While the app is still a draft
-(never published), only `internal` accepts `--status completed`; every other track needs
-`--status draft`.
+track — Play rejects a re-upload of a version code it already has. Now that the app has been
+published, `alpha` accepts `--status completed` too; the draft-only restriction that once limited
+`completed` to `internal` no longer applies.
+
+Bump `version:` in `pubspec.yaml` before building — Gradle reads it as `flutter.versionCode` /
+`flutter.versionName`, and Play rejects a bundle whose version code is already on the account.
+Keep `tool/release_notes_en-US.txt` under **500 characters**; Play rejects anything longer.
 
 Auth is a Google Cloud service account, `play-publisher@blackjack21-v2.iam.gserviceaccount.com`,
 granted "Release apps to testing tracks" and "Manage testing tracks and edit tester lists" on this
@@ -306,6 +310,25 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-08-15 (14)
+- chore: **bumped the app to 1.2.0 (3) and shipped it to Google Play.** `1.1.0 (2)` had been the
+  build on both tracks since August 6, thirteen commits back — three features (the neural-voice
+  re-cut, the hand-total circle, the voice on/off option) and six fixes (sweep pot, voice queue,
+  five overflowing screens, the navigation-bar gap, Google Sign-In `DEVELOPER_ERROR`, the startup
+  hang) had accumulated behind it, which is a minor bump rather than a patch.
+- chore: uploaded the signed 58.9 MB bundle to **Internal testing**, then promoted the same
+  version code to **Closed testing – Alpha** with `--version-code 3` — Play rejects a re-upload of
+  a version code it already holds, so one build reaches both tracks. Both now read `1.2.0 (3)`,
+  status `completed`, confirmed by reading the tracks back off the API.
+- docs: rewrote `tool/release_notes_en-US.txt` for 1.2.0. The first draft ran 591 characters and
+  would have been rejected — Play caps release notes at **500 per language** — so it ships at 467.
+- docs: corrected **Publishing to Google Play**, which still claimed only `internal` accepts
+  `--status completed` "while the app is still a draft". The app is published; `alpha` took
+  `completed` without complaint. Added the version-bump and 500-character rules to the same section.
+- note: managed publishing is on (see [2026-08-15 (12)](#2026-08-15-12)), so both releases land
+  under **Changes ready to publish** once review clears, and reach testers only after
+  **Publish** is clicked in the console. The API commit does not do that step.
 
 ### 2026-08-15 (13)
 - fix: **the table no longer talks over itself.** The spoken call-outs were scheduled from three

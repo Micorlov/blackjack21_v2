@@ -1,6 +1,8 @@
-21 Sweet Pot (formerly Blackjack 21)
+What's new in 1.2.0
 
-- New name: 21 Sweet Pot
-- Weekend Cup tournament screen, daily bonus streak ladder, and a new-player tips screen
-- Table chat bottom sheet and live felt themes
-- Bigger, clearer betting felt on phones
+- A real human voice: every call-out re-recorded, and the table no longer talks over itself.
+- Your hand total now sits in a circle beside your bet, and is spoken as each card lands.
+- Voice can be turned off, in the opening setup or in Settings.
+- The table only announces a sweep pot when there is one to win.
+- Google Sign-In fixed, and a slow network can no longer hang startup.
+- Long names and large text no longer push buttons off screen.
