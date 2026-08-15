@@ -209,7 +209,7 @@ under `flutter: assets:` in `pubspec.yaml` — a new file in the folder needs no
 |---|---|---|
 | Tones | `deal.wav`, `chip.wav`, `turn.wav`, `win.wav`, `lose.wav`, `push.wav`, `blackjack.wav` | Dealing, betting, your turn, and hand outcomes |
 | NPC voice | `npc_stand.wav`, `npc_bust.wav` | An opponent seat standing or busting |
-| Result voice | `player_win.wav`, `player_lose.wav`, `big_win.wav`, `player_pot.wav` | Your settled hand, 700ms after its tone |
+| Result voice | `player_win.wav`, `player_lose.wav`, `big_win.wav`, `player_pot.wav` | Your settled hand, 700ms after its tone — or later, if the hand total is still speaking |
 | Celebration | `pot_celebration.wav` | After the pot call-out — a synthesized drum roll, downbeat and major triad |
 | Number words | `num/*.wav` — 0-19, the tens, `hundred`, `thousand`, `dollars`, `sweep_pot`, `you_have` | Stitched into the spoken pot figure and hand total |
 
@@ -306,6 +306,34 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-08-15 (13)
+- fix: **the table no longer talks over itself.** The spoken call-outs were scheduled from three
+  independent timers — the hand total 350ms after a card lands, the settlement result 700ms after
+  its tone, the sweep-pot figure 700ms after the turn cue — and every one of them drove the same
+  voice channel by stopping whatever was already playing. The windows overlap: "You have twenty
+  five" runs 1.7s, so the result call-out 350ms behind it cut the total off after four syllables.
+  Every bust, every double and every natural blackjack hit this, which is what made the table
+  sound like it was saying the wrong thing.
+- fix: `services/sound_player.dart` now treats the voice channel as a queue instead of a race. A
+  line waits for the one in front of it rather than cutting it short, and a line held more than
+  `SoundPlayer.kMaxVoiceWait` (3s) past its cue is dropped instead — by then the moment it
+  described has passed. Pre-recorded lines are re-wrapped in the same canonical header as the
+  stitched number words, so a clip's length is known from its byte count and whatever follows can
+  be timed off it.
+- fix: **the second split hand is announced when it becomes the active one.** `_advanceHand` said
+  nothing when play moved from the first split hand to the second, so the last number spoken was
+  the first hand's total while the circle on screen showed the second's.
+- fix: muting now silences call-outs already handed to the queue. `toggleSound` and `toggleVoice`
+  cancel their pending timers, but a queued line lives in `SoundPlayer` and only `silenceVoice()`
+  can drop it.
+- refactor: the sweep-pot drum flourish is scheduled from the moment the pot call-out actually
+  finishes, reported back by the queue, rather than the fixed `_kPotVoiceLength` offset that
+  constant is gone. With voice off it still follows the settlement tone directly.
+- test: added `test/voice_queue_test.dart` — every clip is 44.1kHz mono 16-bit (the format the
+  channel's byte-count arithmetic assumes), `SoundPlayer.wavDuration` matches each real clip to
+  within a millisecond, and every reachable hand total 4-31 outlasts the 350ms gap between the
+  two call-outs, so the overlap the queue exists to absorb cannot be quietly optimized away.
 
 ### 2026-08-15 (12)
 - chore: **published the pending tester-list change, which is why Testers Community reported the
