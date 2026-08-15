@@ -10,6 +10,7 @@ import 'package:blackjack21_v2/models/game_state.dart';
 import 'package:blackjack21_v2/models/hand.dart';
 import 'package:blackjack21_v2/models/playing_card.dart';
 import 'package:blackjack21_v2/models/social_models.dart';
+import 'package:blackjack21_v2/models/table_pot.dart';
 import 'package:blackjack21_v2/screens/table/table_calc.dart';
 import 'package:blackjack21_v2/state/game_notifier.dart';
 
@@ -47,8 +48,38 @@ const _noLoserSeats = [
   ),
 ];
 
+/// A seat that went over — the only thing that can forfeit a bet while the
+/// dealer's hole card is still down.
+const _bustedSeat = NpcSeat(
+  bet: 75,
+  cards: [PlayingCard(rank: '10', suit: '♠'), PlayingCard(rank: '9', suit: '♦'), PlayingCard(rank: '5', suit: '♣')],
+  action: 'BUST',
+  done: true,
+);
+
 const _dealer17 = [PlayingCard(rank: '10', suit: '♠'), PlayingCard(rank: '7', suit: '♦')];
+const _dealerSix = [PlayingCard(rank: '6', suit: '♣'), PlayingCard(rank: '10', suit: '♦')];
 const _heroTwenty = [PlayingCard(rank: 'K', suit: '♠'), PlayingCard(rank: 'Q', suit: '♠')];
+const _heroSoft18 = [PlayingCard(rank: '7', suit: '♥'), PlayingCard(rank: 'A', suit: '♠')];
+
+/// The reported hand: every opponent seat has stood, the dealer's hole card is
+/// still down and action is back with the hero — so no bet has been forfeited
+/// and there is nothing to sweep yet.
+GameState _midRound({List<NpcSeat> seats = _noLoserSeats}) {
+  return GameState(
+    screen: AppScreen.table,
+    displayName: 'Guest',
+    chips: 1400,
+    stake: _stake,
+    bet: 100,
+    phase: RoundPhase.playing,
+    dealerHand: _dealerSix,
+    holeRevealed: false,
+    hands: const [Hand(cards: _heroSoft18, bet: 100, status: HandStatus.active)],
+    friends: kInitialFriends,
+    npcSeats: seats,
+  );
+}
 
 GameState _settled({SweepInfo? sweepInfo, int sweepAmount = 0}) {
   return GameState(
@@ -109,6 +140,36 @@ void main() {
       final pot = TableCalc.midRoundPot(_settled());
       expect(pot.potLabelText, 'NO SWEEP');
       expect(pot.potValueLabel, '\$0');
+    });
+  });
+
+  group('pot pill mid-round', () {
+    test('says NO SWEEP POT, with no figure, while every seat is still in', () {
+      final pot = TableCalc.midRoundPot(_midRound());
+      expect(pot.hasSweepPot, isFalse);
+      expect(pot.potLabelText, 'NO SWEEP POT');
+      expect(pot.potValueLabel, '');
+    });
+
+    test('quotes the forfeited chips once a seat busts', () {
+      final pot = TableCalc.midRoundPot(_midRound(seats: const [..._noLoserSeats, _bustedSeat]));
+      expect(pot.hasSweepPot, isTrue);
+      expect(pot.potLabelText, 'SWEEP POT');
+      expect(pot.potValueLabel, '\$75');
+    });
+  });
+
+  group('sweep pot call-out', () {
+    test('has nothing to announce while every seat is still in', () {
+      final pot = TablePot.live(_midRound());
+      expect(pot.isSweep, isFalse);
+      expect(pot.amount, 0);
+    });
+
+    test('announces only the bets actually forfeited', () {
+      final pot = TablePot.live(_midRound(seats: const [..._noLoserSeats, _bustedSeat]));
+      expect(pot.isSweep, isTrue);
+      expect(pot.amount, 75);
     });
   });
 

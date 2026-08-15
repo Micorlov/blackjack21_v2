@@ -71,11 +71,14 @@ class TableCalc {
     final sweep = s.sweepInfo;
     final potLabelText = atSettlement
         ? _settledPotLabel(sweep)
-        : (hasSweepPot ? 'SWEEP POT' : 'TABLE POT');
+        : (hasSweepPot ? 'SWEEP POT' : 'NO SWEEP POT');
 
+    // Mid-round with nothing forfeited there is no figure to quote: the chips
+    // still sitting in front of the players are not a pot anyone can win, and
+    // naming a number reads as one that is already up for grabs.
     final potValueLabel = atSettlement
         ? '\$${formatChips(sweep?.totalWin ?? 0)}'
-        : '\$${formatChips(pot.amount)}';
+        : (hasSweepPot ? '\$${formatChips(pot.amount)}' : '');
 
     return MidRoundPot(
       hasSweepPot: hasSweepPot,

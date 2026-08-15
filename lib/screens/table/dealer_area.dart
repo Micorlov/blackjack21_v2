@@ -10,9 +10,9 @@ import '../../widgets/playing_card_widget.dart';
 import 'table_calc.dart';
 
 /// Centered dealer cluster at the top of the felt: "D" badge + total, the
-/// table/sweep pot pill (with a mid-round "YOU LEAD" badge and, once
-/// settled, a "TABLE SWEEP" banner), then the dealer's two cards — the
-/// second stays a [PlayingCardBack] until `state.holeRevealed`.
+/// sweep-pot pill (with a mid-round "YOU LEAD" badge and, once settled, a
+/// "TABLE SWEEP" banner), then the dealer's two cards — the second stays a
+/// [PlayingCardBack] until `state.holeRevealed`.
 class DealerArea extends StatelessWidget {
   final GameState state;
   final MidRoundPot midPot;
@@ -107,11 +107,15 @@ class DealerArea extends StatelessWidget {
               style: AppText.mono(11, letterSpacing: 1.4, color: AppColors.gold.withValues(alpha: 0.7)),
             ),
           ),
-          const SizedBox(width: 8),
-          Text(
-            midPot.potValueLabel,
-            style: AppText.mono(16, weight: FontWeight.w700, color: AppColors.gold),
-          ),
+          // Empty while no seat has forfeited: "NO SWEEP POT" stands alone
+          // rather than trailing a figure nobody can win.
+          if (midPot.potValueLabel.isNotEmpty) ...[
+            const SizedBox(width: 8),
+            Text(
+              midPot.potValueLabel,
+              style: AppText.mono(16, weight: FontWeight.w700, color: AppColors.gold),
+            ),
+          ],
           if (midPot.heroLeads) ...[
             const SizedBox(width: 8),
             Container(

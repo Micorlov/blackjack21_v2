@@ -198,11 +198,15 @@ class GameNotifier extends StateNotifier<GameState> {
   /// Reads the dealer pill out loud — "Sweep pot, three hundred seventy five
   /// dollars" — now that every opponent seat has played and the figure has
   /// stopped moving. Reads the same [TablePot] the pill renders, so the two
-  /// can never disagree about the figure. The call-out always opens with
-  /// "sweep pot", whichever figure the pill happens to be showing.
+  /// can never disagree about the figure.
+  ///
+  /// Silent when no seat has forfeited a bet: with every opponent still in
+  /// there is no sweep pot, and announcing the chips on the table as one
+  /// promises a pot that does not exist.
   void _announceTablePot() {
     if (!state.soundOn) return;
     final pot = TablePot.live(state);
+    if (!pot.isSweep) return;
     final amount = spokenAmountWords(pot.amount);
     if (amount.isEmpty) return;
 

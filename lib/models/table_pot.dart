@@ -2,21 +2,22 @@ import 'game_state.dart';
 import 'playing_card.dart';
 import 'social_models.dart';
 
-/// The live "closest to 21" pot figure, as shown on the pill above the dealer
+/// The live "closest to 21" sweep pot, as shown on the pill above the dealer
 /// and spoken aloud once every opponent seat has played.
 ///
-/// One pill carries two different figures. Before any seat has forfeited a bet
-/// it shows every chip on the table; the moment a seat busts or loses to a
-/// revealed dealer hand it switches to the sweep pot actually up for grabs.
-/// Both the pill and the spoken call-out read from here so they can never
+/// Only forfeited bets count. Until a seat busts or loses to a revealed dealer
+/// hand there is nothing to sweep, and the pot is empty — the pill says so
+/// rather than quoting the chips still sitting in front of the players, and the
+/// call-out stays silent. Both surfaces read from here so they can never
 /// disagree about what the pot is.
 class TablePot {
-  const TablePot({required this.amount, required this.isSweep});
+  const TablePot(this.amount);
 
+  /// The forfeited chips up for grabs — 0 while every seat is still in.
   final int amount;
 
-  /// Whether [amount] is the forfeited sweep pot rather than the whole table.
-  final bool isSweep;
+  /// Whether there is a sweep pot at all.
+  bool get isSweep => amount > 0;
 
   /// Whether [seat] has already forfeited its bet. [dealerShown] is the
   /// dealer's total once revealed, or null while the hole card is face down —
@@ -37,19 +38,6 @@ class TablePot {
       if (seat.cards.isEmpty) continue;
       if (seatLost(seat, dealerShown)) sweep += seat.bet;
     }
-    if (sweep > 0) return TablePot(amount: sweep, isSweep: true);
-
-    var table = 0;
-    for (final seat in s.npcSeats) {
-      table += seat.bet;
-    }
-    return TablePot(amount: table + heroBet(s), isSweep: false);
-  }
-
-  /// The hero's stake this round. A dealt hand carries its own bet; before the
-  /// deal only the pending [GameState.bet] is set.
-  static int heroBet(GameState s) {
-    if (s.hands.isEmpty) return s.bet;
-    return s.hands.first.bet != 0 ? s.hands.first.bet : s.bet;
+    return TablePot(sweep);
   }
 }
