@@ -9,33 +9,33 @@ Hebrew input is normal — it is never a request to switch reply language.
 
 **After every bug fix and every new feature, without being asked:**
 
-1. **Install a fresh build on the phone** — Michael's iPhone, wireless:
+1. **Install a fresh build on the phone** — Michael's Android, over USB:
 
    ```bash
-   flutter build ios --release && \
-     xcrun devicectl device install app \
-       --device 001F6FE4-6A74-5A55-B2AC-F370BD8A3351 \
-       build/ios/iphoneos/Runner.app
+   flutter build apk --release && \
+     adb -s R5GYB2NHR5D install -r build/app/outputs/flutter-apk/app-release.apk
    ```
 
    **Both commands are required.** The install step does *not* rebuild — on its own it ships
-   whatever `build/ios/iphoneos/Runner.app` already contains, which silently installs a stale
-   binary and makes the fix look like it did not work.
+   whatever `build/app/outputs/flutter-apk/app-release.apk` already contains, which silently
+   installs a stale binary and makes the fix look like it did not work.
 
-   **Never use `flutter install`.** It uninstalls the app before installing it
-   (`flutter_tools/lib/src/commands/install.dart`). The signing identity here is a *free* personal
-   Apple team, and iOS deletes the "Developer App" trust entry as soon as the last app from that
-   developer leaves the device — so every `flutter install` re-triggers the **Untrusted Developer**
-   alert. `devicectl` upgrades in place, so the trust survives.
+   **Keep the `-r` flag.** It upgrades in place, so the signed-in account, chip balance and saved
+   `gameStateV1` blob survive. A plain `adb install` fails on an existing package, and uninstalling
+   first would wipe the player's progress.
 
-   Device ids: `001F6FE4-6A74-5A55-B2AC-F370BD8A3351` is the CoreDevice id used by `devicectl`;
-   `00008130-001C79DC0061401C` is the hardware UDID used by `flutter`/`flutter devices`. Run
-   `xcrun devicectl list devices` if the id ever changes. The phone must be unlocked and on the same
-   network. If the install fails (device offline, code signing, locked screen), say so explicitly —
-   never report a change as delivered when it was only committed.
+   Device: `R5GYB2NHR5D` (Samsung `SM_S731B`), package `com.micorlov.blackjack21_v2`. Run
+   `adb devices -l` if the id ever changes; the phone must be unlocked with USB debugging on.
+   Note `flutter devices` may list only iOS/wireless targets and miss it — trust `adb devices`.
+   Verify the install actually landed with
+   `adb shell dumpsys package com.micorlov.blackjack21_v2 | grep lastUpdateTime` and check it
+   against the APK's build time. If the install fails (device offline, unauthorized, locked
+   screen), say so explicitly — never report a change as delivered when it was only committed.
 
-   The free provisioning profile expires **7 days** after each build, after which the installed app
-   refuses to launch until a fresh build is installed. This is expected, not a bug.
+   **iOS delivery is unavailable** and should not be attempted: Xcode has no Apple ID signed in,
+   so `flutter build ios` fails with *"No Accounts"* and *"No profiles for
+   'com.micorlov.blackjack21V2' were found"*. Ask Michael to sign in under
+   Xcode → Settings → Accounts before ever building for iPhone again.
 
 2. **Commit locally** — `git add` + `git commit` in this repo only. **Never `git push`** unless the
    user asks for it in that same message.
