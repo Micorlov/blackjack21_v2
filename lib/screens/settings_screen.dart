@@ -149,7 +149,16 @@ class _AccountPanel extends StatelessWidget {
               photoUrl: photoUrl,
             ),
             const SizedBox(width: 10),
-            Text(displayName, style: AppText.sora(16, weight: FontWeight.w700)),
+            // Google account names run far longer than "Guest" — without a
+            // flex the name ran straight off the panel's right edge.
+            Expanded(
+              child: Text(
+                displayName,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.sora(16, weight: FontWeight.w700),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 12),

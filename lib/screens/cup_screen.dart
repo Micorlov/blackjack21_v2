@@ -67,7 +67,16 @@ class _CupScreenState extends ConsumerState<CupScreen> {
             children: [
               _BackCircle(onTap: notifier.goLobby),
               const SizedBox(width: 10),
-              Text('Weekend Cup', style: AppText.serifItalic(32)),
+              // A 32pt serif title plus the back circle is wider than a small
+              // phone at a large font scale; the title shrinks to fit instead
+              // of running past the edge.
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text('Weekend Cup', style: AppText.serifItalic(32)),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),

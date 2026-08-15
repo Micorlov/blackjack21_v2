@@ -215,7 +215,7 @@ joins those clips into a single WAV in memory (45ms of silence between words) an
 through one `BytesSource` — playing them as separate calls would need each to report
 completion before the next, and any gap would land mid-sentence.
 
-Voice clips are synthesized speech (macOS `say`, Samantha voice) rather than tones, so the
+Voice clips are synthesized speech (Kokoro, `am_michael` voice) rather than tones, so the
 table reads as spoken call-outs. All are mono 16-bit 44.1kHz and peak-normalised to -6.5 dBFS
 so no one line is louder than the rest.
 
@@ -224,6 +224,29 @@ still loads and plays, it just sounds like an unintelligible click, which is how
 `npc_stand.wav` shipped once. `test/sfx_assets_test.dart` guards against that: it reads each
 WAV and fails any clip still sounding above 10% of its own peak in its final 10ms.
 
+`tool/gen_voice.py` re-cuts the whole spoken set in one command, so changing the table's voice
+is a one-liner rather than 37 hand-trimmed files:
+
+```bash
+python3 tool/gen_voice.py --voice am_michael
+```
+
+It synthesizes each line, trims it to its own edges, resamples to 44.1kHz, peak-normalises and
+fades it out. Clips are produced on the build machine and bundled, so Android and iOS play
+byte-identical audio — nothing runs a TTS engine on the phone.
+
+Kokoro's model is ~325MB and stays out of the repo, under `$KOKORO_HOME`
+(default `~/.cache/blackjack21-voice`): a `kokoro-env/` venv with `kokoro-onnx` and
+`soundfile`, plus `kokoro-v1.0.onnx` and `voices-v1.0.bin`. It also needs
+`brew install espeak-ng` — the espeak bundled inside `espeakng-loader` has its data path
+compiled in as a build-machine path that does not exist locally, so the tool redirects the
+loader at Homebrew's copy.
+
+The tool also speaks through macOS `say` (`--engine say`) for quick auditions. That path
+fingerprints `say`'s fallback voice and refuses to run when the requested voice matches it:
+`say -v Alex` on a machine without Alex returns success and audio in the fallback voice
+instead of failing, which nearly shipped a whole set in the wrong voice.
+
 ## Testing
 
 ```bash
@@ -231,9 +254,23 @@ flutter analyze
 flutter test
 ```
 
-Layout work that has to be judged against real fonts and real device metrics — which widget
-tests, running on the fallback test font, cannot show — has a driver test that walks the app
-from onboarding to a dealt round and then holds the table still:
+### Layout sweeps
+
+`test/screen_overflow_test.dart` pumps **every screen and overlay** — onboarding, tips, lobby,
+stats (all three tabs), friends, shop, settings, the Weekend Cup, the table in five states, the
+daily-bonus dialog, the how-to-play sheet, the story overlay and the full standings list — on
+five phone/tablet sizes at both text scales the app allows, and fails on any `RenderFlex`
+overflow. Half the scenarios use "loaded account" data (a 35-character Google display name,
+seven-figure bankrolls, a full hand history) because every row in the design was drawn around
+"Guest" and "$1,150". `test/table_layout_test.dart` does the same for the felt's round phases.
+
+These sweeps only mean anything because `test/support/real_fonts.dart` registers Roboto (from
+the Flutter SDK's own cache — nothing is committed) under the family names `google_fonts` asks
+for. Without it every glyph is a full em wide in `flutter test`, roughly twice the shipped
+faces, and almost any row holding a sentence "overflows" in a test while being fine on a phone.
+
+Layout work that still has to be judged against the real fonts and real device metrics has a
+driver test that walks the app from onboarding to a dealt round and then holds the table still:
 
 ```bash
 flutter test integration_test/table_shot_test.dart -d <device-id>
@@ -262,6 +299,39 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-08-15 (8)
+- fix: **no screen runs off the edge any more.** A whole-app layout sweep found five places
+  where a row was drawn around short sample data and overflowed on a real account: the
+  Settings account row pushed a Google display name straight off the panel (on *every* phone
+  size — 2.8px on a 412-wide screen, 95px on a 320-wide one), the lobby's Daily Bonus card
+  shoved its Claim button off the card at a large font scale, the Weekend Cup title ran past
+  the screen edge, the shop's chip-pack tiles clipped their price line off the bottom, and the
+  felt's pot pill pushed the pot figure off the table when the sweep winner had a long name.
+  Each one now flexes, shrinks or ellipsises instead of overflowing.
+- test: added `test/screen_overflow_test.dart` — 250 tests pumping every screen, dialog, sheet
+  and overlay across five device sizes and both text scales, with long-name/high-bankroll data,
+  asserting no `RenderFlex` overflows anywhere.
+- test: added `test/support/real_fonts.dart`, which gives layout tests real font metrics by
+  registering the Flutter SDK's bundled Roboto under the families `google_fonts` requests.
+  `flutter test`'s fallback font makes every glyph a full em wide — about twice the shipped
+  faces — which reported 94 overflows where only 19 were real.
+
+### 2026-08-15 (7)
+- feat: **the table now speaks in a human voice.** All 37 spoken clips — the four result
+  call-outs, the two NPC lines and the 31 number words — were re-cut in Kokoro's `am_michael`,
+  a local neural voice, replacing macOS `say`'s Samantha. Same lines, same timing, same
+  format contract (mono 16-bit 44.1kHz, peak-normalised to -6.5 dBFS, faded out); every clip
+  still passes `test/sfx_assets_test.dart`'s truncation guard, with tails at 1.2% of peak or
+  below against the old set's 2.5%. `player_pot.wav` came out at 1442ms against the previous
+  1510ms, still inside `_kPotVoiceLength`'s 1520ms, so the drum flourish is unchanged and
+  starts 78ms after the line ends.
+- feat: added `tool/gen_voice.py`, which regenerates the whole spoken set from one command
+  instead of hand-trimming each file. Two engines: Kokoro (what ships) and macOS `say` (for
+  auditions). The `say` path fingerprints the fallback voice and aborts when the requested
+  voice matches it — `say -v Alex` on a machine without Alex returns success and audio in the
+  fallback voice rather than failing, which nearly shipped the set in the voice it replaced.
+  Clips are generated on the build machine and bundled, so Android and iOS stay byte-identical.
 
 ### 2026-08-15 (6)
 - feat: **added a hand-total circle showing the hero's live card total, spoken aloud as it

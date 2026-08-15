@@ -214,25 +214,38 @@ class _DailyBonusCardState extends State<_DailyBonusCard> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'DAILY BONUS',
-                style: AppText.mono(13, weight: FontWeight.w700, letterSpacing: 1.3, color: AppColors.gold),
-              ),
-              const SizedBox(height: 4),
-              Text('+$reward chips', style: AppText.mono(22, weight: FontWeight.w700)),
-              if (widget.state.dailyBonusStreakDay > 0)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(
-                    ready ? 'Day $claimDay of your streak' : 'Streak day ${widget.state.dailyBonusStreakDay} banked',
-                    style: AppText.sora(12.5, weight: FontWeight.w700, color: AppColors.textMuted),
+          // The reward figure and the streak line are both wider at a large
+          // font scale than the card has room for beside the claim button, so
+          // the label block takes the leftover width and scales into it
+          // rather than pushing the button off the card.
+          Expanded(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'DAILY BONUS',
+                    style: AppText.mono(13, weight: FontWeight.w700, letterSpacing: 1.3, color: AppColors.gold),
                   ),
-                ),
-            ],
+                  const SizedBox(height: 4),
+                  Text('+$reward chips', style: AppText.mono(22, weight: FontWeight.w700)),
+                  if (widget.state.dailyBonusStreakDay > 0)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        ready
+                            ? 'Day $claimDay of your streak'
+                            : 'Streak day ${widget.state.dailyBonusStreakDay} banked',
+                        style: AppText.sora(12.5, weight: FontWeight.w700, color: AppColors.textMuted),
+                      ),
+                    ),
+                ],
+              ),
+            ),
           ),
+          const SizedBox(width: 12),
           if (ready)
             SizedBox(
               width: 110,

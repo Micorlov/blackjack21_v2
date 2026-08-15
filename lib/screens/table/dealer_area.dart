@@ -96,9 +96,16 @@ class DealerArea extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            midPot.potLabelText,
-            style: AppText.mono(11, letterSpacing: 1.4, color: AppColors.gold.withValues(alpha: 0.7)),
+          // At settlement this label carries the winner's display name
+          // ("KONSTANTINOPOULOS TAKES"), which a player picks — so it has to
+          // give way rather than push the pot figure off the felt.
+          Flexible(
+            child: Text(
+              midPot.potLabelText,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppText.mono(11, letterSpacing: 1.4, color: AppColors.gold.withValues(alpha: 0.7)),
+            ),
           ),
           const SizedBox(width: 8),
           Text(

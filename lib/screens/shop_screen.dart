@@ -288,13 +288,18 @@ class _ChipPacksGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // A pack tile is three stacked text lines, so its height has to follow the
+    // user's font scale — a fixed aspect ratio clipped the price line off the
+    // bottom of every tile at large type.
+    final textScale = (MediaQuery.textScalerOf(context).scale(12) / 12).clamp(1.0, 1.3);
+
     return GridView.count(
       crossAxisCount: 2,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       mainAxisSpacing: 10,
       crossAxisSpacing: 10,
-      childAspectRatio: 1.15,
+      childAspectRatio: 1.15 / textScale,
       children: kShopPacks.map((pack) {
         return _ChipPackCard(pack: pack, onTap: () => onBuy(pack));
       }).toList(),
@@ -323,22 +328,28 @@ class _ChipPackCard extends StatelessWidget {
             clipBehavior: Clip.none,
             alignment: Alignment.center,
             children: [
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.monetization_on_outlined, color: AppColors.gold, size: 30),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${formatChips(pack.amount)} chips',
-                    textAlign: TextAlign.center,
-                    style: AppText.sora(17, weight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    pack.price,
-                    style: AppText.sora(15, weight: FontWeight.w700, color: AppColors.gold),
-                  ),
-                ],
+              // The tile grows with the font scale, but a narrow phone can
+              // still leave a pack line a couple of pixels short — scaling the
+              // block down absorbs that instead of clipping the price.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.monetization_on_outlined, color: AppColors.gold, size: 30),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${formatChips(pack.amount)} chips',
+                      textAlign: TextAlign.center,
+                      style: AppText.sora(17, weight: FontWeight.w800),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      pack.price,
+                      style: AppText.sora(15, weight: FontWeight.w700, color: AppColors.gold),
+                    ),
+                  ],
+                ),
               ),
               if (pack.badge.isNotEmpty)
                 Positioned(
