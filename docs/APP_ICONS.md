@@ -1,8 +1,9 @@
 # App Icons
 
-A catalogue of every app-icon asset in this repo, where it lives, what size it is, and whether
-it's the branded "21 Sweet Pot" mark or still the stock Flutter template logo. Regenerate branded
-icons from the same casino-green/gold Ace-of-Spades-and-"21" design described in
+A catalogue of every icon in this repo: the platform launcher icons (where each lives, what size
+it is, and whether it's the branded "21 Sweet Pot" mark or still the stock Flutter template logo),
+and every icon glyph used inside the app's own buttons and UI. Regenerate branded launcher icons
+from the same casino-green/gold Ace-of-Spades-and-"21" design described in
 [README.md → Assets](../README.md#assets) if the design ever changes; there is no checked-in
 source file or generator script for the icon set today, so a design change means re-exporting
 every size below by hand (or wiring up a generator, see **Gaps** at the bottom).
@@ -33,6 +34,41 @@ into a circle at display time rather than using a purpose-drawn round asset.
 This matches the note in the README changelog (2026-08-15 (4)): only the Android launcher icons
 and `play-assets/` were ever branded, and the iOS build still ships the Flutter logo. That gap now
 also covers macOS and Windows, which use the same stock template assets iOS does.
+
+## In-app button icons
+
+Separate from the platform launcher icons above: every icon drawn *inside* the app's own UI —
+nav bar tabs, header buttons, panel affordances. These aren't image files; each is a glyph from
+Flutter's built-in `Icons` (Material Symbols) font, referenced by `Icons.<name>` and drawn with an
+`Icon` widget. There is no custom icon font or SVG set in the app — `cupertino_icons` is a listed
+dependency (the Flutter template default) but nothing in `lib/` actually uses `CupertinoIcons`.
+
+| Icon | Used on | Where |
+|---|---|---|
+| `Icons.diamond_rounded` | Bottom nav — Lobby tab | `widgets/bottom_nav_bar.dart` |
+| `Icons.bar_chart_rounded` | Bottom nav — Stats tab | `widgets/bottom_nav_bar.dart` |
+| `Icons.people_alt_rounded` | Bottom nav — Friends tab | `widgets/bottom_nav_bar.dart` |
+| `Icons.storefront_rounded` | Bottom nav — Shop tab | `widgets/bottom_nav_bar.dart` |
+| `Icons.tune_rounded` | Bottom nav — Settings tab | `widgets/bottom_nav_bar.dart` |
+| `Icons.chevron_left` | Table header — exit-table button | `screens/table/table_header.dart` |
+| `Icons.chat_bubble_outline` | Table header — open table-chat sheet | `screens/table/table_header.dart` |
+| `Icons.more_vert` | Table header — table menu | `screens/table/table_header.dart` |
+| `Icons.arrow_back` | World leaderboard screen — back button | `screens/table/world_leaderboard_screen.dart` |
+| `Icons.chevron_left` | Weekend Cup screen — back button | `screens/cup_screen.dart` |
+| `Icons.open_in_full` | Betting panel — friends-table page-swipe hint | `screens/table/table_betting_panel.dart` |
+| `Icons.chevron_right` | Lobby — table-card disclosure | `screens/lobby_screen.dart` |
+| `Icons.check_circle` | Lobby — Daily Bonus card "Claimed" state | `screens/lobby_screen.dart` |
+| `Icons.chevron_right` | Settings — link-row disclosure (About, Help, etc.) | `screens/settings_screen.dart` |
+| `Icons.trending_up` | Settings — streak-nudge banner badge | `screens/settings_screen.dart` |
+| `Icons.check` | Daily bonus overlay — claimed-day badge on the D1–D7 ladder | `widgets/daily_bonus_dialog.dart` |
+| `Icons.close` | How-to-play sheet — close button | `widgets/how_to_play_sheet.dart` |
+| `Icons.close` | Story overlay — close button | `widgets/story_overlay.dart` |
+| `Icons.check_rounded` | Stats — achievement row unlocked badge | `screens/stats_screen.dart` |
+| `Icons.workspace_premium` | Shop — VIP/premium banner | `screens/shop_screen.dart` |
+| `Icons.favorite` / `Icons.favorite_border` | Shop — like button on a cosmetic item | `screens/shop_screen.dart` |
+| `Icons.monetization_on_outlined` | Shop — chip-pack tile icon | `screens/shop_screen.dart` |
+| `Icons.check` | Shop — selected felt/avatar swatch checkmark | `screens/shop_screen.dart` |
+| `Icons.play_arrow` | Shop — sound-preview play button | `screens/shop_screen.dart` |
 
 ## Gaps
 

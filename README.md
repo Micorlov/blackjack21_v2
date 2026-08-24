@@ -193,7 +193,8 @@ Dev: `flutter_test`, `flutter_lints`, `integration_test`.
 
 See [docs/APP_ICONS.md](docs/APP_ICONS.md) for a full catalogue of every app-icon asset (Android,
 iOS, macOS, Windows, Linux, web/PWA, Play Store listing) with previews, sizes, and which platforms
-still ship the stock Flutter logo instead of the branded mark.
+still ship the stock Flutter logo instead of the branded mark — plus every icon glyph used on the
+app's own buttons (nav bar, headers, panels).
 
 `web/og-image.jpg` is the 1200×630 social/link-preview banner (Open Graph + Twitter Card) referenced
 from `web/index.html`; `web/favicon.png` and `web/icons/Icon-*.png` (including the `-maskable-`
@@ -310,6 +311,15 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-08-24 (2)
+- docs: `docs/APP_ICONS.md` gained an **In-app button icons** section cataloguing every
+  `Icons.*` glyph used across the app's own buttons — the 5 bottom-nav tabs, table header
+  (exit/chat/menu), world leaderboard and Weekend Cup back buttons, lobby and settings
+  disclosure chevrons, the daily-bonus and shop screens' badges/likes/checkmarks, and both
+  close buttons (how-to-play sheet, story overlay) — each mapped to its file. Also notes that
+  `cupertino_icons` is an unused dependency (Flutter template default; nothing in `lib/`
+  references `CupertinoIcons`).
 
 ### 2026-08-24
 - docs: added [docs/APP_ICONS.md](docs/APP_ICONS.md), a full catalogue of every app-icon asset in
