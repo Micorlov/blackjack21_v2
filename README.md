@@ -266,6 +266,11 @@ flutter analyze
 flutter test
 ```
 
+See [docs/APP_IMPROVEMENTS.md](docs/APP_IMPROVEMENTS.md) for a quality/reliability roadmap —
+untested core logic, silent failure paths, and known limitations that are documented but not yet
+resolved. It's a companion to [FEATURE_PLAN.md](FEATURE_PLAN.md), which tracks candidate features
+rather than existing-code quality.
+
 ### Layout sweeps
 
 `test/screen_overflow_test.dart` pumps **every screen and overlay** — onboarding, tips, lobby,
@@ -311,6 +316,16 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-08-24 (4)
+- docs: added [docs/APP_IMPROVEMENTS.md](docs/APP_IMPROVEMENTS.md), a quality/reliability roadmap
+  distinct from `FEATURE_PLAN.md`'s feature list. Flags `state/game_notifier.dart` (1,506 lines,
+  the whole turn-flow/settlement engine) and `services/social_service.dart` as having no dedicated
+  unit tests, six `debugPrint`-and-swallow error sites in `social_service.dart` with no crash
+  visibility, the still-stock iOS/macOS/Windows app icons (linking `docs/APP_ICONS.md`), two
+  already-documented known limitations (web felt scaling, no remote push), and three open
+  `FEATURE_PLAN.md` items worth calling out for quality reasons (table presence, Firestore rules
+  hardening, Hebrew localization). Linked from this section, right after **Testing**.
 
 ### 2026-08-24 (3)
 - docs: the **In-app button icons** table in `docs/APP_ICONS.md` now shows an actual image next to
