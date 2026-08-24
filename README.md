@@ -312,6 +312,14 @@ emulator testing.
 
 ## Changelog
 
+### 2026-08-24 (3)
+- docs: the **In-app button icons** table in `docs/APP_ICONS.md` now shows an actual image next to
+  each `Icons.*` name instead of just the constant. Added `docs/icons/*.png` — 21 glyphs rendered
+  from Google's Material Icons / Material Icons Round fonts at each icon's exact codepoint (the
+  same fonts Flutter's `Icons` class draws from), on a dark casino-green swatch so they read
+  clearly in the doc. These are doc-only previews; the app still draws every glyph live from the
+  font, nothing in `lib/` changed.
+
 ### 2026-08-24 (2)
 - docs: `docs/APP_ICONS.md` gained an **In-app button icons** section cataloguing every
   `Icons.*` glyph used across the app's own buttons — the 5 bottom-nav tabs, table header

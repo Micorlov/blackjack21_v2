@@ -38,37 +38,42 @@ also covers macOS and Windows, which use the same stock template assets iOS does
 ## In-app button icons
 
 Separate from the platform launcher icons above: every icon drawn *inside* the app's own UI —
-nav bar tabs, header buttons, panel affordances. These aren't image files; each is a glyph from
-Flutter's built-in `Icons` (Material Symbols) font, referenced by `Icons.<name>` and drawn with an
+nav bar tabs, header buttons, panel affordances. These aren't image files in the app itself; each
+is a glyph from Flutter's built-in `Icons` font, referenced by `Icons.<name>` and drawn with an
 `Icon` widget. There is no custom icon font or SVG set in the app — `cupertino_icons` is a listed
 dependency (the Flutter template default) but nothing in `lib/` actually uses `CupertinoIcons`.
 
+The previews below are PNGs rendered from Google's own Material Icons / Material Icons Round
+fonts (the same glyphs Flutter's `Icons` class draws from) at each icon's exact codepoint, checked
+into `docs/icons/` purely so this doc can show them — the app itself still draws the glyph live
+from the font, not from these files.
+
 | Icon | Used on | Where |
 |---|---|---|
-| `Icons.diamond_rounded` | Bottom nav — Lobby tab | `widgets/bottom_nav_bar.dart` |
-| `Icons.bar_chart_rounded` | Bottom nav — Stats tab | `widgets/bottom_nav_bar.dart` |
-| `Icons.people_alt_rounded` | Bottom nav — Friends tab | `widgets/bottom_nav_bar.dart` |
-| `Icons.storefront_rounded` | Bottom nav — Shop tab | `widgets/bottom_nav_bar.dart` |
-| `Icons.tune_rounded` | Bottom nav — Settings tab | `widgets/bottom_nav_bar.dart` |
-| `Icons.chevron_left` | Table header — exit-table button | `screens/table/table_header.dart` |
-| `Icons.chat_bubble_outline` | Table header — open table-chat sheet | `screens/table/table_header.dart` |
-| `Icons.more_vert` | Table header — table menu | `screens/table/table_header.dart` |
-| `Icons.arrow_back` | World leaderboard screen — back button | `screens/table/world_leaderboard_screen.dart` |
-| `Icons.chevron_left` | Weekend Cup screen — back button | `screens/cup_screen.dart` |
-| `Icons.open_in_full` | Betting panel — friends-table page-swipe hint | `screens/table/table_betting_panel.dart` |
-| `Icons.chevron_right` | Lobby — table-card disclosure | `screens/lobby_screen.dart` |
-| `Icons.check_circle` | Lobby — Daily Bonus card "Claimed" state | `screens/lobby_screen.dart` |
-| `Icons.chevron_right` | Settings — link-row disclosure (About, Help, etc.) | `screens/settings_screen.dart` |
-| `Icons.trending_up` | Settings — streak-nudge banner badge | `screens/settings_screen.dart` |
-| `Icons.check` | Daily bonus overlay — claimed-day badge on the D1–D7 ladder | `widgets/daily_bonus_dialog.dart` |
-| `Icons.close` | How-to-play sheet — close button | `widgets/how_to_play_sheet.dart` |
-| `Icons.close` | Story overlay — close button | `widgets/story_overlay.dart` |
-| `Icons.check_rounded` | Stats — achievement row unlocked badge | `screens/stats_screen.dart` |
-| `Icons.workspace_premium` | Shop — VIP/premium banner | `screens/shop_screen.dart` |
-| `Icons.favorite` / `Icons.favorite_border` | Shop — like button on a cosmetic item | `screens/shop_screen.dart` |
-| `Icons.monetization_on_outlined` | Shop — chip-pack tile icon | `screens/shop_screen.dart` |
-| `Icons.check` | Shop — selected felt/avatar swatch checkmark | `screens/shop_screen.dart` |
-| `Icons.play_arrow` | Shop — sound-preview play button | `screens/shop_screen.dart` |
+| ![](icons/diamond_rounded.png) `Icons.diamond_rounded` | Bottom nav — Lobby tab | `widgets/bottom_nav_bar.dart` |
+| ![](icons/bar_chart_rounded.png) `Icons.bar_chart_rounded` | Bottom nav — Stats tab | `widgets/bottom_nav_bar.dart` |
+| ![](icons/people_alt_rounded.png) `Icons.people_alt_rounded` | Bottom nav — Friends tab | `widgets/bottom_nav_bar.dart` |
+| ![](icons/storefront_rounded.png) `Icons.storefront_rounded` | Bottom nav — Shop tab | `widgets/bottom_nav_bar.dart` |
+| ![](icons/tune_rounded.png) `Icons.tune_rounded` | Bottom nav — Settings tab | `widgets/bottom_nav_bar.dart` |
+| ![](icons/chevron_left.png) `Icons.chevron_left` | Table header — exit-table button | `screens/table/table_header.dart` |
+| ![](icons/chat_bubble_outline.png) `Icons.chat_bubble_outline` | Table header — open table-chat sheet | `screens/table/table_header.dart` |
+| ![](icons/more_vert.png) `Icons.more_vert` | Table header — table menu | `screens/table/table_header.dart` |
+| ![](icons/arrow_back.png) `Icons.arrow_back` | World leaderboard screen — back button | `screens/table/world_leaderboard_screen.dart` |
+| ![](icons/chevron_left.png) `Icons.chevron_left` | Weekend Cup screen — back button | `screens/cup_screen.dart` |
+| ![](icons/open_in_full.png) `Icons.open_in_full` | Betting panel — friends-table page-swipe hint | `screens/table/table_betting_panel.dart` |
+| ![](icons/chevron_right.png) `Icons.chevron_right` | Lobby — table-card disclosure | `screens/lobby_screen.dart` |
+| ![](icons/check_circle.png) `Icons.check_circle` | Lobby — Daily Bonus card "Claimed" state | `screens/lobby_screen.dart` |
+| ![](icons/chevron_right.png) `Icons.chevron_right` | Settings — link-row disclosure (About, Help, etc.) | `screens/settings_screen.dart` |
+| ![](icons/trending_up.png) `Icons.trending_up` | Settings — streak-nudge banner badge | `screens/settings_screen.dart` |
+| ![](icons/check.png) `Icons.check` | Daily bonus overlay — claimed-day badge on the D1–D7 ladder | `widgets/daily_bonus_dialog.dart` |
+| ![](icons/close.png) `Icons.close` | How-to-play sheet — close button | `widgets/how_to_play_sheet.dart` |
+| ![](icons/close.png) `Icons.close` | Story overlay — close button | `widgets/story_overlay.dart` |
+| ![](icons/check_rounded.png) `Icons.check_rounded` | Stats — achievement row unlocked badge | `screens/stats_screen.dart` |
+| ![](icons/workspace_premium.png) `Icons.workspace_premium` | Shop — VIP/premium banner | `screens/shop_screen.dart` |
+| ![](icons/favorite.png)![](icons/favorite_border.png) `Icons.favorite` / `Icons.favorite_border` | Shop — like button on a cosmetic item | `screens/shop_screen.dart` |
+| ![](icons/monetization_on_outlined.png) `Icons.monetization_on_outlined` | Shop — chip-pack tile icon | `screens/shop_screen.dart` |
+| ![](icons/check.png) `Icons.check` | Shop — selected felt/avatar swatch checkmark | `screens/shop_screen.dart` |
+| ![](icons/play_arrow.png) `Icons.play_arrow` | Shop — sound-preview play button | `screens/shop_screen.dart` |
 
 ## Gaps
 
