@@ -234,40 +234,57 @@ class GameNotifier extends StateNotifier<GameState> {
   void _notifyPlayerTurn() {
     _playSfx(GameSfx.turn);
     _hapticTurnAlert();
-    // Cued before the pot so it is said first: both wait out the turn cue, and
-    // the voice channel speaks them in the order they were handed to it.
-    _announceHandTotal(state.hands[state.activeHandIndex].cards,
-        lead: kTurnVoiceLead);
-    _announceTablePot();
+    _announceTurn();
   }
 
-  /// Reads the dealer pill out loud — "Sweep pot, three hundred seventy five
-  /// dollars" — now that every opponent seat has played and the figure has
-  /// stopped moving. Reads the same [TablePot] the pill renders, so the two
-  /// can never disagree about the figure.
+  /// The two spoken lines that greet the hero's turn, in the order they are
+  /// heard: what the table is playing for, a beat to let that land, then the
+  /// hand they have to play it with — the last thing said before they act.
   ///
-  /// Silent when no seat has forfeited a bet: with every opponent still in
-  /// there is no sweep pot, and announcing the chips on the table as one
-  /// promises a pot that does not exist.
-  void _announceTablePot() {
-    if (!_voiceOn) return;
-    final pot = TablePot.live(state);
-    if (!pot.isSweep) return;
-    final amount = spokenAmountWords(pot.amount);
-    if (amount.isEmpty) return;
+  /// With no sweep pot to call there is nothing to wait for, so the total
+  /// follows the turn cue directly rather than after a stretch of silence.
+  void _announceTurn() {
+    final cards = state.hands[state.activeHandIndex].cards;
+    final pot = _sweepPotWords();
+    if (pot == null) {
+      _announceHandTotal(cards, lead: kTurnVoiceLead);
+      return;
+    }
 
     _potTimer?.cancel();
-    _potTimer = Timer(kTurnVoiceLead, () {
+    _potTimer = Timer(kTurnVoiceLead, () async {
       if (!_voiceOn) return;
-      unawaited(
-        _sound.playWords([
-          'sweep_pot',
-          ...amount,
-          'dollars',
-        ]),
-      );
+      final endsAt = await _sound.playWords(pot);
+      // The pot line's length depends on the figure, so the pause after it is
+      // measured from when it actually finishes rather than a fixed offset.
+      final remaining = endsAt?.difference(DateTime.now()) ?? Duration.zero;
+      final lead = (remaining.isNegative ? Duration.zero : remaining) + kPostPotPause;
+
+      // A quick player can hit or stand while the pot is still being called.
+      // Their own move announces the hand it produced, so this line would be
+      // both a repeat and out of date.
+      if (state.phase != RoundPhase.playing) return;
+      if (!listEquals(state.hands[state.activeHandIndex].cards, cards)) return;
+      _announceHandTotal(cards, lead: lead);
     });
   }
+
+  /// The sweep pot the table is playing for, as words — or null when there is
+  /// nothing to call: the voice is off, or no seat has forfeited a bet, so
+  /// announcing the chips on the felt as one would promise a pot that does
+  /// not exist.
+  List<String>? _sweepPotWords() {
+    if (!_voiceOn) return null;
+    final pot = TablePot.live(state);
+    if (!pot.isSweep) return null;
+    final amount = spokenAmountWords(pot.amount);
+    if (amount.isEmpty) return null;
+    return ['sweep_pot', ...amount, 'dollars'];
+  }
+
+  /// A beat between the pot call-out and the hand total, so the two arrive as
+  /// separate pieces of news rather than one run-on sentence.
+  static const Duration kPostPotPause = Duration(seconds: 1);
 
 
   /// Speaks the hero's hand total — the number shown in the hand-total circle
@@ -299,8 +316,8 @@ class GameNotifier extends StateNotifier<GameState> {
 
   static const kHandTotalVoiceLead = Duration(milliseconds: 350);
 
-  /// Held back so the turn cue (`turn.wav`, 0.60s) finishes first. Both lines
-  /// due at the hero's turn — the hand total and the sweep pot — wait it out.
+  /// Held back so the turn cue (`turn.wav`, 0.60s) finishes first. The first
+  /// line due at the hero's turn waits it out; see [_announceTurn].
   static const kTurnVoiceLead = Duration(milliseconds: 700);
 
   PlayingCard _drawCard() {

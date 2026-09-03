@@ -83,12 +83,14 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   "Player wins" or "Player lost". A push gets the tone only, and taking the pot is followed
   by a drum flourish
 - **Spoken pot** — once every opponent seat has played and the figure has stopped moving, the
-  dealer pill is read aloud: "Sweep pot, three hundred seventy five dollars". A hand where no
-  seat has forfeited a bet has no pot to call, so nothing is said
+  dealer pill is read aloud: "Sweep pot, three hundred seventy five dollars", a second ahead of
+  your own hand total. A hand where no seat has forfeited a bet has no pot to call, so nothing is
+  said and the hand total follows the turn cue directly
 - **Hand-total circle** — your live card total toward 21 (the same number "Soft 19"/"Hard 17"
   already names) shows in its own circle next to the bet circle, gold-ringed normally, red when
   busted, and is read aloud as "You have [total]" when the table comes round to you — after every
-  opponent seat has played — and again after every hit, double, or split card
+  opponent seat has played, a second after the sweep pot has been called, as the last thing said
+  before you act — and again after every hit, double, or split card
 - **Dealer waits for the room** — the hole card turns over and the dealer then holds its two
   cards for two full seconds before drawing, so the spoken call-out of the hand you just
   finished is never talked over by the dealer's turn
@@ -325,6 +327,13 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-03 (22)
+- feat: **your turn is announced in one order now — pot, beat, hand.** "Sweep pot, one hundred
+  dollars" lands on the turn cue, then a one-second pause, then "You have sixteen" as the last
+  thing said before you hit or stand. The pause is measured from when the pot line actually
+  finishes, so it is the same beat whatever the figure. With no pot to call the hand total follows
+  the turn cue directly rather than after a stretch of silence.
 
 ### 2026-09-03 (21)
 - feat: **"You have sixteen" is said when it is your turn, not at the deal.** It used to be
