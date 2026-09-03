@@ -19,9 +19,19 @@ class RecordingSound extends SoundPlayer {
   List<List<String>> get handTotals =>
       words.where((l) => l.first == 'you_have').toList();
 
-  /// The `Dealer has <total>` lines, said as the hole card turns over.
-  List<List<String>> get dealerTotals =>
-      words.where((l) => l.first == 'dealer_has').toList();
+  /// What the dealer said as it played: `Dealer has <total>` on the reveal,
+  /// the bare running total on each card after it, and `Dealer busts` if it
+  /// goes over. Everything the hero's side of the table says opens with a word
+  /// naming it, so what is left is the dealer's.
+  static const _heroPrefixes = {
+    'you_have',
+    'player_bust',
+    'sweep_pot',
+    'no_sweep_pot',
+  };
+
+  List<List<String>> get dealerLines =>
+      words.where((l) => !_heroPrefixes.contains(l.first)).toList();
 
   /// Everything spoken, in the order it was handed over — a stitched line as
   /// its first word, a pre-recorded one as its [GameVoice]. The two channels

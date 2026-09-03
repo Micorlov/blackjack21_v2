@@ -26,6 +26,7 @@ const _voiceClips = {
   'npc_bust.wav',
   'player_win.wav',
   'player_lose.wav',
+  'player_push.wav',
   'big_win.wav',
   'player_pot.wav',
 };

@@ -79,22 +79,25 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
 - **Sound effects** — deal, chip, turn, win, lose, push, and blackjack cues, plus spoken
   "Stand"/"Bust" voice lines when an NPC seat finishes its turn
 - **Spoken results** — every settled hand plays its outcome tone and then says the result:
-  "Big win" on a blackjack, "Player wins the sweep pot" when you sweep the table, otherwise
-  "Player wins" or "Player lost". A push gets the tone only, and taking the pot is followed
-  by a drum flourish
+  "Big win" on a blackjack, "Player wins the sweep pot" when you sweep the table, "Push" when the
+  bet comes back, otherwise "Player wins" or "Player lost". Taking the pot is followed by a drum
+  flourish
 - **Spoken pot** — once every opponent seat has played and the figure has stopped moving, the
   dealer pill is read aloud: "Sweep pot, three hundred seventy five dollars", a second ahead of
   your own hand total. When no seat has forfeited a bet there is nothing to sweep, and the voice
   says what the pill says — "No sweep pot"
 - **Spoken dealer** — the dealer says what it holds as it plays: "Dealer has fourteen" as the hole
-  card turns over, and its new total after every card it draws. A natural is called by name —
-  "Dealer has blackjack", with the result following it. The dealer waits for its own call-out to
-  finish before touching the next card, so the cards never run ahead of the commentary
+  card turns over, then just the running total after every card it draws — "eighteen… twenty two"
+  — since naming it once is enough. A natural is called by name ("Dealer has blackjack") and going
+  over is called as what it is ("Dealer busts"), each with the result following it. The dealer
+  waits for its own call-out to finish before touching the next card, so the cards never run ahead
+  of the commentary
 - **Hand-total circle** — your live card total toward 21 (the same number "Soft 19"/"Hard 17"
   already names) shows in its own circle next to the bet circle, gold-ringed normally, red when
   busted, and is read aloud as "You have [total]" when the table comes round to you — after every
   opponent seat has played, a second after the sweep pot has been called, as the last thing said
-  before you act — and again after every hit, double, or split card
+  before you act — and again after every hit, double, or split card. Going over 21 is called as
+  "Player busts" rather than as a number
 - **Dealer waits for the room** — the hole card turns over and the dealer then holds its two
   cards for two full seconds before drawing, so the spoken call-out of the hand you just
   finished is never talked over by the dealer's turn
@@ -234,9 +237,9 @@ under `flutter: assets:` in `pubspec.yaml` — a new file in the folder needs no
 |---|---|---|
 | Tones | `deal.wav`, `chip.wav`, `turn.wav`, `win.wav`, `lose.wav`, `push.wav`, `blackjack.wav` | Dealing, betting, your turn, and hand outcomes |
 | NPC voice | `npc_stand.wav`, `npc_bust.wav` | An opponent seat standing or busting |
-| Result voice | `player_win.wav`, `player_lose.wav`, `big_win.wav`, `player_pot.wav` | Your settled hand, 700ms after its tone — or later, if the hand total is still speaking |
+| Result voice | `player_win.wav`, `player_lose.wav`, `player_push.wav`, `big_win.wav`, `player_pot.wav` | Your settled hand, 700ms after its tone — or later, if something is still speaking |
 | Celebration | `pot_celebration.wav` | After the pot call-out — a synthesized drum roll, downbeat and major triad |
-| Number words | `num/*.wav` — 0-19, the tens, `hundred`, `thousand`, `dollars`, `sweep_pot`, `no_sweep_pot`, `you_have`, `dealer_has`, `blackjack` | Stitched into the spoken pot call-out, your hand total, and the dealer's |
+| Number words | `num/*.wav` — 0-19, the tens, `hundred`, `thousand`, `dollars`, `sweep_pot`, `no_sweep_pot`, `you_have`, `dealer_has`, `blackjack`, `player_bust`, `dealer_bust` | Stitched into the spoken pot call-out, your hand total, and the dealer's |
 
 `assets/sfx/num/` needs its own `pubspec.yaml` entry: Flutter's asset folders are **not**
 recursive, so a nested folder left out of the manifest is silently missing at runtime.
@@ -331,6 +334,17 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-03 (24)
+- feat: **going over 21 is called a bust, on both sides of the table.** "Player busts" and "Dealer
+  busts" replace "You have twenty three" and "Dealer has twenty two" — the number left you to work
+  out what had just happened to the round. On your bust the table passes straight to the dealer,
+  and your own hand is called before the dealer's, not after it.
+- feat: **a push says "Push".** It was the one outcome with a tone and no words, which is
+  indistinguishable from a call-out that was missed. New clip `player_push.wav`.
+- refactor: **"Dealer has" is said once.** The dealer names itself on the reveal and then just
+  counts — "Dealer has fourteen… eighteen… twenty two" — instead of repeating the whole phrase
+  card after card.
 
 ### 2026-09-03 (23)
 - feat: **the dealer says what it holds, and waits for itself.** "Dealer has fourteen" as the hole

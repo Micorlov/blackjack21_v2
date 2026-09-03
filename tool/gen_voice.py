@@ -66,6 +66,7 @@ VOICE_LINES: dict[str, str] = {
     "player_lose.wav": "Player lost",
     "big_win.wav": "Big win",
     "player_pot.wav": "Player wins the sweep pot",
+    "player_push.wav": "Push",
     "npc_stand.wav": "Stand",
     "npc_bust.wav": "Bust",
 }
@@ -91,6 +92,9 @@ NUMBER_WORDS: dict[str, str] = {
     "num/dealer_has.wav": "Dealer has",
     # Said in place of a number when the dealer's two cards are a natural.
     "num/blackjack.wav": "blackjack",
+    # ...and in place of the whole line when a hand goes over 21.
+    "num/dealer_bust.wav": "Dealer busts",
+    "num/player_bust.wav": "Player busts",
 }
 
 CLIPS: dict[str, str] = {**VOICE_LINES, **NUMBER_WORDS}

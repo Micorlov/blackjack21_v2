@@ -65,17 +65,17 @@ void main() {
 
     // The cards it turned over are read out, inside the pause: 2 + 3 is 5.
     await tester.pump(
-      GameNotifier.kDealerVoiceLead + const Duration(milliseconds: 50),
+      GameNotifier.kDealerRevealVoiceLead + const Duration(milliseconds: 50),
     );
-    expect(sound.dealerTotals, hasLength(1),
+    expect(sound.dealerLines, hasLength(1),
         reason: 'the dealer opened its hand without saying what it holds');
-    expect(sound.dealerTotals.single, ['dealer_has', 'five']);
+    expect(sound.dealerLines.single, ['dealer_has', 'five']);
 
     // Just short of the pause: the cards are on show, the total has been said,
     // and the dealer must still not have acted.
     await tester.pump(
       GameNotifier.kDealerRevealPause -
-          GameNotifier.kDealerVoiceLead -
+          GameNotifier.kDealerRevealVoiceLead -
           const Duration(milliseconds: 100),
     );
     expect(
@@ -128,18 +128,18 @@ void main() {
 
     notifier.playerStand();
 
-    // Past the floor, and still mid-sentence: 200ms lead + 2.5s of line +
-    // 250ms of breath is 2.95s, well past the 2s the dealer would otherwise
+    // Past the floor, and still mid-sentence: a 500ms lead, 2.5s of line and
+    // 250ms of breath is 3.25s, well past the 2s the dealer would otherwise
     // have waited.
-    await tester.pump(GameNotifier.kDealerRevealPause + const Duration(milliseconds: 800));
-    expect(sound.dealerTotals, hasLength(1));
+    await tester.pump(GameNotifier.kDealerRevealPause + const Duration(seconds: 1));
+    expect(sound.dealerLines, hasLength(1));
     expect(
       notifier.state.dealerHand.length,
       2,
       reason: 'the dealer drew while it was still saying what it held',
     );
 
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 600));
     expect(notifier.state.dealerHand.length, greaterThan(2),
         reason: 'the dealer waits for its line, it does not stop for it');
 
@@ -182,7 +182,7 @@ void main() {
         reason: 'a dealer natural ends the round where it stands');
 
     await tester.pump(GameNotifier.kVoiceLead + const Duration(milliseconds: 100));
-    expect(sound.dealerTotals.single, ['dealer_has', 'blackjack'],
+    expect(sound.dealerLines.single, ['dealer_has', 'blackjack'],
         reason: 'a natural is called by name, not as "twenty one"');
     expect(
       sound.spoken,

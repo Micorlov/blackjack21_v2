@@ -151,6 +151,7 @@ void main() {
       'sfx/npc_bust.wav',
       'sfx/player_win.wav',
       'sfx/player_lose.wav',
+      'sfx/player_push.wav',
       'sfx/big_win.wav',
       'sfx/player_pot.wav',
     };

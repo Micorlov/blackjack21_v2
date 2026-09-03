@@ -288,7 +288,10 @@ class GameNotifier extends StateNotifier<GameState> {
 
   /// Speaks the hero's hand total — the number shown in the hand-total circle
   /// in [HeroHandArea] — when the action reaches them, and again after every
-  /// card they take: a hit, a double, or a split.
+  /// card they take: a hit, a double, or a split. Going over 21 is called as
+  /// a bust rather than a number, the same way the dealer's is: "Player busts"
+  /// is what just happened to the hand, and "You have twenty three" leaves the
+  /// player to work that out for themselves.
   ///
   /// It used to be said at the deal instead, over the top of the opponent
   /// seats: they start acting [kNpcDecisionLead] in and call out "Stand" or
@@ -304,39 +307,55 @@ class GameNotifier extends StateNotifier<GameState> {
     Duration lead = kHandTotalVoiceLead,
   }) {
     if (!_voiceOn) return;
-    final words = spokenAmountWords(BlackjackRules.handValue(cards));
-    if (words.isEmpty) return;
+    final value = BlackjackRules.handValue(cards);
+    final List<String> line;
+    if (value > 21) {
+      line = const ['player_bust'];
+    } else {
+      final words = spokenAmountWords(value);
+      if (words.isEmpty) return;
+      line = ['you_have', ...words];
+    }
     _handTotalTimer?.cancel();
     _handTotalTimer = Timer(lead, () {
       if (!_voiceOn) return;
-      unawaited(_sound.playWords(['you_have', ...words]));
+      unawaited(_sound.playWords(line));
     });
   }
 
   static const kHandTotalVoiceLead = Duration(milliseconds: 350);
 
-  /// What the dealer holds, as words — the number its badge shows. A natural
-  /// is called by name rather than as a number: "Dealer has blackjack" is the
-  /// hand that ends the round on the spot, and the settlement call-out queues
-  /// behind it — "Dealer has blackjack. Player lost."
+  /// What the dealer holds, as words — the number its badge shows, named as
+  /// the dealer's only on the [opening] call, and except for the two totals
+  /// that are news rather than arithmetic:
+  ///
+  /// * a natural is called by name — "Dealer has blackjack" is the hand that
+  ///   ends the round on the spot, and the settlement call-out queues behind
+  ///   it: "Dealer has blackjack. Player lost."
+  /// * going over 21 is called as a bust — "Dealer busts" is why the hand was
+  ///   won, and hearing "Dealer has twenty three" instead leaves the player to
+  ///   work that out for themselves.
   ///
   /// Null when there is nothing to say: the voice is off, or the total has no
   /// words.
-  List<String>? _dealerTotalWords() {
+  List<String>? _dealerTotalWords({required bool opening}) {
     if (!_voiceOn) return null;
     final hand = state.dealerHand;
-    final natural = hand.length == 2 && BlackjackRules.handValue(hand) == 21;
-    final words = natural
-        ? const ['blackjack']
-        : spokenAmountWords(BlackjackRules.handValue(hand));
+    final value = BlackjackRules.handValue(hand);
+    if (value > 21) return const ['dealer_bust'];
+    if (hand.length == 2 && value == 21) return const ['dealer_has', 'blackjack'];
+    final words = spokenAmountWords(value);
     if (words.isEmpty) return null;
-    return ['dealer_has', ...words];
+    // "Dealer has" is said once, on the reveal, and the draws that follow are
+    // just the running total: "Dealer has fourteen… eighteen… twenty two."
+    // Repeating the whole phrase every card made the dealer's turn a chant.
+    return opening ? ['dealer_has', ...words] : words;
   }
 
   /// Speaks the dealer's total where nothing follows it — the natural that
   /// settles the round the moment the hole card turns over.
   void _announceDealerTotal() {
-    final words = _dealerTotalWords();
+    final words = _dealerTotalWords(opening: true);
     if (words == null) return;
     _dealerTotalTimer?.cancel();
     _dealerTotalTimer = Timer(kDealerVoiceLead, () {
@@ -345,10 +364,16 @@ class GameNotifier extends StateNotifier<GameState> {
     });
   }
 
-  /// Long enough for the card to be seen — the hole card starting to turn
-  /// over, or a fresh one landing. There is no tone to wait out on the flip,
-  /// and `deal.wav` (0.09s) is over by this on a draw.
+  /// Long enough for a fresh card to be seen landing; `deal.wav` (0.09s) is
+  /// over well before it.
   static const kDealerVoiceLead = Duration(milliseconds: 200);
+
+  /// The hole card's own lead is longer, because the reveal follows the hero's
+  /// last card rather than the dealer's own: that card's call-out is cued
+  /// [kHandTotalVoiceLead] after it lands, and the player should hear what
+  /// became of their hand — "Player busts" — before hearing what the dealer
+  /// turned over. Cued after it, the voice channel keeps them in that order.
+  static const kDealerRevealVoiceLead = Duration(milliseconds: 500);
 
   /// A breath between the dealer saying what it holds and touching the next
   /// card, so the two do not run together.
@@ -1203,7 +1228,11 @@ class GameNotifier extends StateNotifier<GameState> {
     // Reveal the hole card and hand the stage over *before* drawing, so the
     // flip is its own beat rather than one frame of a pile-up.
     state = state.copyWith(holeRevealed: true, phase: RoundPhase.dealer);
-    _dealerBeat(floor: kDealerRevealPause);
+    _dealerBeat(
+      floor: kDealerRevealPause,
+      lead: kDealerRevealVoiceLead,
+      opening: true,
+    );
   }
 
   /// The dealer says what it now holds, then plays on — after the line has
@@ -1214,16 +1243,20 @@ class GameNotifier extends StateNotifier<GameState> {
   /// it would be two cards ahead of what the player is being told it holds.
   /// The floor still sets the rhythm when there is nothing to say — the voice
   /// is off — and when the line is short enough to fit inside it.
-  void _dealerBeat({required Duration floor}) {
+  void _dealerBeat({
+    required Duration floor,
+    Duration lead = kDealerVoiceLead,
+    bool opening = false,
+  }) {
     _dealerTimer?.cancel();
     _dealerTotalTimer?.cancel();
     final floorEndsAt = DateTime.now().add(floor);
     _dealerTimer = Timer(floor, _dealerDrawStep);
 
-    final words = _dealerTotalWords();
+    final words = _dealerTotalWords(opening: opening);
     if (words == null) return;
 
-    _dealerTotalTimer = Timer(kDealerVoiceLead, () async {
+    _dealerTotalTimer = Timer(lead, () async {
       if (!_voiceOn) return;
       final endsAt = await _sound.playWords(words);
       if (endsAt == null) return;
@@ -1411,8 +1444,9 @@ class GameNotifier extends StateNotifier<GameState> {
       messageType = MessageType.win;
     }
 
-    // Tone first, then a spoken result. A push gets no call-out — there is no
-    // win or loss to announce.
+    // Tone first, then a spoken result — every outcome gets one, a push
+    // included: "Push" is the answer to what happened to the bet, and silence
+    // is not.
     if (outcomes.contains('blackjack')) {
       _playSfx(GameSfx.blackjack);
       _playVoice(GameVoice.bigWin);
@@ -1432,6 +1466,7 @@ class GameNotifier extends StateNotifier<GameState> {
       _hapticLight();
     } else {
       _playSfx(GameSfx.push);
+      _playVoice(GameVoice.push);
       _hapticSelection();
     }
 
