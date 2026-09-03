@@ -59,8 +59,18 @@ class TableLayout {
   ///
   /// Wide enough for the three-button DOUBLE/SPLIT/SURRENDER row to stay
   /// readable, capped so the felt keeps the majority of a wide screen.
+  /// The floor is 320, not 280.
+  ///
+  /// At 280 the rail fits the action buttons but not the tutorial coach card's
+  /// header — step label, progress dots and the "Full rules"/"Skip" links —
+  /// once system text scaling is applied. A landscape phone at 1.3x text
+  /// overflowed it by 12px on every short device (640x360, 780x360, 812x375),
+  /// across every round phase. The alternatives were worse: shrinking the two
+  /// links to fit would push their tap targets under the 48dp minimum, and
+  /// wrapping the header cost more width than it saved. The felt gives up 40px
+  /// instead — it scales, and text does not.
   static double railWidthOf(double width) {
-    return (width * 0.36).clamp(280.0, 420.0);
+    return (width * 0.36).clamp(320.0, 420.0);
   }
 }
 

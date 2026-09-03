@@ -320,6 +320,18 @@ emulator testing.
 
 ## Changelog
 
+### 2026-09-03 (18)
+- test: **landscape and tablet are covered now.** The redesign's largest rewrite — the felt's
+  fixed 393px canvas becoming a constraint-driven layout with a side rail — shipped verified only
+  by a throwaway probe that was then deleted, i.e. by nothing. `table_layout_test` gained five
+  landscape and large-screen devices, so the whole existing matrix of round phases and text scales
+  now runs against them: 1,384 tests, up from 1,094.
+- fix: **the table overflowed in landscape at large text.** Adding that coverage immediately found
+  it — 60 failures, all on short landscape phones at 1.3x text, where the coach card's header ran
+  12px past the side rail in every round phase. The rail's minimum width goes 280 → 320: shrinking
+  the "Full rules"/"Skip" links to fit would have taken their tap targets under 48dp, and the felt
+  scales where text does not.
+
 ### 2026-09-03 (17)
 - fix: **the back button no longer quits the game.** Navigation is an enum on the state, not a
   `Navigator` stack, so Android Back had nothing to pop and closed the app from wherever you

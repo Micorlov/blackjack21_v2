@@ -51,6 +51,23 @@ const List<_Device> _devices = [
   _Device('android-412x915', Size(412, 915), topPadding: 40, bottomPadding: 24),
   _Device('foldable-540x720', Size(540, 720), topPadding: 40, bottomPadding: 24),
   _Device('tablet-800x1280', Size(800, 1280)),
+
+  // Landscape and large screens.
+  //
+  // These were the 2026-09-03 redesign's largest rewrite — the felt's fixed
+  // 393px canvas became a constraint-driven layout with a side rail — and for
+  // a while they were also its least tested: the work was checked once by a
+  // throwaway probe and then had no coverage at all, which is no coverage.
+  // Nothing locks orientation, so every one of these is reachable by simply
+  // turning the phone.
+  //
+  // Landscape padding is asymmetric on purpose: the notch and the gesture bar
+  // move to the sides, and the side rail is exactly where they land.
+  _Device('landscape-640x360', Size(640, 360), topPadding: 0, bottomPadding: 24),
+  _Device('landscape-812x375', Size(812, 375), topPadding: 0, bottomPadding: 21),
+  _Device('landscape-915x412', Size(915, 412), topPadding: 0, bottomPadding: 24),
+  _Device('landscape-780x360', Size(780, 360), topPadding: 0, bottomPadding: 24),
+  _Device('tablet-landscape-1280x800', Size(1280, 800)),
 ];
 
 const _stake = TableStake(

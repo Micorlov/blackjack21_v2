@@ -1,7 +1,6 @@
 import 'package:blackjack21_v2/main.dart';
 import 'package:blackjack21_v2/models/enums.dart';
 import 'package:blackjack21_v2/state/game_notifier.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
