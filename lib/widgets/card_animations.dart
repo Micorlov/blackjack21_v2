@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../theme/app_motion.dart';
+
 /// The design's `bjDeal` keyframe — a card easing into place as it is dealt:
 /// `opacity 0→1`, `translateY(-12px)→0`, `scale(.92)→1` over 350ms.
 ///
@@ -17,11 +19,25 @@ class DealInCard extends StatefulWidget {
   State<DealInCard> createState() => _DealInCardState();
 }
 
-class _DealInCardState extends State<DealInCard> with SingleTickerProviderStateMixin {
+class _DealInCardState extends State<DealInCard>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 350),
-  )..forward();
+    duration: AppMotion.spatial,
+  );
+
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Started here rather than in the initialiser because the reduced-motion
+    // setting lives in the MediaQuery, which is not available during initState.
+    if (_started) return;
+    _started = true;
+    _controller.duration = AppMotion.durationOf(context, AppMotion.spatial);
+    _controller.forward();
+  }
 
   @override
   void dispose() {
@@ -31,19 +47,23 @@ class _DealInCardState extends State<DealInCard> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        final t = Curves.ease.transform(_controller.value);
-        return Opacity(
-          opacity: t,
-          child: Transform.translate(
-            offset: Offset(0, -12 * (1 - t)),
-            child: Transform.scale(scale: 0.92 + 0.08 * t, child: child),
-          ),
-        );
-      },
-      child: widget.child,
+    // Each card animates independently; without a boundary every frame of one
+    // card repaints the whole felt behind it.
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          final t = AppMotion.enter.transform(_controller.value);
+          return Opacity(
+            opacity: t,
+            child: Transform.translate(
+              offset: Offset(0, -12 * (1 - t)),
+              child: Transform.scale(scale: 0.92 + 0.08 * t, child: child),
+            ),
+          );
+        },
+        child: widget.child,
+      ),
     );
   }
 }
@@ -60,18 +80,35 @@ class FlipRevealCard extends StatefulWidget {
   final Widget back;
   final Widget face;
 
-  const FlipRevealCard({super.key, required this.revealed, required this.back, required this.face});
+  const FlipRevealCard({
+    super.key,
+    required this.revealed,
+    required this.back,
+    required this.face,
+  });
 
   @override
   State<FlipRevealCard> createState() => _FlipRevealCardState();
 }
 
-class _FlipRevealCardState extends State<FlipRevealCard> with SingleTickerProviderStateMixin {
+class _FlipRevealCardState extends State<FlipRevealCard>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 460),
+    // A flip is a spatial move that has to stay readable as it turns, so it
+    // runs a little longer than a plain deal-in.
+    duration: AppMotion.spatial + AppMotion.fast,
     value: widget.revealed ? 1 : 0,
   );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _controller.duration = AppMotion.durationOf(
+      context,
+      AppMotion.spatial + AppMotion.fast,
+    );
+  }
 
   @override
   void didUpdateWidget(covariant FlipRevealCard oldWidget) {
@@ -92,27 +129,29 @@ class _FlipRevealCardState extends State<FlipRevealCard> with SingleTickerProvid
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) {
-        final t = Curves.easeInOut.transform(_controller.value);
-        final isFaceUp = t >= 0.5;
-        return Transform(
-          alignment: Alignment.center,
-          transform: Matrix4.identity()
-            ..setEntry(3, 2, 0.0012)
-            ..rotateY(t * math.pi),
-          child: isFaceUp
-              // Counter-rotated: the parent has carried the card past
-              // edge-on by now, so the face would otherwise read mirrored.
-              ? Transform(
-                  alignment: Alignment.center,
-                  transform: Matrix4.identity()..rotateY(math.pi),
-                  child: widget.face,
-                )
-              : widget.back,
-        );
-      },
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final t = AppMotion.emphasized.transform(_controller.value);
+          final isFaceUp = t >= 0.5;
+          return Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.identity()
+              ..setEntry(3, 2, 0.0012)
+              ..rotateY(t * math.pi),
+            child: isFaceUp
+                // Counter-rotated: the parent has carried the card past
+                // edge-on by now, so the face would otherwise read mirrored.
+                ? Transform(
+                    alignment: Alignment.center,
+                    transform: Matrix4.identity()..rotateY(math.pi),
+                    child: widget.face,
+                  )
+                : widget.back,
+          );
+        },
+      ),
     );
   }
 }

@@ -33,7 +33,6 @@ class TableCalc {
     return '$soft ${BlackjackRules.handValue(h.cards)}';
   }
 
-
   /// The "closest to 21" table-sweep indicator shown above the dealer while a
   /// round is live: every bet already forfeited by a seat that busted or lost
   /// to the revealed dealer hand.
@@ -69,9 +68,7 @@ class TableCalc {
     // that nobody was ever announced as winning.
     final atSettlement = s.phase == RoundPhase.settlement;
     final sweep = s.sweepInfo;
-    final potLabelText = atSettlement
-        ? _settledPotLabel(sweep)
-        : (hasSweepPot ? 'SWEEP POT' : 'NO SWEEP POT');
+    final potLabelText = atSettlement ? _settledPotLabel(sweep) : (hasSweepPot ? 'SWEEP POT' : 'NO SWEEP POT');
 
     // Mid-round with nothing forfeited there is no figure to quote: the chips
     // still sitting in front of the players are not a pot anyone can win, and

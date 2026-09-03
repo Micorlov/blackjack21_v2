@@ -125,7 +125,11 @@ class _StandingsList extends StatelessWidget {
                     width: 28,
                     child: Text(
                       '#${i + 1}',
-                      style: AppText.mono(13, weight: FontWeight.w700, color: i == 0 ? AppColors.gold : AppColors.textFaint),
+                      style: AppText.mono(
+                        13,
+                        weight: FontWeight.w700,
+                        color: i == 0 ? AppColors.gold : AppColors.textFaint,
+                      ),
                     ),
                   ),
                   Text(flagForId(rows[i].id), style: const TextStyle(fontSize: 18)),

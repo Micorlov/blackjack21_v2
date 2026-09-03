@@ -5,17 +5,22 @@ import '../data/game_data.dart';
 import '../data/tutorial_data.dart';
 import '../state/game_notifier.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/avatar_circle.dart';
 import '../widgets/buttons.dart';
 import '../widgets/google_signin_button.dart';
 import '../widgets/how_to_play_sheet.dart';
 import '../widgets/panel_card.dart';
+import 'legal/legal_content.dart';
+import 'legal/legal_screen.dart';
+import 'shared/async_action.dart';
+import 'shared/avatar_initial.dart';
+import 'shared/confirm_dialog.dart';
 
 /// Settings screen — account, avatar color, appearance, sound/haptics,
-/// notifications, example alert previews, and reset-bankroll. Ported from
-/// the `screen==='settings'` block in `Blackjack 21 v2.dc.html`
-/// (lines 730-821).
+/// notifications, help, the legal documents and build version, and
+/// reset-bankroll.
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -23,7 +28,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(gameProvider);
     final notifier = ref.read(gameProvider.notifier);
-    final avatarInitial = _avatarInitialOf(state.displayName);
+    final avatarInitial = avatarInitialOf(state.displayName);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
@@ -67,16 +72,35 @@ class SettingsScreen extends ConsumerWidget {
                 notifier.toggleVoice,
                 sublabel: 'Your hand total, results and the sweep pot, spoken aloud',
                 enabled: state.soundOn,
+                disabledReason: 'Turn sound effects on to use voice call-outs',
               ),
             ],
           ),
           const SizedBox(height: 16),
           const SectionLabel('Notifications'),
+          // Three bare nouns told the player nothing about what each switch
+          // would actually send them, which is the fastest way to have all
+          // three turned off — or the whole permission revoked.
           _TogglePanel(
             rows: [
-              _ToggleRowData('Social', state.notifSocial, notifier.toggleNotifSocial),
-              _ToggleRowData('Leaderboard', state.notifLeaderboard, notifier.toggleNotifLeaderboard),
-              _ToggleRowData('Daily reminder', state.notifDaily, notifier.toggleNotifDaily),
+              _ToggleRowData(
+                'Social',
+                state.notifSocial,
+                notifier.toggleNotifSocial,
+                sublabel: 'When a friend joins your group, comes online or passes you',
+              ),
+              _ToggleRowData(
+                'Leaderboard',
+                state.notifLeaderboard,
+                notifier.toggleNotifLeaderboard,
+                sublabel: 'When your place on the hourly or daily board changes',
+              ),
+              _ToggleRowData(
+                'Daily reminder',
+                state.notifDaily,
+                notifier.toggleNotifDaily,
+                sublabel: 'One nudge a day, once your daily bonus is ready to claim',
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -96,19 +120,47 @@ class SettingsScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 16),
-          const SectionLabel('Example alerts'),
-          const _ExampleAlerts(),
+          // "Example alerts" used to sit here: two static fake notification
+          // cards, one of them announcing that a practice bot was online.
+          // Marketing chrome in a settings surface, replaced by the legal and
+          // build information a player (and a store reviewer) actually needs.
+          const SectionLabel('About'),
+          _LinkPanel(
+            rows: [
+              _LinkRowData(
+                label: 'Terms of Service',
+                sublabel: 'What you agree to by playing',
+                onTap: () => showTerms(context),
+              ),
+              _LinkRowData(
+                label: 'Privacy Policy',
+                sublabel: 'What stays on this device, and what does not',
+                onTap: () => showPrivacy(context),
+              ),
+            ],
+            trailing: _InfoRow(label: 'Version', value: kAppVersionLabel),
+          ),
           const SizedBox(height: 16),
-          _ResetBankrollButton(onTap: notifier.resetBankroll),
+          _ResetBankrollButton(onTap: () => _confirmResetBankroll(context, notifier)),
         ],
       ),
     );
   }
 }
 
-String _avatarInitialOf(String displayName) {
-  final name = displayName.isEmpty ? 'G' : displayName;
-  return name[0].toUpperCase();
+/// A bankroll is days of play. Losing it to a stray tap in a settings list —
+/// which is what a bare, unconfirmed button invited — is not recoverable.
+Future<void> _confirmResetBankroll(BuildContext context, GameNotifier notifier) async {
+  final confirmed = await confirmAction(
+    context,
+    title: 'Reset your bankroll?',
+    message:
+        'Your chips go back to 1,000. Stats, awards, friends and cosmetics are untouched, '
+        'but the chips you have now cannot be brought back.',
+    confirmLabel: 'Reset chips',
+    destructive: true,
+  );
+  if (confirmed) notifier.resetBankroll();
 }
 
 /// Signed-in profile row + sign-out, or a sign-in CTA when signed out.
@@ -119,8 +171,10 @@ class _AccountPanel extends StatelessWidget {
   final bool avatarFrameGold;
   final String displayName;
   final String? photoUrl;
-  final VoidCallback onSignIn;
-  final VoidCallback onSignOut;
+
+  /// Both are awaited so the panel can show a pending state around them.
+  final Future<void> Function() onSignIn;
+  final Future<void> Function() onSignOut;
 
   const _AccountPanel({
     required this.signedIn,
@@ -138,13 +192,22 @@ class _AccountPanel extends StatelessWidget {
     return Container(
       decoration: panelDecoration(),
       padding: const EdgeInsets.all(16),
-      child: signedIn
-          ? _buildSignedIn()
-          : GoogleSignInButton(child: GoldButton(label: 'Sign in', onPressed: onSignIn)),
+      child: signedIn ? _buildSignedIn(context) : _buildSignedOut(),
     );
   }
 
-  Widget _buildSignedIn() {
+  /// Same pending treatment as onboarding's button: `authenticate()` plus the
+  /// Firebase exchange is seconds of silence otherwise.
+  Widget _buildSignedOut() {
+    return GoogleSignInButton(
+      child: AsyncActionBuilder(
+        action: onSignIn,
+        builder: (context, busy, run) => GoldButton(label: busy ? 'Signing in…' : 'Sign in', onPressed: run),
+      ),
+    );
+  }
+
+  Widget _buildSignedIn(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -173,18 +236,39 @@ class _AccountPanel extends StatelessWidget {
         const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
-          child: OutlinedButton(
-            onPressed: onSignOut,
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 17),
-              side: const BorderSide(color: AppColors.border),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          // Signing out on a single tap dropped a signed-in player back to
+          // guest — losing the live friends group until they signed in again.
+          // Confirm first, then hold the button while both sign-outs resolve.
+          child: AsyncActionBuilder(
+            action: () => _confirmSignOut(context),
+            builder: (context, busy, run) => OutlinedButton(
+              onPressed: run,
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 17),
+                side: const BorderSide(color: AppColors.borderStrong),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              child: busy
+                  ? const PendingSpinner(size: 20)
+                  : Text('Sign out', style: AppText.sora(16, weight: FontWeight.w700)),
             ),
-            child: Text('Sign out', style: AppText.sora(16, weight: FontWeight.w700)),
           ),
         ),
       ],
     );
+  }
+
+  Future<void> _confirmSignOut(BuildContext context) async {
+    final confirmed = await confirmAction(
+      context,
+      title: 'Sign out?',
+      message:
+          'Your chips and stats stay on this device, but you leave your friends group and '
+          'your leaderboard entry until you sign back in.',
+      confirmLabel: 'Sign out',
+      destructive: true,
+    );
+    if (confirmed) await onSignOut();
   }
 }
 
@@ -204,18 +288,26 @@ class _AvatarColorPanel extends StatelessWidget {
       child: Wrap(
         spacing: 12,
         runSpacing: 12,
-        children: AppColors.avatarSwatchColors.map((color) {
+        children: AppColors.avatarSwatchColors.asMap().entries.map((entry) {
+          final color = entry.value;
           final isSelected = color == selected;
-          return InkWell(
-            onTap: () => onSelect(color),
-            customBorder: const CircleBorder(),
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: color,
-                boxShadow: isSelected ? const [BoxShadow(color: AppColors.gold, spreadRadius: 2)] : null,
+          // A bare coloured circle has no name at all. Numbering them is not
+          // poetry, but it is announceable and it says which one is on.
+          return Semantics(
+            button: true,
+            selected: isSelected,
+            label: 'Avatar colour ${entry.key + 1} of ${AppColors.avatarSwatchColors.length}',
+            child: InkWell(
+              onTap: () => onSelect(color),
+              customBorder: const CircleBorder(),
+              child: Container(
+                width: AppTouch.minTarget,
+                height: AppTouch.minTarget,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: color,
+                  boxShadow: isSelected ? const [BoxShadow(color: AppColors.gold, spreadRadius: 2)] : null,
+                ),
               ),
             ),
           );
@@ -306,27 +398,33 @@ class _ThemeSwatch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: option.onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: option.gradient,
-              boxShadow: selected ? [BoxShadow(color: option.ringColor, spreadRadius: 2)] : null,
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: '${option.label} table felt',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: option.onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: AppTouch.minTarget,
+              height: AppTouch.minTarget,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: option.gradient,
+                boxShadow: selected ? [BoxShadow(color: option.ringColor, spreadRadius: 2)] : null,
+              ),
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            option.label,
-            style: AppText.sora(13, weight: FontWeight.w700, color: selected ? AppColors.gold : AppColors.textMuted),
-          ),
-        ],
+            const SizedBox(height: 6),
+            Text(
+              option.label,
+              style: AppText.sora(13, weight: FontWeight.w700, color: selected ? AppColors.gold : AppColors.textMuted),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -345,12 +443,17 @@ class _ToggleRowData {
   /// off — the row renders dimmed and ignores taps, keeping its own value.
   final bool enabled;
 
+  /// Why the row is off-limits, spoken as a hint and shown in place of the
+  /// sublabel. A disabled control with no stated reason is a dead end.
+  final String? disabledReason;
+
   const _ToggleRowData(
     this.label,
     this.value,
     this.onToggle, {
     this.sublabel,
     this.enabled = true,
+    this.disabledReason,
   });
 }
 
@@ -389,7 +492,7 @@ class _ToggleRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final sublabel = data.sublabel;
+    final sublabel = data.enabled ? data.sublabel : (data.disabledReason ?? data.sublabel);
     // Expanded, not the bare Row: the sublabel is a full sentence and ran off
     // the panel's right edge into the switch without a flex to wrap inside.
     final row = Row(
@@ -415,10 +518,14 @@ class _ToggleRow extends StatelessWidget {
       ],
     );
 
+    // Merged so the switch is announced as "<label>, on" rather than as an
+    // anonymous toggle sitting beside some text.
+    final merged = MergeSemantics(child: row);
+
     // Dimming the whole row, rather than recolouring the label and switch
     // separately: the app theme resolves switch track colour on `selected`
     // alone, so a disabled switch keeps its gold and reads as live otherwise.
-    return data.enabled ? row : Opacity(opacity: 0.45, child: row);
+    return data.enabled ? merged : Opacity(opacity: 0.45, child: merged);
   }
 }
 
@@ -436,10 +543,14 @@ class _LinkRowData {
 class _LinkPanel extends StatelessWidget {
   final List<_LinkRowData> rows;
 
-  const _LinkPanel({required this.rows});
+  /// Optional non-interactive last row, e.g. the build version.
+  final Widget? trailing;
+
+  const _LinkPanel({required this.rows, this.trailing});
 
   @override
   Widget build(BuildContext context) {
+    final extra = trailing;
     return Container(
       decoration: panelDecoration(),
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -450,8 +561,11 @@ class _LinkPanel extends StatelessWidget {
               onTap: rows[i].onTap,
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 15),
+                constraints: const BoxConstraints(minHeight: AppTouch.minTarget),
                 decoration: BoxDecoration(
-                  border: i < rows.length - 1 ? const Border(bottom: BorderSide(color: AppColors.border)) : null,
+                  border: i < rows.length - 1 || extra != null
+                      ? const Border(bottom: BorderSide(color: AppColors.border))
+                      : null,
                 ),
                 child: Row(
                   children: [
@@ -465,85 +579,38 @@ class _LinkPanel extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const Icon(Icons.chevron_right, color: AppColors.textLabel),
+                    // The label already says where the row goes; the chevron is
+                    // decoration on top of it.
+                    const ExcludeSemantics(child: Icon(Icons.chevron_right, color: AppColors.textLabel)),
                   ],
                 ),
               ),
             ),
+          if (extra != null) Padding(padding: const EdgeInsets.symmetric(vertical: 15), child: extra),
         ],
       ),
     );
   }
 }
 
-/// Static preview cards showing what a couple of notification types look
-/// like — no interaction.
-class _ExampleAlerts extends StatelessWidget {
-  const _ExampleAlerts();
+/// A read-only label/value row — used for the build version, which a player
+/// needs to hand over in a bug report and had no way to find.
+class _InfoRow extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _InfoRow({required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _AlertPreviewCard(
-          icon: Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: AppColors.gold.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            alignment: Alignment.center,
-            child: const Icon(Icons.trending_up, size: 15, color: AppColors.gold),
-          ),
-          title: '3-win streak! Keep it up',
-          subtitle: '21 Sweet Pot · now',
-        ),
-        const SizedBox(height: 8),
-        _AlertPreviewCard(
-          icon: Container(
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: AppColors.gold.withValues(alpha: 0.15)),
-            alignment: Alignment.center,
-            child: Text(
-              'M',
-              style: AppText.sora(14, weight: FontWeight.w800, color: AppColors.gold),
-            ),
-          ),
-          title: 'Maya T. is online',
-          subtitle: '21 Sweet Pot · 2m ago',
-        ),
-      ],
-    );
-  }
-}
-
-class _AlertPreviewCard extends StatelessWidget {
-  final Widget icon;
-  final String title;
-  final String subtitle;
-
-  const _AlertPreviewCard({required this.icon, required this.title, required this.subtitle});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: panelDecoration(radius: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+    return MergeSemantics(
       child: Row(
         children: [
-          icon,
-          const SizedBox(width: 10),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: AppText.sora(14.5, weight: FontWeight.w800)),
-                Text(subtitle, style: AppText.sora(13, color: AppColors.textMuted)),
-              ],
-            ),
+            child: Text(label, style: AppText.sora(16, weight: FontWeight.w600)),
           ),
+          const SizedBox(width: AppSpacing.md),
+          Text(value, style: AppText.mono(15, color: AppColors.textMuted)),
         ],
       ),
     );

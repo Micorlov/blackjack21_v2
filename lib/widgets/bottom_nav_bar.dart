@@ -50,20 +50,30 @@ class AppBottomNavBar extends StatelessWidget {
                 final active = current == item.screen;
                 final color = active ? AppColors.gold : AppColors.textFaint;
                 return Expanded(
-                  child: InkWell(
-                    onTap: () => onSelect(item.screen),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(item.icon, color: color, size: 27),
-                          const SizedBox(height: 3),
-                          Text(
-                            item.label,
-                            style: AppText.sora(13, weight: FontWeight.w700, color: color),
-                          ),
-                        ],
+                  // `selected` is what makes a screen reader say "Lobby, tab,
+                  // selected" rather than five identical-sounding buttons.
+                  // Sighted players get that from the gold tint; without this
+                  // the state was carried by colour alone.
+                  child: Semantics(
+                    button: true,
+                    selected: active,
+                    label: item.label,
+                    excludeSemantics: true,
+                    child: InkWell(
+                      onTap: () => onSelect(item.screen),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(item.icon, color: color, size: 27),
+                            const SizedBox(height: 3),
+                            Text(
+                              item.label,
+                              style: AppText.sora(13, weight: FontWeight.w700, color: color),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),

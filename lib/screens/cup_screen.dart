@@ -5,14 +5,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/game_data.dart';
 import '../models/game_state.dart';
+import '../models/social_models.dart';
 import '../state/game_notifier.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/cup.dart';
 import '../utils/formatters.dart';
 import '../widgets/avatar_circle.dart';
 import '../widgets/buttons.dart';
 import '../widgets/panel_card.dart';
+import 'shared/avatar_initial.dart';
+import 'shared/empty_state.dart';
 
 /// The Weekend Cup tournament screen ("proposed · new screen" 12 in the
 /// design doc): prize pool with a live countdown to the end of the week,
@@ -86,7 +90,20 @@ class _CupScreenState extends ConsumerState<CupScreen> {
           const SectionLabel('Prizes', margin: EdgeInsets.fromLTRB(2, 18, 2, 10)),
           _PrizesCard(),
           const SectionLabel('Top of the table', margin: EdgeInsets.fromLTRB(2, 18, 2, 10)),
-          _TopTableCard(rows: standings.take(3).toList()),
+          // A one-name table is not a race. Rather than pad it with practice
+          // bots, the card says what would make it one.
+          if (standings.length > 1)
+            _TopTableCard(rows: standings.take(3).toList())
+          else
+            EmptyState(
+              icon: Icons.groups_outlined,
+              title: 'Nobody to race yet',
+              message:
+                  'The Cup runs inside your friends group. Invite someone and the table fills '
+                  'with their week.',
+              actionLabel: 'Invite via WhatsApp',
+              onAction: notifier.shareInviteWhatsApp,
+            ),
           const SizedBox(height: 18),
           state.tournamentJoined
               ? GoldButton(label: 'Play a Cup hand', onPressed: () => notifier.enterTable(kTables.first))
@@ -104,14 +121,23 @@ class _BackCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 46,
-        height: 46,
-        decoration: BoxDecoration(shape: BoxShape.circle, color: Colors.black.withValues(alpha: 0.32)),
-        alignment: Alignment.center,
-        child: const Icon(Icons.chevron_left, size: 28, color: AppColors.textPrimary),
+    // Was a 46px `GestureDetector` around a bare chevron: under the 48dp
+    // minimum, with no button role and no name at all in the semantics tree.
+    return Semantics(
+      button: true,
+      label: 'Back to lobby',
+      child: Material(
+        color: Colors.black.withValues(alpha: 0.32),
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: const SizedBox(
+            width: AppTouch.minTarget,
+            height: AppTouch.minTarget,
+            child: Icon(Icons.chevron_left, size: 28, color: AppColors.textPrimary),
+          ),
+        ),
       ),
     );
   }
@@ -128,10 +154,15 @@ class _CupRow {
 /// Daily-points standings for the Cup: the hero plus every friend, best
 /// first. Ties keep the hero above a friend with the same score so "your
 /// standing" never understates a level race.
+///
+/// Only real group members are rivals. When the group is empty `state.friends`
+/// still holds the seeded practice bots, and counting them told a solo player
+/// they were "#3 of 5" in a tournament nobody else had entered.
 List<_CupRow> _cupStandings(GameState state) {
+  final friends = state.friendsAreLive ? state.friends : const <Friend>[];
   final rows = [
     _CupRow(name: 'You', points: state.heroDailyPoints, isSelf: true),
-    for (final f in state.friends) _CupRow(name: f.name, points: f.dailyScore, isSelf: false),
+    for (final f in friends) _CupRow(name: f.name, points: f.dailyScore, isSelf: false),
   ];
   rows.sort((a, b) {
     final byPoints = b.points.compareTo(a.points);
@@ -149,7 +180,7 @@ class _PrizePoolCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final players = state.friends.length + 1;
+    final players = state.friendsAreLive ? state.friends.length + 1 : 1;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       decoration: BoxDecoration(
@@ -201,7 +232,8 @@ class _CountBox extends StatelessWidget {
             '$value',
             style: AppText.mono(22, weight: FontWeight.w700, color: AppColors.gold, height: 1.1),
           ),
-          Text(unit, style: AppText.sora(11, color: AppColors.textMuted)),
+          // 12px is the app's floor; this label was 11 and unscalable-small.
+          Text(unit, style: AppText.caption()),
         ],
       ),
     );
@@ -223,30 +255,57 @@ class _StandingCard extends StatelessWidget {
       decoration: panelDecoration(),
       child: Row(
         children: [
-          AvatarCircle(
-            initial: state.displayName.isEmpty ? '?' : state.displayName[0].toUpperCase(),
-            color: AppColors.gold,
-            size: 44,
-            goldRing: state.avatarFrameGold,
-            photoUrl: state.photoUrl,
+          ExcludeSemantics(
+            child: AvatarCircle(
+              initial: avatarInitialOf(state.displayName, fallback: '?'),
+              color: AppColors.gold,
+              size: 44,
+              goldRing: state.avatarFrameGold,
+              photoUrl: state.photoUrl,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: MergeSemantics(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('#$rank of $total', style: AppText.sora(17, weight: FontWeight.w800)),
+                  const SizedBox(height: 2),
+                  Text(
+                    "${points >= 0 ? '+' : '−'}\$${formatChips(points.abs())} in today's race",
+                    style: AppText.sora(14, color: AppColors.textMuted),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          // The crown and triangle were typographic glyphs a screen reader
+          // reads as punctuation or skips entirely; a real icon carries a
+          // label with it.
+          Semantics(
+            label: rank == 1 ? 'Leading' : 'Chasing',
+            excludeSemantics: true,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text('#$rank of $total', style: AppText.sora(17, weight: FontWeight.w800)),
-                const SizedBox(height: 2),
+                Icon(
+                  rank == 1 ? Icons.emoji_events : Icons.trending_up,
+                  size: 16,
+                  color: rank == 1 ? AppColors.gold : AppColors.winLight,
+                ),
+                const SizedBox(width: AppSpacing.xs),
                 Text(
-                  "${points >= 0 ? '+' : '−'}\$${formatChips(points.abs())} in today's race",
-                  style: AppText.sora(14, color: AppColors.textMuted),
+                  rank == 1 ? 'leading' : 'chasing',
+                  style: AppText.sora(
+                    14,
+                    weight: FontWeight.w700,
+                    color: rank == 1 ? AppColors.gold : AppColors.winLight,
+                  ),
                 ),
               ],
             ),
-          ),
-          Text(
-            rank == 1 ? '♛ leading' : '▲ chasing',
-            style: AppText.mono(14, weight: FontWeight.w700, color: rank == 1 ? AppColors.gold : AppColors.winLight),
           ),
         ],
       ),

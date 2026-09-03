@@ -10,6 +10,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/playing_card_widget.dart';
+import 'dealt_card.dart';
 import 'table_calc.dart';
 
 /// The player's own hand(s) below center on the felt: fanned cards, a bet
@@ -25,14 +26,19 @@ class HeroHandArea extends StatelessWidget {
   /// edge (`top:342px;bottom:0`), rather than floating it off the bottom.
   final double top;
 
-  const HeroHandArea({super.key, required this.state, required this.top});
+  /// Horizontal inset of the felt's content band, so a wide canvas centres the
+  /// block in the band rather than in the whole box.
+  final double inset;
+
+  const HeroHandArea({super.key, required this.state, required this.top, this.inset = 0});
 
   @override
   Widget build(BuildContext context) {
     final hands = state.hands;
+    final split = hands.length > 1;
     return Positioned(
-      left: 0,
-      right: 0,
+      left: inset,
+      right: inset,
       top: top,
       bottom: 0,
       // A split hand stacks two full blocks and would otherwise run off the
@@ -47,6 +53,8 @@ class HeroHandArea extends StatelessWidget {
               _HeroHandBlock(
                 state: state,
                 hand: hands[i],
+                handIndex: i,
+                split: split,
                 active: i == state.activeHandIndex && state.phase == RoundPhase.playing,
               ),
               if (i != hands.length - 1) const SizedBox(height: 10),
@@ -61,9 +69,20 @@ class HeroHandArea extends StatelessWidget {
 class _HeroHandBlock extends StatelessWidget {
   final GameState state;
   final Hand hand;
+
+  /// Which of `state.hands` this is. Only meaningful to the player once they
+  /// have split, which is exactly when [split] is true.
+  final int handIndex;
+  final bool split;
   final bool active;
 
-  const _HeroHandBlock({required this.state, required this.hand, required this.active});
+  const _HeroHandBlock({
+    required this.state,
+    required this.hand,
+    required this.handIndex,
+    required this.split,
+    required this.active,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -99,7 +118,13 @@ class _HeroHandBlock extends StatelessWidget {
               offset: Offset(ci == 0 ? 0 : -21.0, 0),
               child: Transform.rotate(
                 angle: (ci - (n - 1) / 2) * 4 * (math.pi / 180),
-                child: PlayingCardFace(card: hand.cards[ci], width: 58, height: 84),
+                // Keyed by hand *and* slot so a card joining the fan animates
+                // alone: without the key every card in the row would restart
+                // its deal-in on each hit.
+                child: DealtCard(
+                  key: ValueKey('hero-$handIndex-$ci'),
+                  child: PlayingCardFace(card: hand.cards[ci], width: 58, height: 84),
+                ),
               ),
             ),
         ],
@@ -109,6 +134,14 @@ class _HeroHandBlock extends StatelessWidget {
 
   Widget _betCircle(int betAmount) {
     final hasBet = betAmount > 0;
+    return Semantics(
+      label: hasBet ? 'Your bet ${formatChips(betAmount)} chips' : 'No bet placed',
+      excludeSemantics: true,
+      child: _betCircleBox(betAmount, hasBet),
+    );
+  }
+
+  Widget _betCircleBox(int betAmount, bool hasBet) {
     return Container(
       width: 70,
       height: 70,
@@ -118,23 +151,30 @@ class _HeroHandBlock extends StatelessWidget {
         gradient: RadialGradient(colors: [AppColors.gold.withValues(alpha: 0.1), Colors.black.withValues(alpha: 0.28)]),
       ),
       alignment: Alignment.center,
-      child: hasBet
-          ? Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 26,
-                  height: 19,
-                  decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.gold),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '\$${formatChips(betAmount)}',
-                  style: AppText.mono(15, weight: FontWeight.w700, color: AppColors.gold),
-                ),
-              ],
-            )
-          : Text('BET', style: AppText.mono(11, letterSpacing: 1, color: AppColors.gold.withValues(alpha: 0.5))),
+      // The circle is a fixed 70px disc, but the figure inside it is live text
+      // that grows with the system font setting. Scaling the contents keeps a
+      // seven-figure bet — or a 200% text scale — inside the chip instead of
+      // bursting out of it.
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: hasBet
+            ? Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 26,
+                    height: 19,
+                    decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.gold),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '\$${formatChips(betAmount)}',
+                    style: AppText.mono(15, weight: FontWeight.w700, color: AppColors.gold),
+                  ),
+                ],
+              )
+            : Text('BET', style: AppText.mono(11, letterSpacing: 1, color: AppColors.gold.withValues(alpha: 0.5))),
+      ),
     );
   }
 
@@ -143,14 +183,33 @@ class _HeroHandBlock extends StatelessWidget {
   /// circle so it reads at a glance. [GameNotifier] speaks this number aloud
   /// as each card lands.
   Widget _handTotalCircle() {
+    return Semantics(label: _handSemanticLabel, excludeSemantics: true, child: _handTotalCircleBox());
+  }
+
+  /// Spoken form of the total circle. The visual is a bare number, which out of
+  /// context could be anything on the felt — whose hand it is and how it stands
+  /// have to be said aloud.
+  String get _handSemanticLabel {
+    final which = split ? 'Hand ${handIndex + 1}' : 'Your hand';
+    final value = BlackjackRules.handValue(hand.cards);
+    final status = switch (hand.status) {
+      HandStatus.busted => 'busted',
+      HandStatus.blackjack => 'blackjack',
+      HandStatus.surrendered => 'surrendered',
+      _ => TableCalc.handLabelFor(hand).toLowerCase(),
+    };
+    return '$which, $value, $status';
+  }
+
+  Widget _handTotalCircleBox() {
     final busted = hand.status == HandStatus.busted;
     final blackjack = hand.status == HandStatus.blackjack;
     final value = BlackjackRules.handValue(hand.cards);
     final ringColor = busted
         ? AppColors.lose.withValues(alpha: 0.6)
         : blackjack
-            ? AppColors.gold
-            : AppColors.gold.withValues(alpha: 0.45);
+        ? AppColors.gold
+        : AppColors.gold.withValues(alpha: 0.45);
     final numberColor = busted ? AppColors.loseLight : AppColors.gold;
     return Container(
       width: 70,
@@ -158,12 +217,16 @@ class _HeroHandBlock extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: ringColor, width: 2),
-        gradient: RadialGradient(
-          colors: [AppColors.gold.withValues(alpha: 0.1), Colors.black.withValues(alpha: 0.28)],
-        ),
+        gradient: RadialGradient(colors: [AppColors.gold.withValues(alpha: 0.1), Colors.black.withValues(alpha: 0.28)]),
       ),
       alignment: Alignment.center,
-      child: Text('$value', style: AppText.mono(26, weight: FontWeight.w800, color: numberColor)),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          '$value',
+          style: AppText.mono(26, weight: FontWeight.w800, color: numberColor),
+        ),
+      ),
     );
   }
 
@@ -199,9 +262,13 @@ class _HeroHandBlock extends StatelessWidget {
                 TableCalc.handLabelFor(hand),
                 style: AppText.sora(16, color: active ? AppColors.gold : AppColors.textPrimary.withValues(alpha: 0.9)),
               ),
-              Text(
-                formatChips(state.chips),
-                style: AppText.mono(19, weight: FontWeight.w700, color: Colors.white),
+              Semantics(
+                label: 'Balance ${formatChips(state.chips)} chips',
+                excludeSemantics: true,
+                child: Text(
+                  formatChips(state.chips),
+                  style: AppText.mono(19, weight: FontWeight.w700, color: Colors.white),
+                ),
               ),
             ],
           ),

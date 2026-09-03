@@ -567,6 +567,15 @@ void main() {
         );
         expect(tester.takeException(), isNull, reason: _describe(null, details));
 
+        // The betting panel is a capped, bottom-anchored scroll view: on the
+        // smallest device at the largest text size its content is taller than
+        // the 62% of the screen it is allowed, so the standings card at the
+        // top is scrolled out of the initial viewport. That is the designed
+        // behaviour — the bet and DEAL controls keep the bottom — so the test
+        // scrolls to the card the way a player would, rather than asserting
+        // that it happens to be on screen.
+        await tester.ensureVisible(find.text('FRIENDS'));
+        await tester.pumpAndSettle();
         await tester.tap(find.text('FRIENDS'));
         await tester.pumpAndSettle();
 

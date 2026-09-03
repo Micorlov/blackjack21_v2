@@ -13,117 +13,30 @@ import 'dealer_area.dart';
 import 'hero_hand_area.dart';
 import 'seat_plate.dart';
 import 'table_calc.dart';
-
-class _SeatPos {
-  final double? left;
-  final double? right;
-  final double top;
-  final double width;
-  final bool originLeft;
-
-  const _SeatPos({
-    this.left,
-    this.right,
-    required this.top,
-    required this.width,
-    this.originLeft = true,
-  });
-}
-
-/// All four seats share one slot width and no per-row scale, so every friend's
-/// plate renders at exactly the same size. The design shrank the far pair to
-/// 0.9 for a perspective hint, but that made two identically-built plates read
-/// as two different components, which is worse than the lost depth cue.
-///
-/// [_SeatPos.originLeft] has to match the edge its slot is anchored to. A plate
-/// that shrinks inside its slot collapses toward that origin, so a right-hand
-/// seat left on the default `true` drifts away from the table's right edge and
-/// leaves the two right-hand plates visibly out of line with each other.
-const List<_SeatPos> _kSeatPositions = [
-  _SeatPos(left: 0, top: 164, width: 196),
-  _SeatPos(right: 0, top: 164, width: 196, originLeft: false),
-  _SeatPos(left: 0, top: 262, width: 196),
-  _SeatPos(right: 0, top: 262, width: 196, originLeft: false),
-];
-
-/// Betting-phase seat slots: no seat on the felt has cards yet, so the empty
-/// 38px card rows are dropped and the rows pull up toward the dealer. The
-/// point is not tidiness — a lower canvas height raises the scale the whole
-/// felt renders at, which is what makes the plates readable on a phone.
-const List<_SeatPos> _kSeatPositionsCompact = [
-  _SeatPos(left: 0, top: 116, width: 196),
-  _SeatPos(right: 0, top: 116, width: 196, originLeft: false),
-  _SeatPos(left: 0, top: 182, width: 196),
-  _SeatPos(right: 0, top: 182, width: 196, originLeft: false),
-];
-
-/// Height of one seat slot: a card row (38) over a name plate (~50), plus a
-/// few pixels of slack.
-const double _kSeatHeight = 92;
-
-/// A compact (betting) slot is just the name plate plus slack.
-const double _kSeatHeightCompact = 54;
-
-/// Vertical space the seat plates own, measured from the top of the felt
-/// canvas: the lower pair sits at y=262 and is [_kSeatHeight] tall, plus a
-/// breathing gap. The hero's hand is never allowed to grow past this line.
-const double _kSeatsBottom = 362;
-
-/// Same line in the compact betting layout: 182 + 54 + 8 of breathing room.
-const double _kSeatsBottomCompact = 244;
-
-/// Room the hero's own hand block wants below [_kSeatsBottom]: a card row
-/// (84) over the bet circle (70) over the name plate (~52), plus the gaps
-/// between them. Anything tighter than this and the block scales itself down.
-const double _kHeroMinHeight = 217;
-
-/// Same block before any cards are dealt (the betting phase): no card row and
-/// no gap beneath it, just the bet circle over the name plate. Reserving the
-/// full [_kHeroMinHeight] this early forces the whole felt canvas — every
-/// seat plate, avatar, and badge on it — to scale down for a card row that
-/// isn't on screen yet.
-const double _kHeroMinHeightNoCards = 128;
+import 'table_layout.dart';
 
 /// The felt Stack: dealer cluster + up to 4 friend seat plates + the hero's
 /// own hand, over a radial-gradient oval table.
 ///
-/// Everything inside is laid out on a design canvas — the source design's
-/// 393-wide felt, with its literal edge-anchored pixel offsets (`seatPos` in
-/// `renderVals()`) — which is scaled down only as far as the space the device
-/// actually gives us demands. That keeps the arrangement identical to the
-/// design at every screen size instead of letting fixed offsets collide on
-/// shorter or narrower phones.
+/// Layout is constraint-driven: [FeltMetrics.forState] turns the box we were
+/// actually handed into a canvas, a capped content scale, and fractional seat
+/// slots. Nothing here is pinned to the source design's 393px width any more —
+/// that number survives only as the *reference* the scale is chosen against,
+/// because the parts inside (a 58x84 card, a 40px avatar) do have intrinsic
+/// sizes.
 ///
-/// The height the canvas asks for is what the *current* phase actually needs
-/// ([_requiredHeight]), never a fixed maximum. The design's felt is a
-/// `flex:1` box that simply clips, so demanding its full extent at all times
-/// would shrink the whole table to a thin, over-wide sliver whenever the
-/// bottom panel is tall — during settlement the hero's hand is hidden, so
-/// that space is not needed and the felt should stay full size.
+/// The canvas is exactly `available / scale`, so no content is ever laid out
+/// in a box smaller than it asks for: the [ClipRect] below exists for the
+/// decorative oval, which deliberately bleeds past the canvas, not to hide
+/// overflow from the layout tests. A real overflow still throws.
+///
+/// System text scaling applies here like anywhere else. It used to be switched
+/// off outright, which covered every live number in the game — dealer total,
+/// bet, hand total, balance, seat stacks — so a player at 200% got 100% on the
+/// felt. Now each slot absorbs the growth by scaling its own contents down,
+/// which keeps the arrangement intact without lying about the setting.
 class TableFelt extends ConsumerWidget {
-  static const double _designWidth = 393;
-
   const TableFelt({super.key});
-
-  /// Vertical extent the felt's contents occupy in this phase. Settlement
-  /// hides the hero's hand (the bottom result card recaps it instead), so the
-  /// seat rows are the whole story. Before the deal (betting phase) the hero
-  /// block has no cards yet, so it only needs [_kHeroMinHeightNoCards].
-  static double _requiredHeight(GameState state) {
-    if (state.phase == RoundPhase.settlement) return _kSeatsBottom;
-    // Betting: nothing on the felt has cards, so the compact layout applies
-    // and the canvas asks for far less height (372 vs 490) — the same screen
-    // then renders the whole felt ~30% larger.
-    if (_isCompact(state)) return _kSeatsBottomCompact + _kHeroMinHeightNoCards;
-    final hasCards = state.hands.any((h) => h.cards.isNotEmpty);
-    return _kSeatsBottom + (hasCards ? _kHeroMinHeight : _kHeroMinHeightNoCards);
-  }
-
-  /// The compact layout is exactly the betting phase: no dealer cards, no
-  /// NPC card rows, no hero fan. From the first deal onward the spread
-  /// layout holds steady so plates never jump mid-hand; the shift back
-  /// happens at deal time, under the dealing animation.
-  static bool _isCompact(GameState state) => state.phase == RoundPhase.betting;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -135,44 +48,37 @@ class TableFelt extends ConsumerWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final available = constraints.biggest;
-        if (available.width <= 0 || available.height <= 0) return const SizedBox.shrink();
+        if (!available.isFinite || available.width <= 0 || available.height <= 0) {
+          return const SizedBox.shrink();
+        }
 
-        final required = _requiredHeight(state);
-        // No upper cap: on a device with more room than the 393-wide design
-        // assumes, the felt should grow to fill it rather than sit pinned at
-        // 1:1 pixel scale with black space around it.
-        final scale = math.min(available.width / _designWidth, available.height / required);
-        final canvas = Size(available.width / scale, available.height / scale);
+        final m = FeltMetrics.forState(state, available);
 
         return ClipRect(
-          // The felt is a scaled graphic canvas, so its metrics already adapt;
-          // letting system font scaling stretch text inside it would
-          // reintroduce the overlaps this canvas exists to prevent.
-          child: MediaQuery.withNoTextScaling(
-            child: OverflowBox(
+          child: OverflowBox(
+            alignment: Alignment.topLeft,
+            minWidth: m.canvas.width,
+            maxWidth: m.canvas.width,
+            minHeight: m.canvas.height,
+            maxHeight: m.canvas.height,
+            child: Transform.scale(
+              scale: m.scale,
               alignment: Alignment.topLeft,
-              minWidth: canvas.width,
-              maxWidth: canvas.width,
-              minHeight: canvas.height,
-              maxHeight: canvas.height,
-              child: Transform.scale(
-                scale: scale,
-                alignment: Alignment.topLeft,
-                child: SizedBox(
-                  width: canvas.width,
-                  height: canvas.height,
-                  child: Stack(
-                    children: [
-                      _feltOval(felt),
-                      _topVignette(),
-                      _chipTray(),
-                      _discardPile(),
-                      DealerArea(state: state, midPot: midPot, cardBack: cardBack),
-                      if (kShowFriendsAtTable) ..._seatPlates(state),
-                      if (state.phase != RoundPhase.settlement)
-                        HeroHandArea(state: state, top: _isCompact(state) ? _kSeatsBottomCompact : _kSeatsBottom),
-                    ],
-                  ),
+              child: SizedBox(
+                width: m.canvas.width,
+                height: m.canvas.height,
+                child: Stack(
+                  children: [
+                    _feltOval(felt, m),
+                    _lampFalloff(m),
+                    _topVignette(),
+                    _chipTray(m),
+                    _discardPile(m),
+                    DealerArea(state: state, midPot: midPot, cardBack: cardBack, inset: m.inset),
+                    if (kShowFriendsAtTable) ..._seatPlates(state, m),
+                    if (state.phase != RoundPhase.settlement)
+                      HeroHandArea(state: state, top: m.heroTop, inset: m.inset),
+                  ],
                 ),
               ),
             ),
@@ -182,9 +88,18 @@ class TableFelt extends ConsumerWidget {
     );
   }
 
-  List<Widget> _seatPlates(GameState state) {
+  /// All four seats share one slot width and no per-row scale, so every
+  /// friend's plate renders at exactly the same size. The design shrank the far
+  /// pair to 0.9 for a perspective hint, but that made two identically-built
+  /// plates read as two different components, which is worse than the lost
+  /// depth cue.
+  ///
+  /// A plate that shrinks inside its slot collapses toward the slot's origin,
+  /// so each seat is anchored to the edge of the content band it belongs to —
+  /// a right-hand seat aligned left would drift inward and leave the two
+  /// right-hand plates visibly out of line with each other.
+  List<Widget> _seatPlates(GameState state, FeltMetrics m) {
     final widgets = <Widget>[];
-    final compact = _isCompact(state);
     final seats = tableSeats(state);
     final count = math.min(4, seats.length);
     for (var i = 0; i < count; i++) {
@@ -205,26 +120,27 @@ class TableFelt extends ConsumerWidget {
         sweepTotalWin: state.sweepInfo?.totalWin ?? 0,
         hourly: state.badgeHourly,
       );
-      final pos = compact ? _kSeatPositionsCompact[i] : _kSeatPositions[i];
-      final alignment = pos.originLeft ? Alignment.topLeft : Alignment.topRight;
+      // Seats alternate left, right, left, right — two columns of two.
+      final rightSide = i.isOdd;
+      final alignment = rightSide ? Alignment.topRight : Alignment.topLeft;
       widgets.add(
         Positioned(
-          left: pos.left,
-          right: pos.right,
-          top: pos.top,
-          width: pos.width,
-          // Every seat gets exactly its design slot. Content that runs long
-          // (a seven-figure stack, a four-card hand) shrinks inside the slot
-          // instead of growing down into the seat row below it.
-          height: compact ? _kSeatHeightCompact : _kSeatHeight,
+          left: rightSide ? null : m.inset,
+          right: rightSide ? m.inset : null,
+          top: m.seatTopOf(i ~/ 2),
+          width: m.seatWidth,
+          // Every seat gets exactly its slot. Content that runs long (a
+          // seven-figure stack, a four-card hand, a 200% text setting) shrinks
+          // inside the slot instead of growing down into the row below it.
+          height: m.seatHeight,
           // Anchored at the top edge so an over-long plate shrinks upward,
           // away from the seat row directly below it.
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: alignment,
             child: SizedBox(
-              width: pos.width,
-              child: SeatPlate(data: data, compact: compact),
+              width: m.seatWidth,
+              child: SeatPlate(data: data, compact: m.compact),
             ),
           ),
         ),
@@ -239,12 +155,12 @@ class TableFelt extends ConsumerWidget {
   /// `transform-origin:50% 0%` on the ellipse itself, which is what the
   /// matrix below reproduces — a flat ellipse reads as a green pill instead
   /// of a table seen from a player's seat.
-  Widget _feltOval(FeltDef felt) {
+  Widget _feltOval(FeltDef felt, FeltMetrics m) {
     return Positioned(
-      left: -58,
-      right: -58,
+      left: m.inset - m.ovalBleed,
+      right: m.inset - m.ovalBleed,
       top: 52,
-      height: 540,
+      height: m.ovalHeight,
       child: Transform(
         alignment: Alignment.topCenter,
         transform: Matrix4.identity()
@@ -296,6 +212,35 @@ class TableFelt extends ConsumerWidget {
     );
   }
 
+  /// A single lamp hanging over the middle of the table.
+  ///
+  /// One soft radial falloff — bright where the dealer stands, dropping away
+  /// toward the corners — rather than another drop shadow. The 3D/hyperrealism
+  /// style profile is explicit that stacking heavy shadows on top of an
+  /// already-3D surface reads as mud, so the depth here is bought with light.
+  Widget _lampFalloff(FeltMetrics m) {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              // Above centre, where the dealer's cluster sits.
+              center: const Alignment(0, -0.45),
+              radius: 0.95,
+              colors: [
+                Colors.transparent,
+                Colors.transparent,
+                const Color(0xFF040806).withValues(alpha: 0.28),
+                const Color(0xFF040806).withValues(alpha: 0.55),
+              ],
+              stops: const [0.0, 0.42, 0.78, 1.0],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _topVignette() {
     return Positioned(
       left: 0,
@@ -320,72 +265,79 @@ class TableFelt extends ConsumerWidget {
     );
   }
 
-  /// Decorative shoe + discard-pile glyph in the top-right corner.
-  Widget _discardPile() {
+  /// Decorative shoe + discard-pile glyph in the top-right corner. Excluded
+  /// from the semantics tree — it is scenery, and a screen reader announcing
+  /// it would only get in the way of the hand being played.
+  Widget _discardPile(FeltMetrics m) {
     return Positioned(
-      right: 10,
+      right: m.inset + 10,
       top: 4,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          for (var i = 0; i < 3; i++)
-            Transform.translate(
-              offset: Offset(i == 0 ? 0 : -19.0 * i, 0),
-              child: Container(
-                width: 26,
-                height: 36,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(4),
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF9A332E), Color(0xFF5A1B18)],
+      child: ExcludeSemantics(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            for (var i = 0; i < 3; i++)
+              Transform.translate(
+                offset: Offset(i == 0 ? 0 : -19.0 * i, 0),
+                child: Container(
+                  width: 26,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(4),
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF9A332E), Color(0xFF5A1B18)],
+                    ),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
                   ),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.only(left: 2),
+              child: Container(
+                width: 13,
+                height: 44,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(3),
+                  color: Colors.black.withValues(alpha: 0.6),
+                  border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
                 ),
               ),
             ),
-          Padding(
-            padding: const EdgeInsets.only(left: 2),
-            child: Container(
-              width: 13,
-              height: 44,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(3),
-                color: Colors.black.withValues(alpha: 0.6),
-                border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  /// Decorative chip tray in the top-left corner.
-  Widget _chipTray() {
+  /// Decorative chip tray in the top-left corner. Scenery, like the discard
+  /// pile — not the player's own chips.
+  Widget _chipTray(FeltMetrics m) {
     return Positioned(
-      left: 10,
+      left: m.inset + 10,
       top: 10,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Color(0xFF2A2018), Color(0xFF15100B)],
+      child: ExcludeSemantics(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [Color(0xFF2A2018), Color(0xFF15100B)],
+            ),
+            border: Border.all(color: AppColors.gold.withValues(alpha: 0.2)),
+            borderRadius: BorderRadius.circular(8),
           ),
-          border: Border.all(color: AppColors.gold.withValues(alpha: 0.2)),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (var i = 0; i < 4; i++) ...[
-              if (i > 0) const SizedBox(width: 4),
-              Container(width: 15, height: 13, color: const Color(0xFFB98F3E)),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var i = 0; i < 4; i++) ...[
+                if (i > 0) const SizedBox(width: 4),
+                Container(width: 15, height: 13, color: const Color(0xFFB98F3E)),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

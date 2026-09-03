@@ -80,6 +80,11 @@ class GameNotifier extends StateNotifier<GameState> {
   bool _groupLive = false;
   List<PlayingCard> _shoe = [];
   Timer? _npcTimer;
+
+  /// Paces the dealer's turn. Deliberately *not* cancelled by [exitTable] —
+  /// see [_dealerDrawStep], which settles the hand immediately instead, so
+  /// leaving the table can never strand a bet.
+  Timer? _dealerTimer;
   Timer? _toastTimer;
   Timer? _reactTimer;
   Timer? _adWatchTimer;
@@ -103,6 +108,7 @@ class GameNotifier extends StateNotifier<GameState> {
     }
     _saveTimer?.cancel();
     _npcTimer?.cancel();
+    _dealerTimer?.cancel();
     _toastTimer?.cancel();
     _reactTimer?.cancel();
     _adWatchTimer?.cancel();
@@ -313,6 +319,11 @@ class GameNotifier extends StateNotifier<GameState> {
       tutorialDismissed: saved.tutorialDismissed,
       tipsSeen: saved.tipsSeen,
       tournamentJoined: saved.tournamentJoined,
+      // Send a returning player where they belong instead of back through the
+      // sign-in gate. `screen` itself is never persisted — dropping someone
+      // onto the felt mid-round is not "where I left off" — so onboarding
+      // resolves to the same destination it would have after signing in.
+      screen: saved.onboardingDone ? _postOnboardingScreenFor(saved) : null,
       avatarColor: saved.avatarColor == 0 ? null : Color(saved.avatarColor),
     );
   }
@@ -339,6 +350,9 @@ class GameNotifier extends StateNotifier<GameState> {
     tutorialDismissed: state.tutorialDismissed,
     tipsSeen: state.tipsSeen,
     tournamentJoined: state.tournamentJoined,
+    // Anywhere past the gate counts as done: the player got in, whether by
+    // signing in or as a guest.
+    onboardingDone: state.screen != AppScreen.onboarding,
     avatarColor: state.avatarColor.toARGB32(),
   );
 
@@ -629,6 +643,11 @@ class GameNotifier extends StateNotifier<GameState> {
   /// who already saw it) goes straight to the lobby.
   AppScreen get _postOnboardingScreen =>
       !state.tipsSeen && state.stats.handsPlayed == 0 ? AppScreen.tips : AppScreen.lobby;
+
+  /// The same rule, applied to a blob being restored — at hydrate time the
+  /// live state has not been populated yet, so it cannot be asked.
+  static AppScreen _postOnboardingScreenFor(SavedGame saved) =>
+      !saved.tipsSeen && saved.stats.handsPlayed == 0 ? AppScreen.tips : AppScreen.lobby;
 
   /// Both exits of the tips screen. "I've played before — skip" also turns
   /// the three-hand tutorial off, since the player just said they know the
@@ -1045,19 +1064,72 @@ class GameNotifier extends StateNotifier<GameState> {
     _playDealer();
   }
 
+  // The dealer's turn is paced like an NPC's, and for the same reason: it is
+  // another player acting at the table. These mirror the NPC timings above
+  // (520 / 600 / 480ms) so the table keeps one rhythm.
+  static const Duration _kDealerRevealPause = Duration(milliseconds: 520);
+  static const Duration _kDealerDrawPause = Duration(milliseconds: 600);
+  static const Duration _kDealerSettlePause = Duration(milliseconds: 480);
+
+  static bool _dealerShouldHit(List<PlayingCard> hand) {
+    final v = BlackjackRules.handValue(hand);
+    if (v < 17) return true;
+    if (v == 17 && kDealerHitsSoft17 && BlackjackRules.isSoft(hand)) return true;
+    return false;
+  }
+
+  /// Plays the dealer's hand out one card at a time.
+  ///
+  /// This used to draw the entire hand in a synchronous `while` loop and call
+  /// [_settle] in the same frame, which set `RoundPhase.dealer` and left it
+  /// again before a single frame was rendered. The consequences were all
+  /// visible at the table: the hole-card flip and every dealer draw fired at
+  /// once, the result panel landed on top of them, and the "Dealer is
+  /// playing…" indicator was unreachable code. The player watched four NPCs
+  /// take a considered turn each, then saw the hand they actually cared about
+  /// resolve instantly.
+  ///
+  /// The cards are the same cards: [_drawCard] is pulled in the same order
+  /// from the same shoe, and nothing else can draw while the dealer is acting.
+  /// Only the timing changed.
   void _playDealer() {
-    final dealerHand = [...state.dealerHand];
-    bool shouldHit() {
-      final v = BlackjackRules.handValue(dealerHand);
-      if (v < 17) return true;
-      if (v == 17 && kDealerHitsSoft17 && BlackjackRules.isSoft(dealerHand)) return true;
-      return false;
+    // Reveal the hole card and hand the stage over *before* drawing, so the
+    // flip is its own beat rather than one frame of a pile-up.
+    state = state.copyWith(holeRevealed: true, phase: RoundPhase.dealer);
+    _dealerTimer?.cancel();
+    _dealerTimer = Timer(_kDealerRevealPause, _dealerDrawStep);
+  }
+
+  void _dealerDrawStep() {
+    // If the player walked away mid-turn, finish the hand at once rather than
+    // leaving bets unsettled. The pacing is a presentation nicety; settling
+    // is not optional, and abandoning it would strand the player's stake.
+    if (state.screen != AppScreen.table) {
+      _finishDealerWithoutPacing();
+      return;
     }
 
-    while (shouldHit()) {
-      dealerHand.add(_drawCard());
+    if (!_dealerShouldHit(state.dealerHand)) {
+      _dealerTimer = Timer(_kDealerSettlePause, () {
+        if (state.phase != RoundPhase.dealer) return;
+        _settle();
+      });
+      return;
     }
-    state = state.copyWith(dealerHand: dealerHand, holeRevealed: true, phase: RoundPhase.dealer);
+
+    state = state.copyWith(dealerHand: [...state.dealerHand, _drawCard()]);
+    _playSfx(GameSfx.deal);
+    _dealerTimer = Timer(_kDealerDrawPause, _dealerDrawStep);
+  }
+
+  /// Resolves the rest of the dealer's hand immediately, for when there is
+  /// nobody watching it.
+  void _finishDealerWithoutPacing() {
+    final hand = [...state.dealerHand];
+    while (_dealerShouldHit(hand)) {
+      hand.add(_drawCard());
+    }
+    state = state.copyWith(dealerHand: hand, holeRevealed: true);
     _settle();
   }
 
@@ -1544,17 +1616,37 @@ class GameNotifier extends StateNotifier<GameState> {
   }
   void toggleTableMenu() => state = state.copyWith(tableMenuOpen: !state.tableMenuOpen);
   void toggleTableChat() => state = state.copyWith(tableChatOpen: !state.tableChatOpen, tableMenuOpen: false);
-  void toggleNotifSocial() {
+  /// Asks the OS for notification permission the first time the player turns
+  /// one of these on, and reports back whether they can actually be notified.
+  ///
+  /// Turning a switch on *is* the consent moment: the player just said they
+  /// want this specific kind of alert, which is the context the frame-1 prompt
+  /// never had. If they decline at the OS level the switch goes back off
+  /// rather than sitting there lit and lying — the previous behaviour left all
+  /// three showing ON while nothing could ever be delivered.
+  Future<bool> _ensureNotifPermission() async {
+    if (_notifs.hasPermission) return true;
+    final granted = await _notifs.requestPermission();
+    if (!granted) {
+      _showToast('Notifications are off for this app in system settings');
+    }
+    return granted;
+  }
+
+  Future<void> toggleNotifSocial() async {
+    if (!state.notifSocial && !await _ensureNotifPermission()) return;
     state = state.copyWith(notifSocial: !state.notifSocial);
     _scheduleSave();
   }
 
-  void toggleNotifLeaderboard() {
+  Future<void> toggleNotifLeaderboard() async {
+    if (!state.notifLeaderboard && !await _ensureNotifPermission()) return;
     state = state.copyWith(notifLeaderboard: !state.notifLeaderboard);
     _scheduleSave();
   }
 
-  void toggleNotifDaily() {
+  Future<void> toggleNotifDaily() async {
+    if (!state.notifDaily && !await _ensureNotifPermission()) return;
     state = state.copyWith(notifDaily: !state.notifDaily);
     // Off cancels the pending reminder; on re-arms it mid-cooldown.
     unawaited(_syncDailyBonusReminder());

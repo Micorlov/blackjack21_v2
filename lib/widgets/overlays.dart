@@ -1,9 +1,16 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_motion.dart';
 import '../theme/app_text_styles.dart';
 
 /// Top-of-screen toast pill, driven by `GameState.toast`.
+///
+/// This is the app's only error channel — all 24 failure paths end here, from
+/// "Not enough chips" to "Google sign-in failed". It is therefore also the
+/// only thing telling a screen-reader user that an action failed, which is why
+/// the pill is a live region: it announces itself when it appears rather than
+/// waiting to be found.
 class ToastBanner extends StatelessWidget {
   final String text;
 
@@ -15,24 +22,41 @@ class ToastBanner extends StatelessWidget {
       child: Align(
         alignment: Alignment.topCenter,
         child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
+          duration: AppMotion.durationOf(context, AppMotion.base),
           child: text.isEmpty
               ? const SizedBox.shrink(key: ValueKey('empty'))
-              : Container(
+              : Semantics(
+                  liveRegion: true,
+                  container: true,
                   key: ValueKey(text),
-                  margin: const EdgeInsets.only(top: 58),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-                  decoration: BoxDecoration(
-                    color: AppColors.navSurface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: 20, offset: const Offset(0, 6)),
-                    ],
-                  ),
-                  child: Text(
-                    text,
-                    style: AppText.sora(15, weight: FontWeight.w600, color: AppColors.gold),
+                  child: Container(
+                    margin: const EdgeInsets.only(top: 58),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 9,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.navSurface,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppColors.gold.withValues(alpha: 0.4),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          blurRadius: 20,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      text,
+                      style: AppText.sora(
+                        15,
+                        weight: FontWeight.w600,
+                        color: AppColors.gold,
+                      ),
+                    ),
                   ),
                 ),
         ),
@@ -48,19 +72,27 @@ class ReactionFloatOverlay extends StatefulWidget {
   final String text;
   final int triggerId;
 
-  const ReactionFloatOverlay({super.key, required this.text, required this.triggerId});
+  const ReactionFloatOverlay({
+    super.key,
+    required this.text,
+    required this.triggerId,
+  });
 
   @override
   State<ReactionFloatOverlay> createState() => _ReactionFloatOverlayState();
 }
 
-class _ReactionFloatOverlayState extends State<ReactionFloatOverlay> with SingleTickerProviderStateMixin {
+class _ReactionFloatOverlayState extends State<ReactionFloatOverlay>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1600));
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    );
     if (widget.text.isNotEmpty) _controller.forward(from: 0);
   }
 
@@ -103,7 +135,10 @@ class _ReactionFloatOverlayState extends State<ReactionFloatOverlay> with Single
               child: Opacity(
                 opacity: opacity,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.navSurface.withValues(alpha: 0.95),
                     border: Border.all(color: AppColors.gold),
@@ -111,7 +146,11 @@ class _ReactionFloatOverlayState extends State<ReactionFloatOverlay> with Single
                   ),
                   child: Text(
                     widget.text,
-                    style: AppText.sora(15, weight: FontWeight.w800, color: AppColors.goldLight),
+                    style: AppText.sora(
+                      15,
+                      weight: FontWeight.w800,
+                      color: AppColors.goldLight,
+                    ),
                   ),
                 ),
               ),

@@ -41,7 +41,22 @@ const _liveSeats = [
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('surrendering still plays the dealer out for the live NPC seats', () {
+  /// Advances the fake clock until the dealer's paced turn has resolved.
+  ///
+  /// The dealer used to draw its whole hand in one synchronous loop, so this
+  /// test could assert on settlement the instant it called `playerSurrender`.
+  /// It is now dealt one card at a time on a timer — the pacing fix that made
+  /// `RoundPhase.dealer` survive long enough to be seen. Each `pump` fires the
+  /// timer that schedules the next one, so the loop is chained rather than one
+  /// long jump.
+  Future<void> settleDealer(WidgetTester tester, GameNotifier notifier) async {
+    for (var i = 0; i < 40 && notifier.state.phase != RoundPhase.settlement; i++) {
+      await tester.pump(const Duration(milliseconds: 600));
+    }
+  }
+
+  testWidgets('surrendering still plays the dealer out for the live NPC seats',
+      (tester) async {
     // Dealer's opening two cards total 5 — nowhere near the 17-stand
     // threshold, so a completed hand is only possible if the dealer keeps
     // drawing after the hero surrenders.
@@ -65,6 +80,21 @@ void main() {
 
     notifier.playerSurrender();
 
+    // The dealer's turn must actually be observable now — this is the whole
+    // point of pacing it. Before the fix, RoundPhase.dealer was set and left
+    // again inside one frame, so the "Dealer is playing…" indicator and the
+    // hole-card flip were never seen by anyone.
+    expect(
+      notifier.state.phase,
+      RoundPhase.dealer,
+      reason: 'the dealer must hold the stage rather than resolving in the '
+          'same frame the player acted',
+    );
+    expect(notifier.state.holeRevealed, isTrue,
+        reason: 'the hole card turns over before the dealer draws, as its own beat');
+
+    await settleDealer(tester, notifier);
+
     expect(notifier.state.phase, RoundPhase.settlement, reason: 'surrender should still resolve the round');
     expect(
       BlackjackRules.handValue(notifier.state.dealerHand),
@@ -78,5 +108,12 @@ void main() {
     // subtracted it from sessionNetDelta and the panel showed +$0 instead.
     expect(notifier.state.chips, 950, reason: 'starting 900 (post-deal) + the 50 surrender refund');
     expect(notifier.state.roundHandNet, -50, reason: 'the settlement panel must show the real -\$50 loss, not \$0');
+
+    // GameNotifier keeps a heartbeat, a save timer and the post-settlement
+    // voice timers running. A plain `test` never noticed; `testWidgets`
+    // asserts that no timer outlives the tree, and it is right to. Disposed
+    // inline rather than via addTearDown because that invariant is checked
+    // before teardown callbacks run.
+    notifier.dispose();
   });
 }

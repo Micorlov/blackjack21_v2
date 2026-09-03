@@ -8,6 +8,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/playing_card_widget.dart';
+import 'dealt_card.dart';
 
 /// Size of a single card in a friend's fan. The row that holds the fan is
 /// pinned to [_kCardHeight] so a long hand can never change the seat's height.
@@ -102,9 +103,7 @@ class SeatPlateData {
       showBet: npc != null,
       showBetOnly: npc != null && !hasCards,
       statusLabel: npcTotal > 21 ? 'BUST' : '$npcTotal',
-      statusColor: npcTotal > 21
-          ? AppColors.loseSoft
-          : (npcTotal == 21 ? AppColors.gold : AppColors.winLight),
+      statusColor: npcTotal > 21 ? AppColors.loseSoft : (npcTotal == 21 ? AppColors.gold : AppColors.winLight),
       hasAction: npc != null && npc.action.isNotEmpty,
       actionLabel: npc?.action ?? '',
       actionColor: npc?.action == 'BUST'
@@ -198,10 +197,15 @@ class SeatPlate extends StatelessWidget {
       child: Stack(
         children: [
           // Painted in deal order, so each card overlaps the one before it.
+          // Keyed by slot so a card joining the fan eases in on its own
+          // instead of restarting the whole row's animation.
           for (var i = 0; i < count; i++)
             Positioned(
               left: i * step,
-              child: PlayingCardFace(card: data.cards[i], width: _kCardWidth, height: _kCardHeight),
+              child: DealtCard(
+                key: ValueKey('npc-card-$i'),
+                child: PlayingCardFace(card: data.cards[i], width: _kCardWidth, height: _kCardHeight),
+              ),
             ),
         ],
       ),
@@ -234,7 +238,25 @@ class SeatPlate extends StatelessWidget {
     );
   }
 
+  /// One sentence per seat, instead of the four loose numbers a screen reader
+  /// would otherwise read off the plate ("Maya", "1,240", "+$60", "18").
+  String get _semanticLabel {
+    final parts = <String>[
+      data.name,
+      '${data.stackLabel} chips',
+      if (data.showBet) 'bet ${data.betLabel}',
+      if (data.hasStatus) data.statusLabel == 'BUST' ? 'busted' : 'total ${data.statusLabel}',
+      if (data.acting) 'playing now',
+      if (data.takesPot) 'takes the pot',
+    ];
+    return parts.join(', ');
+  }
+
   Widget _plateRow() {
+    return Semantics(label: _semanticLabel, excludeSemantics: true, child: _plateBox());
+  }
+
+  Widget _plateBox() {
     return Container(
       padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
       decoration: BoxDecoration(
@@ -278,25 +300,31 @@ class SeatPlate extends StatelessWidget {
                       : null,
                 ),
                 _plateLine(
-                  label: Row(
-                    crossAxisAlignment: CrossAxisAlignment.baseline,
-                    textBaseline: TextBaseline.alphabetic,
-                    children: [
-                      Flexible(
-                        child: Text(
+                  // Stack and points are one fact read together, and both are
+                  // live numbers that grow with the system font setting.
+                  // Shrinking the pair as a unit keeps them on one baseline;
+                  // ellipsising either one turns a bankroll into a lie.
+                  label: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
                           data.stackLabel,
                           style: AppText.mono(17, weight: FontWeight.w700, color: Colors.white),
                           maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        data.pointsLabel,
-                        style: AppText.mono(12, weight: FontWeight.w700, color: data.pointsColor),
-                        maxLines: 1,
-                      ),
-                    ],
+                        const SizedBox(width: 5),
+                        Text(
+                          data.pointsLabel,
+                          style: AppText.mono(12, weight: FontWeight.w700, color: data.pointsColor),
+                          maxLines: 1,
+                        ),
+                      ],
+                    ),
                   ),
                   trailing: data.hasStatus && data.showBet ? _betDot(fontSize: 12, dotSize: 8) : null,
                 ),

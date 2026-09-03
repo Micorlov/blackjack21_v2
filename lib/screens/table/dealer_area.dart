@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../../data/game_data.dart';
 import '../../models/game_state.dart';
+import '../../models/playing_card.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_motion.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/card_animations.dart';
 import '../../widgets/playing_card_widget.dart';
+import 'dealt_card.dart';
 import 'table_calc.dart';
 
 /// Centered dealer cluster at the top of the felt: "D" badge + total, the
@@ -18,13 +21,17 @@ class DealerArea extends StatelessWidget {
   final MidRoundPot midPot;
   final CardBackDef cardBack;
 
-  const DealerArea({super.key, required this.state, required this.midPot, required this.cardBack});
+  /// Horizontal inset of the felt's content band. Non-zero on wide canvases,
+  /// where the cluster is centred in the band rather than in the whole box.
+  final double inset;
+
+  const DealerArea({super.key, required this.state, required this.midPot, required this.cardBack, this.inset = 0});
 
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      left: 0,
-      right: 0,
+      left: inset,
+      right: inset,
       top: 4,
       child: Column(
         children: [
@@ -33,13 +40,29 @@ class DealerArea extends StatelessWidget {
           _potPill(),
           if (state.sweepAmount > 0) ...[const SizedBox(height: 8), _sweepBanner()],
           const SizedBox(height: 8),
-          _dealerCardsRow(),
+          _dealerCardsRow(context),
         ],
       ),
     );
   }
 
+  /// The dealer's total is the number every decision at the table is made
+  /// against, so it gets a spoken form of its own: the visual shows "9 + ?"
+  /// while the hole card is down, which reads as gibberish out loud.
+  String get _dealerSemanticLabel {
+    if (state.dealerHand.isEmpty) return 'Dealer has no cards yet';
+    if (state.holeRevealed) {
+      return 'Dealer total ${BlackjackRules.handValue(state.dealerHand)}';
+    }
+    final upCard = BlackjackRules.handValue([state.dealerHand.first]);
+    return 'Dealer shows $upCard, hole card face down';
+  }
+
   Widget _dealerBadgeRow() {
+    return Semantics(label: _dealerSemanticLabel, excludeSemantics: true, child: _dealerBadgeBox());
+  }
+
+  Widget _dealerBadgeBox() {
     return Container(
       padding: const EdgeInsets.fromLTRB(4, 4, 16, 4),
       decoration: BoxDecoration(
@@ -150,7 +173,7 @@ class DealerArea extends StatelessWidget {
     );
   }
 
-  Widget _dealerCardsRow() {
+  Widget _dealerCardsRow(BuildContext context) {
     return SizedBox(
       height: 86,
       child: Row(
@@ -165,14 +188,23 @@ class DealerArea extends StatelessWidget {
             // `bjDeal`). Keys keep each card's animation to itself as the
             // dealer draws.
             if (i == 1)
-              FlipRevealCard(
-                key: const ValueKey('dealer-hole'),
-                revealed: state.holeRevealed,
-                back: PlayingCardBack(width: 58, height: 84, skin: cardBack),
-                face: PlayingCardFace(card: state.dealerHand[i], width: 58, height: 84),
-              )
+              // [FlipRevealCard] owns its own controller and duration, so the
+              // only way to honour reduced motion is to not build it: the card
+              // simply *is* face up, which is the same end state the flip
+              // arrives at.
+              if (AppMotion.reduceMotion(context))
+                state.holeRevealed
+                    ? PlayingCardFace(card: state.dealerHand[i], width: 58, height: 84)
+                    : PlayingCardBack(width: 58, height: 84, skin: cardBack)
+              else
+                FlipRevealCard(
+                  key: const ValueKey('dealer-hole'),
+                  revealed: state.holeRevealed,
+                  back: PlayingCardBack(width: 58, height: 84, skin: cardBack),
+                  face: PlayingCardFace(card: state.dealerHand[i], width: 58, height: 84),
+                )
             else
-              DealInCard(
+              DealtCard(
                 key: ValueKey('dealer-card-$i'),
                 child: PlayingCardFace(card: state.dealerHand[i], width: 58, height: 84),
               ),

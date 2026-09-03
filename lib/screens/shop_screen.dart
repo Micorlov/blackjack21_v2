@@ -3,13 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/game_data.dart';
 import '../models/enums.dart';
+import '../models/social_models.dart';
 import '../state/game_notifier.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/formatters.dart';
 import '../widgets/avatar_circle.dart';
 import '../widgets/panel_card.dart';
 import '../widgets/playing_card_widget.dart';
+import 'shared/avatar_initial.dart';
+import 'shared/empty_state.dart';
 
 /// Shop screen — VIP banner, two social "highlight" feed cards, chip packs,
 /// cosmetics (card backs / table felt / avatar frame), and the "watch an ad"
@@ -22,7 +26,11 @@ class ShopScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(gameProvider);
     final notifier = ref.read(gameProvider.notifier);
-    final avatarInitial = _avatarInitialOf(state.displayName);
+    final avatarInitial = avatarInitialOf(state.displayName);
+    // The two highlight cards were captioned with practice-bot names, so a
+    // player with no friends was shown a social feed of people who do not
+    // exist. They belong to the live group or to nobody.
+    final liveFriends = state.friendsAreLive ? state.friends : const <Friend>[];
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
@@ -32,21 +40,39 @@ class ShopScreen extends ConsumerWidget {
           const ScreenTitle('Shop'),
           _VipBanner(onLearnMore: notifier.vipLearnMore),
           const SizedBox(height: 20),
-          _HighlightCard(
-            avatarInitial: 'M',
-            avatarColor: AppColors.gold,
-            name: 'Maya T.',
-            subtitle: 'Just now · Bronze Table',
-            accentColor: AppColors.gold,
-            headline: 'Blackjack! +450 chips',
-            liked: state.highlight1Liked,
-            likeCount: state.highlight1Count,
-            onToggleLike: notifier.toggleLike1,
-            onSendGG: notifier.sendGGHighlight1,
-          ),
+          if (liveFriends.isNotEmpty)
+            _HighlightCard(
+              avatarInitial: liveFriends[0].initial,
+              avatarColor: AppColors.gold,
+              name: liveFriends[0].name,
+              subtitle: 'Just now · Bronze Table',
+              accentColor: AppColors.gold,
+              headline: 'Blackjack! +450 chips',
+              liked: state.highlight1Liked,
+              likeCount: state.highlight1Count,
+              onToggleLike: notifier.toggleLike1,
+              onSendGG: notifier.sendGGHighlight1,
+            )
+          else
+            EmptyState(
+              icon: Icons.auto_awesome_outlined,
+              title: 'No highlights yet',
+              message:
+                  'Big hands from your friends group show up here. Invite someone and their '
+                  'blackjacks land in this feed.',
+              actionLabel: 'Invite via WhatsApp',
+              onAction: notifier.shareInviteWhatsApp,
+            ),
           const SizedBox(height: 20),
           const SectionLabel('Chip packs'),
           _ChipPacksGrid(onBuy: notifier.buyPack),
+          const SizedBox(height: AppSpacing.sm),
+          // Said plainly, because the tiles show real-looking prices: this
+          // build takes no payment, and the Privacy Policy says the same.
+          Text(
+            'Preview pricing — no payment is taken and the chips are added straight away.',
+            style: AppText.caption(),
+          ),
           const SizedBox(height: 10),
           const SectionLabel('Card backs'),
           _CardBacksRow(equippedId: state.cardBackSkin, onSelect: notifier.selectCardBack),
@@ -63,28 +89,25 @@ class ShopScreen extends ConsumerWidget {
           const SizedBox(height: 10),
           const SectionLabel('Free chips'),
           _FreeChipsRow(adState: state.adState, onWatchAd: notifier.watchAd),
-          const SizedBox(height: 14),
-          _HighlightCard(
-            avatarInitial: 'J',
-            avatarColor: AppColors.win,
-            name: 'Jordan K.',
-            subtitle: '10m ago · Silver Table',
-            accentColor: AppColors.win,
-            headline: '5-win streak!',
-            liked: state.highlight2Liked,
-            likeCount: state.highlight2Count,
-            onToggleLike: notifier.toggleLike2,
-            onSendGG: notifier.sendGGHighlight2,
-          ),
+          if (liveFriends.length > 1) ...[
+            const SizedBox(height: 14),
+            _HighlightCard(
+              avatarInitial: liveFriends[1].initial,
+              avatarColor: AppColors.win,
+              name: liveFriends[1].name,
+              subtitle: '10m ago · Silver Table',
+              accentColor: AppColors.win,
+              headline: '5-win streak!',
+              liked: state.highlight2Liked,
+              likeCount: state.highlight2Count,
+              onToggleLike: notifier.toggleLike2,
+              onSendGG: notifier.sendGGHighlight2,
+            ),
+          ],
         ],
       ),
     );
   }
-}
-
-String _avatarInitialOf(String displayName) {
-  final name = displayName.isEmpty ? 'G' : displayName;
-  return name[0].toUpperCase();
 }
 
 /// Gold-bordered "VIP Club" promo banner at the top of the shop.
@@ -238,35 +261,52 @@ class _HighlightCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
             child: Row(
               children: [
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: onToggleLike,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(liked ? Icons.favorite : Icons.favorite_border, size: 18, color: likeColor),
-                          const SizedBox(width: 8),
-                          Text(
-                            '$likeCount',
-                            style: AppText.sora(15, weight: FontWeight.w700, color: likeColor),
-                          ),
-                        ],
+                Semantics(
+                  button: true,
+                  toggled: liked,
+                  // A heart and a bare number say nothing about whose hand
+                  // this is or what tapping does.
+                  label: 'Like $name\'s hand, $likeCount likes',
+                  excludeSemantics: true,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: onToggleLike,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                        constraints: AppTouch.minTargetConstraints,
+                        alignment: Alignment.center,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(liked ? Icons.favorite : Icons.favorite_border, size: 18, color: likeColor),
+                            const SizedBox(width: 8),
+                            Text(
+                              '$likeCount',
+                              style: AppText.sora(15, weight: FontWeight.w700, color: likeColor),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: onSendGG,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                      child: Text(
-                        'Send GG',
-                        style: AppText.sora(15, weight: FontWeight.w700, color: AppColors.textMuted),
+                Semantics(
+                  button: true,
+                  label: 'Send GG to $name',
+                  excludeSemantics: true,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: onSendGG,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+                        constraints: AppTouch.minTargetConstraints,
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Send GG',
+                          style: AppText.sora(15, weight: FontWeight.w700, color: AppColors.textMuted),
+                        ),
                       ),
                     ),
                   ),
@@ -360,7 +400,9 @@ class _ChipPackCard extends StatelessWidget {
                     decoration: BoxDecoration(color: AppColors.gold, borderRadius: BorderRadius.circular(999)),
                     child: Text(
                       pack.badge,
-                      style: AppText.sora(9, weight: FontWeight.w800, color: AppColors.goldInk),
+                      // Was 9px — below the app's 12px floor and unreadable
+                      // for anyone who needs larger type.
+                      style: AppText.sora(12, weight: FontWeight.w800, color: AppColors.goldInk),
                     ),
                   ),
                 ),
@@ -398,41 +440,47 @@ class _SelectableSwatch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Column(
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              alignment: Alignment.center,
-              children: [
-                preview,
-                if (equipped)
-                  Positioned(
-                    top: -4,
-                    right: -4,
-                    child: Container(
-                      width: 16,
-                      height: 16,
-                      decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.gold),
-                      child: const Icon(Icons.check, size: 10, color: AppColors.goldInk),
+    return Semantics(
+      button: true,
+      selected: equipped,
+      label: equipped ? '$label, equipped' : label,
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                alignment: Alignment.center,
+                children: [
+                  preview,
+                  if (equipped)
+                    Positioned(
+                      top: -4,
+                      right: -4,
+                      child: Container(
+                        width: 16,
+                        height: 16,
+                        decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.gold),
+                        child: const Icon(Icons.check, size: 10, color: AppColors.goldInk),
+                      ),
                     ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: AppText.sora(
-                12.5,
-                weight: FontWeight.w700,
-                color: equipped ? AppColors.gold : AppColors.textMuted,
+                ],
               ),
-            ),
-          ],
+              const SizedBox(height: 6),
+              Text(
+                label,
+                style: AppText.sora(
+                  12.5,
+                  weight: FontWeight.w700,
+                  color: equipped ? AppColors.gold : AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -533,19 +581,29 @@ class _AvatarFrameOption extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          avatar,
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: AppText.sora(12.5, weight: FontWeight.w700, color: selected ? AppColors.gold : AppColors.textMuted),
-          ),
-        ],
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: selected ? '$label avatar frame, equipped' : '$label avatar frame',
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            avatar,
+            const SizedBox(height: 6),
+            Text(
+              label,
+              style: AppText.sora(
+                12.5,
+                weight: FontWeight.w700,
+                color: selected ? AppColors.gold : AppColors.textMuted,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -609,21 +667,33 @@ class _AdButton extends StatelessWidget {
     final isGold = adState != AdState.cooldown;
     final isEnabled = adState == AdState.ready;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999),
-        onTap: isEnabled ? onTap : null,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-          decoration: BoxDecoration(
-            gradient: isGold ? AppColors.goldGradient : null,
-            color: isGold ? null : AppColors.border,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(
-            label,
-            style: AppText.sora(15, weight: FontWeight.w800, color: isGold ? AppColors.goldInk : AppColors.textMuted),
+    return Semantics(
+      button: true,
+      enabled: isEnabled,
+      // Disabled controls in this app used to state no reason at all.
+      hint: switch (adState) {
+        AdState.ready => null,
+        AdState.watching => 'Your reward is on its way',
+        AdState.cooldown => 'Available again shortly',
+      },
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(999),
+          onTap: isEnabled ? onTap : null,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            constraints: AppTouch.minTargetConstraints,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              gradient: isGold ? AppColors.goldGradient : null,
+              color: isGold ? null : AppColors.border,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              label,
+              style: AppText.sora(15, weight: FontWeight.w800, color: isGold ? AppColors.goldInk : AppColors.textMuted),
+            ),
           ),
         ),
       ),

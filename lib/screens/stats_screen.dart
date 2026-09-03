@@ -6,9 +6,11 @@ import '../models/enums.dart';
 import '../models/game_state.dart';
 import '../state/game_notifier.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/formatters.dart';
 import '../widgets/panel_card.dart';
+import 'shared/tab_pill.dart';
 
 /// Stats screen: Recent / All time / Awards tabs plus a "last 10 hands"
 /// history strip. Ported from `Blackjack 21 v2.dc.html` lines 490-543.
@@ -28,13 +30,15 @@ class StatsScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const ScreenTitle('Stats'),
-          Row(
-            children: [
-              _TabPill(label: 'Recent', active: state.statsTab == StatsTab.recent, onTap: notifier.setStatsRecent),
-              const SizedBox(width: 8),
-              _TabPill(label: 'All time', active: state.statsTab == StatsTab.alltime, onTap: notifier.setStatsAlltime),
-              const SizedBox(width: 8),
-              _TabPill(
+          TabPillRow(
+            items: [
+              TabPillItem(label: 'Recent', active: state.statsTab == StatsTab.recent, onTap: notifier.setStatsRecent),
+              TabPillItem(
+                label: 'All time',
+                active: state.statsTab == StatsTab.alltime,
+                onTap: notifier.setStatsAlltime,
+              ),
+              TabPillItem(
                 label: 'Awards',
                 active: state.statsTab == StatsTab.achievements,
                 onTap: notifier.setStatsAchievements,
@@ -106,18 +110,20 @@ class StatsScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             child: recentHistory.isEmpty
                 ? Text('Play a hand to see your streak here.', style: AppText.sora(15, color: AppColors.textMuted))
-                : Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: recentHistory
-                        .map(
-                          (r) => Container(
-                            width: 20,
-                            height: 20,
-                            decoration: BoxDecoration(shape: BoxShape.circle, color: _historyDotColor(r)),
-                          ),
-                        )
-                        .toList(),
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.sm,
+                        children: [
+                          for (var i = 0; i < recentHistory.length; i++)
+                            _HistoryDot(result: recentHistory[i], handNumber: i + 1),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      const _HistoryLegend(),
+                    ],
                   ),
           ),
         ],
@@ -131,47 +137,74 @@ String _winRateDisplay(StatsSummary stats) {
   return '${(stats.wins / stats.handsPlayed * 100).round()}%';
 }
 
-Color _historyDotColor(RoundResult r) {
+/// How one result is drawn: colour *and* a glyph.
+///
+/// The strip used to encode win/loss/push in hue alone, which is invisible to
+/// a red-green colour-blind player — roughly one man in twelve — and says
+/// nothing at all to a screen reader. The glyph carries the meaning; the colour
+/// only reinforces it.
+({Color color, IconData icon, Color ink, String label}) _historyStyle(RoundResult r) {
   switch (r) {
     case RoundResult.win:
-      return AppColors.win;
+      return (color: AppColors.win, icon: Icons.check_rounded, ink: AppColors.goldInk, label: 'Win');
     case RoundResult.loss:
-      return AppColors.lose;
+      return (color: AppColors.lose, icon: Icons.close_rounded, ink: AppColors.textPrimary, label: 'Loss');
     case RoundResult.push:
-      return AppColors.push;
+      return (color: AppColors.push, icon: Icons.remove_rounded, ink: AppColors.goldInk, label: 'Push');
   }
 }
 
-class _TabPill extends StatelessWidget {
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
+class _HistoryDot extends StatelessWidget {
+  final RoundResult result;
+  final int handNumber;
 
-  const _TabPill({required this.label, required this.active, required this.onTap});
+  const _HistoryDot({required this.result, required this.handNumber});
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(999),
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 6),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: active ? AppColors.gold : AppColors.border),
-              color: active ? AppColors.gold.withValues(alpha: 0.12) : Colors.transparent,
-            ),
-            child: Text(
-              label,
-              style: AppText.sora(15, weight: FontWeight.w700, color: active ? AppColors.gold : AppColors.textFaint),
-            ),
-          ),
-        ),
+    final style = _historyStyle(result);
+    return Semantics(
+      label: 'Hand $handNumber: ${style.label.toLowerCase()}',
+      excludeSemantics: true,
+      child: Container(
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(shape: BoxShape.circle, color: style.color),
+        alignment: Alignment.center,
+        child: Icon(style.icon, size: 15, color: style.ink),
       ),
+    );
+  }
+}
+
+/// Names the three marks once, so the strip above needs no interpretation.
+class _HistoryLegend extends StatelessWidget {
+  const _HistoryLegend();
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: AppSpacing.lg,
+      runSpacing: AppSpacing.sm,
+      children: [
+        for (final result in RoundResult.values)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ExcludeSemantics(
+                child: Container(
+                  width: 16,
+                  height: 16,
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: _historyStyle(result).color),
+                  alignment: Alignment.center,
+                  child: Icon(_historyStyle(result).icon, size: 11, color: _historyStyle(result).ink),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Text(_historyStyle(result).label, style: AppText.caption()),
+            ],
+          ),
+      ],
     );
   }
 }

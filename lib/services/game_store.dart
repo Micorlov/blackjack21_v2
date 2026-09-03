@@ -47,6 +47,17 @@ class SavedGame {
   final bool tipsSeen;
   final bool tournamentJoined;
 
+  /// Whether this player has already been past the sign-in gate.
+  ///
+  /// [GameState.screen] deliberately is not persisted — restoring someone
+  /// straight back onto the felt mid-round, or into the Weekend Cup, is not
+  /// what "where I left off" means. But nothing recorded that onboarding had
+  /// *happened* either, and `GameState.screen` defaults to
+  /// `AppScreen.onboarding`, so every cold launch showed a signed-in returning
+  /// player the sign-in gate again. This is the one bit of that screen worth
+  /// keeping.
+  final bool onboardingDone;
+
   /// ARGB of the avatar swatch picked in Settings; 0 means "never picked",
   /// which restores as the GameState default.
   final int avatarColor;
@@ -73,6 +84,7 @@ class SavedGame {
     required this.tutorialDismissed,
     this.tipsSeen = false,
     this.tournamentJoined = false,
+    this.onboardingDone = false,
     this.avatarColor = 0,
   });
 
@@ -112,6 +124,7 @@ class SavedGame {
     'tutorialDismissed': tutorialDismissed,
     'tipsSeen': tipsSeen,
     'tournamentJoined': tournamentJoined,
+    'onboardingDone': onboardingDone,
     'avatarColor': avatarColor,
   };
 
@@ -159,6 +172,10 @@ class SavedGame {
       // has already seen the lobby — never re-show them the primer.
       tipsSeen: _bool(json['tipsSeen'], true),
       tournamentJoined: _bool(json['tournamentJoined'], defaults.tournamentJoined),
+      // A blob written before this key existed belongs to someone who already
+      // got through the gate — the same reasoning as tipsSeen above. Defaulting
+      // to false would send every existing tester back to the sign-in screen.
+      onboardingDone: _bool(json['onboardingDone'], true),
       avatarColor: _int(json['avatarColor'], 0),
     );
   }

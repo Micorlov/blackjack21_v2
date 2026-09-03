@@ -73,8 +73,20 @@ class BlackjackApp extends StatelessWidget {
       // panels. This flips to `ThemeMode.system` once the screens are
       // migrated to `AppPalette.of(context)`.
       themeMode: ThemeMode.dark,
-      // The UI is a fixed-metric design port; unbounded system font scaling
-      // breaks its pill rows and button labels, so cap it at +30%.
+      // Capped at +30%, and this is now the app's weakest accessibility point
+      // rather than a settled decision.
+      //
+      // The felt no longer needs the cap: it used to disable text scaling
+      // outright (`MediaQuery.withNoTextScaling`), so every live number in the
+      // game — dealer total, bet, hand total, balance — ignored the system
+      // setting entirely. It is now constraint-driven and scales properly.
+      //
+      // The cap survives because of the screens *around* the table. Measured
+      // at 1.5x, the lobby's story tiles overflow by 2px and the daily-bonus
+      // dialog by 21px; at 1.6x and 2.0x the failures spread widely (311
+      // overflow cases across the sweep). Raising this is a real accessibility
+      // win and the next thing worth doing — it needs those screens reworked
+      // first, not a bigger number here.
       builder: (context, child) => MediaQuery.withClampedTextScaling(
         minScaleFactor: 1,
         maxScaleFactor: 1.3,

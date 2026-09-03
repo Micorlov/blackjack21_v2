@@ -4,18 +4,56 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/enums.dart';
 import '../../state/game_notifier.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_motion.dart';
+import '../../theme/app_palette.dart';
+import '../../theme/app_spacing.dart';
 import '../../widgets/buttons.dart';
 
 /// Playing-phase bottom panel: DOUBLE/SPLIT/SURRENDER row (each disabled per
 /// table rules) plus STAND/HIT row. Disabled logic mirrors the source
 /// design's UI-only `canDouble`/`canSplit`/`canSurrender` helpers.
-class TablePlayingPanel extends ConsumerWidget {
+///
+/// Stateful only to hold the tap debounce — the notifier is untouched.
+class TablePlayingPanel extends ConsumerStatefulWidget {
   const TablePlayingPanel({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<TablePlayingPanel> createState() => _TablePlayingPanelState();
+}
+
+class _TablePlayingPanelState extends ConsumerState<TablePlayingPanel> {
+  /// When the last action on this panel was accepted.
+  ///
+  /// HIT and STAND are never disabled and the notifier acts synchronously, so
+  /// a fast double-tap used to draw two cards with no visual separation — the
+  /// second card landing before the player had seen the first. One
+  /// [AppMotion.base] window between actions is long enough to swallow the
+  /// stray second tap of a double-tap and short enough that deliberate
+  /// hit-hit-hit still feels immediate.
+  ///
+  /// Local to the widget on purpose: the round's rules are the notifier's
+  /// business, and how fast a thumb can travel is not.
+  DateTime? _lastActionAt;
+
+  /// Wraps an action so it is ignored inside the debounce window. A null
+  /// [action] (the rules forbid it) stays null, so the button still reads as
+  /// disabled rather than as an enabled control that does nothing.
+  VoidCallback? _debounced(VoidCallback? action) {
+    if (action == null) return null;
+    return () {
+      final now = DateTime.now();
+      final last = _lastActionAt;
+      if (last != null && now.difference(last) < AppMotion.base) return;
+      _lastActionAt = now;
+      action();
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(gameProvider);
     final notifier = ref.read(gameProvider.notifier);
+    final palette = AppPalette.of(context);
 
     final isPlaying = state.phase == RoundPhase.playing;
     final activeHand = state.hands[state.activeHandIndex];
@@ -34,44 +72,53 @@ class TablePlayingPanel extends ConsumerWidget {
         Row(
           children: [
             Expanded(
+              flex: 3,
               child: ActionPillButton(
                 label: 'DOUBLE',
                 borderColor: AppColors.gold.withValues(alpha: 0.32),
                 backgroundColor: AppColors.gold.withValues(alpha: 0.08),
                 textColor: AppColors.gold,
-                onPressed: canDouble ? notifier.playerDouble : null,
+                onPressed: _debounced(canDouble ? notifier.playerDouble : null),
                 verticalPadding: 15,
                 fontSize: 17,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
+              flex: 3,
               child: ActionPillButton(
                 label: 'SPLIT',
                 borderColor: AppColors.gold.withValues(alpha: 0.32),
                 backgroundColor: AppColors.gold.withValues(alpha: 0.08),
                 textColor: AppColors.gold,
-                onPressed: canSplit ? notifier.playerSplit : null,
+                onPressed: _debounced(canSplit ? notifier.playerSplit : null),
                 verticalPadding: 15,
                 fontSize: 17,
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
+            // Surrender forfeits half the bet and cannot be undone, yet it used
+            // to be the *widest* button in this row (`flex: 2` against 1 and 1)
+            // and was painted in the same gold as the two constructive plays —
+            // the most dangerous control on the table dressed as the most
+            // inviting one. It now takes the smallest share of the row and a
+            // destructive outline, so weight and colour both say "not this one
+            // by accident".
             Expanded(
               flex: 2,
               child: ActionPillButton(
                 label: 'SURRENDER',
-                borderColor: AppColors.gold.withValues(alpha: 0.32),
-                backgroundColor: AppColors.gold.withValues(alpha: 0.08),
-                textColor: AppColors.gold,
-                onPressed: canSurrender ? notifier.playerSurrender : null,
+                borderColor: palette.lose,
+                backgroundColor: Colors.transparent,
+                textColor: palette.loseOnFelt,
+                onPressed: _debounced(canSurrender ? notifier.playerSurrender : null),
                 verticalPadding: 15,
-                fontSize: 17,
+                fontSize: 14,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: AppSpacing.sm + AppSpacing.xxs),
         Row(
           children: [
             Expanded(
@@ -80,13 +127,18 @@ class TablePlayingPanel extends ConsumerWidget {
                 borderColor: AppColors.win.withValues(alpha: 0.6),
                 backgroundColor: AppColors.win.withValues(alpha: 0.2),
                 textColor: AppColors.winLight,
-                onPressed: notifier.playerStand,
+                onPressed: _debounced(notifier.playerStand),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               flex: 2,
-              child: GoldButton(label: 'HIT', onPressed: notifier.playerHit, verticalPadding: 20, fontSize: 20),
+              child: GoldButton(
+                label: 'HIT',
+                onPressed: _debounced(notifier.playerHit),
+                verticalPadding: 20,
+                fontSize: 20,
+              ),
             ),
           ],
         ),

@@ -18,6 +18,8 @@ import '../widgets/avatar_circle.dart';
 import '../widgets/buttons.dart';
 import '../widgets/daily_bonus_dialog.dart';
 import '../widgets/panel_card.dart';
+import 'shared/avatar_initial.dart';
+import 'shared/empty_state.dart';
 
 /// Home / lobby screen: welcome header, stories, daily bonus, tournament
 /// promo, table picker, and a "Top players" leaderboard preview. Ported 1:1
@@ -58,7 +60,21 @@ class LobbyScreen extends ConsumerWidget {
               ],
             ),
           ),
-          _LeaderboardCard(entries: topPlayers),
+          // Same rule as the friends screen and the world standings: the
+          // seeded practice bots are not people, so they do not get to stand
+          // on a leaderboard next to the player's real score.
+          if (state.friendsAreLive)
+            _LeaderboardCard(entries: topPlayers)
+          else
+            EmptyState(
+              icon: Icons.emoji_events_outlined,
+              title: 'Your leaderboard is waiting',
+              message:
+                  'Invite a friend with your group code and their scores race yours here, '
+                  'hour by hour.',
+              actionLabel: 'Invite via WhatsApp',
+              onAction: notifier.shareInviteWhatsApp,
+            ),
         ],
       ),
     );
@@ -74,40 +90,51 @@ class _HeaderRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        AvatarCircle(
-          initial: state.displayName.isEmpty ? '?' : state.displayName[0].toUpperCase(),
-          color: state.avatarColor,
-          size: 40,
-          goldRing: state.avatarFrameGold,
-          photoUrl: state.photoUrl,
+        ExcludeSemantics(
+          // The name is spoken by the row beside it; the avatar would only
+          // repeat its first letter.
+          child: AvatarCircle(
+            initial: avatarInitialOf(state.displayName, fallback: '?'),
+            color: state.avatarColor,
+            size: 40,
+            goldRing: state.avatarFrameGold,
+            photoUrl: state.photoUrl,
+          ),
         ),
         const SizedBox(width: 10),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Welcome back',
-                style: AppText.sora(14, weight: FontWeight.w600, color: AppColors.textMuted),
-              ),
-              Text(state.displayName, style: AppText.sora(18, weight: FontWeight.w800)),
-            ],
+          child: MergeSemantics(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Welcome back',
+                  style: AppText.sora(14, weight: FontWeight.w600, color: AppColors.textMuted),
+                ),
+                Text(state.displayName, style: AppText.sora(18, weight: FontWeight.w800)),
+              ],
+            ),
           ),
         ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
-          decoration: BoxDecoration(
-            color: AppColors.navSurface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.gold.withValues(alpha: 0.25)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('●', style: AppText.mono(15, color: AppColors.gold, height: 1)),
-              const SizedBox(width: 7),
-              Text(formatChips(state.chips), style: AppText.mono(17, weight: FontWeight.w700)),
-            ],
+        Semantics(
+          // "● 1,150" is a chip glyph and a bare number to a screen reader.
+          label: 'Balance: ${formatChips(state.chips)} chips',
+          excludeSemantics: true,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
+            decoration: BoxDecoration(
+              color: AppColors.navSurface,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.gold.withValues(alpha: 0.25)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('●', style: AppText.mono(15, color: AppColors.gold, height: 1)),
+                const SizedBox(width: 7),
+                Text(formatChips(state.chips), style: AppText.mono(17, weight: FontWeight.w700)),
+              ],
+            ),
           ),
         ),
       ],
@@ -132,34 +159,41 @@ class _StoriesRow extends StatelessWidget {
         itemBuilder: (context, i) {
           final story = kStoriesData[i];
           final viewed = state.viewedStories.contains(story.id);
-          return GestureDetector(
-            onTap: () => notifier.openStory(story.id),
-            child: SizedBox(
-              width: 60,
-              child: Column(
-                children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: story.color,
-                      border: Border.all(color: viewed ? const Color(0xFF3A4A42) : AppColors.gold, width: 2),
+          return Semantics(
+            button: true,
+            // Without this the whole row is a strip of unnamed circles that
+            // each read as a single capital letter.
+            label: viewed ? '${story.name}, story seen' : '${story.name}, new story',
+            excludeSemantics: true,
+            child: GestureDetector(
+              onTap: () => notifier.openStory(story.id),
+              child: SizedBox(
+                width: 60,
+                child: Column(
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: story.color,
+                        border: Border.all(color: viewed ? const Color(0xFF3A4A42) : AppColors.gold, width: 2),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        story.initial,
+                        style: AppText.sora(20, weight: FontWeight.w800, color: AppColors.goldInk),
+                      ),
                     ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      story.initial,
-                      style: AppText.sora(20, weight: FontWeight.w800, color: AppColors.goldInk),
+                    const SizedBox(height: 5),
+                    Text(
+                      story.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.sora(12.5, weight: FontWeight.w700, color: const Color(0xFFD8D3C6)),
                     ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    story.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppText.sora(12.5, weight: FontWeight.w700, color: const Color(0xFFD8D3C6)),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
@@ -293,7 +327,9 @@ class _TournamentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final players = state.friends.length + 1;
+    // Only real group members are counted. Adding the practice bots made a
+    // solo player's card claim a five-player race that does not exist.
+    final players = state.friendsAreLive ? state.friends.length + 1 : 1;
     return GestureDetector(
       onTap: notifier.openCup,
       child: Container(

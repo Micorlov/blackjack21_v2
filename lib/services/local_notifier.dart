@@ -20,7 +20,24 @@ class LocalNotifier {
 
   final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
   bool _ready = false;
+  bool _permissionGranted = false;
 
+  /// Whether the OS has actually granted permission.
+  ///
+  /// Settings used to show its three notification toggles as ON regardless,
+  /// so a player who had denied the OS prompt was looking at three switches
+  /// that promised alerts nothing could deliver.
+  bool get hasPermission => _permissionGranted;
+
+  /// Sets up channels. Deliberately does **not** ask for permission.
+  ///
+  /// This used to request it inline, and because [init] is reached from the
+  /// notifier's constructor the OS dialog landed on frame 1 — on top of the
+  /// onboarding screen, over a blank grey window, before the player knew what
+  /// the app was. That is the worst possible moment to ask: the player has no
+  /// reason to say yes yet, and on Android a denial is effectively permanent.
+  /// Ask later, from [requestPermission], once there is something to be
+  /// notified *about*.
   Future<void> init() async {
     if (!notificationsSupported) return;
     try {
@@ -29,16 +46,33 @@ class LocalNotifier {
         iOS: DarwinInitializationSettings(),
       );
       final ok = await _plugin.initialize(settings: settings);
-      await _plugin
-          .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
-          ?.requestPermissions(alert: true, badge: true, sound: true);
-      await _plugin
-          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-          ?.requestNotificationsPermission();
       _ready = ok ?? false;
     } on PlatformException catch (e) {
       debugPrint('LocalNotifier.init failed: ${e.code}');
       _ready = false;
+    }
+  }
+
+  /// Asks the OS for permission, returning whether it was granted.
+  ///
+  /// Call this only after the player has been told what they are agreeing to
+  /// — turning on a notification setting, or accepting an in-app primer.
+  Future<bool> requestPermission() async {
+    if (!notificationsSupported || !_ready) return false;
+    try {
+      final ios = await _plugin
+          .resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
+          ?.requestPermissions(alert: true, badge: true, sound: true);
+      final android = await _plugin
+          .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+          ?.requestNotificationsPermission();
+      // Whichever platform answered is the answer; the other returns null.
+      _permissionGranted = ios ?? android ?? false;
+      return _permissionGranted;
+    } on PlatformException catch (e) {
+      debugPrint('LocalNotifier.requestPermission failed: ${e.code}');
+      _permissionGranted = false;
+      return false;
     }
   }
 

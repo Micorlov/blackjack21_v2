@@ -5,6 +5,7 @@ import '../../data/game_data.dart';
 import '../../models/game_state.dart';
 import '../../state/game_notifier.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/flags.dart';
 import '../../utils/formatters.dart';
@@ -54,33 +55,11 @@ class TableBettingPanel extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(height: 8),
-        // The tray scales as a unit: capped height keeps the chips compact,
-        // and the FittedBox still shrinks the row further on narrow phones.
-        SizedBox(
-          height: 46,
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                for (var i = 0; i < denoms.length; i++) ...[
-                  if (i > 0) const SizedBox(width: 9),
-                  ChipButton(
-                    amount: denoms[i],
-                    color: AppColors.chipColors[denoms[i]]!,
-                    disabled:
-                        (state.bet + denoms[i]) > state.chips ||
-                        (tableMax != null && (state.bet + denoms[i]) > tableMax),
-                    onPressed: () => notifier.placeBet(denoms[i]),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 8),
+        // The tray is 60px of chip either side of these gaps, so it reads as
+        // its own band without needing a full step of space around it.
+        const SizedBox(height: AppSpacing.xs),
+        _ChipTray(state: state, notifier: notifier, denoms: denoms, tableMax: tableMax),
+        const SizedBox(height: AppSpacing.xs),
         Row(
           children: [
             Expanded(
@@ -126,6 +105,64 @@ class TableBettingPanel extends ConsumerWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// The row of denomination chips the player bets with.
+///
+/// This used to be `SizedBox(height: 46)` wrapping a `FittedBox(scaleDown)`.
+/// Because 46/60 is a smaller ratio than any width ever produced, the height
+/// always won: the 60px chips rendered at **46x46 on every device**, under the
+/// 48dp minimum touch target, permanently — not just on narrow phones.
+///
+/// The chips now keep their real size. When they do not all fit, the row
+/// scrolls horizontally rather than shrinking below the minimum, because a
+/// target too small to hit reliably is worse than one that needs a swipe.
+class _ChipTray extends StatelessWidget {
+  final GameState state;
+  final GameNotifier notifier;
+  final List<int> denoms;
+  final int? tableMax;
+
+  const _ChipTray({required this.state, required this.notifier, required this.denoms, required this.tableMax});
+
+  /// [ChipButton]'s painted diameter. Asserted against the platform minimum so
+  /// this stays honest if either number ever moves.
+  static const double _chipSize = 60;
+  static const double _gap = 9;
+
+  @override
+  Widget build(BuildContext context) {
+    assert(_chipSize >= AppTouch.minTarget, 'chips must clear the minimum touch target');
+
+    final row = Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < denoms.length; i++) ...[
+          if (i > 0) const SizedBox(width: _gap),
+          ChipButton(
+            amount: denoms[i],
+            color: AppColors.chipColors[denoms[i]]!,
+            disabled:
+                (state.bet + denoms[i]) > state.chips || (tableMax != null && (state.bet + denoms[i]) > tableMax!),
+            onPressed: () => notifier.placeBet(denoms[i]),
+          ),
+        ],
+      ],
+    );
+
+    return SizedBox(
+      height: _chipSize,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final needed = denoms.length * _chipSize + (denoms.length - 1) * _gap;
+          if (needed <= constraints.maxWidth) {
+            return Center(child: row);
+          }
+          return SingleChildScrollView(scrollDirection: Axis.horizontal, child: row);
+        },
+      ),
     );
   }
 }
@@ -212,15 +249,33 @@ class _FriendsMiniTableState extends State<_FriendsMiniTable> {
                   controller: _controller,
                   onPageChanged: (p) => setState(() => _page = p),
                   children: [
-                    _friendsPage(s),
-                    _worldPage(s, hourly: true),
-                    _worldPage(s, hourly: false),
+                    _fitPage(_friendsPage(s)),
+                    _fitPage(_worldPage(s, hourly: true)),
+                    _fitPage(_worldPage(s, hourly: false)),
                   ],
                 ),
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// Keeps a page inside the card's fixed height whatever the text scale or
+  /// the card's width.
+  ///
+  /// The card is one fixed-height row of the betting panel, but its contents
+  /// are wrapping text: narrow the card — the landscape side rail is ~26px
+  /// tighter than the portrait panel — and the empty-state line takes a third
+  /// line it has no room for. Re-imposing the real width inside the
+  /// [FittedBox] is what keeps the wrapping honest: without it the child would
+  /// be laid out unbounded, never wrap, and then be scaled to nothing.
+  Widget _fitPage(Widget page) {
+    return LayoutBuilder(
+      builder: (context, constraints) => FittedBox(
+        fit: BoxFit.scaleDown,
+        child: SizedBox(width: constraints.maxWidth, child: page),
       ),
     );
   }
@@ -285,7 +340,11 @@ class _FriendsMiniTableState extends State<_FriendsMiniTable> {
                   width: 24,
                   child: Text(
                     selfUnranked && e.row.isSelf ? '#–' : '#${e.rank}',
-                    style: AppText.mono(11, weight: FontWeight.w700, color: e.rank == 1 ? AppColors.gold : AppColors.textFaint),
+                    style: AppText.mono(
+                      11,
+                      weight: FontWeight.w700,
+                      color: e.rank == 1 ? AppColors.gold : AppColors.textFaint,
+                    ),
                   ),
                 ),
                 Text(flagForId(e.row.id), style: const TextStyle(fontSize: 12)),

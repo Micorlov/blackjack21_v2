@@ -124,7 +124,12 @@ lib/
 ├── models/        # enums, game_state, hand, playing_card, social_models, table_pot
 ├── screens/       # lobby, table, friends, settings, shop, stats, onboarding,
 │   │              #   tips (one-time new-player primer), cup (Weekend Cup tournament)
-│   └── table/     # table sub-panels (felt, betting, action, chat sheet, settlement, …)
+│   ├── legal/     # Terms + Privacy copy and the in-app reader (offline, no webview)
+│   ├── shared/    # cross-screen pieces: tab_pill, async_action (pending state),
+│   │              #   confirm_dialog, empty_state, avatar_initial
+│   └── table/     # table sub-panels (felt, betting, action, chat sheet, settlement,
+│                  #   table_layout (breakpoints + felt metrics), table_phase_banner,
+│                  #   dealt_card, …)
 ├── services/      # sound_player, spoken_amount, social_service (Firestore), local_notifier,
 │                  #   notification_support (web-safe "can we notify here?" check),
 │                  #   daily_bonus_store (persists the last claim time + streak day)
@@ -314,6 +319,48 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-03 (16)
+- fix: **the dealer's turn is something you can watch.** `_playDealer` drew the whole hand in one
+  synchronous loop and settled in the same frame, so `RoundPhase.dealer` never survived to be
+  rendered: the hole-card flip and every draw fired at once, the result panel landed on top of
+  them, and the "Dealer is playing…" indicator was unreachable code. The dealer is now paced like
+  the NPC seats already were (520/600/480ms). Same cards in the same order — only the timing.
+- feat: **the table says what is happening.** The five small phase pills are now a headline
+  banner — "Place your bet", "Sam is playing", "Your turn · hand 2 of 2", "Dealer is playing" —
+  gold-filled when the table is waiting on you, over a five-segment progress track.
+- fix: **chips were below the minimum touch target on every device.** A `SizedBox(height: 46)` +
+  scaling `FittedBox` meant the 60px chips always rendered at 46×46. They now stay full size and
+  the tray scrolls if it will not fit. Header icon buttons went 46 → 48dp too.
+- feat: cards are drawn, not typed — suits are painted vector shapes instead of Unicode glyphs
+  that depended on a runtime-fetched font, and chips are rendered as real chips with edge spots,
+  an inner ring and a rim highlight.
+- feat: **the felt honours your text size.** It previously disabled scaling outright, so every
+  live number in the game — dealer total, bet, hand total, balance, seat stacks — ignored the
+  system setting. The fixed 393px canvas is gone, replaced by a constraint-driven layout with
+  fractional seat positions, a scale cap (a tablet rendered everything at ~2×), landscape support
+  with a side rail, and tablet gutters.
+- fix: **onboarding replayed on every cold launch.** Nothing recorded that the sign-in gate had
+  been passed, so returning players met it forever. Existing saves default to "done".
+- fix: **the notification permission no longer fires on frame 1**, over a blank grey window,
+  before the player knows what the app is. It is asked when a notification setting is switched
+  on, and the switch reverts if the OS says no instead of sitting there lit and lying.
+- feat: Terms and Privacy exist, in-app and offline, linked from the line that already claimed
+  you had agreed to them; Settings gains an About panel with them and the version.
+- fix: practice bots no longer pose as real friends — with working "Gift 100" buttons — in the
+  friends list, lobby top players, Weekend Cup counts or shop highlights. Each is now a designed
+  empty state with the invite CTA.
+- fix: resetting your bankroll and signing out now ask first; sign-in, invite and join show that
+  they are working instead of sitting idle through the whole round trip.
+- feat: accessibility, where there was none — the codebase contained zero `Semantics` widgets.
+  Cards announce themselves ("Ace of spades") instead of reading a suit glyph twice, buttons
+  declare their role and why they are disabled, the stats history strip encodes results by glyph
+  as well as colour, the toast is a live region, and every animation honours reduced motion.
+- fix: SURRENDER was the largest button in its row and styled like the constructive ones; it is
+  now the smallest with a destructive outline. HIT and STAND are debounced, so a fast double-tap
+  no longer draws two cards.
+- fix: the group-code field built a new `TextEditingController` on every rebuild — leaking one
+  each time and forcing the caret to the end, so a typo mid-code could not be corrected.
 
 ### 2026-09-03 (15)
 - refactor: **the app has a design system.** Colour, type, spacing, radii and motion were
