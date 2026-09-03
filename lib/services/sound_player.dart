@@ -254,12 +254,12 @@ class SoundPlayer {
     throw const FormatException('WAV has no data chunk');
   }
 
-  /// Joins clips into one WAV, separated by [_kWordGap] of silence so the
+  /// Joins clips into one WAV, separated by [kWordGap] of silence so the
   /// words do not run together — each clip was trimmed to its own edges, so
   /// butting them up back to back sounds hurried.
   static Uint8List _joinClips(List<Uint8List> clips) {
     final gap = Uint8List(
-      (_kSampleRate * _kWordGap.inMilliseconds ~/ 1000) * _kBytesPerSample,
+      (_kSampleRate * kWordGap.inMilliseconds ~/ 1000) * _kBytesPerSample,
     );
     final body = BytesBuilder();
     for (var i = 0; i < clips.length; i++) {
@@ -303,7 +303,10 @@ class SoundPlayer {
   static const int _kSampleRate = 44100;
   static const int _kBytesPerSample = 2;
   static const int _kWavHeaderBytes = 44;
-  static const Duration _kWordGap = Duration(milliseconds: 45);
+  /// Silence inserted between stitched word clips, so they do not run
+  /// together. Public because a line's real length — what a caller has to fit
+  /// inside a pause — is the clips plus these gaps.
+  static const Duration kWordGap = Duration(milliseconds: 45);
 
   Future<void> dispose() async {
     for (final timer in _queued) {

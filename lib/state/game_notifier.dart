@@ -97,6 +97,7 @@ class GameNotifier extends StateNotifier<GameState> {
   Timer? _potTimer;
   Timer? _celebrationTimer;
   Timer? _handTotalTimer;
+  Timer? _dealerTotalTimer;
 
   /// Long enough to absorb a burst of state changes, short enough that a
   /// force-quit right after a hand still finds the result on disk.
@@ -121,6 +122,7 @@ class GameNotifier extends StateNotifier<GameState> {
     _potTimer?.cancel();
     _celebrationTimer?.cancel();
     _handTotalTimer?.cancel();
+    _dealerTotalTimer?.cancel();
     _heartbeatTimer?.cancel();
     unawaited(_authEventsSub?.cancel());
     unawaited(_groupSub?.cancel());
@@ -240,16 +242,10 @@ class GameNotifier extends StateNotifier<GameState> {
   /// The two spoken lines that greet the hero's turn, in the order they are
   /// heard: what the table is playing for, a beat to let that land, then the
   /// hand they have to play it with — the last thing said before they act.
-  ///
-  /// With no sweep pot to call there is nothing to wait for, so the total
-  /// follows the turn cue directly rather than after a stretch of silence.
   void _announceTurn() {
+    if (!_voiceOn) return;
     final cards = state.hands[state.activeHandIndex].cards;
-    final pot = _sweepPotWords();
-    if (pot == null) {
-      _announceHandTotal(cards, lead: kTurnVoiceLead);
-      return;
-    }
+    final pot = _potWords();
 
     _potTimer?.cancel();
     _potTimer = Timer(kTurnVoiceLead, () async {
@@ -269,16 +265,19 @@ class GameNotifier extends StateNotifier<GameState> {
     });
   }
 
-  /// The sweep pot the table is playing for, as words — or null when there is
-  /// nothing to call: the voice is off, or no seat has forfeited a bet, so
-  /// announcing the chips on the felt as one would promise a pot that does
-  /// not exist.
-  List<String>? _sweepPotWords() {
-    if (!_voiceOn) return null;
+  /// What the table is playing for, as words — reading out the same dealer
+  /// pill the felt shows, so the two can never disagree.
+  ///
+  /// "No sweep pot" when no seat has forfeited a bet yet: with every opponent
+  /// still in there is nothing to sweep, and calling the chips on the felt as
+  /// one would promise a pot that does not exist. The pill says exactly that,
+  /// and now so does the voice — silence left the player wondering whether the
+  /// call-out had been missed.
+  List<String> _potWords() {
     final pot = TablePot.live(state);
-    if (!pot.isSweep) return null;
+    if (!pot.isSweep) return const ['no_sweep_pot'];
     final amount = spokenAmountWords(pot.amount);
-    if (amount.isEmpty) return null;
+    if (amount.isEmpty) return const ['no_sweep_pot'];
     return ['sweep_pot', ...amount, 'dollars'];
   }
 
@@ -315,6 +314,45 @@ class GameNotifier extends StateNotifier<GameState> {
   }
 
   static const kHandTotalVoiceLead = Duration(milliseconds: 350);
+
+  /// What the dealer holds, as words — the number its badge shows. A natural
+  /// is called by name rather than as a number: "Dealer has blackjack" is the
+  /// hand that ends the round on the spot, and the settlement call-out queues
+  /// behind it — "Dealer has blackjack. Player lost."
+  ///
+  /// Null when there is nothing to say: the voice is off, or the total has no
+  /// words.
+  List<String>? _dealerTotalWords() {
+    if (!_voiceOn) return null;
+    final hand = state.dealerHand;
+    final natural = hand.length == 2 && BlackjackRules.handValue(hand) == 21;
+    final words = natural
+        ? const ['blackjack']
+        : spokenAmountWords(BlackjackRules.handValue(hand));
+    if (words.isEmpty) return null;
+    return ['dealer_has', ...words];
+  }
+
+  /// Speaks the dealer's total where nothing follows it — the natural that
+  /// settles the round the moment the hole card turns over.
+  void _announceDealerTotal() {
+    final words = _dealerTotalWords();
+    if (words == null) return;
+    _dealerTotalTimer?.cancel();
+    _dealerTotalTimer = Timer(kDealerVoiceLead, () {
+      if (!_voiceOn) return;
+      unawaited(_sound.playWords(words));
+    });
+  }
+
+  /// Long enough for the card to be seen — the hole card starting to turn
+  /// over, or a fresh one landing. There is no tone to wait out on the flip,
+  /// and `deal.wav` (0.09s) is over by this on a draw.
+  static const kDealerVoiceLead = Duration(milliseconds: 200);
+
+  /// A breath between the dealer saying what it holds and touching the next
+  /// card, so the two do not run together.
+  static const kDealerVoiceTail = Duration(milliseconds: 250);
 
   /// Held back so the turn cue (`turn.wav`, 0.60s) finishes first. The first
   /// line due at the hero's turn waits it out; see [_announceTurn].
@@ -978,6 +1016,7 @@ class GameNotifier extends StateNotifier<GameState> {
         activeHandIndex: 0,
         phase: RoundPhase.dealer,
       );
+      _announceDealerTotal();
       _settle();
       return;
     }
@@ -1009,6 +1048,7 @@ class GameNotifier extends StateNotifier<GameState> {
           .map((h) => h.copyWith(status: (playerBJ && !dealerBJ) ? HandStatus.blackjack : h.status))
           .toList();
       state = state.copyWith(hands: newHands, holeRevealed: true, phase: RoundPhase.dealer);
+      _announceDealerTotal();
       _settle();
     } else {
       _startNpcTurns();
@@ -1125,11 +1165,13 @@ class GameNotifier extends StateNotifier<GameState> {
   // another player acting at the table. The draw and settle beats mirror the
   // NPC timings above (600 / 480ms) so the table keeps one rhythm.
   //
-  // The reveal beat is deliberately longer than that rhythm. The hole card
-  // turns over while the spoken call-outs of the player's last action — the
-  // hand total ("you have twenty") and the sweep-pot figure — may still be
-  // playing, and at the old 520ms the dealer was already drawing over them.
-  // Two seconds outlasts the longest of those lines, so the player hears the
+  // These are floors, not fixed beats: the dealer also waits out its own
+  // call-out before touching the next card — see [_dealerBeat].
+  //
+  // The reveal floor is deliberately longer than that rhythm. The hole card
+  // turns over while the spoken call-out of the player's last card ("you have
+  // twenty") may still be playing, and at the old 520ms the dealer was already
+  // drawing over it. Two seconds outlasts that line, so the player hears the
   // hand they just finished, sees the dealer's cards, and only then watches
   // the dealer act.
   static const Duration kDealerRevealPause = Duration(seconds: 2);
@@ -1161,8 +1203,37 @@ class GameNotifier extends StateNotifier<GameState> {
     // Reveal the hole card and hand the stage over *before* drawing, so the
     // flip is its own beat rather than one frame of a pile-up.
     state = state.copyWith(holeRevealed: true, phase: RoundPhase.dealer);
+    _dealerBeat(floor: kDealerRevealPause);
+  }
+
+  /// The dealer says what it now holds, then plays on — after the line has
+  /// been said, or after [floor], whichever is later.
+  ///
+  /// The wait is the longer of the two because the beats between the dealer's
+  /// cards are shorter than the sentences describing them: on the floor alone
+  /// it would be two cards ahead of what the player is being told it holds.
+  /// The floor still sets the rhythm when there is nothing to say — the voice
+  /// is off — and when the line is short enough to fit inside it.
+  void _dealerBeat({required Duration floor}) {
     _dealerTimer?.cancel();
-    _dealerTimer = Timer(kDealerRevealPause, _dealerDrawStep);
+    _dealerTotalTimer?.cancel();
+    final floorEndsAt = DateTime.now().add(floor);
+    _dealerTimer = Timer(floor, _dealerDrawStep);
+
+    final words = _dealerTotalWords();
+    if (words == null) return;
+
+    _dealerTotalTimer = Timer(kDealerVoiceLead, () async {
+      if (!_voiceOn) return;
+      final endsAt = await _sound.playWords(words);
+      if (endsAt == null) return;
+      // Only ever pushes the next card back, never pulls it forward.
+      final until = endsAt.add(kDealerVoiceTail);
+      if (!until.isAfter(floorEndsAt)) return;
+      if (state.phase != RoundPhase.dealer) return;
+      _dealerTimer?.cancel();
+      _dealerTimer = Timer(until.difference(DateTime.now()), _dealerDrawStep);
+    });
   }
 
   void _dealerDrawStep() {
@@ -1175,6 +1246,7 @@ class GameNotifier extends StateNotifier<GameState> {
     }
 
     if (!_dealerShouldHit(state.dealerHand)) {
+      _dealerTimer?.cancel();
       _dealerTimer = Timer(_kDealerSettlePause, () {
         if (state.phase != RoundPhase.dealer) return;
         _settle();
@@ -1184,7 +1256,7 @@ class GameNotifier extends StateNotifier<GameState> {
 
     state = state.copyWith(dealerHand: [...state.dealerHand, _drawCard()]);
     _playSfx(GameSfx.deal);
-    _dealerTimer = Timer(_kDealerDrawPause, _dealerDrawStep);
+    _dealerBeat(floor: _kDealerDrawPause);
   }
 
   /// Resolves the rest of the dealer's hand immediately, for when there is

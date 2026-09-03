@@ -20,6 +20,8 @@ import 'package:blackjack21_v2/state/game_notifier.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'support/recording_sound.dart';
+
 const _stake = TableStake(
   key: 'bronze',
   name: 'Bronze Table',
@@ -28,42 +30,6 @@ const _stake = TableStake(
   tint: Color(0xFF4FAE8E),
   tintDim: Color(0x264FAE8E),
 );
-
-/// Records which channel each call-out was handed to, and says nothing.
-class _RecordingSound extends SoundPlayer {
-  final List<GameSfx> tones = [];
-  final List<GameVoice> voices = [];
-  final List<List<String>> words = [];
-
-  /// The seat call-outs, which are the ones this file is about.
-  Iterable<GameVoice> get spokenSeatLines => voices
-      .where((v) => v == GameVoice.npcStand || v == GameVoice.npcBust);
-
-  /// The `You have <total>` lines, whenever they were said.
-  List<List<String>> get handTotals =>
-      words.where((l) => l.first == 'you_have').toList();
-
-  void reset() {
-    tones.clear();
-    voices.clear();
-    words.clear();
-  }
-
-  @override
-  Future<void> play(GameSfx sfx) async => tones.add(sfx);
-
-  @override
-  Future<DateTime?> playVoice(GameVoice voice) async {
-    voices.add(voice);
-    return DateTime.now();
-  }
-
-  @override
-  Future<DateTime?> playWords(List<String> line) async {
-    words.add(line);
-    return DateTime.now();
-  }
-}
 
 /// Seated at a table with chips and the voice on, ready to be dealt.
 class _TableNotifier extends GameNotifier {
@@ -211,7 +177,7 @@ void main() {
       // asked to play, so it is held until they are the one being asked — and
       // it comes last, after what the table is playing for has been called and
       // allowed to land.
-      final sound = _RecordingSound();
+      final sound = RecordingSound();
       final notifier = _TableNotifier(sound);
       addTearDown(notifier.dispose);
 
@@ -222,12 +188,13 @@ void main() {
         }
       }
 
-      // What the seats do is the shoe's business: a dealer ace goes to
-      // insurance, a natural settles on the spot, and a round where nobody
-      // busts has no sweep pot to call. So deal until one round gives us the
-      // hero's turn with a pot on the table.
-      var potRound = false;
-      for (var round = 0; round < 12 && !potRound; round++) {
+      // A dealer ace goes to insurance and a natural settles on the spot;
+      // either skips the hero's turn, so retry rather than leaving the test to
+      // the shoe. Every turn that does arrive is called the same way, pot or
+      // no pot.
+      for (var round = 0;
+          round < 8 && notifier.state.phase != RoundPhase.playing;
+          round++) {
         sound.reset();
         notifier.placeBet(25);
         notifier.dealRound();
@@ -239,45 +206,43 @@ void main() {
               reason: "the hero's total was announced while the seats were "
                   'still playing');
         }
-
-        if (notifier.state.phase == RoundPhase.playing) {
-          // The turn cue, and on it the pot the table is playing for.
-          await tester.pump(GameNotifier.kTurnVoiceLead);
-          potRound = sound.words.any((l) => l.first == 'sweep_pot');
-          if (potRound) {
-            expect(sound.handTotals, isEmpty,
-                reason: 'the total was said over the sweep-pot call-out');
-
-            // A beat to let it land, and only then the hand to play it with.
-            // The margins are the 100ms granularity of pumpUntil above: the
-            // turn can have begun up to one step before this clock started.
-            await tester.pump(
-              GameNotifier.kPostPotPause - const Duration(milliseconds: 200),
-            );
-            expect(sound.handTotals, isEmpty,
-                reason: 'the beat after the pot call-out was cut short');
-            await tester.pump(const Duration(milliseconds: 400));
-
-            expect(sound.handTotals, hasLength(1),
-                reason: 'the hero is asked to act without being told what they '
-                    'are holding');
-            expect(
-              sound.words.indexWhere((l) => l.first == 'sweep_pot'),
-              lessThan(sound.words.indexOf(sound.handTotals.single)),
-              reason: "the hero's own total was called before the table's pot",
-            );
-            break;
-          }
-          notifier.playerStand();
-        }
+        if (notifier.state.phase == RoundPhase.playing) break;
 
         await pumpUntil(() => notifier.state.phase == RoundPhase.settlement);
         notifier.nextHand();
       }
+      expect(notifier.state.phase, RoundPhase.playing,
+          reason: 'never dealt a round that reached the hero');
 
-      expect(potRound, isTrue,
-          reason: 'never dealt a round where a seat forfeited a bet, so the '
-              'order of the two call-outs went untested');
+      // The turn cue, and on it what the table is playing for — a figure when
+      // a seat has forfeited a bet, "No sweep pot" when none has.
+      await tester.pump(GameNotifier.kTurnVoiceLead);
+      expect(
+        sound.words.map((l) => l.first),
+        anyOf(contains('sweep_pot'), contains('no_sweep_pot')),
+        reason: 'the hero was not told what the table is playing for',
+      );
+      expect(sound.handTotals, isEmpty,
+          reason: 'the total was said over the pot call-out');
+
+      // A beat to let it land, and only then the hand to play it with. The
+      // margins are the 100ms granularity of pumpUntil above: the turn can
+      // have begun up to one step before this clock started.
+      await tester.pump(
+        GameNotifier.kPostPotPause - const Duration(milliseconds: 200),
+      );
+      expect(sound.handTotals, isEmpty,
+          reason: 'the beat after the pot call-out was cut short');
+      await tester.pump(const Duration(milliseconds: 400));
+
+      expect(sound.handTotals, hasLength(1),
+          reason: 'the hero is asked to act without being told what they hold');
+      expect(
+        sound.words.indexWhere(
+            (l) => l.first == 'sweep_pot' || l.first == 'no_sweep_pot'),
+        lessThan(sound.words.indexOf(sound.handTotals.single)),
+        reason: "the hero's own total was called before the table's pot",
+      );
     });
 
     testWidgets('a seat speaks through the voice channel as it acts',
@@ -285,7 +250,7 @@ void main() {
       // The call sites, not just the enum: a seat's outcome must reach
       // playVoice — the queued channel — and never the tone channel, whatever
       // the seat decides to do.
-      final sound = _RecordingSound();
+      final sound = RecordingSound();
       final notifier = _TableNotifier(sound);
 
       // A deal can skip the seats entirely — a dealer ace goes to insurance,

@@ -86,7 +86,11 @@ NUMBER_WORDS: dict[str, str] = {
     "num/thousand.wav": "thousand",
     "num/dollars.wav": "dollars",
     "num/sweep_pot.wav": "Sweep pot",
+    "num/no_sweep_pot.wav": "No sweep pot",
     "num/you_have.wav": "You have",
+    "num/dealer_has.wav": "Dealer has",
+    # Said in place of a number when the dealer's two cards are a natural.
+    "num/blackjack.wav": "blackjack",
 }
 
 CLIPS: dict[str, str] = {**VOICE_LINES, **NUMBER_WORDS}
@@ -365,12 +369,6 @@ def main() -> int:
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
-    pot_ms = round(len(read_samples(args.out / "player_pot.wav")) / SAMPLE_RATE * 1000)
-    print(
-        f"\nplayer_pot.wav is {pot_ms}ms. `_kPotVoiceLength` in "
-        "lib/state/game_notifier.dart schedules the drum flourish off this "
-        "length — update it if it has moved."
-    )
     print(f"{len(CLIPS)} clips written to {args.out}")
     return 0
 

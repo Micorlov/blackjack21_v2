@@ -84,8 +84,12 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   by a drum flourish
 - **Spoken pot** — once every opponent seat has played and the figure has stopped moving, the
   dealer pill is read aloud: "Sweep pot, three hundred seventy five dollars", a second ahead of
-  your own hand total. A hand where no seat has forfeited a bet has no pot to call, so nothing is
-  said and the hand total follows the turn cue directly
+  your own hand total. When no seat has forfeited a bet there is nothing to sweep, and the voice
+  says what the pill says — "No sweep pot"
+- **Spoken dealer** — the dealer says what it holds as it plays: "Dealer has fourteen" as the hole
+  card turns over, and its new total after every card it draws. A natural is called by name —
+  "Dealer has blackjack", with the result following it. The dealer waits for its own call-out to
+  finish before touching the next card, so the cards never run ahead of the commentary
 - **Hand-total circle** — your live card total toward 21 (the same number "Soft 19"/"Hard 17"
   already names) shows in its own circle next to the bet circle, gold-ringed normally, red when
   busted, and is read aloud as "You have [total]" when the table comes round to you — after every
@@ -232,7 +236,7 @@ under `flutter: assets:` in `pubspec.yaml` — a new file in the folder needs no
 | NPC voice | `npc_stand.wav`, `npc_bust.wav` | An opponent seat standing or busting |
 | Result voice | `player_win.wav`, `player_lose.wav`, `big_win.wav`, `player_pot.wav` | Your settled hand, 700ms after its tone — or later, if the hand total is still speaking |
 | Celebration | `pot_celebration.wav` | After the pot call-out — a synthesized drum roll, downbeat and major triad |
-| Number words | `num/*.wav` — 0-19, the tens, `hundred`, `thousand`, `dollars`, `sweep_pot`, `you_have` | Stitched into the spoken pot figure and hand total |
+| Number words | `num/*.wav` — 0-19, the tens, `hundred`, `thousand`, `dollars`, `sweep_pot`, `no_sweep_pot`, `you_have`, `dealer_has`, `blackjack` | Stitched into the spoken pot call-out, your hand total, and the dealer's |
 
 `assets/sfx/num/` needs its own `pubspec.yaml` entry: Flutter's asset folders are **not**
 recursive, so a nested folder left out of the manifest is silently missing at runtime.
@@ -327,6 +331,18 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-03 (23)
+- feat: **the dealer says what it holds, and waits for itself.** "Dealer has fourteen" as the hole
+  card turns over, then its new total after every card it draws, with a natural called by name —
+  "Dealer has blackjack", and the settlement result queued behind it. Its cards come 600ms apart
+  and the sentences run longer than that, so the beats between them are now floors: the dealer
+  waits out its own call-out before touching the next card, and the commentary can never fall a
+  card behind. Two new clips, `dealer_has.wav` and `blackjack.wav`.
+- feat: **"No sweep pot" is now said out loud.** The pill has always shown it; the voice used to
+  say nothing at all, which was indistinguishable from a call-out that had been missed. Every
+  hero turn is announced the same way now: what the table is playing for, a beat, then your hand.
+  New clip `no_sweep_pot.wav`.
 
 ### 2026-09-03 (22)
 - feat: **your turn is announced in one order now — pot, beat, hand.** "Sweep pot, one hundred
