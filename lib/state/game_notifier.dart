@@ -421,6 +421,7 @@ class GameNotifier extends StateNotifier<GameState> {
       heroDayKey: dayKey,
       soundOn: saved.soundOn,
       voiceOn: saved.voiceOn,
+      languageOverride: saved.languageOverride,
       hapticsOn: saved.hapticsOn,
       notifSocial: saved.notifSocial,
       notifLeaderboard: saved.notifLeaderboard,
@@ -452,6 +453,7 @@ class GameNotifier extends StateNotifier<GameState> {
     dayKey: state.heroDayKey,
     soundOn: state.soundOn,
     voiceOn: state.voiceOn,
+    languageOverride: state.languageOverride,
     hapticsOn: state.hapticsOn,
     notifSocial: state.notifSocial,
     notifLeaderboard: state.notifLeaderboard,
@@ -1786,6 +1788,15 @@ class GameNotifier extends StateNotifier<GameState> {
     }
     _scheduleSave();
   }
+  /// Sets the UI language override; null reverts to following the device
+  /// locale. Voice call-outs follow this too (see `SoundPlayer.setLanguage`,
+  /// wired once the voice pipeline gains per-language asset sets), so a
+  /// single Settings picker controls both.
+  void setLanguage(String? code) {
+    state = state.copyWith(languageOverride: code);
+    _scheduleSave();
+  }
+
   void toggleTableMenu() => state = state.copyWith(tableMenuOpen: !state.tableMenuOpen);
   void toggleTableChat() => state = state.copyWith(tableChatOpen: !state.tableChatOpen, tableMenuOpen: false);
   /// Asks the OS for notification permission the first time the player turns

@@ -109,6 +109,11 @@ class GameState {
   /// figure, and the NPC "Stand"/"Bust" lines. Nested under [soundOn]: muting
   /// sound silences the voice too, so both must be on for a word to be said.
   final bool voiceOn;
+
+  /// ISO 639-1 code (e.g. 'es') the player explicitly picked in Settings;
+  /// null means "follow the device's locale" — the same null-means-unset
+  /// convention [avatarColor] uses for a color the player never chose.
+  final String? languageOverride;
   final bool notifSocial;
   final bool notifLeaderboard;
   final bool notifDaily;
@@ -190,6 +195,7 @@ class GameState {
     this.hapticsOn = true,
     this.soundOn = true,
     this.voiceOn = true,
+    this.languageOverride,
     this.notifSocial = true,
     this.notifLeaderboard = true,
     // On by default so the daily-chips reminder works out of the box; the
@@ -267,6 +273,7 @@ class GameState {
     bool? hapticsOn,
     bool? soundOn,
     bool? voiceOn,
+    Object? languageOverride = _unset,
     bool? notifSocial,
     bool? notifLeaderboard,
     bool? notifDaily,
@@ -343,6 +350,9 @@ class GameState {
       hapticsOn: hapticsOn ?? this.hapticsOn,
       soundOn: soundOn ?? this.soundOn,
       voiceOn: voiceOn ?? this.voiceOn,
+      languageOverride: identical(languageOverride, _unset)
+          ? this.languageOverride
+          : languageOverride as String?,
       notifSocial: notifSocial ?? this.notifSocial,
       notifLeaderboard: notifLeaderboard ?? this.notifLeaderboard,
       notifDaily: notifDaily ?? this.notifDaily,

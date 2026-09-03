@@ -1,9 +1,11 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'firebase_options.dart';
+import 'l10n/generated/app_localizations.dart';
 import 'models/enums.dart';
 import 'models/game_state.dart';
 import 'screens/cup_screen.dart';
@@ -57,14 +59,27 @@ Future<void> _initServices() async {
   }
 }
 
-class BlackjackApp extends StatelessWidget {
+class BlackjackApp extends ConsumerWidget {
   const BlackjackApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // `select` so this only rebuilds the whole MaterialApp (and its Navigator)
+    // when the language actually changes, not on every other state change.
+    final languageOverride = ref.watch(
+      gameProvider.select((s) => s.languageOverride),
+    );
     return MaterialApp(
-      title: '21 Sweet Pot',
+      onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
+      locale: languageOverride == null ? null : Locale(languageOverride),
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       // Pinned to dark on purpose, for now.

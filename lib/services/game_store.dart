@@ -34,6 +34,10 @@ class SavedGame {
   final String dayKey;
   final bool soundOn;
   final bool voiceOn;
+
+  /// ISO 639-1 code the player picked in Settings; null follows the device
+  /// locale, mirroring [GameState.languageOverride].
+  final String? languageOverride;
   final bool hapticsOn;
   final bool notifSocial;
   final bool notifLeaderboard;
@@ -72,6 +76,7 @@ class SavedGame {
     required this.dayKey,
     required this.soundOn,
     required this.voiceOn,
+    this.languageOverride,
     required this.hapticsOn,
     required this.notifSocial,
     required this.notifLeaderboard,
@@ -112,6 +117,7 @@ class SavedGame {
     'dayKey': dayKey,
     'soundOn': soundOn,
     'voiceOn': voiceOn,
+    'languageOverride': languageOverride,
     'hapticsOn': hapticsOn,
     'notifSocial': notifSocial,
     'notifLeaderboard': notifLeaderboard,
@@ -155,6 +161,9 @@ class SavedGame {
       dayKey: _str(json['dayKey'], ''),
       soundOn: _bool(json['soundOn'], defaults.soundOn),
       voiceOn: _bool(json['voiceOn'], defaults.voiceOn),
+      languageOverride: json['languageOverride'] is String
+          ? json['languageOverride'] as String
+          : defaults.languageOverride,
       hapticsOn: _bool(json['hapticsOn'], defaults.hapticsOn),
       notifSocial: _bool(json['notifSocial'], defaults.notifSocial),
       notifLeaderboard: _bool(json['notifLeaderboard'], defaults.notifLeaderboard),

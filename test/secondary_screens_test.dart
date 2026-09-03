@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:blackjack21_v2/data/game_data.dart';
+import 'package:blackjack21_v2/l10n/generated/app_localizations.dart';
 import 'package:blackjack21_v2/models/enums.dart';
 import 'package:blackjack21_v2/models/game_state.dart';
 import 'package:blackjack21_v2/models/social_models.dart';
@@ -27,6 +28,8 @@ Widget _wrap(GameState state, Widget screen) {
     overrides: [gameProvider.overrideWith((ref) => _FixedGameNotifier(state))],
     child: MaterialApp(
       theme: AppTheme.dark,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       home: Scaffold(body: screen),
     ),
   );

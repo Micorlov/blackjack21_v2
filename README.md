@@ -116,6 +116,13 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
 - **Branded link preview** — sharing the web URL (WhatsApp, iMessage, Facebook, etc.) shows a
   custom casino-themed card: an Ace of Spades and King of Hearts fanned on a felt table, the
   "21 Sweet Pot" title, and a real description, instead of the generic Flutter placeholder
+- **Multi-language UI (in progress)** — Settings has a Language picker (Settings → Language),
+  built on Flutter's standard `flutter_localizations`/ARB pipeline (`lib/l10n/`). Only English
+  ships translated today; the picker lists every locale that has an `app_<lang>.arb` file, so it
+  grows automatically as Spanish, French, German, Portuguese, Russian, Chinese, Japanese, Hebrew
+  and Arabic are added. The dealer's spoken call-outs are meant to follow the same language once
+  the voice pipeline (currently English-only pre-recorded clips) gains per-language asset sets —
+  not wired up yet
 
 ## Getting Started
 
@@ -226,6 +233,8 @@ overview. Anything else already sitting in **Changes in review** rides along wit
 | `flutter_local_notifications` | "Friend passed you" leaderboard alerts and the daily-bonus reminder |
 | `shared_preferences` | Saves the bankroll, stats, points and settings between launches (`game_store`), and the last daily-bonus claim time (`daily_bonus_store`) |
 | `timezone` | Builds the `TZDateTime` the daily-bonus reminder is scheduled against |
+| `flutter_localizations` | Wires the Material/Widgets/Cupertino locale delegates the app-wide UI translation uses |
+| `intl` | Backs `flutter gen-l10n`'s generated `AppLocalizations` class and ICU plural/placeholder syntax |
 
 Dev: `flutter_test`, `flutter_lints`, `integration_test`.
 
@@ -346,6 +355,18 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-04 (2)
+- feat: **Localization infrastructure + Settings language picker.** Added Flutter's standard
+  `flutter_localizations`/`intl`/ARB pipeline (`l10n.yaml`, `lib/l10n/app_en.arb`, generated
+  `AppLocalizations`), wired into `MaterialApp` with a persisted `languageOverride` setting
+  (`GameState`/`SavedGame`/`GameNotifier.setLanguage`, saved the same way as `soundOn`/`voiceOn`).
+  The Settings screen is now fully extracted to localized strings and has a new Language section;
+  the picker lists whichever locales have a translated `.arb` file, so it grows as more languages
+  are added — only English exists today. First slice of a larger effort to translate the whole
+  app and the dealer's spoken call-outs into Spanish, French, German, Portuguese, Russian,
+  Chinese, Japanese, Hebrew and Arabic; the remaining screens, data files, and the voice pipeline
+  are not converted yet.
 
 ### 2026-09-04
 - chore: **1.3.0 (4) is on production, in review.** The first attempt uploaded the 59.6 MB bundle

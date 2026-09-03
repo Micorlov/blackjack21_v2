@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/game_data.dart';
 import '../data/tutorial_data.dart';
+import '../l10n/generated/app_localizations.dart';
 import '../state/game_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -29,14 +30,15 @@ class SettingsScreen extends ConsumerWidget {
     final state = ref.watch(gameProvider);
     final notifier = ref.read(gameProvider.notifier);
     final avatarInitial = avatarInitialOf(state.displayName);
+    final t = AppLocalizations.of(context);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const ScreenTitle('Settings'),
-          const SectionLabel('Account'),
+          ScreenTitle(t.settingsTitle),
+          SectionLabel(t.settingsSectionAccount),
           _AccountPanel(
             signedIn: state.signedIn,
             avatarInitial: avatarInitial,
@@ -48,10 +50,10 @@ class SettingsScreen extends ConsumerWidget {
             onSignOut: notifier.signOutUser,
           ),
           const SizedBox(height: 16),
-          const SectionLabel('Avatar color'),
+          SectionLabel(t.settingsSectionAvatarColor),
           _AvatarColorPanel(selected: state.avatarColor, onSelect: notifier.selectAvatarColor),
           const SizedBox(height: 16),
-          const SectionLabel('Appearance'),
+          SectionLabel(t.settingsSectionAppearance),
           _AppearancePanel(
             themeChoice: state.themeChoice,
             onSelectDefault: notifier.selectThemeDefault,
@@ -59,62 +61,65 @@ class SettingsScreen extends ConsumerWidget {
             onSelectEmber: notifier.selectThemeEmber,
           ),
           const SizedBox(height: 16),
-          const SectionLabel('Sound & haptics'),
+          SectionLabel(t.settingsSectionLanguage),
+          _LanguagePanel(selected: state.languageOverride, onSelect: notifier.setLanguage),
+          const SizedBox(height: 16),
+          SectionLabel(t.settingsSectionSoundHaptics),
           _TogglePanel(
             rows: [
-              _ToggleRowData('Haptics', state.hapticsOn, notifier.toggleHaptics),
-              _ToggleRowData('Sound effects', state.soundOn, notifier.toggleSound),
+              _ToggleRowData(t.hapticsLabel, state.hapticsOn, notifier.toggleHaptics),
+              _ToggleRowData(t.soundEffectsLabel, state.soundOn, notifier.toggleSound),
               // Greyed out while sound is off: voice plays through the same
               // output, so the switch would promise something it can't deliver.
               _ToggleRowData(
-                'Voice call-outs',
+                t.voiceCalloutsLabel,
                 state.voiceOn,
                 notifier.toggleVoice,
-                sublabel: 'Your hand total, results and the sweep pot, spoken aloud',
+                sublabel: t.voiceCalloutsSublabel,
                 enabled: state.soundOn,
-                disabledReason: 'Turn sound effects on to use voice call-outs',
+                disabledReason: t.voiceCalloutsDisabledReason,
               ),
             ],
           ),
           const SizedBox(height: 16),
-          const SectionLabel('Notifications'),
+          SectionLabel(t.settingsSectionNotifications),
           // Three bare nouns told the player nothing about what each switch
           // would actually send them, which is the fastest way to have all
           // three turned off — or the whole permission revoked.
           _TogglePanel(
             rows: [
               _ToggleRowData(
-                'Social',
+                t.notifSocialLabel,
                 state.notifSocial,
                 notifier.toggleNotifSocial,
-                sublabel: 'When a friend joins your group, comes online or passes you',
+                sublabel: t.notifSocialSublabel,
               ),
               _ToggleRowData(
-                'Leaderboard',
+                t.notifLeaderboardLabel,
                 state.notifLeaderboard,
                 notifier.toggleNotifLeaderboard,
-                sublabel: 'When your place on the hourly or daily board changes',
+                sublabel: t.notifLeaderboardSublabel,
               ),
               _ToggleRowData(
-                'Daily reminder',
+                t.notifDailyLabel,
                 state.notifDaily,
                 notifier.toggleNotifDaily,
-                sublabel: 'One nudge a day, once your daily bonus is ready to claim',
+                sublabel: t.notifDailySublabel,
               ),
             ],
           ),
           const SizedBox(height: 16),
-          const SectionLabel('Help'),
+          SectionLabel(t.settingsSectionHelp),
           _LinkPanel(
             rows: [
               _LinkRowData(
-                label: 'How to play',
-                sublabel: 'Rules, moves, payouts and the sweep pot',
+                label: t.howToPlayLabel,
+                sublabel: t.howToPlaySublabel,
                 onTap: () => showHowToPlaySheet(context),
               ),
               _LinkRowData(
-                label: 'Replay the tutorial',
-                sublabel: 'Coaching cards on your next $kTutorialRounds hands',
+                label: t.replayTutorialLabel,
+                sublabel: t.replayTutorialSublabel(kTutorialRounds),
                 onTap: notifier.restartTutorial,
               ),
             ],
@@ -124,21 +129,21 @@ class SettingsScreen extends ConsumerWidget {
           // cards, one of them announcing that a practice bot was online.
           // Marketing chrome in a settings surface, replaced by the legal and
           // build information a player (and a store reviewer) actually needs.
-          const SectionLabel('About'),
+          SectionLabel(t.settingsSectionAbout),
           _LinkPanel(
             rows: [
               _LinkRowData(
-                label: 'Terms of Service',
-                sublabel: 'What you agree to by playing',
+                label: t.termsOfServiceLabel,
+                sublabel: t.termsOfServiceSublabel,
                 onTap: () => showTerms(context),
               ),
               _LinkRowData(
-                label: 'Privacy Policy',
-                sublabel: 'What stays on this device, and what does not',
+                label: t.privacyPolicyLabel,
+                sublabel: t.privacyPolicySublabel,
                 onTap: () => showPrivacy(context),
               ),
             ],
-            trailing: _InfoRow(label: 'Version', value: kAppVersionLabel),
+            trailing: _InfoRow(label: t.versionLabel, value: kAppVersionLabel),
           ),
           const SizedBox(height: 16),
           _ResetBankrollButton(onTap: () => _confirmResetBankroll(context, notifier)),
@@ -151,13 +156,12 @@ class SettingsScreen extends ConsumerWidget {
 /// A bankroll is days of play. Losing it to a stray tap in a settings list —
 /// which is what a bare, unconfirmed button invited — is not recoverable.
 Future<void> _confirmResetBankroll(BuildContext context, GameNotifier notifier) async {
+  final t = AppLocalizations.of(context);
   final confirmed = await confirmAction(
     context,
-    title: 'Reset your bankroll?',
-    message:
-        'Your chips go back to 1,000. Stats, awards, friends and cosmetics are untouched, '
-        'but the chips you have now cannot be brought back.',
-    confirmLabel: 'Reset chips',
+    title: t.resetBankrollConfirmTitle,
+    message: t.resetBankrollConfirmMessage,
+    confirmLabel: t.resetBankrollConfirmLabel,
     destructive: true,
   );
   if (confirmed) notifier.resetBankroll();
@@ -192,22 +196,24 @@ class _AccountPanel extends StatelessWidget {
     return Container(
       decoration: panelDecoration(),
       padding: const EdgeInsets.all(16),
-      child: signedIn ? _buildSignedIn(context) : _buildSignedOut(),
+      child: signedIn ? _buildSignedIn(context) : _buildSignedOut(context),
     );
   }
 
   /// Same pending treatment as onboarding's button: `authenticate()` plus the
   /// Firebase exchange is seconds of silence otherwise.
-  Widget _buildSignedOut() {
+  Widget _buildSignedOut(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return GoogleSignInButton(
       child: AsyncActionBuilder(
         action: onSignIn,
-        builder: (context, busy, run) => GoldButton(label: busy ? 'Signing in…' : 'Sign in', onPressed: run),
+        builder: (context, busy, run) => GoldButton(label: busy ? t.signingIn : t.signIn, onPressed: run),
       ),
     );
   }
 
   Widget _buildSignedIn(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -250,7 +256,7 @@ class _AccountPanel extends StatelessWidget {
               ),
               child: busy
                   ? const PendingSpinner(size: 20)
-                  : Text('Sign out', style: AppText.sora(16, weight: FontWeight.w700)),
+                  : Text(t.signOut, style: AppText.sora(16, weight: FontWeight.w700)),
             ),
           ),
         ),
@@ -259,13 +265,12 @@ class _AccountPanel extends StatelessWidget {
   }
 
   Future<void> _confirmSignOut(BuildContext context) async {
+    final t = AppLocalizations.of(context);
     final confirmed = await confirmAction(
       context,
-      title: 'Sign out?',
-      message:
-          'Your chips and stats stay on this device, but you leave your friends group and '
-          'your leaderboard entry until you sign back in.',
-      confirmLabel: 'Sign out',
+      title: t.signOutConfirmTitle,
+      message: t.signOutConfirmMessage,
+      confirmLabel: t.signOut,
       destructive: true,
     );
     if (confirmed) await onSignOut();
@@ -282,6 +287,7 @@ class _AvatarColorPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     return Container(
       decoration: panelDecoration(),
       padding: const EdgeInsets.all(16),
@@ -296,7 +302,7 @@ class _AvatarColorPanel extends StatelessWidget {
           return Semantics(
             button: true,
             selected: isSelected,
-            label: 'Avatar colour ${entry.key + 1} of ${AppColors.avatarSwatchColors.length}',
+            label: t.avatarColorSemanticLabel(entry.key + 1, AppColors.avatarSwatchColors.length),
             child: InkWell(
               onTap: () => onSelect(color),
               customBorder: const CircleBorder(),
@@ -351,24 +357,25 @@ class _AppearancePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
     final options = [
       _ThemeOption(
         id: 'default',
-        label: 'Default',
+        label: t.themeDefault,
         gradient: kFeltDefs[0].swatchGradient,
         ringColor: AppColors.gold,
         onTap: onSelectDefault,
       ),
       _ThemeOption(
         id: 'ocean',
-        label: 'Ocean',
+        label: t.themeOcean,
         gradient: kFeltDefs[1].swatchGradient,
         ringColor: const Color(0xFFF5C451),
         onTap: onSelectOcean,
       ),
       _ThemeOption(
         id: 'ember',
-        label: 'Ember',
+        label: t.themeEmber,
         gradient: kFeltDefs[2].swatchGradient,
         ringColor: const Color(0xFFFFB457),
         onTap: onSelectEmber,
@@ -401,7 +408,7 @@ class _ThemeSwatch extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: '${option.label} table felt',
+      label: AppLocalizations.of(context).themeFeltSemanticLabel(option.label),
       excludeSemantics: true,
       child: InkWell(
         onTap: option.onTap,
@@ -424,6 +431,94 @@ class _ThemeSwatch extends StatelessWidget {
               style: AppText.sora(13, weight: FontWeight.w700, color: selected ? AppColors.gold : AppColors.textMuted),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Language picker: "match device" plus one row per locale this build ships
+/// ARB translations for. Voice call-outs follow the same choice — see
+/// `GameNotifier.setLanguage`.
+class _LanguagePanel extends StatelessWidget {
+  final String? selected;
+  final ValueChanged<String?> onSelect;
+
+  const _LanguagePanel({required this.selected, required this.onSelect});
+
+  static String _displayName(AppLocalizations t, String code) => switch (code) {
+    'en' => t.languageNameEn,
+    'es' => t.languageNameEs,
+    'fr' => t.languageNameFr,
+    'de' => t.languageNameDe,
+    'pt' => t.languageNamePt,
+    'ru' => t.languageNameRu,
+    'zh' => t.languageNameZh,
+    'ja' => t.languageNameJa,
+    'he' => t.languageNameHe,
+    'ar' => t.languageNameAr,
+    _ => code,
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final t = AppLocalizations.of(context);
+    final codes = [
+      for (final locale in AppLocalizations.supportedLocales) locale.languageCode,
+    ];
+    return Container(
+      decoration: panelDecoration(),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: [
+          for (var i = -1; i < codes.length; i++)
+            _LanguageRow(
+              // i == -1 is the "match device" row, value null.
+              label: i < 0 ? t.languageSystemDefault : _displayName(t, codes[i]),
+              isSelected: i < 0 ? selected == null : selected == codes[i],
+              isLast: i == codes.length - 1,
+              onTap: () => onSelect(i < 0 ? null : codes[i]),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LanguageRow extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final bool isLast;
+  final VoidCallback onTap;
+
+  const _LanguageRow({
+    required this.label,
+    required this.isSelected,
+    required this.isLast,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          constraints: const BoxConstraints(minHeight: AppTouch.minTarget),
+          decoration: BoxDecoration(
+            border: isLast ? null : const Border(bottom: BorderSide(color: AppColors.border)),
+          ),
+          child: ExcludeSemantics(
+            child: Row(
+              children: [
+                Expanded(child: Text(label, style: AppText.sora(16, weight: FontWeight.w600))),
+                if (isSelected) const Icon(Icons.check, color: AppColors.gold),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -635,7 +730,7 @@ class _ResetBankrollButton extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         ),
         child: Text(
-          'Reset bankroll to 1,000 chips',
+          AppLocalizations.of(context).resetBankrollButtonLabel,
           style: AppText.sora(16, weight: FontWeight.w700, color: AppColors.lose),
         ),
       ),
