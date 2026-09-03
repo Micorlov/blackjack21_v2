@@ -16,7 +16,7 @@ import 'screens/table_screen.dart';
 import 'screens/tips_screen.dart';
 import 'state/game_notifier.dart';
 import 'theme/app_colors.dart';
-import 'theme/app_text_styles.dart';
+import 'theme/app_theme.dart';
 import 'widgets/bottom_nav_bar.dart';
 import 'widgets/overlays.dart';
 import 'widgets/rank_strip.dart';
@@ -62,24 +62,17 @@ class BlackjackApp extends StatelessWidget {
     return MaterialApp(
       title: '21 Sweet Pot',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: AppColors.surface,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.gold,
-          brightness: Brightness.dark,
-        ),
-        textTheme: TextTheme(bodyMedium: AppText.sora(15)),
-        switchTheme: SwitchThemeData(
-          thumbColor: WidgetStateProperty.all(Colors.white),
-          trackColor: WidgetStateProperty.resolveWith(
-            (states) => states.contains(WidgetState.selected)
-                ? AppColors.gold
-                : AppColors.border,
-          ),
-        ),
-      ),
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      // Pinned to dark on purpose, for now.
+      //
+      // Both themes are built and contrast-tested (test/theme_contrast_test),
+      // but the screens still read colours straight from `AppColors` rather
+      // than from the palette, so `ThemeMode.system` would hand a light-mode
+      // player a half-migrated UI: light chrome around dark hand-styled
+      // panels. This flips to `ThemeMode.system` once the screens are
+      // migrated to `AppPalette.of(context)`.
+      themeMode: ThemeMode.dark,
       // The UI is a fixed-metric design port; unbounded system font scaling
       // breaks its pill rows and button labels, so cap it at +30%.
       builder: (context, child) => MediaQuery.withClampedTextScaling(

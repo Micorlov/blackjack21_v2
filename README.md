@@ -129,7 +129,11 @@ lib/
 │                  #   notification_support (web-safe "can we notify here?" check),
 │                  #   daily_bonus_store (persists the last claim time + streak day)
 ├── state/         # game_notifier (Riverpod)
-├── theme/         # app_colors, app_text_styles
+├── theme/         # design tokens — app_colors (raw values incl. the light set),
+│                  #   app_palette (semantic roles per brightness, a ThemeExtension),
+│                  #   app_theme (ThemeData for both brightnesses), app_spacing
+│                  #   (4/8dp scale, radii, 48dp touch minimum), app_motion
+│                  #   (durations, curves, reduced-motion), app_text_styles (+ type ramp)
 ├── utils/         # formatters, leaderboard, points (hourly/daily buckets), comeback,
 │                  #   daily_bonus (pure cooldown + 7-day streak logic),
 │                  #   cup (pure Weekend Cup countdown/prizes),
@@ -310,6 +314,25 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-03 (15)
+- refactor: **the app has a design system.** Colour, type, spacing, radii and motion were
+  previously decided at each call site — 14 different text sizes between 10 and 48px, seven
+  corner radii, and 31 raw colour literals outside `theme/`. `lib/theme/` now holds the tokens:
+  `app_spacing` (a 4/8dp scale, radii, and the 48dp touch minimum), `app_motion` (durations
+  chosen by what is moving, plus one reduced-motion helper), a named type ramp in
+  `app_text_styles`, and `app_palette` mapping raw values to semantic roles.
+- fix: **losses were nearly invisible on the table.** The loss red `#C1503F` scored **1.76:1**
+  against the felt — below even the 3:1 floor for non-text, on the number telling you how much
+  you just lost. Outcome colours now come in two forms: a fill colour, and an accessible variant
+  for text on the felt (loss 4.53:1, win 5.75:1, push 4.53:1). Control outlines got the same
+  treatment, since `border` sat at 1.71:1 and was the only thing defining some tappable edges.
+- test: contrast is now enforced rather than audited. `test/theme_contrast_test.dart` checks every
+  text-on-surface pairing in both themes against WCAG AA, including against the felt specifically
+  — a token change that regresses a pairing fails the build instead of reaching players.
+- feat: a light theme exists and is contrast-tested. It is not switched on yet: the screens still
+  read colours straight from `AppColors`, so `themeMode` stays pinned to dark until they are
+  migrated to the palette, rather than shipping light chrome around dark hand-styled panels.
 
 ### 2026-08-15 (14)
 - chore: **bumped the app to 1.2.0 (3) and shipped it to Google Play.** `1.1.0 (2)` had been the
