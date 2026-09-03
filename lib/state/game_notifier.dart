@@ -1065,9 +1065,17 @@ class GameNotifier extends StateNotifier<GameState> {
   }
 
   // The dealer's turn is paced like an NPC's, and for the same reason: it is
-  // another player acting at the table. These mirror the NPC timings above
-  // (520 / 600 / 480ms) so the table keeps one rhythm.
-  static const Duration _kDealerRevealPause = Duration(milliseconds: 520);
+  // another player acting at the table. The draw and settle beats mirror the
+  // NPC timings above (600 / 480ms) so the table keeps one rhythm.
+  //
+  // The reveal beat is deliberately longer than that rhythm. The hole card
+  // turns over while the spoken call-outs of the player's last action — the
+  // hand total ("you have twenty") and the sweep-pot figure — may still be
+  // playing, and at the old 520ms the dealer was already drawing over them.
+  // Two seconds outlasts the longest of those lines, so the player hears the
+  // hand they just finished, sees the dealer's cards, and only then watches
+  // the dealer act.
+  static const Duration kDealerRevealPause = Duration(seconds: 2);
   static const Duration _kDealerDrawPause = Duration(milliseconds: 600);
   static const Duration _kDealerSettlePause = Duration(milliseconds: 480);
 
@@ -1097,7 +1105,7 @@ class GameNotifier extends StateNotifier<GameState> {
     // flip is its own beat rather than one frame of a pile-up.
     state = state.copyWith(holeRevealed: true, phase: RoundPhase.dealer);
     _dealerTimer?.cancel();
-    _dealerTimer = Timer(_kDealerRevealPause, _dealerDrawStep);
+    _dealerTimer = Timer(kDealerRevealPause, _dealerDrawStep);
   }
 
   void _dealerDrawStep() {

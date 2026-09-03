@@ -89,6 +89,9 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   already names) shows in its own circle next to the bet circle, gold-ringed normally, red when
   busted, and is read aloud as "You have [total]" right after the opening deal and again after
   every hit, double, or split card
+- **Dealer waits for the room** — the hole card turns over and the dealer then holds its two
+  cards for two full seconds before drawing, so the spoken call-out of the hand you just
+  finished is never talked over by the dealer's turn
 - **Voice toggle** — every spoken call-out above (hand totals, results, the sweep pot, and the
   NPC "Stand"/"Bust" lines) can be switched off without silencing the tones, from the onboarding
   screen before the first hand and from Settings → Sound & haptics afterwards. It sits under
@@ -319,6 +322,13 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-03 (19)
+- feat: **the dealer waits two seconds before playing.** The hole card flipped and the dealer
+  started drawing 520ms later — while the spoken call-out of the hand you had just finished
+  ("You have twenty", or the sweep-pot figure) was still playing. The reveal beat is now 2s, long
+  enough to outlast those lines, so you hear your own hand, see the dealer's cards, and only then
+  watch the dealer act. Draw and settle pacing are unchanged.
 
 ### 2026-09-03 (18)
 - test: **landscape and tablet are covered now.** The redesign's largest rewrite — the felt's
