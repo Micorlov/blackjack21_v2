@@ -48,7 +48,11 @@ class _SeatResult {
 /// Riverpod [StateNotifier]. See that file's `class Component extends DCLogic`
 /// for the reference behavior this mirrors.
 class GameNotifier extends StateNotifier<GameState> {
-  GameNotifier() : super(const GameState(friends: kInitialFriends)) {
+  /// [sound] is a seam for tests, which need to see which channel a call-out
+  /// was handed to — the app always builds its own.
+  GameNotifier({@visibleForTesting SoundPlayer? sound})
+      : _sound = sound ?? SoundPlayer(),
+        super(const GameState(friends: kInitialFriends)) {
     _shoe = BlackjackRules.buildShoe(kDeckCount, _rng);
     // `authenticate()` throws UnimplementedError on web — Google Identity
     // Services requires its own rendered button there (see
@@ -61,7 +65,7 @@ class GameNotifier extends StateNotifier<GameState> {
   }
 
   final Random _rng = Random();
-  final SoundPlayer _sound = SoundPlayer();
+  final SoundPlayer _sound;
   final SocialService _social = SocialService();
   final LocalNotifier _notifs = LocalNotifier();
   final DailyBonusStore _bonusStore = DailyBonusStore();
@@ -140,11 +144,22 @@ class GameNotifier extends StateNotifier<GameState> {
   /// regardless of how the voice switch is left.
   bool get _voiceOn => state.soundOn && state.voiceOn;
 
-  /// A spoken clip that happens to live in [GameSfx] — the NPC seats'
-  /// "Stand"/"Bust" lines. Words, not tones, so they follow the voice toggle.
-  void _playSpokenSfx(GameSfx sfx) {
+  /// An NPC seat's "Stand"/"Bust" line, spoken as the seat acts.
+  ///
+  /// Goes on the voice channel — queued behind whatever is already speaking —
+  /// rather than the tone channel. On the tone channel it had nothing holding
+  /// it back, and the opening deal talked over itself: "You have sixteen"
+  /// starts [kHandTotalVoiceLead] after the cards land and runs well over a
+  /// second, while the first seat acts 520ms in, so the hero heard "You have"
+  /// and then "Bust" on top of it. Queued, the seat's line waits its turn and
+  /// both are heard whole.
+  ///
+  /// No lead of its own: the queue decides when it can be said. If the wait
+  /// ever ran past [SoundPlayer.kMaxVoiceWait] the line is dropped rather than
+  /// spoken over the wrong seat.
+  void _playSpokenVoice(GameVoice voice) {
     if (!_voiceOn) return;
-    unawaited(_sound.play(sfx));
+    unawaited(_sound.playVoice(voice));
   }
 
   /// Held back so the settlement tone plays out first and the spoken result
@@ -729,8 +744,15 @@ class GameNotifier extends StateNotifier<GameState> {
       return;
     }
     state = state.copyWith(actingSeat: order[k]);
-    _npcTimer = Timer(const Duration(milliseconds: 520), () => _npcDecide(order, k));
+    _npcTimer = Timer(kNpcDecisionLead, () => _npcDecide(order, k));
   }
+
+  /// How long a seat is shown as acting before it plays its card and speaks.
+  /// The first seat's line therefore lands this long after the deal — while
+  /// the hero's own "You have sixteen", cued [kHandTotalVoiceLead] in, is
+  /// still being said. That overlap is why the seat lines belong on the
+  /// queued voice channel; see [_playSpokenVoice].
+  static const Duration kNpcDecisionLead = Duration(milliseconds: 520);
 
   void _npcDecide(List<int> order, int k) {
     if (state.screen != AppScreen.table) return;
@@ -742,7 +764,7 @@ class GameNotifier extends StateNotifier<GameState> {
       final nv = BlackjackRules.handValue(cards);
       _patchNpc(i, (seat) => seat.copyWith(cards: cards, action: nv > 21 ? 'BUST' : 'HIT'));
       if (nv > 21) {
-        _playSpokenSfx(GameSfx.npcBust);
+        _playSpokenVoice(GameVoice.npcBust);
         _hapticLight();
       }
       _npcTimer = Timer(const Duration(milliseconds: 600), () {
@@ -755,7 +777,7 @@ class GameNotifier extends StateNotifier<GameState> {
       });
     } else {
       _patchNpc(i, (seat) => seat.copyWith(action: 'STAND', done: true));
-      _playSpokenSfx(GameSfx.npcStand);
+      _playSpokenVoice(GameVoice.npcStand);
       _hapticSelection();
       _npcTimer = Timer(const Duration(milliseconds: 480), () => _stepNpc(order, k + 1));
     }

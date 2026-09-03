@@ -14,14 +14,14 @@ enum GameSfx {
   push,
   blackjack,
   turn,
-  npcStand,
-  npcBust,
   potCelebration,
 }
 
-/// Spoken call-outs announcing the hero's settlement result. Kept apart from
-/// [GameSfx] because they play on their own channel — see [SoundPlayer].
-enum GameVoice { playerWin, playerLose, bigWin, playerPot }
+/// Spoken call-outs: the hero's settlement result, and an NPC seat's outcome.
+/// Kept apart from [GameSfx] because words, unlike tones, must not be spoken
+/// over one another — they play on the queued voice channel instead. See
+/// [SoundPlayer].
+enum GameVoice { playerWin, playerLose, bigWin, playerPot, npcStand, npcBust }
 
 const Map<GameSfx, String> _sfxAssets = {
   GameSfx.chip: 'sfx/chip.wav',
@@ -31,9 +31,6 @@ const Map<GameSfx, String> _sfxAssets = {
   GameSfx.push: 'sfx/push.wav',
   GameSfx.blackjack: 'sfx/blackjack.wav',
   GameSfx.turn: 'sfx/turn.wav',
-  // Spoken voice lines (synthesized) announcing an NPC seat's outcome.
-  GameSfx.npcStand: 'sfx/npc_stand.wav',
-  GameSfx.npcBust: 'sfx/npc_bust.wav',
   // Drum flourish played after the "Player wins the pot" call-out.
   GameSfx.potCelebration: 'sfx/pot_celebration.wav',
 };
@@ -43,6 +40,10 @@ const Map<GameVoice, String> _voiceAssets = {
   GameVoice.playerLose: 'sfx/player_lose.wav',
   GameVoice.bigWin: 'sfx/big_win.wav',
   GameVoice.playerPot: 'sfx/player_pot.wav',
+  // An NPC seat's outcome. Spoken words, so they queue with the rest rather
+  // than firing on the tone channel over whatever is mid-sentence.
+  GameVoice.npcStand: 'sfx/npc_stand.wav',
+  GameVoice.npcBust: 'sfx/npc_bust.wav',
 };
 
 /// Thin wrapper around [AudioPlayer] for one-shot game SFX. Playback errors
@@ -57,10 +58,17 @@ const Map<GameVoice, String> _voiceAssets = {
 ///
 /// The voice channel is a queue, not a race. Several call-outs are scheduled
 /// from independent timers in `GameNotifier` — the hand total as a card lands,
-/// the settlement result, the sweep-pot figure — and their windows overlap: a
-/// bust schedules "You have twenty five" and "Player loses" 350ms apart, while
-/// the first line runs for over a second. Starting the second one cut the
-/// first off mid-word, so a spoken line now waits for the channel instead.
+/// an NPC seat's "Stand"/"Bust" as it acts, the settlement result, the
+/// sweep-pot figure — and their windows overlap: a bust schedules "You have
+/// twenty five" and "Player loses" 350ms apart, while the first line runs for
+/// over a second. Starting the second one cut the first off mid-word, so a
+/// spoken line now waits for the channel instead.
+///
+/// Every spoken clip therefore belongs on this channel. The NPC lines were
+/// filed under [GameSfx] and played on the tone channel, which is why the
+/// opening deal talked over itself: "You have sixteen" began 350ms after the
+/// cards landed and the first seat's "Bust" fired 170ms later, on the other
+/// channel, where the queue could not hold it back.
 class SoundPlayer {
   SoundPlayer() {
     _player.setReleaseMode(ReleaseMode.stop);
@@ -84,6 +92,13 @@ class SoundPlayer {
   static const Duration kMaxVoiceWait = Duration(seconds: 3);
 
   Future<void> play(GameSfx sfx) => _playOn(_player, _sfxAssets[sfx]!);
+
+  /// Which asset a cue loads from. Exposed so a test can pin the routing —
+  /// a spoken clip on the tone channel is the bug these two channels exist
+  /// to prevent, and nothing else in the app can see the difference.
+  static String sfxAsset(GameSfx sfx) => _sfxAssets[sfx]!;
+
+  static String voiceAsset(GameVoice voice) => _voiceAssets[voice]!;
 
   /// Speaks a pre-recorded line. Returns when it will have finished, so the
   /// caller can line up whatever follows it — or null if it was dropped.

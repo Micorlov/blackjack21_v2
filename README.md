@@ -92,6 +92,9 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
 - **Dealer waits for the room** — the hole card turns over and the dealer then holds its two
   cards for two full seconds before drawing, so the spoken call-out of the hand you just
   finished is never talked over by the dealer's turn
+- **One voice at a time** — every spoken line shares one channel and waits its turn: a seat's
+  "Stand"/"Bust" never starts until the hand total before it has finished the word it is on. A
+  line held more than 3s past its cue is dropped rather than said late
 - **Voice toggle** — every spoken call-out above (hand totals, results, the sweep pot, and the
   NPC "Stand"/"Bust" lines) can be switched off without silencing the tones, from the onboarding
   screen before the first hand and from Settings → Sound & haptics afterwards. It sits under
@@ -322,6 +325,13 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-03 (20)
+- fix: **the table no longer talks over itself.** "You have sixteen" was cut off mid-word by a
+  seat's "Bust": the hand total starts 350ms after the cards land and runs over a second, the
+  first seat acts 520ms in, and the seat lines were filed under the sound effects, so they played
+  on the tone channel where the voice queue could not hold them back. They are voice lines now,
+  queued like every other spoken call-out, so each one is heard whole.
 
 ### 2026-09-03 (19)
 - feat: **the dealer waits two seconds before playing.** The hole card flipped and the dealer

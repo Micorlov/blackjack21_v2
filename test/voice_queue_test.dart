@@ -1,6 +1,7 @@
-// The spoken call-outs are scheduled from three independent timers — the hand
-// total as a card lands, the settlement result, the sweep-pot figure — and
-// they all drive the one voice channel. Their windows overlap, so the channel
+// The spoken call-outs are scheduled from four independent timers — the hand
+// total as a card lands, an NPC seat's "Stand"/"Bust" as it acts, the
+// settlement result, the sweep-pot figure — and they all drive the one voice
+// channel. Their windows overlap, so the channel
 // queues them. These tests pin the two things that queue depends on: that a
 // clip's length really is derivable from its byte count, and that the overlap
 // is real, so nobody "simplifies" the queue away and brings back the bug where
@@ -9,10 +10,63 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:blackjack21_v2/data/game_data.dart';
+import 'package:blackjack21_v2/models/enums.dart';
+import 'package:blackjack21_v2/models/game_state.dart';
+import 'package:blackjack21_v2/models/social_models.dart';
 import 'package:blackjack21_v2/services/sound_player.dart';
 import 'package:blackjack21_v2/services/spoken_amount.dart';
 import 'package:blackjack21_v2/state/game_notifier.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+const _stake = TableStake(
+  key: 'bronze',
+  name: 'Bronze Table',
+  min: 25,
+  max: 500,
+  tint: Color(0xFF4FAE8E),
+  tintDim: Color(0x264FAE8E),
+);
+
+/// Records which channel each call-out was handed to, and says nothing.
+class _RecordingSound extends SoundPlayer {
+  final List<GameSfx> tones = [];
+  final List<GameVoice> voices = [];
+  final List<List<String>> words = [];
+
+  /// The seat call-outs, which are the ones this file is about.
+  Iterable<GameVoice> get spokenSeatLines => voices
+      .where((v) => v == GameVoice.npcStand || v == GameVoice.npcBust);
+
+  @override
+  Future<void> play(GameSfx sfx) async => tones.add(sfx);
+
+  @override
+  Future<DateTime?> playVoice(GameVoice voice) async {
+    voices.add(voice);
+    return DateTime.now();
+  }
+
+  @override
+  Future<DateTime?> playWords(List<String> line) async {
+    words.add(line);
+    return DateTime.now();
+  }
+}
+
+/// Seated at a table with chips and the voice on, ready to be dealt.
+class _TableNotifier extends GameNotifier {
+  _TableNotifier(SoundPlayer sound) : super(sound: sound) {
+    state = const GameState(
+      screen: AppScreen.table,
+      displayName: 'Guest',
+      chips: 5000,
+      stake: _stake,
+      friends: kInitialFriends,
+    );
+  }
+}
 
 /// The parts of a WAV header the voice channel relies on.
 class _Wav {
@@ -110,6 +164,67 @@ void main() {
     });
   });
 
+  group('every spoken line is on the queued channel', () {
+    // The NPC seats' "Stand"/"Bust" were filed under GameSfx and played on the
+    // tone channel, which the queue cannot hold back. The opening deal talked
+    // over itself as a result: "You have sixteen" starts 350ms after the cards
+    // land and runs over a second, the first seat acts 520ms in, and the hero
+    // heard "You have" and then "Bust" on top of it.
+    const spokenClips = {
+      'sfx/npc_stand.wav',
+      'sfx/npc_bust.wav',
+      'sfx/player_win.wav',
+      'sfx/player_lose.wav',
+      'sfx/big_win.wav',
+      'sfx/player_pot.wav',
+    };
+
+    test('no spoken clip is reachable from the tone channel', () {
+      final tones = GameSfx.values.map(SoundPlayer.sfxAsset).toSet();
+      expect(
+        tones.intersection(spokenClips),
+        isEmpty,
+        reason: 'a clip of words on the tone channel plays over whatever the '
+            'voice channel is in the middle of saying — nothing queues it',
+      );
+    });
+
+    test('every spoken clip is reachable from the voice channel', () {
+      final voices = GameVoice.values.map(SoundPlayer.voiceAsset).toSet();
+      expect(voices, containsAll(spokenClips));
+    });
+
+    testWidgets('a seat speaks through the voice channel as it acts',
+        (tester) async {
+      // The call sites, not just the enum: a seat's outcome must reach
+      // playVoice — the queued channel — and never the tone channel, whatever
+      // the seat decides to do.
+      final sound = _RecordingSound();
+      final notifier = _TableNotifier(sound);
+
+      // A deal can skip the seats entirely — a dealer ace goes to insurance,
+      // and a natural settles on the spot — so retry a few rounds rather than
+      // leaving the test to the shoe.
+      for (var round = 0; round < 8 && sound.spokenSeatLines.isEmpty; round++) {
+        notifier.placeBet(25);
+        notifier.dealRound();
+        for (var i = 0; i < 40; i++) {
+          await tester.pump(const Duration(milliseconds: 600));
+        }
+        notifier.nextHand();
+      }
+
+      expect(sound.spokenSeatLines, isNotEmpty,
+          reason: 'no seat ever said anything, so this proves nothing');
+      expect(
+        sound.tones.where((t) => t == GameSfx.deal),
+        isNotEmpty,
+        reason: 'the tone channel should still be carrying the tones',
+      );
+      notifier.dispose();
+    });
+  });
+
   group('the voice schedule overlaps, which is why the channel queues', () {
     /// Lower bound on "You have <total>" — the clips alone, ignoring the gaps
     /// [SoundPlayer] inserts between them.
@@ -133,6 +248,23 @@ void main() {
           greaterThan(gap),
           reason: 'a $total call-out fits inside the ${gap.inMilliseconds}ms '
               'gap, so the queue would no longer be doing anything',
+        );
+      }
+    });
+
+    test("a seat's call-out is due while the hand total is still speaking", () {
+      // The deal cues the hero's total kHandTotalVoiceLead in, and the first
+      // seat speaks kNpcDecisionLead in. The total's line outlasts the gap
+      // between the two for every total there is, so the seat always arrives
+      // mid-sentence — on the tone channel that meant "You have" and then
+      // "Bust" over the top of it.
+      final gap = GameNotifier.kNpcDecisionLead - GameNotifier.kHandTotalVoiceLead;
+      for (var total = 4; total <= 21; total++) {
+        expect(
+          handTotalLine(total),
+          greaterThan(gap),
+          reason: 'a $total call-out is over before the first seat speaks, so '
+              'the seat lines would not need the queue',
         );
       }
     });
