@@ -87,8 +87,8 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   seat has forfeited a bet has no pot to call, so nothing is said
 - **Hand-total circle** — your live card total toward 21 (the same number "Soft 19"/"Hard 17"
   already names) shows in its own circle next to the bet circle, gold-ringed normally, red when
-  busted, and is read aloud as "You have [total]" right after the opening deal and again after
-  every hit, double, or split card
+  busted, and is read aloud as "You have [total]" when the table comes round to you — after every
+  opponent seat has played — and again after every hit, double, or split card
 - **Dealer waits for the room** — the hole card turns over and the dealer then holds its two
   cards for two full seconds before drawing, so the spoken call-out of the hand you just
   finished is never talked over by the dealer's turn
@@ -325,6 +325,14 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-03 (21)
+- feat: **"You have sixteen" is said when it is your turn, not at the deal.** It used to be
+  announced as the cards landed, across the opponent seats calling out their own "Stand" and
+  "Bust", so the one number you needed arrived in the middle of somebody else's turn. It now waits
+  for every seat to finish and lands with the turn cue, ahead of the sweep-pot call-out. A hand
+  that never reaches you — a natural, or a dealer blackjack — settles without it, as the result
+  call-out already says what happened.
 
 ### 2026-09-03 (20)
 - fix: **the table no longer talks over itself.** "You have sixteen" was cut off mid-word by a

@@ -147,12 +147,13 @@ class GameNotifier extends StateNotifier<GameState> {
   /// An NPC seat's "Stand"/"Bust" line, spoken as the seat acts.
   ///
   /// Goes on the voice channel — queued behind whatever is already speaking —
-  /// rather than the tone channel. On the tone channel it had nothing holding
-  /// it back, and the opening deal talked over itself: "You have sixteen"
-  /// starts [kHandTotalVoiceLead] after the cards land and runs well over a
-  /// second, while the first seat acts 520ms in, so the hero heard "You have"
-  /// and then "Bust" on top of it. Queued, the seat's line waits its turn and
-  /// both are heard whole.
+  /// rather than the tone channel, where nothing held it back. That is how the
+  /// opening deal came to talk over itself: the hero's "You have sixteen" was
+  /// said as the cards landed and the first seat's "Bust" fired 170ms later,
+  /// on the other channel, cutting it off mid-word. The total now waits for
+  /// the hero's turn (see [_announceHandTotal]) so the two no longer collide
+  /// at all, and the queue keeps the seats from clipping each other as they
+  /// act [kNpcDecisionLead] apart.
   ///
   /// No lead of its own: the queue decides when it can be said. If the wait
   /// ever ran past [SoundPlayer.kMaxVoiceWait] the line is dropped rather than
@@ -233,6 +234,10 @@ class GameNotifier extends StateNotifier<GameState> {
   void _notifyPlayerTurn() {
     _playSfx(GameSfx.turn);
     _hapticTurnAlert();
+    // Cued before the pot so it is said first: both wait out the turn cue, and
+    // the voice channel speaks them in the order they were handed to it.
+    _announceHandTotal(state.hands[state.activeHandIndex].cards,
+        lead: kTurnVoiceLead);
     _announceTablePot();
   }
 
@@ -252,7 +257,7 @@ class GameNotifier extends StateNotifier<GameState> {
     if (amount.isEmpty) return;
 
     _potTimer?.cancel();
-    _potTimer = Timer(_kPotAnnouncementLead, () {
+    _potTimer = Timer(kTurnVoiceLead, () {
       if (!_voiceOn) return;
       unawaited(
         _sound.playWords([
@@ -264,25 +269,39 @@ class GameNotifier extends StateNotifier<GameState> {
     });
   }
 
-  /// Held back so the turn cue (`turn.wav`, 0.60s) finishes first.
-  static const _kPotAnnouncementLead = Duration(milliseconds: 700);
 
-  /// Speaks the hero's new hand total — the number shown in the hand-total
-  /// circle in [HeroHandArea] — right after a card lands, whether from the
-  /// opening deal, a hit, a double, or a split. Held back so `deal.wav`
-  /// (0.09s) finishes first.
-  void _announceHandTotal(List<PlayingCard> cards) {
+  /// Speaks the hero's hand total — the number shown in the hand-total circle
+  /// in [HeroHandArea] — when the action reaches them, and again after every
+  /// card they take: a hit, a double, or a split.
+  ///
+  /// It used to be said at the deal instead, over the top of the opponent
+  /// seats: they start acting [kNpcDecisionLead] in and call out "Stand" or
+  /// "Bust" as they go, so the hero's own total arrived in the middle of
+  /// somebody else's turn. Held until the table comes round to them, it is
+  /// about the hand they are being asked to play.
+  ///
+  /// [lead] holds the line back until the tone that cued it has finished:
+  /// [kHandTotalVoiceLead] clears `deal.wav` (0.09s) as a card lands,
+  /// [kTurnVoiceLead] clears the longer `turn.wav` (0.60s) at the hero's turn.
+  void _announceHandTotal(
+    List<PlayingCard> cards, {
+    Duration lead = kHandTotalVoiceLead,
+  }) {
     if (!_voiceOn) return;
     final words = spokenAmountWords(BlackjackRules.handValue(cards));
     if (words.isEmpty) return;
     _handTotalTimer?.cancel();
-    _handTotalTimer = Timer(kHandTotalVoiceLead, () {
+    _handTotalTimer = Timer(lead, () {
       if (!_voiceOn) return;
       unawaited(_sound.playWords(['you_have', ...words]));
     });
   }
 
   static const kHandTotalVoiceLead = Duration(milliseconds: 350);
+
+  /// Held back so the turn cue (`turn.wav`, 0.60s) finishes first. Both lines
+  /// due at the hero's turn — the hand total and the sweep pot — wait it out.
+  static const kTurnVoiceLead = Duration(milliseconds: 700);
 
   PlayingCard _drawCard() {
     if (_shoe.length < 15) _shoe = BlackjackRules.buildShoe(kDeckCount, _rng);
@@ -915,7 +934,6 @@ class GameNotifier extends StateNotifier<GameState> {
 
     _playSfx(GameSfx.deal);
     _hapticMedium();
-    _announceHandTotal(playerCards);
 
     if (dealerUpIsAce) {
       state = state.copyWith(

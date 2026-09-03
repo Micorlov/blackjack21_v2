@@ -39,6 +39,16 @@ class _RecordingSound extends SoundPlayer {
   Iterable<GameVoice> get spokenSeatLines => voices
       .where((v) => v == GameVoice.npcStand || v == GameVoice.npcBust);
 
+  /// The "You have <total>" lines, whenever they were said.
+  List<List<String>> get handTotals =>
+      words.where((l) => l.first == 'you_have').toList();
+
+  void reset() {
+    tones.clear();
+    voices.clear();
+    words.clear();
+  }
+
   @override
   Future<void> play(GameSfx sfx) async => tones.add(sfx);
 
@@ -194,6 +204,62 @@ void main() {
       expect(voices, containsAll(spokenClips));
     });
 
+    testWidgets('the hand total waits for the table to come round to the hero',
+        (tester) async {
+      // "You have sixteen" used to be said as the cards landed, on top of the
+      // seats playing their own turns. It is about the hand the hero is being
+      // asked to play, so it is held until they are the one being asked.
+      final sound = _RecordingSound();
+      final notifier = _TableNotifier(sound);
+
+      // A dealer ace goes to insurance and a natural settles on the spot;
+      // either skips the seats, so retry rather than leaving the test to the
+      // shoe.
+      for (var round = 0;
+          round < 8 && notifier.state.phase != RoundPhase.npcs;
+          round++) {
+        notifier.placeBet(25);
+        notifier.dealRound();
+        if (notifier.state.phase == RoundPhase.npcs) break;
+        for (var i = 0;
+            i < 40 && notifier.state.phase != RoundPhase.settlement;
+            i++) {
+          await tester.pump(const Duration(milliseconds: 600));
+        }
+        notifier.nextHand();
+      }
+      expect(notifier.state.phase, RoundPhase.npcs,
+          reason: 'never dealt a round the seats actually play');
+      // A retried round runs to the hero's turn and is announced there, which
+      // is the behaviour under test — but it is not this round's evidence.
+      sound.reset();
+
+      // Every seat plays. Not a word about the hero's hand over any of it.
+      for (var i = 0; i < 60 && notifier.state.phase == RoundPhase.npcs; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+        expect(sound.handTotals, isEmpty,
+            reason: 'the hero\'s total was announced while the seats were '
+                'still playing');
+      }
+      expect(notifier.state.phase, RoundPhase.playing,
+          reason: 'the seats never finished');
+
+      await tester.pump(GameNotifier.kTurnVoiceLead);
+      expect(sound.handTotals, hasLength(1),
+          reason: 'the total is said once the action reaches the hero');
+      expect(sound.handTotals.single.first, 'you_have');
+
+      // The pot call-out is cued at the same beat and queues behind it, so the
+      // hero hears their own hand before the table's.
+      final potIndex = sound.words.indexWhere((l) => l.first == 'sweep_pot');
+      if (potIndex >= 0) {
+        expect(potIndex, greaterThan(sound.words.indexOf(sound.handTotals.single)),
+            reason: 'the sweep pot was called before the hero\'s own total');
+      }
+
+      notifier.dispose();
+    });
+
     testWidgets('a seat speaks through the voice channel as it acts',
         (tester) async {
       // The call sites, not just the enum: a seat's outcome must reach
@@ -248,23 +314,6 @@ void main() {
           greaterThan(gap),
           reason: 'a $total call-out fits inside the ${gap.inMilliseconds}ms '
               'gap, so the queue would no longer be doing anything',
-        );
-      }
-    });
-
-    test("a seat's call-out is due while the hand total is still speaking", () {
-      // The deal cues the hero's total kHandTotalVoiceLead in, and the first
-      // seat speaks kNpcDecisionLead in. The total's line outlasts the gap
-      // between the two for every total there is, so the seat always arrives
-      // mid-sentence — on the tone channel that meant "You have" and then
-      // "Bust" over the top of it.
-      final gap = GameNotifier.kNpcDecisionLead - GameNotifier.kHandTotalVoiceLead;
-      for (var total = 4; total <= 21; total++) {
-        expect(
-          handTotalLine(total),
-          greaterThan(gap),
-          reason: 'a $total call-out is over before the first seat speaks, so '
-              'the seat lines would not need the queue',
         );
       }
     });

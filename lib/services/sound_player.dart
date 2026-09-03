@@ -66,9 +66,9 @@ const Map<GameVoice, String> _voiceAssets = {
 ///
 /// Every spoken clip therefore belongs on this channel. The NPC lines were
 /// filed under [GameSfx] and played on the tone channel, which is why the
-/// opening deal talked over itself: "You have sixteen" began 350ms after the
-/// cards landed and the first seat's "Bust" fired 170ms later, on the other
-/// channel, where the queue could not hold it back.
+/// opening deal talked over itself: "You have sixteen" began as the cards
+/// landed and the first seat's "Bust" fired 170ms later, on the other channel,
+/// where the queue could not hold it back.
 class SoundPlayer {
   SoundPlayer() {
     _player.setReleaseMode(ReleaseMode.stop);
