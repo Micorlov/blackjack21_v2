@@ -198,13 +198,17 @@ granted "Release apps to testing tracks" and "Manage testing tracks and edit tes
 app in Play Console. Its JSON key lives at `android/play-service-account.json` and is gitignored,
 like `android/key.properties` — neither ever gets committed.
 
-**It cannot release to production.** A `--track production` run uploads the bundle and stages the
-release, then fails on the final commit with `HttpError 403 … The caller does not have permission`,
-and the whole edit is discarded — Play is left untouched and the version code stays free for a
-retry. Production needs "Release to production, exclude devices, and use Play App Signing" added to
-the service account under **Users and permissions → play-publisher → App permissions**. Until then
-the route to production is the console: upload to `internal`, then promote that version code from
-the Play Console UI.
+It can release to production as of 1.3.0 (4). Until then it could not: a `--track production` run
+uploaded the bundle and staged the release, then failed on the final commit with `HttpError 403 …
+The caller does not have permission`, discarding the whole edit — Play untouched, the version code
+still free. The fix was ticking **Release to production, exclude devices, and use Play App
+Signing** under **Users and permissions → play-publisher → App permissions**, alongside the
+testing-track permissions it already had. A 403 on commit, with the upload itself succeeding, is
+what that box being unticked looks like from the API.
+
+**Managed publishing is off** for this app now, so a committed release goes to review by itself and
+publishes when review passes — there is no longer a **Publish** button to remember in Publishing
+overview. Anything else already sitting in **Changes in review** rides along with it.
 
 ## Dependencies
 
@@ -343,14 +347,19 @@ emulator testing.
 
 ## Changelog
 
+### 2026-09-04
+- chore: **1.3.0 (4) is on production, in review.** The first attempt uploaded the 59.6 MB bundle
+  and staged the release, then failed the edit's commit with `403 … The caller does not have
+  permission` — the `play-publisher` service account held "Release apps to testing tracks", and
+  production is not a testing track. Play discarded that edit whole, so version code 4 survived
+  for the retry. Granted the account **Release to production, exclude devices, and use Play App
+  Signing** in Play Console, re-ran the same upload, and production now reads **1.3.0 (4), full
+  rollout, completed**, with the three pending store-listing edits riding along in the same review.
+  Managed publishing is off, so it publishes when review passes rather than waiting on a click.
+
 ### 2026-09-03 (25)
-- chore: **1.3.0 (4) is built and signed, but not on Play.** `pubspec.yaml` reads `1.3.0+4` and
-  `tool/release_notes_en-US.txt` is rewritten for it (431 of Play's 500 characters). The 59.6 MB
-  bundle uploaded and the release staged, then the edit's commit came back `403 … The caller does
-  not have permission`: the `play-publisher` service account holds "Release apps to testing tracks"
-  and production is not a testing track. The edit was discarded whole, so production still serves
-  1.2.0 (3) and version code 4 is still free. Documented the permission and the console route
-  under **Publishing to Google Play**.
+- chore: **cut 1.3.0 (4).** `pubspec.yaml` reads `1.3.0+4` and `tool/release_notes_en-US.txt` is
+  rewritten for it (431 of Play's 500 characters).
 
 ### 2026-09-03 (24)
 - feat: **going over 21 is called a bust, on both sides of the table.** "Player busts" and "Dealer
