@@ -5,6 +5,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import 'firebase_options.dart';
 import 'models/enums.dart';
+import 'models/game_state.dart';
 import 'screens/cup_screen.dart';
 import 'screens/friends_screen.dart';
 import 'screens/lobby_screen.dart';
@@ -50,7 +51,9 @@ Future<void> _initServices() async {
   try {
     await GoogleSignIn.instance.initialize().timeout(_startupInitTimeout);
   } catch (error) {
-    debugPrint('Google sign-in init did not complete, guest play still works: $error');
+    debugPrint(
+      'Google sign-in init did not complete, guest play still works: $error',
+    );
   }
 }
 
@@ -153,10 +156,76 @@ class AppShell extends ConsumerWidget {
       }
     }
 
+    // Android Back, for the whole app.
+    //
+    // Navigation here is an enum on the state, not a `Navigator` stack, so
+    // there is nothing for the framework to pop and Back quit the app from
+    // wherever the player happened to be. Fixing it only on the table left the
+    // same trap everywhere else: leaving the Weekend Cup, Stats, Friends, Shop
+    // or Settings still dropped the player onto their home screen. Found on a
+    // real device — Back out of the Weekend Cup closed the game.
+    //
+    // Handled in one place rather than per screen so the peel order is
+    // consistent: overlays first, then the screen, then the app.
+    final canLeaveApp =
+        state.activeStoryId == null &&
+        !state.tableChatOpen &&
+        !state.tableMenuOpen &&
+        (state.screen == AppScreen.lobby ||
+            state.screen == AppScreen.onboarding ||
+            state.screen == AppScreen.tips);
+
+    return PopScope(
+      canPop: canLeaveApp,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        if (state.activeStoryId != null) {
+          notifier.closeStory();
+          return;
+        }
+        if (state.tableChatOpen) {
+          notifier.toggleTableChat();
+          return;
+        }
+        if (state.tableMenuOpen) {
+          notifier.toggleTableMenu();
+          return;
+        }
+        switch (state.screen) {
+          // `exitTable` rather than `goLobby`: it also cancels the round's
+          // timers, the same way the header's chevron does.
+          case AppScreen.table:
+            notifier.exitTable();
+          case AppScreen.cup:
+          case AppScreen.stats:
+          case AppScreen.friends:
+          case AppScreen.shop:
+          case AppScreen.settings:
+            notifier.goLobby();
+          // Nothing sits behind these, so Back means "leave", which `canPop`
+          // has already allowed.
+          case AppScreen.lobby:
+          case AppScreen.onboarding:
+          case AppScreen.tips:
+            break;
+        }
+      },
+      child: _buildShell(context, state, onNavSelect, showNav),
+    );
+  }
+
+  Widget _buildShell(
+    BuildContext context,
+    GameState state,
+    void Function(AppScreen) onNavSelect,
+    bool showNav,
+  ) {
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: SafeArea(
-        top: state.screen != AppScreen.onboarding && state.screen != AppScreen.tips,
+        top:
+            state.screen != AppScreen.onboarding &&
+            state.screen != AppScreen.tips,
         bottom: false,
         child: Stack(
           children: [

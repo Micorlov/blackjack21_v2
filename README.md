@@ -320,6 +320,15 @@ emulator testing.
 
 ## Changelog
 
+### 2026-09-03 (17)
+- fix: **the back button no longer quits the game.** Navigation is an enum on the state, not a
+  `Navigator` stack, so Android Back had nothing to pop and closed the app from wherever you
+  were. It was fixed for the table first, which left the identical trap everywhere else — backing
+  out of the Weekend Cup, Stats, Friends, Shop or Settings dropped you on your home screen. Back
+  is now handled once for the whole app and peels one layer at a time: an open story, then the
+  chat sheet, then the table menu, then the screen, then the app. Found by installing on a real
+  phone; `test/back_button_test.dart` now covers every screen so a new one cannot miss the rule.
+
 ### 2026-09-03 (16)
 - fix: **the dealer's turn is something you can watch.** `_playDealer` drew the whole hand in one
   synchronous loop and settled in the same frame, so `RoundPhase.dealer` never survived to be

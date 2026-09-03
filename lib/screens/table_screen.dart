@@ -34,47 +34,31 @@ class TableScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(gameProvider);
-    final notifier = ref.read(gameProvider.notifier);
     // The Appearance/Table-felt choice restyles the whole table, not just
     // the swatch: this background plus the felt ellipse in TableFelt.
     final felt = feltById(state.themeChoice);
 
-    return PopScope(
-      // Navigation here is an enum on the state, not a `Navigator` stack, so
-      // there is nothing for the framework to pop: without this, Android Back
-      // from the table quit the app outright. Back now peels off one layer at
-      // a time — chat sheet, then menu, then the table itself — and reaches
-      // the same `exitTable` the header's chevron calls, so the round's timers
-      // are cancelled either way.
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
-        if (state.tableChatOpen) {
-          notifier.toggleTableChat();
-          return;
-        }
-        if (state.tableMenuOpen) {
-          notifier.toggleTableMenu();
-          return;
-        }
-        notifier.exitTable();
-      },
-      child: DecoratedBox(
-        decoration: BoxDecoration(gradient: felt.tableGradient),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final available = constraints.biggest;
-            final landscape = TableLayout.isLandscape(available);
+    // Android Back is handled once, app-wide, in `AppShell` — it peels the
+    // chat sheet and menu before leaving the table, and reaches the same
+    // `exitTable` this screen's chevron calls. A second PopScope here would
+    // fire alongside it and pop two layers per press.
+    return DecoratedBox(
+      decoration: BoxDecoration(gradient: felt.tableGradient),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final available = constraints.biggest;
+          final landscape = TableLayout.isLandscape(available);
 
-            return Stack(
-              children: [
-                landscape ? _landscape(state, available) : _portrait(state, available),
-                if (state.tableMenuOpen) const TableMenuDropdown(),
-                if (state.tableChatOpen) const TableChatSheet(),
-              ],
-            );
-          },
-        ),
+          return Stack(
+            children: [
+              landscape
+                  ? _landscape(state, available)
+                  : _portrait(state, available),
+              if (state.tableMenuOpen) const TableMenuDropdown(),
+              if (state.tableChatOpen) const TableChatSheet(),
+            ],
+          );
+        },
       ),
     );
   }
@@ -93,7 +77,10 @@ class TableScreen extends ConsumerWidget {
         const Expanded(child: TableFelt()),
         ConstrainedBox(
           constraints: BoxConstraints(maxHeight: panelMaxHeight),
-          child: const SingleChildScrollView(reverse: true, child: TableActionPanel()),
+          child: const SingleChildScrollView(
+            reverse: true,
+            child: TableActionPanel(),
+          ),
         ),
       ],
     );
@@ -129,7 +116,9 @@ class TableScreen extends ConsumerWidget {
                   top: false,
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(0, 0, gutter, 0),
-                    child: SingleChildScrollView(child: TableActionPanel(inSideRail: true)),
+                    child: SingleChildScrollView(
+                      child: TableActionPanel(inSideRail: true),
+                    ),
                   ),
                 ),
               ),
