@@ -255,8 +255,23 @@ class GameNotifier extends StateNotifier<GameState> {
     if (state.hapticsOn) HapticFeedback.mediumImpact();
   }
 
-  void _hapticHeavy() {
-    if (state.hapticsOn) HapticFeedback.heavyImpact();
+  /// A short roll of taps building to one heavy hit, for the two results
+  /// worth marking: a natural blackjack, and sweeping the table.
+  ///
+  /// The felt now throws confetti and flies the beaten seats' chips over to
+  /// the player for these; a single `mediumImpact` under all of that felt like
+  /// the same acknowledgement a chip tap gets.
+  void _hapticCelebrate() {
+    if (!state.hapticsOn) return;
+    HapticFeedback.mediumImpact();
+    for (var i = 1; i <= 2; i++) {
+      Timer(Duration(milliseconds: 90 * i), () {
+        if (state.hapticsOn) HapticFeedback.mediumImpact();
+      });
+    }
+    Timer(const Duration(milliseconds: 320), () {
+      if (state.hapticsOn) HapticFeedback.heavyImpact();
+    });
   }
 
   /// A longer, distinctly different buzz (vs. the short impact taps used
@@ -1786,16 +1801,17 @@ class GameNotifier extends StateNotifier<GameState> {
     if (outcomes.contains('blackjack')) {
       _playOutcomeTone(GameSfx.blackjack, afterFlip: holeCardJustRevealed);
       _playVoice(GameVoice.bigWin);
-      _hapticHeavy();
+      _hapticCelebrate();
     } else if (messageType == MessageType.win) {
       _playOutcomeTone(GameSfx.win, afterFlip: holeCardJustRevealed);
       if (heroTakesPot) {
         _playVoice(GameVoice.playerPot, celebrate: true);
         _celebrateSweep();
+        _hapticCelebrate();
       } else {
         _playVoice(GameVoice.playerWin);
+        _hapticMedium();
       }
-      _hapticMedium();
     } else if (messageType == MessageType.lose) {
       _playOutcomeTone(GameSfx.lose, afterFlip: holeCardJustRevealed);
       _playVoice(GameVoice.playerLose);

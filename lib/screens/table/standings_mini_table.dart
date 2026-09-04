@@ -30,15 +30,27 @@ class StandingsMiniTable extends StatefulWidget {
   const StandingsMiniTable({super.key, required this.state, required this.notifier});
 
   @override
-  State<StandingsMiniTable> createState() => StandingsMiniTableState();
+  State<StandingsMiniTable> createState() => _StandingsMiniTableState();
 }
 
-class StandingsMiniTableState extends State<StandingsMiniTable> {
+class _StandingsMiniTableState extends State<StandingsMiniTable> {
   static const List<String> _titles = ['FRIENDS', 'WORLD · THIS HOUR', 'WORLD · TODAY'];
   static const int _kMaxRows = 5;
 
-  final PageController _controller = PageController();
-  int _page = 0;
+  /// With nobody in the group, the FRIENDS page is dropped rather than shown
+  /// empty.
+  ///
+  /// It used to open on a page reading "No friends here yet — you play alone"
+  /// under a full gold invite button: the one page in the card with nothing on
+  /// it, handed to the player mid-hand, when the invite already sits on the
+  /// betting panel, the lobby, the shop and the friends screen. The world race
+  /// is real whether or not you have invited anyone, so that shows instead.
+  bool get _hasFriendsPage => widget.state.friendsAreLive;
+
+  int get _firstPage => _hasFriendsPage ? 0 : 1;
+
+  late final PageController _controller = PageController(initialPage: _firstPage);
+  late int _page = _firstPage;
 
   @override
   void dispose() {
@@ -69,13 +81,21 @@ class StandingsMiniTableState extends State<StandingsMiniTable> {
             children: [
               Row(
                 children: [
-                  Text(
-                    _titles[_page],
-                    style: AppText.sora(10, weight: FontWeight.w800, color: AppColors.textFaint, letterSpacing: 1),
+                  // Flexible because the card is narrower in the landscape
+                  // side rail than in the portrait panel, and the world titles
+                  // are twice the length of "FRIENDS".
+                  Flexible(
+                    child: Text(
+                      _titles[_page],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.sora(10, weight: FontWeight.w800, color: AppColors.textFaint, letterSpacing: 1),
+                    ),
                   ),
+                  const SizedBox(width: 6),
                   const Spacer(),
-                  for (var i = 0; i < _titles.length; i++) ...[
-                    if (i > 0) const SizedBox(width: 4),
+                  for (var i = _firstPage; i < _titles.length; i++) ...[
+                    if (i > _firstPage) const SizedBox(width: 4),
                     Container(
                       width: 5,
                       height: 5,
@@ -98,7 +118,10 @@ class StandingsMiniTableState extends State<StandingsMiniTable> {
                   controller: _controller,
                   onPageChanged: (p) => setState(() => _page = p),
                   children: [
-                    _fitPage(_friendsPage(s)),
+                    // An empty slot rather than a removed child, so page
+                    // indices stay aligned with [_titles] and with the tab the
+                    // full standings screen opens on.
+                    if (_hasFriendsPage) _fitPage(_friendsPage(s)) else const SizedBox.shrink(),
                     _fitPage(_worldPage(s, hourly: true)),
                     _fitPage(_worldPage(s, hourly: false)),
                   ],
@@ -129,36 +152,9 @@ class StandingsMiniTableState extends State<StandingsMiniTable> {
     );
   }
 
-  /// Real invited friends only — the practice bots never appear here. With no
-  /// live friends yet, the page says so and offers the WhatsApp invite
-  /// directly.
-  Widget _friendsPage(GameState s) {
-    if (!s.friendsAreLive) {
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'No friends here yet — you play alone.',
-            textAlign: TextAlign.center,
-            style: AppText.sora(11, color: AppColors.textMuted),
-          ),
-          const SizedBox(height: 6),
-          GestureDetector(
-            onTap: widget.notifier.shareInviteWhatsApp,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(gradient: AppColors.goldGradient, borderRadius: BorderRadius.circular(999)),
-              child: Text(
-                'Invite friends on WhatsApp',
-                style: AppText.sora(12, weight: FontWeight.w800, color: AppColors.goldInk),
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-    return _standings(friendsStandingsRows(s));
-  }
+  /// Real invited friends only — the practice bots never appear here. Not
+  /// built at all until there are some (see [_hasFriendsPage]).
+  Widget _friendsPage(GameState s) => _standings(friendsStandingsRows(s));
 
   /// Live world top list, always padded to [_kMaxRows] with filler bots so
   /// the card never looks sparse while the real player base is still small.

@@ -91,7 +91,7 @@ class _ReactionFloatOverlayState extends State<ReactionFloatOverlay>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1600),
+      duration: AppMotion.float,
     );
     if (widget.text.isNotEmpty) _controller.forward(from: 0);
   }

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/game_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import 'chip_disc.dart';
+import 'count_up_text.dart';
 import '../utils/daily_bonus.dart';
 import 'buttons.dart';
 
@@ -45,30 +47,18 @@ class _DailyBonusDialog extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 78,
-              height: 78,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: AppColors.goldGradient,
-                boxShadow: [
-                  BoxShadow(color: AppColors.goldDark.withValues(alpha: 0.4), blurRadius: 30, offset: const Offset(0, 10)),
-                ],
-              ),
-              alignment: Alignment.center,
-              child: Container(
-                width: 34,
-                height: 25,
-                decoration: const BoxDecoration(
-                  color: AppColors.goldInk,
-                  borderRadius: BorderRadius.all(Radius.elliptical(17, 12.5)),
-                ),
-              ),
-            ),
+            // A chip, not a flat gold disc with an oval punched out of it. The
+            // reward is chips, and the app now has a chip it can draw.
+            const ChipDisc(color: AppColors.gold, size: 78),
             const SizedBox(height: 14),
             Text('Daily bonus', style: AppText.serifItalic(32)),
             const SizedBox(height: 4),
-            Text('+$reward', style: AppText.mono(40, weight: FontWeight.w700, color: AppColors.gold, height: 1.1)),
+            CountUpText(
+              value: reward,
+              signed: true,
+              haptic: true,
+              style: AppText.mono(40, weight: FontWeight.w700, color: AppColors.gold, height: 1.1),
+            ),
             Text(
               day > 1 ? 'Day $day of your streak — keep it going' : 'Come back tomorrow to start a streak',
               style: AppText.sora(15, color: AppColors.textMuted),

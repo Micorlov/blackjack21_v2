@@ -18,6 +18,7 @@ import '../utils/table_presence.dart';
 import '../utils/table_recommendation.dart';
 import '../widgets/avatar_circle.dart';
 import '../widgets/buttons.dart';
+import '../widgets/count_up_text.dart';
 import '../widgets/daily_bonus_dialog.dart';
 import '../widgets/panel_card.dart';
 import 'shared/avatar_initial.dart';
@@ -149,7 +150,7 @@ class _HeaderRow extends StatelessWidget {
               children: [
                 Text('●', style: AppText.mono(15, color: AppColors.gold, height: 1)),
                 const SizedBox(width: 7),
-                Text(formatChips(state.chips), style: AppText.mono(17, weight: FontWeight.w700)),
+                CountUpText(value: state.chips, style: AppText.mono(17, weight: FontWeight.w700)),
               ],
             ),
           ),

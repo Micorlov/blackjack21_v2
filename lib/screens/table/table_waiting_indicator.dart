@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
+import '../../theme/app_motion.dart';
 import '../../theme/app_text_styles.dart';
 
 /// Centered pulsing-dot + status text, used for the `npcs` ("{name} is
@@ -21,7 +22,7 @@ class _TableWaitingIndicatorState extends State<TableWaitingIndicator> with Sing
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat(reverse: true);
+    _controller = AnimationController(vsync: this, duration: AppMotion.pulse)..repeat(reverse: true);
   }
 
   @override

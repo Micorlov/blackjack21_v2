@@ -410,6 +410,32 @@ emulator testing.
 
 ## Changelog
 
+### 2026-09-05 (2)
+- feat: **Winning looks like winning.** Sweeping the table or hitting a natural 21 now bursts
+  confetti over the felt and flies each beaten seat's chips across to your plate — the sweep pot
+  is what this game is built around and the felt used to mark it with nothing but a changed
+  number, while the audio side had a tone, a call-out and a drum flourish. Both layers are
+  hand-painted (`lib/widgets/confetti_burst.dart`, `lib/screens/table/chip_flight_layer.dart`),
+  ignore pointers so the READY button stays tappable underneath, and do not run at all under the
+  system's reduce-motion setting. Reserved for blackjacks and sweeps: confetti on every $50 win
+  would stop meaning anything by the tenth hand.
+- feat: **The numbers count.** The bankroll, the round's net and the daily-bonus reward roll to
+  their new value with a rate-capped haptic tick instead of switching between frames — a $400 win
+  and a $50 loss used to look identical. `CountUpText` counts down as well as up, and arrives
+  instantly under reduced motion. Covered by `test/count_up_text_test.dart`.
+- feat: **A real chip, and a heavier celebration.** `ChipDisc` draws the rim, edge spots and inner
+  ring that make a circle read as a casino chip; the daily-bonus dialog uses it in place of a flat
+  gold disc, and the chips in flight are the same object. Blackjacks and sweeps get a short roll
+  of haptic taps building to one heavy hit rather than the single tap a chip press gets.
+- feat: dealt cards land with a few degrees of tilt that unwinds, so a card reads as dealt rather
+  than as a rectangle appearing.
+- fix: **The standings card stopped advertising to people playing alone.** With an empty group it
+  opened on a page saying "No friends here yet — you play alone" under a gold invite button; the
+  world race is real whether or not you have invited anyone, so that is the page it opens on
+  instead, and the empty one is not built.
+- refactor: the reaction float and the waiting pulse route their durations through `AppMotion`
+  (`float`, `pulse`) like every other animation, so they collapse under reduced motion too.
+
 ### 2026-09-05
 - fix: **The dealer's cards no longer land on top of the other players.** The felt reserved 164
   units for a dealer cluster that needs about 178 — 220 once the gold "TABLE SWEEP" banner

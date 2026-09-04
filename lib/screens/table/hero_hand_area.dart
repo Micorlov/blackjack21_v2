@@ -9,6 +9,7 @@ import '../../models/playing_card.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/formatters.dart';
+import '../../widgets/count_up_text.dart';
 import '../../widgets/playing_card_widget.dart';
 import 'dealt_card.dart';
 import 'table_calc.dart';
@@ -262,11 +263,15 @@ class _HeroHandBlock extends StatelessWidget {
                 TableCalc.handLabelFor(hand),
                 style: AppText.sora(16, color: active ? AppColors.gold : AppColors.textPrimary.withValues(alpha: 0.9)),
               ),
+              // Rolls rather than snapping: this is the number the whole game
+              // is scored on, and a win used to be indistinguishable from a
+              // loss — it simply became a different figure between frames.
               Semantics(
                 label: 'Balance ${formatChips(state.chips)} chips',
                 excludeSemantics: true,
-                child: Text(
-                  formatChips(state.chips),
+                child: CountUpText(
+                  value: state.chips,
+                  haptic: true,
                   style: AppText.mono(19, weight: FontWeight.w700, color: Colors.white),
                 ),
               ),

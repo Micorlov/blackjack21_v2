@@ -9,6 +9,8 @@ import '../../models/game_state.dart';
 import '../../state/game_notifier.dart';
 import '../../theme/app_colors.dart';
 import '../../utils/table_seats.dart';
+import '../../widgets/confetti_burst.dart';
+import 'chip_flight_layer.dart';
 import 'dealer_area.dart';
 import 'hero_hand_area.dart';
 import 'seat_plate.dart';
@@ -88,6 +90,16 @@ class TableFelt extends ConsumerWidget {
                     if (kShowFriendsAtTable) ..._seatPlates(state, m),
                     if (state.phase != RoundPhase.settlement)
                       HeroHandArea(state: state, top: m.heroTop, inset: m.inset),
+                    // Celebration sits above the felt's contents and below
+                    // nothing: both layers ignore pointers, so the READY
+                    // button underneath stays tappable through them.
+                    if (state.phase == RoundPhase.settlement) ...[
+                      Positioned.fill(child: ChipFlightLayer(state: state, metrics: m)),
+                      if (_deservesConfetti(state))
+                        Positioned.fill(
+                          child: ConfettiBurst(trigger: state.roundNet, origin: Alignment(0, _confettiOrigin(m))),
+                        ),
+                    ],
                   ],
                 ),
               ),
@@ -96,6 +108,25 @@ class TableFelt extends ConsumerWidget {
         );
       },
     );
+  }
+
+  /// Which results are worth confetti.
+  ///
+  /// Not every win: a $50 hand that beats the dealer by a point is the game
+  /// working normally, and celebrating it every time would make the gesture
+  /// mean nothing by the tenth hand. Reserved for a natural blackjack and for
+  /// sweeping the table, which is what this game is actually about.
+  static bool _deservesConfetti(GameState state) {
+    final blackjack = state.hands.any((h) => h.status == HandStatus.blackjack);
+    if (blackjack && state.messageType == MessageType.win) return true;
+    return (state.sweepInfo?.heroTook ?? false) && state.sweepAmount > 0;
+  }
+
+  /// Bursts from the hero's own plate rather than the middle of the screen, so
+  /// the chips appear to come off the player's own hand.
+  static double _confettiOrigin(FeltMetrics m) {
+    if (m.canvas.height <= 0) return 0;
+    return ((m.heroTop / m.canvas.height) * 2 - 1).clamp(-1.0, 1.0);
   }
 
   /// All four seats share one slot width and no per-row scale, so every

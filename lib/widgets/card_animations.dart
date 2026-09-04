@@ -13,7 +13,13 @@ import '../theme/app_motion.dart';
 class DealInCard extends StatefulWidget {
   final Widget child;
 
-  const DealInCard({super.key, required this.child});
+  /// Degrees the card is rotated by as it arrives, unwinding to square.
+  ///
+  /// A card that slides straight down in perfect alignment reads as a UI
+  /// element appearing; a few degrees of tilt reads as a card being dealt.
+  final double tilt;
+
+  const DealInCard({super.key, required this.child, this.tilt = 4});
 
   @override
   State<DealInCard> createState() => _DealInCardState();
@@ -58,7 +64,10 @@ class _DealInCardState extends State<DealInCard>
             opacity: t,
             child: Transform.translate(
               offset: Offset(0, -12 * (1 - t)),
-              child: Transform.scale(scale: 0.92 + 0.08 * t, child: child),
+              child: Transform.rotate(
+                angle: widget.tilt * (1 - t) * math.pi / 180,
+                child: Transform.scale(scale: 0.92 + 0.08 * t, child: child),
+              ),
             ),
           );
         },

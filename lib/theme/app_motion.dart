@@ -25,6 +25,12 @@ class AppMotion {
   /// Deliberately slow: blackjack and big-win moments.
   static const Duration celebratory = Duration(milliseconds: 600);
 
+  /// A reaction drifting up over a seat and fading out.
+  static const Duration float = Duration(milliseconds: 1600);
+
+  /// One cycle of a repeating "still working" pulse.
+  static const Duration pulse = Duration(milliseconds: 1200);
+
   /// Decelerating — for things entering or settling into place.
   static const Curve enter = Curves.easeOutCubic;
 

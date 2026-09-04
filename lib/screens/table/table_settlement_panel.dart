@@ -8,6 +8,7 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/buttons.dart';
+import '../../widgets/count_up_text.dart';
 import '../../widgets/playing_card_widget.dart';
 import 'table_calc.dart';
 
@@ -28,7 +29,6 @@ class TableSettlementPanel extends ConsumerWidget {
     final roundNetColor = state.roundNet > 0
         ? AppColors.winLight
         : (state.roundNet < 0 ? AppColors.loseLight : AppColors.push);
-    final roundNetLabel = '${state.roundNet >= 0 ? '+' : '−'}\$${formatChips(state.roundNet.abs())}';
     final messageColor = switch (state.messageType) {
       MessageType.win => AppColors.win,
       MessageType.lose => AppColors.lose,
@@ -119,8 +119,13 @@ class TableSettlementPanel extends ConsumerWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
-                roundNetLabel,
+              // The figure the player actually came for. It counts, with a
+              // haptic tick as the digits move, instead of simply appearing.
+              CountUpText(
+                value: state.roundNet,
+                prefix: '\$',
+                signed: true,
+                haptic: true,
                 style: AppText.mono(34, weight: FontWeight.w700, color: roundNetColor, height: 1),
               ),
             ],
