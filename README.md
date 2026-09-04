@@ -357,6 +357,16 @@ emulator testing.
 
 ## Changelog
 
+### 2026-09-04 (7)
+- fix: **The gold "TABLE SWEEP" banner no longer beats the hole card to the punch either.** Same
+  root cause as the tone fix below: a natural blackjack reveals the dealer's hole card and sets
+  `sweepAmount` in the same beat, but the banner had no entrance animation of its own, so it popped
+  in fully formed while `FlipRevealCard` was still mid-turn. `DealerArea` is now a `StatefulWidget`
+  that gates the banner's first render on the flip's actual duration (500ms via `AppMotion`, or
+  instant under reduced motion) whenever `holeRevealed` just flipped true in the same update; a
+  widget that mounts already past the reveal (hot reload, returning to a settled table) shows it at
+  once, since there is no fresh flip to wait for.
+
 ### 2026-09-04 (5)
 - fix: **The win/blackjack/lose/push tone no longer beats the hole card to the punch.** A natural
   blackjack — on the initial deal, or right after an insurance decision — reveals the dealer's hole

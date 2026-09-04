@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../data/game_data.dart';
@@ -16,7 +18,7 @@ import 'table_calc.dart';
 /// sweep-pot pill (with a mid-round "YOU LEAD" badge and, once settled, a
 /// "TABLE SWEEP" banner), then the dealer's two cards — the second stays a
 /// [PlayingCardBack] until `state.holeRevealed`.
-class DealerArea extends StatelessWidget {
+class DealerArea extends StatefulWidget {
   final GameState state;
   final MidRoundPot midPot;
   final CardBackDef cardBack;
@@ -28,17 +30,60 @@ class DealerArea extends StatelessWidget {
   const DealerArea({super.key, required this.state, required this.midPot, required this.cardBack, this.inset = 0});
 
   @override
+  State<DealerArea> createState() => _DealerAreaState();
+}
+
+class _DealerAreaState extends State<DealerArea> {
+  Timer? _sweepRevealTimer;
+
+  /// Whether the "TABLE SWEEP" banner may render yet.
+  ///
+  /// A natural blackjack reveals the hole card and settles the round —
+  /// `sweepAmount` included — in the same beat, but [FlipRevealCard] still
+  /// takes half a second to visually turn the card over. Without this gate
+  /// the banner used to pop in fully formed while the card was still
+  /// edge-on, announcing a result the felt hadn't shown yet. True on first
+  /// build: a widget that mounts already past the reveal (hot reload, or
+  /// returning to a settled table) has no fresh flip to wait for.
+  bool _sweepBannerReady = true;
+
+  @override
+  void didUpdateWidget(covariant DealerArea oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final justRevealed = !oldWidget.state.holeRevealed && widget.state.holeRevealed;
+    if (!justRevealed) return;
+    _sweepRevealTimer?.cancel();
+    final pause = AppMotion.durationOf(context, AppMotion.spatial + AppMotion.fast);
+    if (pause == Duration.zero) return; // Reduced motion: the flip is instant too.
+    // A plain field write, not setState: this build hasn't happened yet for
+    // this update, so it picks up the new value directly.
+    _sweepBannerReady = false;
+    _sweepRevealTimer = Timer(pause, () {
+      if (!mounted) return;
+      setState(() => _sweepBannerReady = true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _sweepRevealTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final state = widget.state;
+    final showSweepBanner = state.sweepAmount > 0 && _sweepBannerReady;
     return Positioned(
-      left: inset,
-      right: inset,
+      left: widget.inset,
+      right: widget.inset,
       top: 4,
       child: Column(
         children: [
           _dealerBadgeRow(),
           const SizedBox(height: 8),
           _potPill(),
-          if (state.sweepAmount > 0) ...[const SizedBox(height: 8), _sweepBanner()],
+          if (showSweepBanner) ...[const SizedBox(height: 8), _sweepBanner()],
           const SizedBox(height: 8),
           _dealerCardsRow(context),
         ],
@@ -50,6 +95,7 @@ class DealerArea extends StatelessWidget {
   /// against, so it gets a spoken form of its own: the visual shows "9 + ?"
   /// while the hole card is down, which reads as gibberish out loud.
   String get _dealerSemanticLabel {
+    final state = widget.state;
     if (state.dealerHand.isEmpty) return 'Dealer has no cards yet';
     if (state.holeRevealed) {
       return 'Dealer total ${BlackjackRules.handValue(state.dealerHand)}';
@@ -98,7 +144,7 @@ class DealerArea extends StatelessWidget {
                 style: AppText.mono(12, letterSpacing: 1.6, color: AppColors.gold.withValues(alpha: 0.85)),
               ),
               Text(
-                TableCalc.dealerTotalLabel(state),
+                TableCalc.dealerTotalLabel(widget.state),
                 style: AppText.mono(21, weight: FontWeight.w700, color: AppColors.gold),
               ),
             ],
@@ -109,6 +155,7 @@ class DealerArea extends StatelessWidget {
   }
 
   Widget _potPill() {
+    final midPot = widget.midPot;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       decoration: BoxDecoration(
@@ -165,7 +212,7 @@ class DealerArea extends StatelessWidget {
           Text('TABLE SWEEP', style: AppText.mono(11, letterSpacing: 1.4, color: AppColors.goldInk)),
           const SizedBox(width: 9),
           Text(
-            '+\$${formatChips(state.sweepAmount)}',
+            '+\$${formatChips(widget.state.sweepAmount)}',
             style: AppText.mono(19, weight: FontWeight.w700, color: AppColors.goldInk),
           ),
         ],
@@ -174,6 +221,7 @@ class DealerArea extends StatelessWidget {
   }
 
   Widget _dealerCardsRow(BuildContext context) {
+    final state = widget.state;
     return SizedBox(
       height: 86,
       child: Row(
@@ -195,12 +243,12 @@ class DealerArea extends StatelessWidget {
               if (AppMotion.reduceMotion(context))
                 state.holeRevealed
                     ? PlayingCardFace(card: state.dealerHand[i], width: 58, height: 84)
-                    : PlayingCardBack(width: 58, height: 84, skin: cardBack)
+                    : PlayingCardBack(width: 58, height: 84, skin: widget.cardBack)
               else
                 FlipRevealCard(
                   key: const ValueKey('dealer-hole'),
                   revealed: state.holeRevealed,
-                  back: PlayingCardBack(width: 58, height: 84, skin: cardBack),
+                  back: PlayingCardBack(width: 58, height: 84, skin: widget.cardBack),
                   face: PlayingCardFace(card: state.dealerHand[i], width: 58, height: 84),
                 )
             else
