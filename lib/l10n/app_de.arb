@@ -1,0 +1,70 @@
+{
+  "@@locale": "de",
+  "appTitle": "21 Sweet Pot",
+
+  "settingsTitle": "Einstellungen",
+  "settingsSectionAccount": "Konto",
+  "settingsSectionAvatarColor": "Avatarfarbe",
+  "settingsSectionAppearance": "Erscheinungsbild",
+  "settingsSectionLanguage": "Sprache",
+  "settingsSectionSoundHaptics": "Ton & Vibration",
+  "settingsSectionNotifications": "Benachrichtigungen",
+  "settingsSectionHelp": "Hilfe",
+  "settingsSectionAbout": "Über",
+
+  "signingIn": "Anmelden…",
+  "signIn": "Anmelden",
+  "signOut": "Abmelden",
+  "signOutConfirmTitle": "Abmelden?",
+  "signOutConfirmMessage": "Deine Chips und Statistiken bleiben auf diesem Gerät, aber du verlässt deine Freundesgruppe und deinen Platz in der Bestenliste, bis du dich wieder anmeldest.",
+
+  "avatarColorSemanticLabel": "Avatarfarbe {index} von {total}",
+
+  "themeDefault": "Standard",
+  "themeOcean": "Ozean",
+  "themeEmber": "Glut",
+  "themeFeltSemanticLabel": "{label}-Tischfilz",
+
+  "hapticsLabel": "Vibration",
+  "soundEffectsLabel": "Soundeffekte",
+  "voiceCalloutsLabel": "Sprachansagen",
+  "voiceCalloutsSublabel": "Deine Handsumme, Ergebnisse und der Sweep-Pot werden laut angesagt",
+  "voiceCalloutsDisabledReason": "Aktiviere Soundeffekte, um Sprachansagen zu nutzen",
+
+  "notifSocialLabel": "Sozial",
+  "notifSocialSublabel": "Wenn ein Freund deiner Gruppe beitritt, online geht oder dich überholt",
+  "notifLeaderboardLabel": "Bestenliste",
+  "notifLeaderboardSublabel": "Wenn sich dein Platz in der Stunden- oder Tagesliste ändert",
+  "notifDailyLabel": "Tägliche Erinnerung",
+  "notifDailySublabel": "Ein Hinweis pro Tag, sobald dein täglicher Bonus bereit ist",
+
+  "howToPlayLabel": "Spielanleitung",
+  "howToPlaySublabel": "Regeln, Aktionen, Auszahlungen und der Sweep-Pot",
+  "replayTutorialLabel": "Tutorial wiederholen",
+  "replayTutorialSublabel": "Hinweiskarten für deine nächsten {count} Hände",
+
+  "termsOfServiceLabel": "Nutzungsbedingungen",
+  "termsOfServiceSublabel": "Was du beim Spielen akzeptierst",
+  "privacyPolicyLabel": "Datenschutzrichtlinie",
+  "privacyPolicySublabel": "Was auf diesem Gerät bleibt und was nicht",
+  "versionLabel": "Version",
+
+  "resetBankrollConfirmTitle": "Guthaben zurücksetzen?",
+  "resetBankrollConfirmMessage": "Deine Chips werden auf 1000 zurückgesetzt. Statistiken, Auszeichnungen, Freunde und Kosmetik bleiben unverändert, aber deine aktuellen Chips können nicht wiederhergestellt werden.",
+  "resetBankrollConfirmLabel": "Chips zurücksetzen",
+  "resetBankrollButtonLabel": "Guthaben auf 1000 Chips zurücksetzen",
+
+  "languagePickerSublabel": "Menüs und die Stimme des Dealers folgen dieser Auswahl",
+  "languageSystemDefault": "Gerätesprache verwenden",
+
+  "languageNameEn": "English",
+  "languageNameEs": "Español",
+  "languageNameFr": "Français",
+  "languageNameDe": "Deutsch",
+  "languageNamePt": "Português",
+  "languageNameRu": "Русский",
+  "languageNameZh": "中文",
+  "languageNameJa": "日本語",
+  "languageNameHe": "עברית",
+  "languageNameAr": "العربية"
+}

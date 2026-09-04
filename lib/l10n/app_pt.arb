@@ -1,0 +1,70 @@
+{
+  "@@locale": "pt",
+  "appTitle": "21 Sweet Pot",
+
+  "settingsTitle": "Configurações",
+  "settingsSectionAccount": "Conta",
+  "settingsSectionAvatarColor": "Cor do avatar",
+  "settingsSectionAppearance": "Aparência",
+  "settingsSectionLanguage": "Idioma",
+  "settingsSectionSoundHaptics": "Som e vibração",
+  "settingsSectionNotifications": "Notificações",
+  "settingsSectionHelp": "Ajuda",
+  "settingsSectionAbout": "Sobre",
+
+  "signingIn": "Entrando…",
+  "signIn": "Entrar",
+  "signOut": "Sair",
+  "signOutConfirmTitle": "Sair da conta?",
+  "signOutConfirmMessage": "Suas fichas e estatísticas permanecem neste dispositivo, mas você sairá do seu grupo de amigos e da sua posição no ranking até entrar novamente.",
+
+  "avatarColorSemanticLabel": "Cor do avatar {index} de {total}",
+
+  "themeDefault": "Padrão",
+  "themeOcean": "Oceano",
+  "themeEmber": "Brasa",
+  "themeFeltSemanticLabel": "Mesa {label}",
+
+  "hapticsLabel": "Vibração",
+  "soundEffectsLabel": "Efeitos sonoros",
+  "voiceCalloutsLabel": "Locução por voz",
+  "voiceCalloutsSublabel": "Seu total na mão, os resultados e o pote são ditos em voz alta",
+  "voiceCalloutsDisabledReason": "Ative os efeitos sonoros para usar a locução por voz",
+
+  "notifSocialLabel": "Social",
+  "notifSocialSublabel": "Quando um amigo entra no seu grupo, fica online ou te ultrapassa",
+  "notifLeaderboardLabel": "Ranking",
+  "notifLeaderboardSublabel": "Quando sua posição no ranking horário ou diário muda",
+  "notifDailyLabel": "Lembrete diário",
+  "notifDailySublabel": "Um aviso por dia, assim que seu bônus diário estiver pronto",
+
+  "howToPlayLabel": "Como jogar",
+  "howToPlaySublabel": "Regras, jogadas, pagamentos e o pote",
+  "replayTutorialLabel": "Repetir o tutorial",
+  "replayTutorialSublabel": "Cartões de dicas nas suas próximas {count} mãos",
+
+  "termsOfServiceLabel": "Termos de Serviço",
+  "termsOfServiceSublabel": "O que você aceita ao jogar",
+  "privacyPolicyLabel": "Política de Privacidade",
+  "privacyPolicySublabel": "O que fica neste dispositivo e o que não fica",
+  "versionLabel": "Versão",
+
+  "resetBankrollConfirmTitle": "Reiniciar sua banca?",
+  "resetBankrollConfirmMessage": "Suas fichas voltam para 1.000. Estatísticas, prêmios, amigos e cosméticos permanecem intactos, mas as fichas atuais não podem ser recuperadas.",
+  "resetBankrollConfirmLabel": "Reiniciar fichas",
+  "resetBankrollButtonLabel": "Reiniciar banca para 1.000 fichas",
+
+  "languagePickerSublabel": "Os menus e a voz do dealer seguem esta escolha",
+  "languageSystemDefault": "Usar idioma do dispositivo",
+
+  "languageNameEn": "English",
+  "languageNameEs": "Español",
+  "languageNameFr": "Français",
+  "languageNameDe": "Deutsch",
+  "languageNamePt": "Português",
+  "languageNameRu": "Русский",
+  "languageNameZh": "中文",
+  "languageNameJa": "日本語",
+  "languageNameHe": "עברית",
+  "languageNameAr": "العربية"
+}

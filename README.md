@@ -117,12 +117,13 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   custom casino-themed card: an Ace of Spades and King of Hearts fanned on a felt table, the
   "21 Sweet Pot" title, and a real description, instead of the generic Flutter placeholder
 - **Multi-language UI (in progress)** — Settings has a Language picker (Settings → Language),
-  built on Flutter's standard `flutter_localizations`/ARB pipeline (`lib/l10n/`). Only English
-  ships translated today; the picker lists every locale that has an `app_<lang>.arb` file, so it
-  grows automatically as Spanish, French, German, Portuguese, Russian, Chinese, Japanese, Hebrew
-  and Arabic are added. The dealer's spoken call-outs are meant to follow the same language once
-  the voice pipeline (currently English-only pre-recorded clips) gains per-language asset sets —
-  not wired up yet
+  built on Flutter's standard `flutter_localizations`/ARB pipeline (`lib/l10n/`). The Settings
+  screen itself ships translated into all 10 target languages — English, Spanish, French,
+  German, Portuguese, Russian, Chinese, Japanese, Hebrew and Arabic; the picker lists every
+  locale that has an `app_<lang>.arb` file, so it grows automatically as more screens are
+  translated. The rest of the app's screens and data files are still English-only. The dealer's
+  spoken call-outs are meant to follow the same language once the voice pipeline (currently
+  English-only pre-recorded clips) gains per-language asset sets — not wired up yet
 
 ## Getting Started
 
@@ -355,6 +356,14 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-04 (4)
+- feat: **Translated the Settings screen into all 10 target languages.** Added
+  `lib/l10n/app_{es,fr,de,pt,ru,zh,ja,he,ar}.arb`, so the Language picker (Settings → Language)
+  now lists Spanish, French, German, Portuguese, Russian, Chinese, Japanese, Hebrew, and Arabic
+  alongside English, instead of only English. These are a first LLM-generated translation pass of
+  the Settings screen's strings only — the rest of the app's screens, the data files
+  (`game_data.dart`, `tutorial_data.dart`), and the dealer's spoken voice are still English-only.
 
 ### 2026-09-04 (3)
 - feat: **Win call-outs name the dealer.** The spoken result for a plain win changed from

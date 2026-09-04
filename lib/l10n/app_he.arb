@@ -1,0 +1,70 @@
+{
+  "@@locale": "he",
+  "appTitle": "21 Sweet Pot",
+
+  "settingsTitle": "הגדרות",
+  "settingsSectionAccount": "חשבון",
+  "settingsSectionAvatarColor": "צבע האווטאר",
+  "settingsSectionAppearance": "מראה",
+  "settingsSectionLanguage": "שפה",
+  "settingsSectionSoundHaptics": "צלילים ורטט",
+  "settingsSectionNotifications": "התראות",
+  "settingsSectionHelp": "עזרה",
+  "settingsSectionAbout": "אודות",
+
+  "signingIn": "מתחבר…",
+  "signIn": "התחברות",
+  "signOut": "התנתקות",
+  "signOutConfirmTitle": "להתנתק?",
+  "signOutConfirmMessage": "הצ'יפים והסטטיסטיקות שלך יישארו במכשיר הזה, אך תעזוב את קבוצת החברים ואת מקומך בטבלת המובילים עד שתתחבר מחדש.",
+
+  "avatarColorSemanticLabel": "צבע אווטאר {index} מתוך {total}",
+
+  "themeDefault": "ברירת מחדל",
+  "themeOcean": "אוקיינוס",
+  "themeEmber": "גחלת",
+  "themeFeltSemanticLabel": "מפת שולחן {label}",
+
+  "hapticsLabel": "רטט",
+  "soundEffectsLabel": "אפקטים קוליים",
+  "voiceCalloutsLabel": "הכרזות קוליות",
+  "voiceCalloutsSublabel": "סך הקלפים שלך, התוצאות והקופה המשותפת מוכרזים בקול",
+  "voiceCalloutsDisabledReason": "הפעל אפקטים קוליים כדי להשתמש בהכרזות קוליות",
+
+  "notifSocialLabel": "חברתי",
+  "notifSocialSublabel": "כשחבר מצטרף לקבוצה שלך, מתחבר או עוקף אותך",
+  "notifLeaderboardLabel": "טבלת מובילים",
+  "notifLeaderboardSublabel": "כשהמקום שלך בטבלה השעתית או היומית משתנה",
+  "notifDailyLabel": "תזכורת יומית",
+  "notifDailySublabel": "תזכורת אחת ביום, כשהבונוס היומי שלך מוכן למימוש",
+
+  "howToPlayLabel": "איך משחקים",
+  "howToPlaySublabel": "חוקים, מהלכים, תשלומים והקופה המשותפת",
+  "replayTutorialLabel": "לשחק שוב את המדריך",
+  "replayTutorialSublabel": "כרטיסי הדרכה ב-{count} היד הבאות שלך",
+
+  "termsOfServiceLabel": "תנאי השימוש",
+  "termsOfServiceSublabel": "במה אתה מסכים כשאתה משחק",
+  "privacyPolicyLabel": "מדיניות הפרטיות",
+  "privacyPolicySublabel": "מה נשאר במכשיר הזה, ומה לא",
+  "versionLabel": "גרסה",
+
+  "resetBankrollConfirmTitle": "לאפס את היתרה שלך?",
+  "resetBankrollConfirmMessage": "הצ'יפים שלך יחזרו ל-1,000. הסטטיסטיקות, הפרסים, החברים והפריטים הקוסמטיים לא ייפגעו, אך לא ניתן יהיה להחזיר את הצ'יפים שיש לך כרגע.",
+  "resetBankrollConfirmLabel": "איפוס צ'יפים",
+  "resetBankrollButtonLabel": "איפוס היתרה ל-1,000 צ'יפים",
+
+  "languagePickerSublabel": "התפריטים וקול הדילר עוקבים אחרי הבחירה הזו",
+  "languageSystemDefault": "כמו שפת המכשיר",
+
+  "languageNameEn": "English",
+  "languageNameEs": "Español",
+  "languageNameFr": "Français",
+  "languageNameDe": "Deutsch",
+  "languageNamePt": "Português",
+  "languageNameRu": "Русский",
+  "languageNameZh": "中文",
+  "languageNameJa": "日本語",
+  "languageNameHe": "עברית",
+  "languageNameAr": "العربية"
+}

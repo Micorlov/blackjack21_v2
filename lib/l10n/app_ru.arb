@@ -1,0 +1,70 @@
+{
+  "@@locale": "ru",
+  "appTitle": "21 Sweet Pot",
+
+  "settingsTitle": "Настройки",
+  "settingsSectionAccount": "Аккаунт",
+  "settingsSectionAvatarColor": "Цвет аватара",
+  "settingsSectionAppearance": "Оформление",
+  "settingsSectionLanguage": "Язык",
+  "settingsSectionSoundHaptics": "Звук и вибрация",
+  "settingsSectionNotifications": "Уведомления",
+  "settingsSectionHelp": "Помощь",
+  "settingsSectionAbout": "О приложении",
+
+  "signingIn": "Вход…",
+  "signIn": "Войти",
+  "signOut": "Выйти",
+  "signOutConfirmTitle": "Выйти из аккаунта?",
+  "signOutConfirmMessage": "Ваши фишки и статистика останутся на этом устройстве, но вы покинете группу друзей и своё место в рейтинге до следующего входа.",
+
+  "avatarColorSemanticLabel": "Цвет аватара {index} из {total}",
+
+  "themeDefault": "Стандартный",
+  "themeOcean": "Океан",
+  "themeEmber": "Уголь",
+  "themeFeltSemanticLabel": "Сукно стола «{label}»",
+
+  "hapticsLabel": "Вибрация",
+  "soundEffectsLabel": "Звуковые эффекты",
+  "voiceCalloutsLabel": "Голосовые объявления",
+  "voiceCalloutsSublabel": "Сумма ваших карт, результаты и общий банк озвучиваются вслух",
+  "voiceCalloutsDisabledReason": "Включите звуковые эффекты, чтобы использовать голосовые объявления",
+
+  "notifSocialLabel": "Социальные",
+  "notifSocialSublabel": "Когда друг присоединяется к группе, выходит в сеть или обгоняет вас",
+  "notifLeaderboardLabel": "Рейтинг",
+  "notifLeaderboardSublabel": "Когда меняется ваше место в почасовом или дневном рейтинге",
+  "notifDailyLabel": "Ежедневное напоминание",
+  "notifDailySublabel": "Одно напоминание в день, когда готов ежедневный бонус",
+
+  "howToPlayLabel": "Как играть",
+  "howToPlaySublabel": "Правила, ходы, выплаты и общий банк",
+  "replayTutorialLabel": "Повторить обучение",
+  "replayTutorialSublabel": "Подсказки на следующие {count} раздачи",
+
+  "termsOfServiceLabel": "Условия использования",
+  "termsOfServiceSublabel": "Что вы принимаете, играя в игру",
+  "privacyPolicyLabel": "Политика конфиденциальности",
+  "privacyPolicySublabel": "Что остаётся на этом устройстве, а что нет",
+  "versionLabel": "Версия",
+
+  "resetBankrollConfirmTitle": "Сбросить баланс?",
+  "resetBankrollConfirmMessage": "Ваши фишки вернутся к 1000. Статистика, награды, друзья и косметика не изменятся, но текущие фишки вернуть будет нельзя.",
+  "resetBankrollConfirmLabel": "Сбросить фишки",
+  "resetBankrollButtonLabel": "Сбросить баланс до 1000 фишек",
+
+  "languagePickerSublabel": "Меню и голос дилера следуют этому выбору",
+  "languageSystemDefault": "Как в системе устройства",
+
+  "languageNameEn": "English",
+  "languageNameEs": "Español",
+  "languageNameFr": "Français",
+  "languageNameDe": "Deutsch",
+  "languageNamePt": "Português",
+  "languageNameRu": "Русский",
+  "languageNameZh": "中文",
+  "languageNameJa": "日本語",
+  "languageNameHe": "עברית",
+  "languageNameAr": "العربية"
+}

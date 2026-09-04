@@ -1,0 +1,70 @@
+{
+  "@@locale": "ar",
+  "appTitle": "21 Sweet Pot",
+
+  "settingsTitle": "الإعدادات",
+  "settingsSectionAccount": "الحساب",
+  "settingsSectionAvatarColor": "لون الصورة الرمزية",
+  "settingsSectionAppearance": "المظهر",
+  "settingsSectionLanguage": "اللغة",
+  "settingsSectionSoundHaptics": "الصوت والاهتزاز",
+  "settingsSectionNotifications": "الإشعارات",
+  "settingsSectionHelp": "المساعدة",
+  "settingsSectionAbout": "حول التطبيق",
+
+  "signingIn": "جارٍ تسجيل الدخول…",
+  "signIn": "تسجيل الدخول",
+  "signOut": "تسجيل الخروج",
+  "signOutConfirmTitle": "تسجيل الخروج؟",
+  "signOutConfirmMessage": "ستبقى رقائقك وإحصائياتك على هذا الجهاز، لكنك ستغادر مجموعة أصدقائك ومكانك في لوحة المتصدرين حتى تسجّل الدخول مرة أخرى.",
+
+  "avatarColorSemanticLabel": "لون الصورة الرمزية {index} من {total}",
+
+  "themeDefault": "افتراضي",
+  "themeOcean": "المحيط",
+  "themeEmber": "الجمر",
+  "themeFeltSemanticLabel": "طاولة {label}",
+
+  "hapticsLabel": "الاهتزاز",
+  "soundEffectsLabel": "المؤثرات الصوتية",
+  "voiceCalloutsLabel": "التعليقات الصوتية",
+  "voiceCalloutsSublabel": "يُعلَن مجموع أوراقك والنتائج ومبلغ القدر بصوت مسموع",
+  "voiceCalloutsDisabledReason": "فعّل المؤثرات الصوتية لاستخدام التعليقات الصوتية",
+
+  "notifSocialLabel": "اجتماعي",
+  "notifSocialSublabel": "عندما ينضم صديق إلى مجموعتك أو يتصل بالإنترنت أو يتخطاك",
+  "notifLeaderboardLabel": "لوحة المتصدرين",
+  "notifLeaderboardSublabel": "عندما يتغيّر ترتيبك في اللوحة الساعية أو اليومية",
+  "notifDailyLabel": "تذكير يومي",
+  "notifDailySublabel": "تنبيه واحد يوميًا عندما تصبح مكافأتك اليومية جاهزة",
+
+  "howToPlayLabel": "كيفية اللعب",
+  "howToPlaySublabel": "القواعد والحركات والمدفوعات ومبلغ القدر",
+  "replayTutorialLabel": "إعادة عرض الشرح",
+  "replayTutorialSublabel": "بطاقات إرشادية خلال {count} أيدٍ القادمة",
+
+  "termsOfServiceLabel": "شروط الخدمة",
+  "termsOfServiceSublabel": "ما توافق عليه عند اللعب",
+  "privacyPolicyLabel": "سياسة الخصوصية",
+  "privacyPolicySublabel": "ما يبقى على هذا الجهاز وما لا يبقى",
+  "versionLabel": "الإصدار",
+
+  "resetBankrollConfirmTitle": "إعادة تعيين رصيدك؟",
+  "resetBankrollConfirmMessage": "ستعود رقائقك إلى 1000. لن تتأثر الإحصائيات والجوائز والأصدقاء والمظاهر، لكن لا يمكن استرجاع الرقائق الحالية.",
+  "resetBankrollConfirmLabel": "إعادة تعيين الرقائق",
+  "resetBankrollButtonLabel": "إعادة تعيين الرصيد إلى 1000 رقاقة",
+
+  "languagePickerSublabel": "تتبع القوائم وصوت الموزّع هذا الاختيار",
+  "languageSystemDefault": "مطابقة لغة الجهاز",
+
+  "languageNameEn": "English",
+  "languageNameEs": "Español",
+  "languageNameFr": "Français",
+  "languageNameDe": "Deutsch",
+  "languageNamePt": "Português",
+  "languageNameRu": "Русский",
+  "languageNameZh": "中文",
+  "languageNameJa": "日本語",
+  "languageNameHe": "עברית",
+  "languageNameAr": "العربية"
+}

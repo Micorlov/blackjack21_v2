@@ -1,0 +1,70 @@
+{
+  "@@locale": "zh",
+  "appTitle": "21 Sweet Pot",
+
+  "settingsTitle": "设置",
+  "settingsSectionAccount": "账户",
+  "settingsSectionAvatarColor": "头像颜色",
+  "settingsSectionAppearance": "外观",
+  "settingsSectionLanguage": "语言",
+  "settingsSectionSoundHaptics": "声音与震动",
+  "settingsSectionNotifications": "通知",
+  "settingsSectionHelp": "帮助",
+  "settingsSectionAbout": "关于",
+
+  "signingIn": "正在登录…",
+  "signIn": "登录",
+  "signOut": "退出登录",
+  "signOutConfirmTitle": "要退出登录吗？",
+  "signOutConfirmMessage": "你的筹码和统计数据会保留在此设备上，但在重新登录之前，你将离开好友群组并失去排行榜名次。",
+
+  "avatarColorSemanticLabel": "头像颜色 {index}／{total}",
+
+  "themeDefault": "默认",
+  "themeOcean": "海洋",
+  "themeEmber": "余烬",
+  "themeFeltSemanticLabel": "{label}牌桌",
+
+  "hapticsLabel": "震动",
+  "soundEffectsLabel": "音效",
+  "voiceCalloutsLabel": "语音播报",
+  "voiceCalloutsSublabel": "你的手牌点数、结果和彩池金额都会语音播报",
+  "voiceCalloutsDisabledReason": "开启音效后才能使用语音播报",
+
+  "notifSocialLabel": "社交",
+  "notifSocialSublabel": "好友加入群组、上线或超过你时提醒",
+  "notifLeaderboardLabel": "排行榜",
+  "notifLeaderboardSublabel": "你在每小时或每日榜单中的名次变化时提醒",
+  "notifDailyLabel": "每日提醒",
+  "notifDailySublabel": "每日奖励可领取时提醒一次",
+
+  "howToPlayLabel": "玩法说明",
+  "howToPlaySublabel": "规则、操作、赔付和彩池",
+  "replayTutorialLabel": "重新观看教程",
+  "replayTutorialSublabel": "接下来 {count} 局会显示提示卡",
+
+  "termsOfServiceLabel": "服务条款",
+  "termsOfServiceSublabel": "你在游戏中所同意的内容",
+  "privacyPolicyLabel": "隐私政策",
+  "privacyPolicySublabel": "哪些信息保留在本设备上，哪些不会",
+  "versionLabel": "版本",
+
+  "resetBankrollConfirmTitle": "要重置筹码吗？",
+  "resetBankrollConfirmMessage": "你的筹码将重置为 1,000。统计数据、奖励、好友和装扮不受影响，但当前的筹码将无法找回。",
+  "resetBankrollConfirmLabel": "重置筹码",
+  "resetBankrollButtonLabel": "将筹码重置为 1,000",
+
+  "languagePickerSublabel": "菜单和荷官语音都会跟随此设置",
+  "languageSystemDefault": "跟随设备语言",
+
+  "languageNameEn": "English",
+  "languageNameEs": "Español",
+  "languageNameFr": "Français",
+  "languageNameDe": "Deutsch",
+  "languageNamePt": "Português",
+  "languageNameRu": "Русский",
+  "languageNameZh": "中文",
+  "languageNameJa": "日本語",
+  "languageNameHe": "עברית",
+  "languageNameAr": "العربية"
+}
