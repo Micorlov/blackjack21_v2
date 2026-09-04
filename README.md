@@ -357,6 +357,16 @@ emulator testing.
 
 ## Changelog
 
+### 2026-09-04 (5)
+- fix: **The win/blackjack/lose/push tone no longer beats the hole card to the punch.** A natural
+  blackjack — on the initial deal, or right after an insurance decision — reveals the dealer's hole
+  card and settles the round in the same beat, but `FlipRevealCard` still takes 500ms to visually
+  turn the card over. `GameNotifier._settle()` played the outcome tone immediately in that case, so
+  the "you win" chime landed before the card had turned face-up. `_settle()` now takes a
+  `holeCardJustRevealed` flag (set only by those two fast paths) and holds the tone back 500ms —
+  long enough for the flip to finish — through a new `_playOutcomeTone()` helper; the normal
+  dealer-turn path, where the hole card has been showing for seconds already, is unaffected.
+
 ### 2026-09-04 (4)
 - feat: **Translated the Settings screen into all 10 target languages.** Added
   `lib/l10n/app_{es,fr,de,pt,ru,zh,ja,he,ar}.arb`, so the Language picker (Settings → Language)

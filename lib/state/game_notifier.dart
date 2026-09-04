@@ -141,6 +141,31 @@ class GameNotifier extends StateNotifier<GameState> {
     unawaited(_sound.play(sfx));
   }
 
+  /// `FlipRevealCard` (see `screens/table/dealer_area.dart`) takes half a
+  /// second to turn the hole card face-up — `AppMotion.spatial + AppMotion.fast`
+  /// in `theme/app_motion.dart`, duplicated here as a literal since state has
+  /// no business importing the widget layer.
+  static const Duration _kHoleCardFlipPause = Duration(milliseconds: 500);
+
+  /// Plays a round-outcome tone (win/lose/push/blackjack).
+  ///
+  /// [afterFlip] holds it back until the hole-card flip has visually finished.
+  /// A natural blackjack reveals the hole card and settles in the same beat —
+  /// without the pause the tone fired the instant the flip *started*, so the
+  /// player heard "you win" before the card had turned over. Every other path
+  /// into [_settle] reveals the hole card well ahead of this call, so the tone
+  /// can play at once there.
+  void _playOutcomeTone(GameSfx sfx, {required bool afterFlip}) {
+    if (!afterFlip) {
+      _playSfx(sfx);
+      return;
+    }
+    Timer(_kHoleCardFlipPause, () {
+      if (!mounted) return;
+      _playSfx(sfx);
+    });
+  }
+
   /// Whether a word may be spoken right now. Voice sits under the master
   /// sound toggle, so a player who mutes the game never hears a call-out
   /// regardless of how the voice switch is left.
@@ -737,18 +762,59 @@ class GameNotifier extends StateNotifier<GameState> {
 
     try {
       final credential = GoogleAuthProvider.credential(idToken: idToken);
-      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final current = FirebaseAuth.instance.currentUser;
+      UserCredential userCredential;
+      // A guest who signs in should keep the group/leaderboard identity tied
+      // to their anonymous uid, not lose it to a brand-new one — so link the
+      // Google credential onto the existing anonymous user rather than
+      // replacing the session outright.
+      if (current != null && current.isAnonymous) {
+        try {
+          userCredential = await current.linkWithCredential(credential);
+        } on FirebaseAuthException catch (e) {
+          // This Google account already has its own uid elsewhere — fall
+          // back to signing into that account, then re-adopt whatever group
+          // it (or this device) already belongs to.
+          if (e.code != 'credential-already-in-use' && e.code != 'email-already-in-use') rethrow;
+          userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+          await _rebindSocialIdentity();
+        }
+      } else {
+        userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+        await _rebindSocialIdentity();
+      }
       final user = userCredential.user;
       state = state.copyWith(
         signedIn: true,
         displayName: user?.displayName ?? account.displayName ?? 'Player',
         photoUrl: user?.photoURL ?? account.photoUrl,
         screen: _postOnboardingScreen,
+        heroUid: _social.uid,
       );
       _reportScore();
     } on FirebaseAuthException {
       _showToast('Google sign-in failed. Please try again.');
     }
+  }
+
+  /// After the Firebase uid changes underneath an already-running session
+  /// (the credential-already-in-use fallback above), the group subscription
+  /// and `heroUid` would otherwise keep pointing at the old identity. Re-read
+  /// membership for the new uid, and if it has none but this device was
+  /// already in a group, rejoin that same group under the new uid.
+  Future<void> _rebindSocialIdentity() async {
+    if (!mounted) return;
+    state = state.copyWith(heroUid: _social.uid);
+    final code = await _social.fetchMyGroupCode();
+    if (!mounted) return;
+    if (code != null) {
+      _subscribeGroup(code);
+    } else if (state.groupCode != null) {
+      await _social.joinGroup(state.groupCode!, _playerName);
+      if (!mounted) return;
+      _subscribeGroup(state.groupCode!);
+    }
+    _reportScore();
   }
 
   void playGuest() =>
@@ -1044,7 +1110,7 @@ class GameNotifier extends StateNotifier<GameState> {
         phase: RoundPhase.dealer,
       );
       _announceDealerTotal();
-      _settle();
+      _settle(holeCardJustRevealed: true);
       return;
     }
 
@@ -1076,7 +1142,7 @@ class GameNotifier extends StateNotifier<GameState> {
           .toList();
       state = state.copyWith(hands: newHands, holeRevealed: true, phase: RoundPhase.dealer);
       _announceDealerTotal();
-      _settle();
+      _settle(holeCardJustRevealed: true);
     } else {
       _startNpcTurns();
     }
@@ -1309,7 +1375,7 @@ class GameNotifier extends StateNotifier<GameState> {
   // Settlement — "Closest to 21" sweep-pot logic ported from `settle()`
   // ---------------------------------------------------------------------
 
-  void _settle() {
+  void _settle({bool holeCardJustRevealed = false}) {
     final hands = state.hands;
     final dealerHand = state.dealerHand;
     final insuranceBet = state.insuranceBet;
@@ -1450,11 +1516,11 @@ class GameNotifier extends StateNotifier<GameState> {
     // included: "Push" is the answer to what happened to the bet, and silence
     // is not.
     if (outcomes.contains('blackjack')) {
-      _playSfx(GameSfx.blackjack);
+      _playOutcomeTone(GameSfx.blackjack, afterFlip: holeCardJustRevealed);
       _playVoice(GameVoice.bigWin);
       _hapticHeavy();
     } else if (messageType == MessageType.win) {
-      _playSfx(GameSfx.win);
+      _playOutcomeTone(GameSfx.win, afterFlip: holeCardJustRevealed);
       if (heroTakesPot) {
         _playVoice(GameVoice.playerPot, celebrate: true);
         _celebrateSweep();
@@ -1463,11 +1529,11 @@ class GameNotifier extends StateNotifier<GameState> {
       }
       _hapticMedium();
     } else if (messageType == MessageType.lose) {
-      _playSfx(GameSfx.lose);
+      _playOutcomeTone(GameSfx.lose, afterFlip: holeCardJustRevealed);
       _playVoice(GameVoice.playerLose);
       _hapticLight();
     } else {
-      _playSfx(GameSfx.push);
+      _playOutcomeTone(GameSfx.push, afterFlip: holeCardJustRevealed);
       _playVoice(GameVoice.push);
       _hapticSelection();
     }
