@@ -79,9 +79,9 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
 - **Sound effects** — deal, chip, turn, win, lose, push, and blackjack cues, plus spoken
   "Stand"/"Bust" voice lines when an NPC seat finishes its turn
 - **Spoken results** — every settled hand plays its outcome tone and then says the result:
-  "Big win" on a blackjack, "Player wins the sweep pot" when you sweep the table, "Push" when the
-  bet comes back, otherwise "Player wins" or "Player lost". Taking the pot is followed by a drum
-  flourish
+  "Big win" on a blackjack, "You win, versus the dealer, and take the sweep pot" when you sweep
+  the table, "Push" when the bet comes back, otherwise "You win, versus the dealer" or
+  "Player lost". Taking the pot is followed by a drum flourish
 - **Spoken pot** — once every opponent seat has played and the figure has stopped moving, the
   dealer pill is read aloud: "Sweep pot, three hundred seventy five dollars", a second ahead of
   your own hand total. When no seat has forfeited a bet there is nothing to sweep, and the voice
@@ -355,6 +355,14 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-04 (3)
+- feat: **Win call-outs name the dealer.** The spoken result for a plain win changed from
+  "Player wins" to "You win, versus the dealer", and the sweep-pot win from "Player wins the
+  sweep pot" to "You win, versus the dealer, and take the sweep pot" — the old wording didn't say
+  who was beaten, which reads as ambiguous now that "Closest to 21" lets you also sweep the other
+  seats. `tool/gen_voice.py`'s `VOICE_LINES` for `player_win.wav`/`player_pot.wav` updated and both
+  clips re-cut with Kokoro (`am_michael`, the shipping voice).
 
 ### 2026-09-04 (2)
 - feat: **Localization infrastructure + Settings language picker.** Added Flutter's standard

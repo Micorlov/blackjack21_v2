@@ -62,10 +62,10 @@ ESPEAK_DATA = "/opt/homebrew/share/espeak-ng-data"
 # Spoken lines announcing the hero's settled hand and each NPC seat's turn.
 # Keys are paths under assets/sfx/; values are what the voice says.
 VOICE_LINES: dict[str, str] = {
-    "player_win.wav": "Player wins",
+    "player_win.wav": "You win, versus the dealer",
     "player_lose.wav": "Player lost",
     "big_win.wav": "Big win",
-    "player_pot.wav": "Player wins the sweep pot",
+    "player_pot.wav": "You win, versus the dealer, and take the sweep pot",
     "player_push.wav": "Push",
     "npc_stand.wav": "Stand",
     "npc_bust.wav": "Bust",
