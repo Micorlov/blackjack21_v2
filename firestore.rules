@@ -9,6 +9,26 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.email == 'micorlov@gmail.com';
     }
 
+    // `invitedBy` credits whoever the joiner's referral reward goes to. It is
+    // write-once (set only when the row is created, by the joiner, pointing
+    // at the group's own creator) and never the writer's own uid, so
+    // self-referral is impossible and no client can retarget an existing
+    // credit later.
+    function validInvitedBy(code) {
+      return !('invitedBy' in request.resource.data)
+        || (request.resource.data.invitedBy is string
+            && request.resource.data.invitedBy != request.auth.uid
+            && request.resource.data.invitedBy
+                 == get(/databases/$(database)/documents/groups/$(code)).data.createdBy);
+    }
+
+    // Real table presence: which stake table (if any) this member currently
+    // sits at.
+    function validTableKey() {
+      return !('tableKey' in request.resource.data)
+        || request.resource.data.tableKey in ['', 'bronze', 'silver', 'vip'];
+    }
+
     // Each player's membership pointer — private to its owner, readable by
     // the admin panel.
     match /players/{uid} {
@@ -44,7 +64,19 @@ service cloud.firestore {
 
       match /players/{uid} {
         allow read: if request.auth != null;
-        allow write: if request.auth != null && request.auth.uid == uid;
+
+        allow create: if request.auth != null && request.auth.uid == uid
+          && validInvitedBy(code) && validTableKey();
+
+        // `invitedBy` is write-once: an update must either omit it or repeat
+        // exactly what is already stored (rows written before this field
+        // existed have none, hence the `get(..., null)` default).
+        allow update: if request.auth != null && request.auth.uid == uid
+          && (!('invitedBy' in request.resource.data)
+              || request.resource.data.invitedBy == resource.data.get('invitedBy', null))
+          && validTableKey();
+
+        allow delete: if false;
       }
     }
   }

@@ -142,19 +142,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get versionLabel => 'Version';
 
   @override
-  String get resetBankrollConfirmTitle => 'Reset your bankroll?';
-
-  @override
-  String get resetBankrollConfirmMessage =>
-      'Your chips go back to 1,000. Stats, awards, friends and cosmetics are untouched, but the chips you have now cannot be brought back.';
-
-  @override
-  String get resetBankrollConfirmLabel => 'Reset chips';
-
-  @override
-  String get resetBankrollButtonLabel => 'Reset bankroll to 1,000 chips';
-
-  @override
   String get languagePickerSublabel =>
       'Menus and the dealer\'s voice both follow this';
 
@@ -190,4 +177,52 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get languageNameAr => 'العربية';
+
+  @override
+  String rebuyButtonLabel(int chips) {
+    return 'Rebuy $chips chips';
+  }
+
+  @override
+  String rebuyReadyInLabel(String time) {
+    return 'Rebuy in $time';
+  }
+
+  @override
+  String get rebuyHint => 'Or claim your daily bonus in the lobby';
+
+  @override
+  String inviteMessage(String url) {
+    return '🃏 Play 21 Sweet Pot with me — tap to join my table:\n$url';
+  }
+
+  @override
+  String get inviteSubtitle =>
+      'Send friends your link — anyone who taps it lands on your live leaderboard.';
+
+  @override
+  String get inviteButtonWhatsApp => 'Invite via WhatsApp';
+
+  @override
+  String get inviteButtonShare => 'Share link';
+
+  @override
+  String get inviteCopyLink => 'Copy link';
+
+  @override
+  String joinedTableToast(int chips) {
+    return 'Joined the table — +$chips welcome chips!';
+  }
+
+  @override
+  String get joinAlreadyMemberToast => 'Back at your friends\' table';
+
+  @override
+  String get joinOwnTableToast => 'This is your own table';
+
+  @override
+  String get webInstallBanner => 'Playing in the browser — get the Android app';
+
+  @override
+  String get webInstallButton => 'Get it on Google Play';
 }

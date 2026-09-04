@@ -75,12 +75,12 @@ README, and ship it.
 
 *Replace every fake social signal with a true one; give the race finish lines.*
 
-3. **Real table presence — "Maya is at the Silver table right now"** (8.3, effort S).
-   Write a `tableKey` field on the player's existing group row (piggybacking on
-   `reportScore`, masked by the same 5-minute freshness window as the online dot). Lobby
-   cards show real friend counts and avatars with a "Join Maya" tap. Replaces the hardcoded
-   friends-here label. Simultaneous play is the multiplier for every other live feature —
-   this is the cheapest way to get it.
+3. ✅ **Done (2026-09-04).** **Real table presence — "Maya is at the Silver table right now"**
+   (8.3, effort S). Shipped as designed: a `tableKey` field on the player's existing group row
+   (`reportScore`, masked by the same 5-minute freshness window as the online dot). Lobby
+   cards show real friend avatars with a presence label and tapping in joins them.
+   Replaces the hardcoded friends-here label. See `lib/utils/table_presence.dart` and the
+   README changelog entry for 2026-09-04 (6).
 
 4. **Real cross-device chat and taunt reactions** (7.7). The chat panel, reaction chips,
    float overlay, and settings toggle are all built and merely disconnected. Sync canned

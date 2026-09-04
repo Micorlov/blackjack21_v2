@@ -1,7 +1,6 @@
 {
   "@@locale": "ja",
   "appTitle": "21 Sweet Pot",
-
   "settingsTitle": "設定",
   "settingsSectionAccount": "アカウント",
   "settingsSectionAvatarColor": "アバターの色",
@@ -11,52 +10,38 @@
   "settingsSectionNotifications": "通知",
   "settingsSectionHelp": "ヘルプ",
   "settingsSectionAbout": "アプリについて",
-
   "signingIn": "サインイン中…",
   "signIn": "サインイン",
   "signOut": "サインアウト",
   "signOutConfirmTitle": "サインアウトしますか？",
   "signOutConfirmMessage": "チップと統計はこの端末に残りますが、再度サインインするまでフレンドグループとランキングの順位から外れます。",
-
   "avatarColorSemanticLabel": "アバターカラー {total} 色中 {index} 番目",
-
   "themeDefault": "デフォルト",
   "themeOcean": "オーシャン",
   "themeEmber": "エンバー",
   "themeFeltSemanticLabel": "{label}のテーブルフェルト",
-
   "hapticsLabel": "触覚フィードバック",
   "soundEffectsLabel": "効果音",
   "voiceCalloutsLabel": "音声コールアウト",
   "voiceCalloutsSublabel": "手札の合計、結果、スイープポットを音声で読み上げます",
   "voiceCalloutsDisabledReason": "音声コールアウトを使うには効果音をオンにしてください",
-
   "notifSocialLabel": "ソーシャル",
   "notifSocialSublabel": "フレンドがグループに参加、オンラインになる、またはあなたを追い抜いたとき",
   "notifLeaderboardLabel": "ランキング",
   "notifLeaderboardSublabel": "1時間ごとまたは1日ごとのランキング順位が変わったとき",
   "notifDailyLabel": "デイリーリマインダー",
   "notifDailySublabel": "デイリーボーナスを受け取れるようになったら1日1回通知します",
-
   "howToPlayLabel": "遊び方",
   "howToPlaySublabel": "ルール、操作、配当、スイープポットについて",
   "replayTutorialLabel": "チュートリアルをもう一度見る",
   "replayTutorialSublabel": "次の{count}ハンドでコーチングカードを表示します",
-
   "termsOfServiceLabel": "利用規約",
   "termsOfServiceSublabel": "プレイすることで同意する内容",
   "privacyPolicyLabel": "プライバシーポリシー",
   "privacyPolicySublabel": "この端末に残るものと残らないもの",
   "versionLabel": "バージョン",
-
-  "resetBankrollConfirmTitle": "資金をリセットしますか？",
-  "resetBankrollConfirmMessage": "チップは1,000に戻ります。統計、実績、フレンド、コスメティックは変更されませんが、現在のチップは取り戻せません。",
-  "resetBankrollConfirmLabel": "チップをリセット",
-  "resetBankrollButtonLabel": "資金を1,000チップにリセット",
-
   "languagePickerSublabel": "メニューとディーラーの音声もこの設定に従います",
   "languageSystemDefault": "端末の言語に合わせる",
-
   "languageNameEn": "English",
   "languageNameEs": "Español",
   "languageNameFr": "Français",
@@ -66,5 +51,18 @@
   "languageNameZh": "中文",
   "languageNameJa": "日本語",
   "languageNameHe": "עברית",
-  "languageNameAr": "العربية"
+  "languageNameAr": "العربية",
+  "rebuyButtonLabel": "Rebuy {chips} chips",
+  "rebuyReadyInLabel": "Rebuy in {time}",
+  "rebuyHint": "Or claim your daily bonus in the lobby",
+  "inviteMessage": "🃏 Play 21 Sweet Pot with me — tap to join my table:\n{url}",
+  "inviteSubtitle": "Send friends your link — anyone who taps it lands on your live leaderboard.",
+  "inviteButtonWhatsApp": "Invite via WhatsApp",
+  "inviteButtonShare": "Share link",
+  "inviteCopyLink": "Copy link",
+  "joinedTableToast": "Joined the table — +{chips} welcome chips!",
+  "joinAlreadyMemberToast": "Back at your friends' table",
+  "joinOwnTableToast": "This is your own table",
+  "webInstallBanner": "Playing in the browser — get the Android app",
+  "webInstallButton": "Get it on Google Play"
 }

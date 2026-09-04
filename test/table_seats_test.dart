@@ -65,5 +65,35 @@ void main() {
 
       expect(seats, kInitialFriends);
     });
+
+    test('a friend actually seated at this stake goes first', () {
+      final stake = kTables.firstWhere((t) => t.key == 'bronze');
+      final friends = [
+        // Bob comes first in the roster, but Alice is the one really at this
+        // table (real table presence) — she should seat before Bob.
+        Friend(
+          id: _bob.id,
+          name: _bob.name,
+          chips: _bob.chips,
+          online: _bob.online,
+          dailyScore: _bob.dailyScore,
+          hourlyScore: _bob.hourlyScore,
+          tableKey: 'vip',
+        ),
+        Friend(
+          id: _alice.id,
+          name: _alice.name,
+          chips: _alice.chips,
+          online: _alice.online,
+          dailyScore: _alice.dailyScore,
+          hourlyScore: _alice.hourlyScore,
+          tableKey: 'bronze',
+        ),
+      ];
+
+      final seats = tableSeats(GameState(friends: friends, stake: stake));
+
+      expect(seats.first.id, _alice.id);
+    });
   });
 }

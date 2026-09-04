@@ -141,19 +141,6 @@ class AppLocalizationsHe extends AppLocalizations {
   String get versionLabel => 'גרסה';
 
   @override
-  String get resetBankrollConfirmTitle => 'לאפס את היתרה שלך?';
-
-  @override
-  String get resetBankrollConfirmMessage =>
-      'הצ\'יפים שלך יחזרו ל-1,000. הסטטיסטיקות, הפרסים, החברים והפריטים הקוסמטיים לא ייפגעו, אך לא ניתן יהיה להחזיר את הצ\'יפים שיש לך כרגע.';
-
-  @override
-  String get resetBankrollConfirmLabel => 'איפוס צ\'יפים';
-
-  @override
-  String get resetBankrollButtonLabel => 'איפוס היתרה ל-1,000 צ\'יפים';
-
-  @override
   String get languagePickerSublabel =>
       'התפריטים וקול הדילר עוקבים אחרי הבחירה הזו';
 
@@ -189,4 +176,53 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String get languageNameAr => 'العربية';
+
+  @override
+  String rebuyButtonLabel(int chips) {
+    return 'קנייה מחדש: $chips צ\'יפים';
+  }
+
+  @override
+  String rebuyReadyInLabel(String time) {
+    return 'קנייה מחדש בעוד $time';
+  }
+
+  @override
+  String get rebuyHint => 'או קבלו את הבונוס היומי בלובי';
+
+  @override
+  String inviteMessage(String url) {
+    return '🃏 בואו לשחק איתי 21 Sweet Pot — לחצו כדי להצטרף לשולחן שלי:\n$url';
+  }
+
+  @override
+  String get inviteSubtitle =>
+      'שלחו לחברים את הקישור שלכם — כל מי שלוחץ עליו מגיע ישר לטבלת השיאים החיה שלכם.';
+
+  @override
+  String get inviteButtonWhatsApp => 'הזמינו בוואטסאפ';
+
+  @override
+  String get inviteButtonShare => 'שתפו קישור';
+
+  @override
+  String get inviteCopyLink => 'העתיקו קישור';
+
+  @override
+  String joinedTableToast(int chips) {
+    return 'הצטרפת לשולחן — קיבלת $chips צ\'יפים!';
+  }
+
+  @override
+  String get joinAlreadyMemberToast => 'חזרתם לשולחן החברים שלכם';
+
+  @override
+  String get joinOwnTableToast => 'זה השולחן שלכם';
+
+  @override
+  String get webInstallBanner =>
+      'משחקים בדפדפן — הורידו את האפליקציה לאנדרואיד';
+
+  @override
+  String get webInstallButton => 'הורידו מ-Google Play';
 }

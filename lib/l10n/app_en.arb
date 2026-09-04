@@ -4,7 +4,6 @@
   "@appTitle": {
     "description": "The app's title, used for the OS task switcher / window title."
   },
-
   "settingsTitle": "Settings",
   "settingsSectionAccount": "Account",
   "settingsSectionAvatarColor": "Avatar color",
@@ -14,68 +13,62 @@
   "settingsSectionNotifications": "Notifications",
   "settingsSectionHelp": "Help",
   "settingsSectionAbout": "About",
-
   "signingIn": "Signing in…",
   "signIn": "Sign in",
   "signOut": "Sign out",
   "signOutConfirmTitle": "Sign out?",
   "signOutConfirmMessage": "Your chips and stats stay on this device, but you leave your friends group and your leaderboard entry until you sign back in.",
-
   "avatarColorSemanticLabel": "Avatar colour {index} of {total}",
   "@avatarColorSemanticLabel": {
     "placeholders": {
-      "index": {"type": "int"},
-      "total": {"type": "int"}
+      "index": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
     }
   },
-
   "themeDefault": "Default",
   "themeOcean": "Ocean",
   "themeEmber": "Ember",
   "themeFeltSemanticLabel": "{label} table felt",
   "@themeFeltSemanticLabel": {
     "placeholders": {
-      "label": {"type": "String"}
+      "label": {
+        "type": "String"
+      }
     }
   },
-
   "hapticsLabel": "Haptics",
   "soundEffectsLabel": "Sound effects",
   "voiceCalloutsLabel": "Voice call-outs",
   "voiceCalloutsSublabel": "Your hand total, results and the sweep pot, spoken aloud",
   "voiceCalloutsDisabledReason": "Turn sound effects on to use voice call-outs",
-
   "notifSocialLabel": "Social",
   "notifSocialSublabel": "When a friend joins your group, comes online or passes you",
   "notifLeaderboardLabel": "Leaderboard",
   "notifLeaderboardSublabel": "When your place on the hourly or daily board changes",
   "notifDailyLabel": "Daily reminder",
   "notifDailySublabel": "One nudge a day, once your daily bonus is ready to claim",
-
   "howToPlayLabel": "How to play",
   "howToPlaySublabel": "Rules, moves, payouts and the sweep pot",
   "replayTutorialLabel": "Replay the tutorial",
   "replayTutorialSublabel": "Coaching cards on your next {count} hands",
   "@replayTutorialSublabel": {
     "placeholders": {
-      "count": {"type": "int"}
+      "count": {
+        "type": "int"
+      }
     }
   },
-
   "termsOfServiceLabel": "Terms of Service",
   "termsOfServiceSublabel": "What you agree to by playing",
   "privacyPolicyLabel": "Privacy Policy",
   "privacyPolicySublabel": "What stays on this device, and what does not",
   "versionLabel": "Version",
-
-  "resetBankrollConfirmTitle": "Reset your bankroll?",
-  "resetBankrollConfirmMessage": "Your chips go back to 1,000. Stats, awards, friends and cosmetics are untouched, but the chips you have now cannot be brought back.",
-  "resetBankrollConfirmLabel": "Reset chips",
-  "resetBankrollButtonLabel": "Reset bankroll to 1,000 chips",
-
   "languagePickerSublabel": "Menus and the dealer's voice both follow this",
   "languageSystemDefault": "Match device language",
-
   "languageNameEn": "English",
   "languageNameEs": "Español",
   "languageNameFr": "Français",
@@ -85,5 +78,46 @@
   "languageNameZh": "中文",
   "languageNameJa": "日本語",
   "languageNameHe": "עברית",
-  "languageNameAr": "العربية"
+  "languageNameAr": "العربية",
+  "rebuyButtonLabel": "Rebuy {chips} chips",
+  "@rebuyButtonLabel": {
+    "placeholders": {
+      "chips": {
+        "type": "int"
+      }
+    }
+  },
+  "rebuyReadyInLabel": "Rebuy in {time}",
+  "@rebuyReadyInLabel": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "rebuyHint": "Or claim your daily bonus in the lobby",
+  "inviteMessage": "🃏 Play 21 Sweet Pot with me — tap to join my table:\n{url}",
+  "@inviteMessage": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteSubtitle": "Send friends your link — anyone who taps it lands on your live leaderboard.",
+  "inviteButtonWhatsApp": "Invite via WhatsApp",
+  "inviteButtonShare": "Share link",
+  "inviteCopyLink": "Copy link",
+  "joinedTableToast": "Joined the table — +{chips} welcome chips!",
+  "@joinedTableToast": {
+    "placeholders": {
+      "chips": {
+        "type": "int"
+      }
+    }
+  },
+  "joinAlreadyMemberToast": "Back at your friends' table",
+  "joinOwnTableToast": "This is your own table",
+  "webInstallBanner": "Playing in the browser — get the Android app",
+  "webInstallButton": "Get it on Google Play"
 }

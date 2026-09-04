@@ -41,6 +41,10 @@ SavedGame sample({
   claimedTiers: const ['tier1'],
   tutorialRoundsSeen: 2,
   tutorialDismissed: false,
+  rewardedReferralIds: const ['u1', 'u2'],
+  playDayStreak: 4,
+  lastPlayDayKey: '2026-09-04',
+  lastRebuyAtMs: 1756900000000,
 );
 
 void main() {
@@ -69,6 +73,10 @@ void main() {
       expect(restored.claimedTiers, ['tier1']);
       expect(restored.tutorialRoundsSeen, 2);
       expect(restored.tutorialDismissed, isFalse);
+      expect(restored.rewardedReferralIds, ['u1', 'u2']);
+      expect(restored.playDayStreak, 4);
+      expect(restored.lastPlayDayKey, '2026-09-04');
+      expect(restored.lastRebuyAtMs, 1756900000000);
     });
 
     test('survives a JSON encode/decode hop', () {
@@ -91,6 +99,10 @@ void main() {
       expect(restored.claimedTiers, isEmpty);
       expect(restored.tutorialRoundsSeen, 0);
       expect(restored.tutorialDismissed, isFalse);
+      expect(restored.rewardedReferralIds, isEmpty);
+      expect(restored.playDayStreak, 0);
+      expect(restored.lastPlayDayKey, isEmpty);
+      expect(restored.lastRebuyAtMs, 0);
     });
 
     test('a player saved before the tutorial existed is not re-tutored', () {

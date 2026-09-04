@@ -18,6 +18,10 @@ class LocalNotifier {
   /// the previous pending one instead of stacking up.
   static const int _kDailyBonusNotifId = 210;
 
+  /// Fixed id for the play-day-streak reminder — same idempotent-reschedule
+  /// reasoning as [_kDailyBonusNotifId], on the next available id.
+  static const int _kStreakNotifId = 211;
+
   final FlutterLocalNotificationsPlugin _plugin = FlutterLocalNotificationsPlugin();
   bool _ready = false;
   bool _permissionGranted = false;
@@ -141,6 +145,46 @@ class LocalNotifier {
       await _plugin.cancel(id: _kDailyBonusNotifId);
     } on PlatformException catch (e) {
       debugPrint('LocalNotifier.cancelDailyBonusReminder failed: ${e.code}');
+    }
+  }
+
+  /// Schedules the "your streak ends tonight" reminder [after] from now,
+  /// replacing any one already pending — mirrors
+  /// [scheduleDailyBonusReminder] exactly, including the UTC scheduling
+  /// rationale in its doc comment.
+  Future<void> scheduleStreakReminder({required Duration after, required int streak}) async {
+    if (!_ready) return;
+    try {
+      await _plugin.zonedSchedule(
+        id: _kStreakNotifId,
+        title: 'Your $streak-day streak ends tonight',
+        body: 'Play one hand to keep it going.',
+        scheduledDate: tz.TZDateTime.now(tz.UTC).add(after),
+        notificationDetails: const NotificationDetails(
+          android: AndroidNotificationDetails(
+            'streak',
+            'Play streak',
+            channelDescription: 'Reminder when today\'s play-day streak is about to lapse',
+            importance: Importance.high,
+            priority: Priority.high,
+          ),
+          iOS: DarwinNotificationDetails(presentAlert: true, presentBanner: true, presentSound: true),
+        ),
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+      );
+    } on PlatformException catch (e) {
+      debugPrint('LocalNotifier.scheduleStreakReminder failed: ${e.code}');
+    }
+  }
+
+  /// Cancels a pending streak reminder (a hand was played today, the streak
+  /// lapsed, or the user switched the daily reminder off in Settings).
+  Future<void> cancelStreakReminder() async {
+    if (!_ready) return;
+    try {
+      await _plugin.cancel(id: _kStreakNotifId);
+    } on PlatformException catch (e) {
+      debugPrint('LocalNotifier.cancelStreakReminder failed: ${e.code}');
     }
   }
 }

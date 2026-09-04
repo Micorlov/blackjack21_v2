@@ -161,6 +161,34 @@ class GameState {
   /// they replay it from Settings.
   final bool tutorialDismissed;
 
+  /// A join code parsed from an incoming link (or clipboard) before the
+  /// social layer is ready to act on it yet. In-memory only — never
+  /// persisted, since a stale pending join should not resurrect itself days
+  /// later after a completely unrelated relaunch.
+  final String? pendingJoinCode;
+
+  /// True once this launch joined a group by tapping a link rather than
+  /// typing a code — drives the one-time "get the Android app" banner on
+  /// web. In-memory only.
+  final bool joinedViaLink;
+
+  /// Ids of referred friends whose join bonus has already been paid to the
+  /// inviter, so a later snapshot of the same member (including one seen
+  /// again after a relaunch) is never paid twice. See utils/referrals.dart.
+  final List<String> rewardedReferralIds;
+
+  /// Consecutive calendar days with at least one settled hand. See
+  /// utils/play_streak.dart.
+  final int playDayStreak;
+
+  /// Day-key [playDayStreak] was last extended on; `''` before the first
+  /// hand is ever settled.
+  final String lastPlayDayKey;
+
+  /// Moment of the last table Rebuy; null means never taken. Readiness is
+  /// derived via `isRebuyReady` in utils/rebuy.dart.
+  final DateTime? lastRebuyAt;
+
   const GameState({
     this.screen = AppScreen.onboarding,
     this.signedIn = false,
@@ -237,6 +265,12 @@ class GameState {
     this.globalDaily = const [],
     this.tutorialRoundsSeen = 0,
     this.tutorialDismissed = false,
+    this.pendingJoinCode,
+    this.joinedViaLink = false,
+    this.rewardedReferralIds = const [],
+    this.playDayStreak = 0,
+    this.lastPlayDayKey = '',
+    this.lastRebuyAt,
   });
 
   GameState copyWith({
@@ -313,6 +347,12 @@ class GameState {
     List<Friend>? globalDaily,
     int? tutorialRoundsSeen,
     bool? tutorialDismissed,
+    Object? pendingJoinCode = _unset,
+    bool? joinedViaLink,
+    List<String>? rewardedReferralIds,
+    int? playDayStreak,
+    String? lastPlayDayKey,
+    Object? lastRebuyAt = _unset,
   }) {
     return GameState(
       screen: screen ?? this.screen,
@@ -392,6 +432,12 @@ class GameState {
       globalDaily: globalDaily ?? this.globalDaily,
       tutorialRoundsSeen: tutorialRoundsSeen ?? this.tutorialRoundsSeen,
       tutorialDismissed: tutorialDismissed ?? this.tutorialDismissed,
+      pendingJoinCode: identical(pendingJoinCode, _unset) ? this.pendingJoinCode : pendingJoinCode as String?,
+      joinedViaLink: joinedViaLink ?? this.joinedViaLink,
+      rewardedReferralIds: rewardedReferralIds ?? this.rewardedReferralIds,
+      playDayStreak: playDayStreak ?? this.playDayStreak,
+      lastPlayDayKey: lastPlayDayKey ?? this.lastPlayDayKey,
+      lastRebuyAt: identical(lastRebuyAt, _unset) ? this.lastRebuyAt : lastRebuyAt as DateTime?,
     );
   }
 }

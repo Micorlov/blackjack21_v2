@@ -1,7 +1,6 @@
 {
   "@@locale": "fr",
   "appTitle": "21 Sweet Pot",
-
   "settingsTitle": "Paramètres",
   "settingsSectionAccount": "Compte",
   "settingsSectionAvatarColor": "Couleur de l'avatar",
@@ -11,52 +10,38 @@
   "settingsSectionNotifications": "Notifications",
   "settingsSectionHelp": "Aide",
   "settingsSectionAbout": "À propos",
-
   "signingIn": "Connexion…",
   "signIn": "Se connecter",
   "signOut": "Se déconnecter",
   "signOutConfirmTitle": "Se déconnecter ?",
   "signOutConfirmMessage": "Vos jetons et statistiques restent sur cet appareil, mais vous quittez votre groupe d'amis et votre place au classement jusqu'à votre prochaine connexion.",
-
   "avatarColorSemanticLabel": "Couleur d'avatar {index} sur {total}",
-
   "themeDefault": "Par défaut",
   "themeOcean": "Océan",
   "themeEmber": "Braise",
   "themeFeltSemanticLabel": "Tapis {label}",
-
   "hapticsLabel": "Vibrations",
   "soundEffectsLabel": "Effets sonores",
   "voiceCalloutsLabel": "Annonces vocales",
   "voiceCalloutsSublabel": "Votre total en main, les résultats et le pot annoncés à voix haute",
   "voiceCalloutsDisabledReason": "Activez les effets sonores pour utiliser les annonces vocales",
-
   "notifSocialLabel": "Social",
   "notifSocialSublabel": "Quand un ami rejoint votre groupe, se connecte ou vous dépasse",
   "notifLeaderboardLabel": "Classement",
   "notifLeaderboardSublabel": "Quand votre place au classement horaire ou quotidien change",
   "notifDailyLabel": "Rappel quotidien",
   "notifDailySublabel": "Un rappel par jour, dès que votre bonus quotidien est prêt",
-
   "howToPlayLabel": "Comment jouer",
   "howToPlaySublabel": "Règles, actions, gains et le pot",
   "replayTutorialLabel": "Revoir le tutoriel",
   "replayTutorialSublabel": "Cartes de conseils sur vos {count} prochaines mains",
-
   "termsOfServiceLabel": "Conditions d'utilisation",
   "termsOfServiceSublabel": "Ce que vous acceptez en jouant",
   "privacyPolicyLabel": "Politique de confidentialité",
   "privacyPolicySublabel": "Ce qui reste sur cet appareil, et ce qui n'y reste pas",
   "versionLabel": "Version",
-
-  "resetBankrollConfirmTitle": "Réinitialiser votre solde ?",
-  "resetBankrollConfirmMessage": "Vos jetons reviennent à 1000. Les statistiques, récompenses, amis et cosmétiques restent intacts, mais les jetons actuels ne peuvent pas être récupérés.",
-  "resetBankrollConfirmLabel": "Réinitialiser les jetons",
-  "resetBankrollButtonLabel": "Réinitialiser le solde à 1000 jetons",
-
   "languagePickerSublabel": "Les menus et la voix du croupier suivent ce choix",
   "languageSystemDefault": "Suivre la langue de l'appareil",
-
   "languageNameEn": "English",
   "languageNameEs": "Español",
   "languageNameFr": "Français",
@@ -66,5 +51,18 @@
   "languageNameZh": "中文",
   "languageNameJa": "日本語",
   "languageNameHe": "עברית",
-  "languageNameAr": "العربية"
+  "languageNameAr": "العربية",
+  "rebuyButtonLabel": "Rebuy {chips} chips",
+  "rebuyReadyInLabel": "Rebuy in {time}",
+  "rebuyHint": "Or claim your daily bonus in the lobby",
+  "inviteMessage": "🃏 Play 21 Sweet Pot with me — tap to join my table:\n{url}",
+  "inviteSubtitle": "Send friends your link — anyone who taps it lands on your live leaderboard.",
+  "inviteButtonWhatsApp": "Invite via WhatsApp",
+  "inviteButtonShare": "Share link",
+  "inviteCopyLink": "Copy link",
+  "joinedTableToast": "Joined the table — +{chips} welcome chips!",
+  "joinAlreadyMemberToast": "Back at your friends' table",
+  "joinOwnTableToast": "This is your own table",
+  "webInstallBanner": "Playing in the browser — get the Android app",
+  "webInstallButton": "Get it on Google Play"
 }

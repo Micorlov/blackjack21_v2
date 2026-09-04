@@ -145,26 +145,10 @@ class SettingsScreen extends ConsumerWidget {
             ],
             trailing: _InfoRow(label: t.versionLabel, value: kAppVersionLabel),
           ),
-          const SizedBox(height: 16),
-          _ResetBankrollButton(onTap: () => _confirmResetBankroll(context, notifier)),
         ],
       ),
     );
   }
-}
-
-/// A bankroll is days of play. Losing it to a stray tap in a settings list —
-/// which is what a bare, unconfirmed button invited — is not recoverable.
-Future<void> _confirmResetBankroll(BuildContext context, GameNotifier notifier) async {
-  final t = AppLocalizations.of(context);
-  final confirmed = await confirmAction(
-    context,
-    title: t.resetBankrollConfirmTitle,
-    message: t.resetBankrollConfirmMessage,
-    confirmLabel: t.resetBankrollConfirmLabel,
-    destructive: true,
-  );
-  if (confirmed) notifier.resetBankroll();
 }
 
 /// Signed-in profile row + sign-out, or a sign-in CTA when signed out.
@@ -712,28 +696,3 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-class _ResetBankrollButton extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _ResetBankrollButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton(
-        onPressed: onTap,
-        style: OutlinedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          backgroundColor: AppColors.lose.withValues(alpha: 0.12),
-          side: const BorderSide(color: Color(0xFF3E211C)),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        ),
-        child: Text(
-          AppLocalizations.of(context).resetBankrollButtonLabel,
-          style: AppText.sora(16, weight: FontWeight.w700, color: AppColors.lose),
-        ),
-      ),
-    );
-  }
-}

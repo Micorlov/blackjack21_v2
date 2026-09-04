@@ -9,6 +9,7 @@ import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/flags.dart';
 import '../../utils/formatters.dart';
+import '../../utils/rebuy.dart';
 import '../../utils/world_standings.dart';
 import '../../widgets/buttons.dart';
 import 'world_leaderboard_screen.dart';
@@ -88,20 +89,34 @@ class TableBettingPanel extends ConsumerWidget {
         // Below the table minimum the player cannot legally bet, so the rebuy
         // has to appear before the stack literally hits zero — with a bankroll
         // that now survives relaunch, a stranded $10 would otherwise be a
-        // permanent dead end.
+        // permanent dead end. Limited to once per `kRebuyCooldown`: an
+        // unlimited free refill would remove the entire reason to claim the
+        // daily bonus or invite anyone to race you.
         if (state.chips < (state.stake?.min ?? kStartingChips)) ...[
           const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: ActionPillButton(
-              label: 'Get 1,000 complimentary chips',
-              borderColor: AppColors.gold.withValues(alpha: 0.32),
-              backgroundColor: AppColors.gold.withValues(alpha: 0.08),
-              textColor: AppColors.gold,
-              onPressed: notifier.resetBankroll,
-              verticalPadding: 12,
-              fontSize: 16,
-            ),
+          Builder(
+            builder: (context) {
+              final now = DateTime.now();
+              final ready = isRebuyReady(state.lastRebuyAt, now);
+              return SizedBox(
+                width: double.infinity,
+                child: ActionPillButton(
+                  label: ready ? 'Rebuy 1,000 chips' : 'Rebuy in ${rebuyCountdownLabel(state.lastRebuyAt!, now)}',
+                  borderColor: AppColors.gold.withValues(alpha: 0.32),
+                  backgroundColor: AppColors.gold.withValues(alpha: 0.08),
+                  textColor: AppColors.gold,
+                  onPressed: ready ? notifier.rebuy : null,
+                  verticalPadding: 12,
+                  fontSize: 16,
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Or claim your daily bonus in the lobby',
+            textAlign: TextAlign.center,
+            style: AppText.mono(11, letterSpacing: 0.6, color: AppColors.textMuted),
           ),
         ],
       ],

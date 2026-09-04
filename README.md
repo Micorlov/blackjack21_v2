@@ -16,13 +16,29 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
 - **Enforced table limits** — each table's posted `$min – $max` is a real rule: the betting tray
   only offers chips a table can legally take (no $1,000 chip at a $500 table), a chip that would
   push the bet past the maximum is refused, and DEAL stays locked until the bet reaches the minimum
-- **Live friends groups** — invite friends over WhatsApp with a 6-character group code; everyone
-  who joins the code shares one Firestore-backed group and appears live in the friends list,
-  leaderboard, and table seats (guests get anonymous Firebase accounts, so no sign-in is required).
-  The friends standings list only ever shows real people who joined by code — never the practice
-  bots — and offers an inline WhatsApp invite button while you have nobody to race. The table
-  itself always seats 4 opponents (hero + 4 = 5 players in the room): real friends fill seats
-  first, and practice bots pad any seats a small group leaves empty
+- **Live friends groups** — invite friends with a one-tap link (`blackjack21-v2.web.app/join/CODE`)
+  over WhatsApp, the system share sheet, or a copied link; everyone who taps it (or types the
+  6-character code by hand) shares one Firestore-backed group and appears live in the friends
+  list, leaderboard, and table seats (guests get anonymous Firebase accounts, so no sign-in is
+  required). Tapping the link on Android opens the app straight to the join (App Links, verified
+  via `web/.well-known/assetlinks.json`); without the app it opens the playable web version, which
+  joins automatically and shows a "Get it on Google Play" banner. The Friends screen also pre-fills
+  the join field from the clipboard on first visit. The friends standings list only ever shows real
+  people who joined — never the practice bots. The table itself always seats 4 opponents (hero + 4
+  = 5 players in the room): real friends fill seats first (a friend actually seated at this table
+  goes first of all), and practice bots pad any seats a small group leaves empty
+- **Referral rewards that pay the inviter** — inviting and joining are both rewarded: a joiner gets
+  +200 welcome chips the moment they join, and the inviter gets +100 chips per real friend who
+  joins their link, with a toast and (when enabled) a local notification ("Maya joined your
+  table!"). Credit is derived live from who invited whom, never a counter that can drift, and each
+  join pays exactly once even across a relaunch. The existing referral-count milestones
+  (+100 / +500 / +1,500 chips) sit on top as bigger goals
+- **Real table presence** — a lobby table card shows real friends actually seated there right now
+  ("Maya is here", with her avatar) and lets you tap straight in to join them — replacing the old
+  hardcoded "2 friends here" placeholder text
+- **Play-day streak** — playing at least one hand a day builds a streak that adds up to +250 chips
+  on top of the daily bonus (+50 per consecutive day, capped at 5 days), with a local "your streak
+  ends tonight" reminder if the day is about to lapse unplayed
 - **World leaderboard** — swipe the standings panel at the table between three pages: FRIENDS,
   WORLD · THIS HOUR, and WORLD · TODAY. The world pages are the live global top players by
   hourly and daily points; your own row stays visible even when you are outside the top
@@ -43,6 +59,10 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   day's reward and a live "Next in 23h 59m" countdown while on cooldown, and a scheduled local
   notification quoting the right amount fires the moment it unlocks — even if the app is closed.
   Honors the Settings → Daily reminder toggle
+- **Rebuy, on a cooldown** — dropping below a table's minimum offers a Rebuy to 1,000 chips, once
+  every 4 hours (with a live countdown while cooling down). Replaces the old free, unlimited
+  "Reset bankroll to 1,000" in Settings — without a real cost to running out of chips, there was no
+  reason to ever claim the daily bonus or invite anyone to race you
 - **Weekend Cup screen** — the lobby's Weekend Cup card now opens a real tournament screen: the
   5,000-chip prize pool with a live countdown to the end of the week (Monday 00:00 local), your
   standing in your group's daily points race, the prize table (2,000 / 1,200 / 800 / 200), and the
@@ -218,6 +238,21 @@ what that box being unticked looks like from the API.
 publishes when review passes — there is no longer a **Publish** button to remember in Publishing
 overview. Anything else already sitting in **Changes in review** rides along with it.
 
+### Verifying the invite deep link (Android App Links)
+
+`web/.well-known/assetlinks.json` currently lists only the local debug keystore's SHA-256
+fingerprint, so an invite link opens the app directly on a debug/`adb install`ed build but not yet
+on a Play-distributed one. One-time manual steps to fix that:
+
+1. Play Console → **Setup → App signing** → copy the **App signing key certificate**'s SHA-256 (not
+   the upload key — Play re-signs the bundle with this one).
+2. Add it to the `sha256_cert_fingerprints` array in `web/.well-known/assetlinks.json`, alongside
+   the existing debug entry.
+3. `flutter build web && firebase deploy --only hosting`.
+4. Verify: `adb shell pm get-app-links com.micorlov.blackjack21_v2` should report the domain
+   `verified`. Until it does, tapping a link still works — it just opens the web app (which
+   auto-joins) instead of the installed app directly.
+
 ## Dependencies
 
 | Package | Purpose |
@@ -230,10 +265,12 @@ overview. Anything else already sitting in **Changes in review** rides along wit
 | `google_sign_in` | Google account picker for sign-in |
 | `google_sign_in_web` | Renders Google's own Identity Services button on web — `authenticate()` isn't supported there |
 | `cloud_firestore` | Friends groups and live hourly/daily score sync |
-| `url_launcher` | Opens WhatsApp with the prefilled group invite |
-| `flutter_local_notifications` | "Friend passed you" leaderboard alerts and the daily-bonus reminder |
-| `shared_preferences` | Saves the bankroll, stats, points and settings between launches (`game_store`), and the last daily-bonus claim time (`daily_bonus_store`) |
-| `timezone` | Builds the `TZDateTime` the daily-bonus reminder is scheduled against |
+| `url_launcher` | Opens WhatsApp with the prefilled invite link, and the Play Store from the web install banner |
+| `share_plus` | The system share sheet for the invite link, alongside the WhatsApp button |
+| `flutter_web_plugins` | `usePathUrlStrategy()`, so a web invite link resolves `/join/CODE` from the real URL path instead of the default `#/` hash fragment |
+| `flutter_local_notifications` | "Friend passed you" leaderboard alerts, the daily-bonus reminder, and the play-streak reminder |
+| `shared_preferences` | Saves the bankroll, stats, points, referral/streak/rebuy state and settings between launches (`game_store`), and the last daily-bonus claim time (`daily_bonus_store`) |
+| `timezone` | Builds the `TZDateTime` the daily-bonus and streak reminders are scheduled against |
 | `flutter_localizations` | Wires the Material/Widgets/Cupertino locale delegates the app-wide UI translation uses |
 | `intl` | Backs `flutter gen-l10n`'s generated `AppLocalizations` class and ICU plural/placeholder syntax |
 
@@ -366,6 +403,52 @@ emulator testing.
   instant under reduced motion) whenever `holeRevealed` just flipped true in the same update; a
   widget that mounts already past the reveal (hot reload, returning to a settled table) shows it at
   once, since there is no fresh flip to wait for.
+
+### 2026-09-04 (6)
+- feat: **Invite friends with one link instead of a 4-step manual instruction.** The WhatsApp
+  invite used to send only a 6-character code and "Open the app → Friends → Join → type it in" —
+  no link at all, and nothing on any platform could open one. It now shares
+  `https://blackjack21-v2.web.app/join/CODE`: tapping it opens the app straight to the join
+  (Android App Links, `flutter_deeplinking_enabled` + an `autoVerify` intent-filter in
+  `AndroidManifest.xml`, verified via the new `web/.well-known/assetlinks.json`), or the playable
+  web app if it isn't installed, which joins automatically and offers a Play Store banner. Added a
+  system share sheet (`share_plus`) and a Copy link button alongside WhatsApp, and the Friends
+  screen now pre-fills the join field from the clipboard on first visit. New pure module
+  `lib/utils/invite_link.dart` builds and parses the link; `lib/main.dart` gained route generation
+  (`onGenerateInitialRoutes`/`onGenerateRoute`) and a new `AppLifecycleBridge` widget to receive it
+  on both cold start and while the app is already running.
+- fix: **Referrals now credit the inviter, not the joiner.** `joinGroupByCode` used to increment
+  the *joiner's* referral count — so creating a group and having five friends join it earned
+  nothing, while joining five groups yourself earned the top referral tier. The joiner now gets
+  +200 welcome chips on joining; the inviter gets +100 chips per real friend who joins their link,
+  with a toast and (when the Settings "Social" notification toggle is on) a local notification.
+  Firestore rows gained a write-once `invitedBy` field (validated server-side in `firestore.rules`
+  — never the writer's own uid, always the group's actual creator), and referral credit is now
+  derived live from who invited whom rather than a counter that could drift or reset on relaunch.
+  New pure module `lib/utils/referrals.dart`.
+- feat: **Real table presence — lobby cards show who is actually there.** `tableFriendsHereLabel`'s
+  hardcoded "2 friends here" / "1 friend here" strings are gone. Friends' rows now carry a
+  `tableKey` (written by `enterTable`/`exitTable` and every score report), so a lobby table card
+  shows real friends currently seated there, with avatars, and tapping it seats you with them —
+  `tableSeats()` puts a friend actually at this stake first. New pure module
+  `lib/utils/table_presence.dart`.
+- feat: **Play-day streak.** Playing at least one hand a day now builds a streak (separate from the
+  daily-*claim* streak) worth up to +250 extra daily-bonus chips, and a scheduled local
+  notification warns when today's streak is about to lapse unplayed. The app also finally responds
+  to being backgrounded and resumed at all (`AppLifecycleBridge` + `GameNotifier.onAppResumed` /
+  `onAppPaused`) — previously nothing did, so a resume waited out whatever was left of the
+  60-second heartbeat and a background could lose a save still waiting out its debounce. New pure
+  module `lib/utils/play_streak.dart`.
+- feat: **Rebuy replaces the free, unlimited "Reset bankroll."** Dropping below a table's minimum
+  now offers a Rebuy to 1,000 chips once every 4 hours, with a live countdown, instead of an
+  unlimited free reset available from both the table and Settings. New pure module
+  `lib/utils/rebuy.dart`.
+- fix: **Signing in with Google no longer strands a guest's friends group.** `_completeGoogleSignIn`
+  used `signInWithCredential`, which replaces the anonymous session with a brand-new uid — a guest
+  who had already created or joined a group lost it silently the moment they signed in. It now
+  links the Google credential onto the existing anonymous user (`linkWithCredential`), falling back
+  to `signInWithCredential` plus re-adopting the device's group under the new uid only when that
+  Google account already has its own separate identity elsewhere.
 
 ### 2026-09-04 (5)
 - fix: **The win/blackjack/lose/push tone no longer beats the hole card to the punch.** A natural

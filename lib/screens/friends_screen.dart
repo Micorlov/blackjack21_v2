@@ -1,7 +1,9 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../data/game_data.dart';
 import '../models/enums.dart';
@@ -12,6 +14,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/formatters.dart';
+import '../utils/invite_link.dart';
 import '../utils/leaderboard.dart';
 import '../widgets/avatar_circle.dart';
 import '../widgets/buttons.dart';
@@ -67,8 +70,8 @@ class FriendsScreen extends ConsumerWidget {
                 const SizedBox(height: 8),
                 Text(
                   state.groupCode == null
-                      ? 'Invite friends on WhatsApp — everyone who joins with your code plays on your live leaderboard.'
-                      : 'Friends who enter this code appear live below.',
+                      ? 'Send friends your link — anyone who taps it lands on your live leaderboard.'
+                      : 'Friends who tap this link (or enter the code) appear live below.',
                   textAlign: TextAlign.center,
                   style: AppText.sora(13, color: AppColors.textMuted),
                 ),
@@ -82,6 +85,44 @@ class FriendsScreen extends ConsumerWidget {
                     onPressed: run,
                   ),
                 ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Expanded(
+                      child: AsyncActionBuilder(
+                        action: notifier.shareInviteSheet,
+                        builder: (context, busy, run) => ActionPillButton(
+                          label: busy ? 'Opening…' : 'Share link',
+                          borderColor: AppColors.gold.withValues(alpha: 0.4),
+                          backgroundColor: Colors.transparent,
+                          textColor: AppColors.gold,
+                          onPressed: run,
+                          verticalPadding: 12,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: AsyncActionBuilder(
+                        action: notifier.copyInviteLink,
+                        builder: (context, busy, run) => ActionPillButton(
+                          label: 'Copy link',
+                          borderColor: AppColors.gold.withValues(alpha: 0.4),
+                          backgroundColor: Colors.transparent,
+                          textColor: AppColors.gold,
+                          onPressed: run,
+                          verticalPadding: 12,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (kIsWeb && state.joinedViaLink) ...[
+                  const SizedBox(height: 12),
+                  const _WebInstallBanner(),
+                ],
               ],
             ),
           ),
@@ -331,6 +372,40 @@ class FriendsScreen extends ConsumerWidget {
 }
 
 /// Panel container with rows separated by a bottom divider (all but the last).
+/// Shown once per launch on web, only after joining a friend's table via a
+/// tapped link — the moment a browser-only visitor is most receptive to
+/// installing the real app. `state.joinedViaLink` gates this, not every web
+/// session, so a returning web player who bookmarked the site is not nagged.
+class _WebInstallBanner extends StatelessWidget {
+  const _WebInstallBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.gold.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'Playing in the browser — get the Android app',
+              style: AppText.sora(13, color: AppColors.gold),
+            ),
+          ),
+          TextLinkButton(
+            label: 'Get it on Google Play',
+            onPressed: () => launchUrl(Uri.parse(kPlayStoreUrl), mode: LaunchMode.externalApplication),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _DividedPanel extends StatelessWidget {
   final List<Widget> rows;
 

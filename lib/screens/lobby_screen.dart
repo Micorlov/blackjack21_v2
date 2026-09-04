@@ -14,6 +14,7 @@ import '../utils/cup.dart';
 import '../utils/daily_bonus.dart';
 import '../utils/formatters.dart';
 import '../utils/leaderboard.dart';
+import '../utils/table_presence.dart';
 import '../widgets/avatar_circle.dart';
 import '../widgets/buttons.dart';
 import '../widgets/daily_bonus_dialog.dart';
@@ -48,7 +49,13 @@ class LobbyScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           _TournamentCard(state: state, notifier: notifier),
           const SectionLabel('Choose your table'),
-          for (final t in kTables) _TableCard(table: t, notifier: notifier),
+          for (final t in kTables)
+            _TableCard(
+              table: t,
+              notifier: notifier,
+              // Bots never carry a `tableKey`, so this is real friends only.
+              here: friendsAtTable(state.friendsAreLive ? state.friends : const [], t.key),
+            ),
           const SizedBox(height: 4),
           Padding(
             padding: const EdgeInsets.fromLTRB(2, 8, 2, 10),
@@ -378,10 +385,15 @@ class _TableCard extends StatelessWidget {
   final TableStake table;
   final GameNotifier notifier;
 
-  const _TableCard({required this.table, required this.notifier});
+  /// Real friends currently seated at this table — always empty for the
+  /// practice-bot roster (see [friendsAtTable]).
+  final List<Friend> here;
+
+  const _TableCard({required this.table, required this.notifier, required this.here});
 
   @override
   Widget build(BuildContext context) {
+    final label = tablePresenceLabel(here);
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
@@ -393,7 +405,7 @@ class _TableCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              border: Border.all(color: AppColors.border),
+              border: Border.all(color: here.isEmpty ? AppColors.border : AppColors.gold.withValues(alpha: 0.4)),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -420,12 +432,32 @@ class _TableCard extends StatelessWidget {
                       Text(table.name, style: AppText.sora(17, weight: FontWeight.w800)),
                       const SizedBox(height: 2),
                       Text(
-                        '\$${table.min} – \$${table.max} · ${tableFriendsHereLabel(table.key)}',
-                        style: AppText.sora(14, color: AppColors.textMuted),
+                        label.isEmpty ? '\$${table.min} – \$${table.max}' : '\$${table.min} – \$${table.max} · $label',
+                        style: AppText.sora(14, color: label.isEmpty ? AppColors.textMuted : AppColors.gold),
                       ),
                     ],
                   ),
                 ),
+                if (here.isNotEmpty) ...[
+                  SizedBox(
+                    width: 20.0 * math.min(here.length, 3) + 8,
+                    height: 28,
+                    child: Stack(
+                      children: [
+                        for (var i = 0; i < math.min(here.length, 3); i++)
+                          Positioned(
+                            left: i * 16.0,
+                            child: AvatarCircle(
+                              initial: here[i].initial,
+                              color: AppColors.gold.withValues(alpha: 0.22),
+                              size: 28,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                ],
                 const Icon(Icons.chevron_right, color: AppColors.textLabel),
               ],
             ),

@@ -54,6 +54,12 @@ dependencies:
   # Direct dependency because the daily-bonus reminder builds TZDateTime
   # values itself when scheduling through flutter_local_notifications.
   timezone: ^0.11.1
+  share_plus: ^13.3.0
+  # Only for `usePathUrlStrategy()` in main.dart, so the web build resolves
+  # `/join/CODE` from the real URL path instead of the default `#/` hash
+  # fragment — needed for the invite deep link to work on web.
+  flutter_web_plugins:
+    sdk: flutter
 
 dev_dependencies:
   flutter_test:

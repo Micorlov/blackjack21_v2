@@ -130,17 +130,6 @@ const List<TableStake> kTables = [
   TableStake(key: 'vip', name: 'VIP Table', min: 500, max: 5000, tint: AppColors.gold, tintDim: Color(0x26E8C77A)),
 ];
 
-String tableFriendsHereLabel(String key) {
-  switch (key) {
-    case 'bronze':
-      return '2 friends here';
-    case 'silver':
-      return '1 friend here';
-    default:
-      return 'VIP only';
-  }
-}
-
 final List<AchievementDef> kAchievementDefs = [
   AchievementDef(id: 'first', name: 'First Hand', desc: 'Play your first hand', check: (s) => s.stats.handsPlayed >= 1),
   AchievementDef(id: 'bj', name: 'Blackjack!', desc: 'Hit a natural 21', check: (s) => s.stats.blackjacks >= 1),

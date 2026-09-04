@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.micorlov.blackjack21_v2",
+      "sha256_cert_fingerprints": [
+        "03:2B:AF:04:FB:D0:CE:98:EC:C9:AE:F1:3E:DF:48:36:03:1B:DD:5F:47:C0:30:F6:DE:D9:02:B8:3A:58:77:25"
+      ]
+    }
+  }
+]

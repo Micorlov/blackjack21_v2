@@ -1,7 +1,9 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'firebase_options.dart';
@@ -20,6 +22,7 @@ import 'screens/tips_screen.dart';
 import 'state/game_notifier.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
+import 'widgets/app_lifecycle_bridge.dart';
 import 'widgets/bottom_nav_bar.dart';
 import 'widgets/overlays.dart';
 import 'widgets/rank_strip.dart';
@@ -36,6 +39,9 @@ const _startupInitTimeout = Duration(seconds: 8);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // Resolves an invite link's `/join/CODE` from the real URL path instead of
+  // the default `#/` hash fragment — see utils/invite_link.dart.
+  if (kIsWeb) usePathUrlStrategy();
   await _initServices();
   runApp(const ProviderScope(child: BlackjackApp()));
 }
@@ -110,9 +116,67 @@ class BlackjackApp extends ConsumerWidget {
         maxScaleFactor: 1.3,
         child: WebViewportScaler(child: child ?? const SizedBox.shrink()),
       ),
-      home: const AppShell(),
+      // Not `home:` — the app has exactly one screen-shaped route (the
+      // enum-driven `AppShell`, never a `Navigator` stack), but an invite
+      // link's `/join/CODE` still arrives as a named route: on cold start via
+      // `onGenerateInitialRoutes`, or — because `MainActivity` is
+      // `singleTop` — as a fresh `onGenerateRoute` call while the app is
+      // already running. `_DeepLinkGate` reads the route once, hands it to
+      // the notifier, and always renders the same shell either way.
+      onGenerateInitialRoutes: (initialRoute) => [_deepLinkRoute(initialRoute)],
+      onGenerateRoute: (settings) => _deepLinkRoute(settings.name ?? '/'),
     );
   }
+}
+
+/// One `PageRouteBuilder` for every route this app ever navigates to,
+/// [route] included only so [_DeepLinkGate] can parse it. A route pushed
+/// while the app is already running (the `onGenerateRoute` path) pops itself
+/// on the next frame — the shell underneath already reflects whatever the
+/// link changed, so a second stacked copy of it would only be a dead page a
+/// user has to Back out of.
+Route<void> _deepLinkRoute(String route) {
+  return PageRouteBuilder<void>(
+    settings: RouteSettings(name: route),
+    transitionDuration: Duration.zero,
+    reverseTransitionDuration: Duration.zero,
+    pageBuilder: (context, _, _) => _DeepLinkGate(route: route),
+  );
+}
+
+/// Hands an incoming route to [GameNotifier.handleIncomingLink] once, then
+/// renders the app shell. Split out from [BlackjackApp] because reading the
+/// notifier this way needs a [WidgetRef], which a raw `pageBuilder` does not
+/// have.
+class _DeepLinkGate extends ConsumerStatefulWidget {
+  final String route;
+
+  const _DeepLinkGate({required this.route});
+
+  @override
+  ConsumerState<_DeepLinkGate> createState() => _DeepLinkGateState();
+}
+
+class _DeepLinkGateState extends ConsumerState<_DeepLinkGate> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.route == '/') return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(gameProvider.notifier).handleIncomingLink(widget.route);
+      // This route only ever existed to deliver the link; a route pushed
+      // while the app was already running (the framework calls
+      // `onGenerateRoute` again on `MainActivity`'s `singleTop` re-delivery)
+      // has somewhere to pop back to. The very first route of the app
+      // — cold start — never does, and `Navigator.canPop` guards that.
+      final navigator = Navigator.maybeOf(context);
+      if (navigator != null && navigator.canPop()) navigator.pop();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) => const AppLifecycleBridge(child: AppShell());
 }
 
 class AppShell extends ConsumerWidget {

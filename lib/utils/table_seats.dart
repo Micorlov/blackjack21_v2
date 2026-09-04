@@ -12,7 +12,17 @@ import '../models/social_models.dart';
 /// the rest so the room never looks sparse with just one or two friends
 /// online. More than 4 real friends still only occupy the 4 physical seats.
 List<Friend> tableSeats(GameState state) {
-  final real = state.friends;
+  // Friends actually sitting at this stake (real table presence) go first,
+  // so "Maya is here" on the lobby card reliably seats Maya rather than
+  // whichever four friends happen to sort first.
+  final tableKey = state.stake?.key;
+  final real = tableKey == null
+      ? state.friends
+      : ([...state.friends]..sort((a, b) {
+          final aHere = a.tableKey == tableKey ? 0 : 1;
+          final bHere = b.tableKey == tableKey ? 0 : 1;
+          return aHere.compareTo(bHere);
+        }));
   if (real.length >= 4) return real.take(4).toList();
   final seatedIds = real.map((f) => f.id).toSet();
   final filler = kInitialFriends.where((f) => !seatedIds.contains(f.id));

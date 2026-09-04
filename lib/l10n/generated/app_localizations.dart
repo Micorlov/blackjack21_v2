@@ -354,30 +354,6 @@ abstract class AppLocalizations {
   /// **'Version'**
   String get versionLabel;
 
-  /// No description provided for @resetBankrollConfirmTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset your bankroll?'**
-  String get resetBankrollConfirmTitle;
-
-  /// No description provided for @resetBankrollConfirmMessage.
-  ///
-  /// In en, this message translates to:
-  /// **'Your chips go back to 1,000. Stats, awards, friends and cosmetics are untouched, but the chips you have now cannot be brought back.'**
-  String get resetBankrollConfirmMessage;
-
-  /// No description provided for @resetBankrollConfirmLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset chips'**
-  String get resetBankrollConfirmLabel;
-
-  /// No description provided for @resetBankrollButtonLabel.
-  ///
-  /// In en, this message translates to:
-  /// **'Reset bankroll to 1,000 chips'**
-  String get resetBankrollButtonLabel;
-
   /// No description provided for @languagePickerSublabel.
   ///
   /// In en, this message translates to:
@@ -449,6 +425,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'العربية'**
   String get languageNameAr;
+
+  /// No description provided for @rebuyButtonLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Rebuy {chips} chips'**
+  String rebuyButtonLabel(int chips);
+
+  /// No description provided for @rebuyReadyInLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Rebuy in {time}'**
+  String rebuyReadyInLabel(String time);
+
+  /// No description provided for @rebuyHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Or claim your daily bonus in the lobby'**
+  String get rebuyHint;
+
+  /// No description provided for @inviteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'🃏 Play 21 Sweet Pot with me — tap to join my table:\n{url}'**
+  String inviteMessage(String url);
+
+  /// No description provided for @inviteSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send friends your link — anyone who taps it lands on your live leaderboard.'**
+  String get inviteSubtitle;
+
+  /// No description provided for @inviteButtonWhatsApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite via WhatsApp'**
+  String get inviteButtonWhatsApp;
+
+  /// No description provided for @inviteButtonShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share link'**
+  String get inviteButtonShare;
+
+  /// No description provided for @inviteCopyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get inviteCopyLink;
+
+  /// No description provided for @joinedTableToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Joined the table — +{chips} welcome chips!'**
+  String joinedTableToast(int chips);
+
+  /// No description provided for @joinAlreadyMemberToast.
+  ///
+  /// In en, this message translates to:
+  /// **'Back at your friends\' table'**
+  String get joinAlreadyMemberToast;
+
+  /// No description provided for @joinOwnTableToast.
+  ///
+  /// In en, this message translates to:
+  /// **'This is your own table'**
+  String get joinOwnTableToast;
+
+  /// No description provided for @webInstallBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'Playing in the browser — get the Android app'**
+  String get webInstallBanner;
+
+  /// No description provided for @webInstallButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Get it on Google Play'**
+  String get webInstallButton;
 }
 
 class _AppLocalizationsDelegate

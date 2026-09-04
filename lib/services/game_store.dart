@@ -66,6 +66,18 @@ class SavedGame {
   /// which restores as the GameState default.
   final int avatarColor;
 
+  /// Ids of referred friends already paid to the inviter — see
+  /// utils/referrals.dart and GameState.rewardedReferralIds.
+  final List<String> rewardedReferralIds;
+
+  /// Consecutive play-day streak and the day-key it was last extended on —
+  /// see utils/play_streak.dart.
+  final int playDayStreak;
+  final String lastPlayDayKey;
+
+  /// Epoch-ms of the last table Rebuy; 0 means never, restoring as null.
+  final int lastRebuyAtMs;
+
   const SavedGame({
     required this.chips,
     required this.stats,
@@ -91,6 +103,10 @@ class SavedGame {
     this.tournamentJoined = false,
     this.onboardingDone = false,
     this.avatarColor = 0,
+    this.rewardedReferralIds = const [],
+    this.playDayStreak = 0,
+    this.lastPlayDayKey = '',
+    this.lastRebuyAtMs = 0,
   });
 
   Map<String, Object?> toJson() => {
@@ -132,6 +148,10 @@ class SavedGame {
     'tournamentJoined': tournamentJoined,
     'onboardingDone': onboardingDone,
     'avatarColor': avatarColor,
+    'rewardedReferralIds': rewardedReferralIds,
+    'playDayStreak': playDayStreak,
+    'lastPlayDayKey': lastPlayDayKey,
+    'lastRebuyAtMs': lastRebuyAtMs,
   };
 
   /// Every field falls back to the [GameState] default it mirrors, so a blob
@@ -186,6 +206,10 @@ class SavedGame {
       // to false would send every existing tester back to the sign-in screen.
       onboardingDone: _bool(json['onboardingDone'], true),
       avatarColor: _int(json['avatarColor'], 0),
+      rewardedReferralIds: _strings(json['rewardedReferralIds']),
+      playDayStreak: _int(json['playDayStreak'], 0),
+      lastPlayDayKey: _str(json['lastPlayDayKey'], ''),
+      lastRebuyAtMs: _int(json['lastRebuyAtMs'], 0),
     );
   }
 

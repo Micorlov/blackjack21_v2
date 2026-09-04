@@ -10,6 +10,17 @@ class Friend {
   final int dailyScore;
   final int hourlyScore;
 
+  /// Uid of the group creator who gets credit for this member joining, or
+  /// null for the creator's own row and for members who joined before this
+  /// field existed. Set once, at join time — never changes afterwards.
+  final String? invitedBy;
+
+  /// Which table this member is currently seated at (`'bronze'`, `'silver'`,
+  /// `'vip'`), or null when they are not at a table or their row is stale
+  /// (see [online] — mapped to null together in `SocialService._friendFromDoc`
+  /// so the UI never has to reason about freshness itself).
+  final String? tableKey;
+
   const Friend({
     required this.id,
     required this.name,
@@ -17,6 +28,8 @@ class Friend {
     required this.online,
     required this.dailyScore,
     required this.hourlyScore,
+    this.invitedBy,
+    this.tableKey,
   });
 
   String get firstName => name.split(' ').first;
@@ -29,6 +42,8 @@ class Friend {
     online: online,
     dailyScore: dailyScore,
     hourlyScore: hourlyScore,
+    invitedBy: invitedBy,
+    tableKey: tableKey,
   );
 }
 

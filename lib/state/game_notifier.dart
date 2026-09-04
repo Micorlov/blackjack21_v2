@@ -1,15 +1,19 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'dart:ui' show Locale, PlatformDispatcher;
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../data/game_data.dart';
 import '../data/tutorial_data.dart';
+import '../l10n/generated/app_localizations.dart';
 import '../models/enums.dart';
 import '../models/game_state.dart';
 import '../models/hand.dart';
@@ -25,7 +29,11 @@ import '../services/spoken_amount.dart';
 import '../utils/comeback.dart';
 import '../utils/daily_bonus.dart';
 import '../utils/formatters.dart';
+import '../utils/invite_link.dart';
+import '../utils/play_streak.dart';
 import '../utils/points.dart';
+import '../utils/rebuy.dart';
+import '../utils/referrals.dart';
 import '../utils/table_seats.dart';
 
 class _SeatResult {
@@ -82,6 +90,10 @@ class GameNotifier extends StateNotifier<GameState> {
   /// True once a live (non-empty) member snapshot has arrived, so the first
   /// snapshot after subscribing never fires overtake alerts.
   bool _groupLive = false;
+
+  /// Guards [prefillJoinFromClipboard] to at most once per launch — repeated
+  /// visits to the Friends screen must not keep re-reading the clipboard.
+  bool _clipboardChecked = false;
   List<PlayingCard> _shoe = [];
   Timer? _npcTimer;
 
@@ -465,6 +477,12 @@ class GameNotifier extends StateNotifier<GameState> {
       // resolves to the same destination it would have after signing in.
       screen: saved.onboardingDone ? _postOnboardingScreenFor(saved) : null,
       avatarColor: saved.avatarColor == 0 ? null : Color(saved.avatarColor),
+      rewardedReferralIds: saved.rewardedReferralIds,
+      playDayStreak: saved.playDayStreak,
+      lastPlayDayKey: saved.lastPlayDayKey,
+      lastRebuyAt: saved.lastRebuyAtMs == 0
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(saved.lastRebuyAtMs),
     );
   }
 
@@ -495,6 +513,10 @@ class GameNotifier extends StateNotifier<GameState> {
     // signing in or as a guest.
     onboardingDone: state.screen != AppScreen.onboarding,
     avatarColor: state.avatarColor.toARGB32(),
+    rewardedReferralIds: state.rewardedReferralIds,
+    playDayStreak: state.playDayStreak,
+    lastPlayDayKey: state.lastPlayDayKey,
+    lastRebuyAtMs: state.lastRebuyAt?.millisecondsSinceEpoch ?? 0,
   );
 
   /// Coalesces the writes a fast player generates — settling a hand, flipping
@@ -527,7 +549,13 @@ class GameNotifier extends StateNotifier<GameState> {
     _reportScore();
     final code = await _social.fetchMyGroupCode();
     if (!mounted) return;
-    if (code != null) _subscribeGroup(code);
+    if (code != null) {
+      _subscribeGroup(code);
+    } else if (state.pendingJoinCode != null) {
+      // A deep link arrived before the social layer was ready (cold start) —
+      // act on it now that it is.
+      unawaited(_joinCode(state.pendingJoinCode!, viaLink: true));
+    }
     _heartbeatTimer = Timer.periodic(const Duration(seconds: 60), (_) => _heartbeat());
   }
 
@@ -576,6 +604,7 @@ class GameNotifier extends StateNotifier<GameState> {
       _notifyOvertaken(overHourly, overDaily);
     }
 
+    final wasGroupLive = _groupLive;
     _groupLive = members.isNotEmpty;
     // Alone in the group → practice bots keep the table lively, but
     // `friendsAreLive` stays false so friend lists can tell bots from people.
@@ -583,6 +612,39 @@ class GameNotifier extends StateNotifier<GameState> {
       friends: members.isEmpty ? kInitialFriends : members,
       friendsAreLive: members.isNotEmpty,
     );
+
+    _payOutstandingReferrals(members, wasWatchingBefore: wasGroupLive);
+  }
+
+  /// Pays the inviter for every referred friend not yet rewarded, and
+  /// republishes the honest, derived referral count. Runs on every snapshot
+  /// (not just a fresh join) so a friend who joined while this device was
+  /// offline still gets credited the moment the stream reconnects.
+  void _payOutstandingReferrals(List<Friend> members, {required bool wasWatchingBefore}) {
+    final me = _social.uid;
+    if (me == null) return;
+    final unpaid = unrewardedReferrals(members, me, state.rewardedReferralIds);
+    if (unpaid.isNotEmpty) {
+      state = state.copyWith(
+        chips: state.chips + unpaid.length * kReferralJoinChips,
+        rewardedReferralIds: [...state.rewardedReferralIds, ...unpaid.map((f) => f.id)],
+      );
+      _scheduleSave();
+      final name = unpaid.first.firstName;
+      final body = unpaid.length == 1
+          ? '$name joined your table! +$kReferralJoinChips chips'
+          : '${unpaid.length} friends joined your table! +${unpaid.length * kReferralJoinChips} chips';
+      _showToast(body);
+      // A notification only makes sense once this is a live update rather
+      // than the first snapshot after (re)subscribing — the same gate
+      // `_notifyOvertaken` above uses, so a relaunch never spams a
+      // notification for referrals that joined while the app was closed.
+      if (wasWatchingBefore && state.notifSocial) {
+        unawaited(_notifs.show('New friend at your table', body));
+        _playSfx(GameSfx.win);
+      }
+    }
+    state = state.copyWith(referralsCount: referralCount(members, me));
   }
 
   void _notifyOvertaken(List<RankedPlayer> hourly, List<RankedPlayer> daily) {
@@ -613,6 +675,28 @@ class GameNotifier extends StateNotifier<GameState> {
     }
     _subscribeGlobals();
     _reportScore();
+  }
+
+  /// Called by [AppLifecycleBridge] whenever the app comes back to the
+  /// foreground. Nothing here was previously handled at all — a resume used
+  /// to wait for the next 60s heartbeat tick to roll a stale point bucket or
+  /// notice a day has turned over.
+  void onAppResumed() {
+    if (!state.socialReady) return;
+    _heartbeat();
+    unawaited(_syncDailyBonusReminder());
+    unawaited(_syncStreakReminder());
+    if (state.pendingJoinCode != null) unawaited(_joinCode(state.pendingJoinCode!, viaLink: true));
+  }
+
+  /// Called by [AppLifecycleBridge] when the app is backgrounded — flushes
+  /// any save still waiting out its debounce, the same way [dispose] does,
+  /// so a swipe-away right after a hand never loses it.
+  void onAppPaused() {
+    if (_saveTimer?.isActive ?? false) {
+      _saveTimer!.cancel();
+      unawaited(_store.save(_snapshot()));
+    }
   }
 
   /// (Re)subscribes the world top-10 streams; called at init and again from
@@ -650,35 +734,68 @@ class GameNotifier extends StateNotifier<GameState> {
         daily: state.heroDailyPoints,
         hourKey: state.heroHourKey,
         dayKey: state.heroDayKey,
+        tableKey: state.screen == AppScreen.table ? (state.stake?.key ?? '') : '',
       ),
     );
   }
 
-  /// Creates the group on first use, then opens WhatsApp with a ready-to-send
-  /// invite so the user can drop it into any group chat.
-  Future<void> shareInviteWhatsApp() async {
+  /// Resolves the player's locale for invite text and toasts to the same
+  /// precedence `MaterialApp.locale` uses in main.dart: an explicit Settings
+  /// choice, else the device locale.
+  AppLocalizations _appLocalizations() {
+    final code = state.languageOverride ?? PlatformDispatcher.instance.locale.languageCode;
+    final locale = AppLocalizations.supportedLocales.firstWhere(
+      (l) => l.languageCode == code,
+      orElse: () => const Locale('en'),
+    );
+    return lookupAppLocalizations(locale);
+  }
+
+  String _inviteText(String code) => _appLocalizations().inviteMessage(inviteUri(code).toString());
+
+  /// Creates the group on first use (idempotent otherwise) so every invite
+  /// channel below shares the same code.
+  Future<String?> _ensureGroupCode() async {
     if (!state.socialReady) {
       _showToast('No connection — try again in a moment');
-      return;
+      return null;
     }
     var code = state.groupCode;
     code ??= await _social.createGroup(_playerName, _rng);
-    if (!mounted) return;
+    if (!mounted) return null;
     if (code == null) {
       _showToast('Could not create your group — try again');
-      return;
+      return null;
     }
     if (state.groupCode == null) _subscribeGroup(code);
     _reportScore();
+    return code;
+  }
 
-    final text = Uri.encodeComponent(
-      '🃏 Come play 21 Sweet Pot with me!\n'
-      'Join my friends table and try to beat my hourly score.\n\n'
-      'Group code: $code\n\n'
-      'Open 21 Sweet Pot → Friends → Join a friends group → enter $code',
-    );
+  /// Opens WhatsApp with a ready-to-send invite — the single link every
+  /// channel shares, so the recipient never has to navigate the app by hand.
+  Future<void> shareInviteWhatsApp() async {
+    final code = await _ensureGroupCode();
+    if (code == null) return;
+    final text = Uri.encodeComponent(_inviteText(code));
     final opened = await _openExternal(Uri.parse('https://wa.me/?text=$text'));
     if (!opened) _showToast('Could not open WhatsApp');
+  }
+
+  /// The system share sheet — for friends not reachable over WhatsApp.
+  Future<void> shareInviteSheet() async {
+    final code = await _ensureGroupCode();
+    if (code == null) return;
+    await SharePlus.instance.share(ShareParams(text: _inviteText(code)));
+  }
+
+  /// Copies the bare link, mainly useful on web where a share sheet may not
+  /// exist.
+  Future<void> copyInviteLink() async {
+    final code = await _ensureGroupCode();
+    if (code == null) return;
+    await Clipboard.setData(ClipboardData(text: inviteUri(code).toString()));
+    _showToast('Link copied');
   }
 
   Future<bool> _openExternal(Uri uri) async {
@@ -689,28 +806,91 @@ class GameNotifier extends StateNotifier<GameState> {
     }
   }
 
+  /// Reads the join field, validates it, and joins. The typed-code entry
+  /// point for [_joinCode] — see [handleIncomingLink] for the link entry
+  /// point sharing the same join logic.
   Future<void> joinGroupByCode() async {
     final code = state.friendCodeInput.trim().toUpperCase();
-    if (code.length != SocialService.codeLength) {
+    if (!isValidJoinCode(code)) {
       _showToast('Enter the ${SocialService.codeLength}-character group code');
       return;
     }
+    await _joinCode(code, viaLink: false);
+  }
+
+  /// Parses an incoming deep link (a tapped invite, or `Uri.base` on web) and
+  /// joins immediately if the social layer is already up, otherwise queues
+  /// it as [GameState.pendingJoinCode] for `_initSocial`/[onAppResumed] to
+  /// retry once it is.
+  void handleIncomingLink(String route) {
+    final code = joinCodeFromRoute(route);
+    if (code == null) return;
+    if (state.socialReady) {
+      unawaited(_joinCode(code, viaLink: true));
+    } else {
+      state = state.copyWith(pendingJoinCode: code);
+    }
+  }
+
+  /// Reads whatever text is on the clipboard — a pasted invite message, or a
+  /// bare code — and pre-fills the join field. Skipped on web, where reading
+  /// the clipboard needs a user gesture the Friends screen visit itself does
+  /// not provide, and skipped once already tried this launch.
+  Future<void> prefillJoinFromClipboard() async {
+    if (kIsWeb || _clipboardChecked) return;
+    _clipboardChecked = true;
+    if (state.groupCode != null || state.friendCodeInput.isNotEmpty) return;
+    try {
+      final data = await Clipboard.getData('text/plain');
+      final code = data?.text == null ? null : joinCodeFromText(data!.text!);
+      if (code != null && mounted) state = state.copyWith(friendCodeInput: code);
+    } on PlatformException {
+      // No clipboard access — nothing to pre-fill, nothing to report.
+    }
+  }
+
+  /// Shared by [joinGroupByCode] and [handleIncomingLink]/deep links.
+  Future<void> _joinCode(String code, {required bool viaLink}) async {
     if (!state.socialReady) {
-      _showToast('No connection — try again in a moment');
+      state = state.copyWith(pendingJoinCode: code);
       return;
     }
-    final ok = await _social.joinGroup(code, _playerName);
+    final result = await _social.joinGroup(code, _playerName);
     if (!mounted) return;
-    if (!ok) {
-      _showToast('Group $code not found');
-      return;
+    switch (result) {
+      case JoinResult.notFound:
+        _showToast('Group $code not found');
+        return;
+      case JoinResult.failed:
+        _showToast('No connection — try again in a moment');
+        return;
+      case JoinResult.alreadyMember:
+        final ownTable = await _social.isGroupCreator(code);
+        if (!mounted) return;
+        state = state.copyWith(friendCodeInput: '', pendingJoinCode: null);
+        _subscribeGroup(code);
+        _reportScore();
+        _showToast(ownTable ? _appLocalizations().joinOwnTableToast : _appLocalizations().joinAlreadyMemberToast);
+        return;
+      case JoinResult.joined:
+        // Referral credit and the join bonus flow through `_onGroupUpdate`'s
+        // `unrewardedReferrals` check once the group stream delivers this
+        // row back — that path also covers a friend who joined while this
+        // device was offline, which a one-shot bonus here would miss.
+        state = state.copyWith(
+          friendCodeInput: '',
+          pendingJoinCode: null,
+          joinedViaLink: viaLink || state.joinedViaLink,
+          chips: state.chips + kReferralWelcomeChips,
+        );
+        _subscribeGroup(code);
+        _reportScore();
+        _scheduleSave();
+        _showToast(_appLocalizations().joinedTableToast(kReferralWelcomeChips));
+        _playSfx(GameSfx.win);
+        _hapticMedium();
+        return;
     }
-    state = state.copyWith(friendCodeInput: '', referralsCount: state.referralsCount + 1);
-    _subscribeGroup(code);
-    _reportScore();
-    _showToast('Joined group $code!');
-    _playSfx(GameSfx.win);
-    _hapticMedium();
   }
 
   void toggleBadgePeriod() => state = state.copyWith(badgeHourly: !state.badgeHourly);
@@ -851,7 +1031,10 @@ class GameNotifier extends StateNotifier<GameState> {
 
   void goLobby() => state = state.copyWith(screen: AppScreen.lobby);
   void goStats() => state = state.copyWith(screen: AppScreen.stats);
-  void goFriends() => state = state.copyWith(screen: AppScreen.friends);
+  void goFriends() {
+    state = state.copyWith(screen: AppScreen.friends);
+    unawaited(prefillJoinFromClipboard());
+  }
   void goShop() => state = state.copyWith(screen: AppScreen.shop);
   void goSettings() => state = state.copyWith(screen: AppScreen.settings);
 
@@ -873,6 +1056,9 @@ class GameNotifier extends StateNotifier<GameState> {
       visitedVIP: state.visitedVIP || t.key == 'vip',
       npcSeats: _rollNpcSeats(t.min),
     );
+    // Publish table presence immediately rather than waiting up to 60s for
+    // the heartbeat, so a friend's lobby card shows "here" right away.
+    _reportScore();
   }
 
   List<NpcSeat> _rollNpcSeats(int minBet) {
@@ -953,6 +1139,7 @@ class GameNotifier extends StateNotifier<GameState> {
   void exitTable() {
     _npcTimer?.cancel();
     state = state.copyWith(screen: AppScreen.lobby, actingSeat: null);
+    _reportScore();
   }
 
   // ---------------------------------------------------------------------
@@ -1003,6 +1190,7 @@ class GameNotifier extends StateNotifier<GameState> {
     if (!mounted || last == null) return;
     state = state.copyWith(lastDailyBonusClaimAt: last, dailyBonusStreakDay: streakDay);
     await _syncDailyBonusReminder();
+    await _syncStreakReminder();
   }
 
   /// Keeps at most one pending "daily chips ready" notification, matching the
@@ -1015,20 +1203,47 @@ class GameNotifier extends StateNotifier<GameState> {
       return;
     }
     // Quote what a claim at the moment of unlock would actually pay — day 7
-    // of a live streak is worth 1,000, not the flat 250.
+    // of a live streak is worth 1,000, not the flat 250, and a live play-day
+    // streak still standing at unlock time adds its own bonus on top.
     final unlockAt = last.add(kDailyBonusCooldown);
     final dayAtUnlock = nextDailyBonusStreakDay(state.dailyBonusStreakDay, last, unlockAt);
     await _notifs.scheduleDailyBonusReminder(
       after: unlockAt.difference(now),
-      chips: dailyBonusRewardForDay(dayAtUnlock),
+      chips: dailyBonusRewardForDay(dayAtUnlock) + _playStreakBonusNow(unlockAt),
     );
   }
+
+  /// Keeps at most one pending "streak ends tonight" notification, matching
+  /// the live play-day streak and the Settings "Daily reminder" toggle
+  /// (there is no separate toggle for this one — it is the same promise:
+  /// "remind me to come back today").
+  Future<void> _syncStreakReminder() async {
+    final now = DateTime.now();
+    final liveStreak = livePlayStreak(streak: state.playDayStreak, lastDayKey: state.lastPlayDayKey, now: now);
+    final at = state.notifDaily
+        ? streakReminderAt(liveStreak: liveStreak, playedToday: playedToday(state.lastPlayDayKey, now), now: now)
+        : null;
+    if (at == null) {
+      await _notifs.cancelStreakReminder();
+      return;
+    }
+    await _notifs.scheduleStreakReminder(after: at.difference(now), streak: liveStreak);
+  }
+
+  /// Extra chips a live play-day streak adds on top of the claim-streak
+  /// ladder — see utils/play_streak.dart. Kept as one place both
+  /// `claimDailyBonus` and `_syncDailyBonusReminder` (which must quote the
+  /// same total in the notification) read from.
+  int _playStreakBonusNow(DateTime now) => playStreakBonusChips(
+    livePlayStreak(streak: state.playDayStreak, lastDayKey: state.lastPlayDayKey, now: now),
+  );
 
   void claimDailyBonus() {
     final now = DateTime.now();
     if (!isDailyBonusReady(state.lastDailyBonusClaimAt, now)) return;
     final day = nextDailyBonusStreakDay(state.dailyBonusStreakDay, state.lastDailyBonusClaimAt, now);
-    final reward = dailyBonusRewardForDay(day);
+    final streakBonus = _playStreakBonusNow(now);
+    final reward = dailyBonusRewardForDay(day) + streakBonus;
     state = state.copyWith(
       chips: state.chips + reward,
       lastDailyBonusClaimAt: now,
@@ -1037,9 +1252,18 @@ class GameNotifier extends StateNotifier<GameState> {
     unawaited(_bonusStore.saveClaim(now, day));
     unawaited(_syncDailyBonusReminder());
     _scheduleSave();
-    _showToast('+$reward chips claimed — day $day of your streak!');
+    _showToast(
+      streakBonus > 0
+          ? '+$reward chips claimed — day $day of your streak, +$streakBonus for playing $_playStreakLabel!'
+          : '+$reward chips claimed — day $day of your streak!',
+    );
     _playSfx(GameSfx.win);
     _hapticMedium();
+  }
+
+  String get _playStreakLabel {
+    final n = livePlayStreak(streak: state.playDayStreak, lastDayKey: state.lastPlayDayKey, now: DateTime.now());
+    return n == 1 ? '1 day in a row' : '$n days in a row';
   }
 
   // ---------------------------------------------------------------------
@@ -1598,6 +1822,15 @@ class GameNotifier extends StateNotifier<GameState> {
       heroHourKey: hourKey,
       heroDayKey: dayKey,
     );
+
+    final advanced = advancePlayStreak(streak: state.playDayStreak, lastDayKey: state.lastPlayDayKey, now: now);
+    final streakExtended = advanced.streak != state.playDayStreak;
+    state = state.copyWith(playDayStreak: advanced.streak, lastPlayDayKey: advanced.dayKey);
+    if (streakExtended && advanced.streak > 1) {
+      _showToast('🔥 Day ${advanced.streak} play streak');
+    }
+    if (streakExtended) unawaited(_syncStreakReminder());
+
     _reportScore();
     _scheduleSave();
   }
@@ -1663,9 +1896,22 @@ class GameNotifier extends StateNotifier<GameState> {
     _showToast('Tutorial on — deal a hand to start it');
   }
 
-  void resetBankroll() {
-    state = state.copyWith(chips: kStartingChips);
+  /// Tops the bankroll back up to [kRebuyChips] (never down — a rebuy while
+  /// still holding more than that would be a free top-up, not a rescue),
+  /// gated by a cooldown so there is a real reason to claim the daily bonus
+  /// or invite someone to race you. Replaces the old free, unlimited
+  /// "Reset bankroll".
+  void rebuy() {
+    final now = DateTime.now();
+    if (!isRebuyReady(state.lastRebuyAt, now)) {
+      _showToast('Rebuy available in ${rebuyCountdownLabel(state.lastRebuyAt!, now)}');
+      return;
+    }
+    state = state.copyWith(chips: max(state.chips, kRebuyChips), lastRebuyAt: now);
     _scheduleSave();
+    _showToast('+${formatChips(kRebuyChips)} rebuy chips');
+    _playSfx(GameSfx.win);
+    _hapticMedium();
   }
 
   // ---------------------------------------------------------------------
@@ -1897,8 +2143,9 @@ class GameNotifier extends StateNotifier<GameState> {
   Future<void> toggleNotifDaily() async {
     if (!state.notifDaily && !await _ensureNotifPermission()) return;
     state = state.copyWith(notifDaily: !state.notifDaily);
-    // Off cancels the pending reminder; on re-arms it mid-cooldown.
+    // Off cancels both pending reminders; on re-arms whichever applies.
     unawaited(_syncDailyBonusReminder());
+    unawaited(_syncStreakReminder());
     _scheduleSave();
   }
 }
