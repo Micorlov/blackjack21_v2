@@ -13,7 +13,7 @@ import 'table_insurance_panel.dart';
 import 'table_layout.dart';
 import 'table_playing_panel.dart';
 import 'table_settlement_panel.dart';
-import 'table_waiting_indicator.dart';
+import 'table_waiting_panel.dart';
 
 /// Auto-height action panel: whichever phase-specific content is active, under
 /// the tutorial coach card.
@@ -70,7 +70,7 @@ class TableActionPanel extends ConsumerWidget {
               // fades out from where it stood instead of jumping to centre.
               layoutBuilder: (current, previous) =>
                   Stack(alignment: Alignment.bottomCenter, children: [...previous, ?current]),
-              child: KeyedSubtree(key: ValueKey(state.phase), child: _panelFor(state)),
+              child: KeyedSubtree(key: ValueKey(state.phase), child: _panelFor(state, ref.read(gameProvider.notifier))),
             ),
           ),
         ],
@@ -83,13 +83,22 @@ class TableActionPanel extends ConsumerWidget {
     return inSideRail ? content : SafeArea(top: false, child: content);
   }
 
-  Widget _panelFor(GameState state) {
+  Widget _panelFor(GameState state, GameNotifier notifier) {
     return switch (state.phase) {
       RoundPhase.betting => const TableBettingPanel(),
       RoundPhase.insurance => const TableInsurancePanel(),
       RoundPhase.playing => const TablePlayingPanel(),
-      RoundPhase.npcs => TableWaitingIndicator(text: '${_actingName(state)} is playing…'),
-      RoundPhase.dealer => const TableWaitingIndicator(text: 'Dealer is playing…', fontSize: 19),
+      RoundPhase.npcs => TableWaitingPanel(
+        state: state,
+        notifier: notifier,
+        text: '${_actingName(state)} is playing…',
+      ),
+      RoundPhase.dealer => TableWaitingPanel(
+        state: state,
+        notifier: notifier,
+        text: 'Dealer is playing…',
+        fontSize: 19,
+      ),
       RoundPhase.settlement => const TableSettlementPanel(),
     };
   }

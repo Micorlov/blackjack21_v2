@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'package:blackjack21_v2/data/game_data.dart';
 import 'package:blackjack21_v2/main.dart';
@@ -484,7 +483,6 @@ Future<List<FlutterErrorDetails>> _pumpScreen(
 
 void main() {
   setUpAll(() async {
-    GoogleFonts.config.allowRuntimeFetching = false;
     await loadRealTestFonts();
   });
 
@@ -547,12 +545,14 @@ void main() {
       });
 
       // The full standings list, reached by tapping the table's mini
-      // standings card.
+      // standings card — which lives in the waiting panel now, shown while the
+      // other seats and the dealer play, rather than in the betting panel.
       testWidgets('${device.name} @${textScale}x world standings lays out without overflow', (tester) async {
         final details = await _pumpScreen(
           tester,
           _state(
             screen: AppScreen.table,
+            phase: RoundPhase.npcs,
             displayName: _longName,
             chips: 1284500,
             friends: _longNamedFriends,
@@ -567,21 +567,32 @@ void main() {
         );
         expect(tester.takeException(), isNull, reason: _describe(null, details));
 
-        // The betting panel is a capped, bottom-anchored scroll view: on the
-        // smallest device at the largest text size its content is taller than
-        // the 62% of the screen it is allowed, so the standings card at the
-        // top is scrolled out of the initial viewport. That is the designed
-        // behaviour — the bet and DEAL controls keep the bottom — so the test
-        // scrolls to the card the way a player would, rather than asserting
-        // that it happens to be on screen.
+        // The action panel is a capped, bottom-anchored scroll view: on the
+        // smallest device at the largest text size its content can be taller
+        // than the 62% of the screen it is allowed, so the standings card may
+        // start outside the viewport. The test scrolls to it the way a player
+        // would rather than asserting it happens to be on screen.
+        // Fixed pumps rather than `pumpAndSettle`: the waiting panel carries
+        // the dealer/NPC pulse, which repeats forever by design, so settling
+        // never completes here.
+        // Fixed pumps rather than `pumpAndSettle`: the waiting panel carries
+        // the dealer/NPC pulse, which repeats forever by design, so settling
+        // never completes here. Several pumps, because opening the standings
+        // is a pushed route with its own transition.
+        Future<void> advance() async {
+          for (var i = 0; i < 6; i++) {
+            await tester.pump(const Duration(milliseconds: 200));
+          }
+        }
+
         await tester.ensureVisible(find.text('FRIENDS'));
-        await tester.pumpAndSettle();
+        await advance();
         await tester.tap(find.text('FRIENDS'));
-        await tester.pumpAndSettle();
+        await advance();
 
         for (final tab in ['Friends', 'World · this hour', 'World · today']) {
           await tester.tap(find.text(tab));
-          await tester.pumpAndSettle();
+          await advance();
           final exception = tester.takeException();
           expect(
             exception,

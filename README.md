@@ -258,7 +258,6 @@ on a Play-distributed one. One-time manual steps to fix that:
 | Package | Purpose |
 |---|---|
 | `flutter_riverpod` | State management (`game_notifier`) |
-| `google_fonts` | Typography |
 | `audioplayers` | Sound effect playback |
 | `cupertino_icons` | iOS-style icons |
 | `firebase_core` / `firebase_auth` | Firebase app + Google/anonymous sign-in |
@@ -276,7 +275,23 @@ on a Play-distributed one. One-time manual steps to fix that:
 
 Dev: `flutter_test`, `flutter_lints`, `integration_test`.
 
+Typography is no longer a dependency: Sora, Instrument Serif and Space Mono ship inside the app
+under `assets/fonts` (see **Assets**), replacing `google_fonts`, which fetched all three over the
+network on first launch.
+
 ## Assets
+
+`assets/fonts/` holds the three typefaces the design is drawn in, declared under `flutter: fonts:`
+in `pubspec.yaml`:
+
+| File | Family | Used for |
+|---|---|---|
+| `Sora-Variable.ttf` | `Sora` | Body and UI text. The upstream variable font — `AppText.sora` drives its `wght` axis through `fontVariations`, because Flutter will not do that from `fontWeight` alone |
+| `InstrumentSerif-Italic.ttf` | `Instrument Serif` | Screen titles and display headings |
+| `SpaceMono-Regular.ttf`, `SpaceMono-Bold.ttf` | `Space Mono` | Money, totals and uppercase labels |
+
+They were fetched at runtime by `google_fonts` until 2026-09-05, so a cold first launch drew the
+whole game in the platform fallback face and then reflowed once the download landed.
 
 `web/og-image.jpg` is the 1200×630 social/link-preview banner (Open Graph + Twitter Card) referenced
 from `web/index.html`; `web/favicon.png` and `web/icons/Icon-*.png` (including the `-maskable-`
@@ -358,10 +373,11 @@ overflow. Half the scenarios use "loaded account" data (a 35-character Google di
 seven-figure bankrolls, a full hand history) because every row in the design was drawn around
 "Guest" and "$1,150". `test/table_layout_test.dart` does the same for the felt's round phases.
 
-These sweeps only mean anything because `test/support/real_fonts.dart` registers Roboto (from
-the Flutter SDK's own cache — nothing is committed) under the family names `google_fonts` asks
-for. Without it every glyph is a full em wide in `flutter test`, roughly twice the shipped
-faces, and almost any row holding a sentence "overflows" in a test while being fine on a phone.
+These sweeps only mean anything because `test/support/real_fonts.dart` loads the app's own three
+faces from `assets/fonts`. Without it every glyph is a full em wide in `flutter test`, roughly
+twice the shipped faces, and almost any row holding a sentence "overflows" in a test while being
+fine on a phone. It used to substitute Roboto from the Flutter SDK cache, which measures about
+10% narrower than Sora and so let two real overflows through.
 
 Layout work that still has to be judged against the real fonts and real device metrics has a
 driver test that walks the app from onboarding to a dealt round and then holds the table still:
@@ -393,6 +409,42 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-05
+- fix: **The dealer's cards no longer land on top of the other players.** The felt reserved 164
+  units for a dealer cluster that needs about 178 — 220 once the gold "TABLE SWEEP" banner
+  appears — so from the fourth card on, the dealer's hand was painted over the two upper seat
+  plates and their card fans. The band is now sized for what it holds, grows with the system font
+  setting (most of the cluster is type), and a dealer who keeps drawing fans their cards instead
+  of running off the table. `test/table_layout_test.dart` gained a five-card settled-with-sweep
+  scenario and an assertion that no dealer card covers a seat.
+- fix: **The dealer says BUST.** A revealed 23 used to be shown as a bare number while every
+  losing seat got a red BUST tag — the one bust that pays the whole table was the only one the
+  felt did not name.
+- fix: **The sweep result stopped truncating.** "You win the sweep p…" is now "Sweep pot: yours",
+  and the line wraps to two rather than clipping when a winner's display name is long.
+- fix: **The Weekend Cup header no longer overflows** on a 320-wide phone at large text.
+- feat: **One-tap rebet, and an ALL IN button.** Once you have dealt a hand, DEAL becomes
+  "DEAL $50 AGAIN" and re-stakes it in a single tap; ALL IN puts the whole stack (capped at the
+  table maximum) on the felt instead of twenty taps on a chip.
+- feat: **The table gives you something to look at while the bots play.** The swipeable standings
+  card moved out of the betting panel — where it ate a quarter of the screen at the moment you
+  are choosing a chip, and, with an empty group, spent it saying "you play alone" — into the
+  stretch where the other seats and the dealer are playing and you have nothing to do.
+- feat: **One gold button per screen.** Insurance now leads with NO THANKS rather than INSURE;
+  HIT and STAND are the same size, so the felt stops pointing at the card that busts on a hard 19;
+  the lobby's recommended table carries a gold PLAY button, and the tournament card, the shop and
+  the empty-state invites step down to outlines and text links. New `OutlinePillButton` replaces
+  four hand-rolled copies of the same secondary button.
+- feat: **The lobby stopped inventing friends.** The stories rail of four fictional players is
+  hidden until real people are in your group, and table chat no longer types messages from
+  "Maya T." at someone playing alone.
+- feat: **Fonts ship with the app, and the splash is the app's own colour.** Sora, Instrument
+  Serif and Space Mono are bundled instead of downloaded on first run, so the first frame is
+  already right; Android's launch window is the felt black with the wordmark, not the template's
+  white flash.
+- test: layout sweeps now measure with the real bundled faces rather than a Roboto stand-in,
+  which caught the two overflows fixed above.
 
 ### 2026-09-04 (7)
 - fix: **The gold "TABLE SWEEP" banner no longer beats the hole card to the punch either.** Same

@@ -24,6 +24,14 @@ class TableCalc {
     return '${BlackjackRules.handValue([s.dealerHand.first])} + ?';
   }
 
+  /// True once the hole card is face up and the dealer is over 21. Kept here
+  /// rather than recomputed in the felt so the badge and the settlement copy
+  /// can never disagree about whether the dealer broke.
+  static bool dealerBusted(GameState s) {
+    if (!s.holeRevealed || s.dealerHand.isEmpty) return false;
+    return BlackjackRules.handValue(s.dealerHand) > 21;
+  }
+
   static String handLabelFor(Hand h) {
     if (h.cards.isEmpty) return 'Waiting';
     if (h.status == HandStatus.blackjack) return 'Blackjack!';
@@ -137,7 +145,7 @@ class TableCalc {
         color: AppColors.gold,
         rowBg: AppColors.gold.withValues(alpha: 0.14),
         rowBorder: AppColors.gold.withValues(alpha: 0.5),
-        headline: 'You win the sweep pot',
+        headline: 'Sweep pot: yours',
         sub: 'BET \$${formatChips(info.winnerBet)} + POT \$${formatChips(info.pot)}',
       );
     }
@@ -148,7 +156,7 @@ class TableCalc {
       color: AppColors.textPrimary,
       rowBg: Colors.white.withValues(alpha: 0.05),
       rowBorder: Colors.white.withValues(alpha: 0.14),
-      headline: '${info.winner} wins the sweep pot',
+      headline: 'Sweep pot: ${info.winner}',
       sub: 'BET \$${formatChips(info.winnerBet)} + POT \$${formatChips(info.pot)}',
     );
   }

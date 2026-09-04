@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'package:blackjack21_v2/data/game_data.dart';
 import 'package:blackjack21_v2/main.dart';
@@ -11,9 +10,11 @@ import 'package:blackjack21_v2/models/game_state.dart';
 import 'package:blackjack21_v2/models/hand.dart';
 import 'package:blackjack21_v2/models/playing_card.dart';
 import 'package:blackjack21_v2/models/social_models.dart';
+import 'package:blackjack21_v2/screens/table/dealer_area.dart';
 import 'package:blackjack21_v2/screens/table/hero_hand_area.dart';
 import 'package:blackjack21_v2/screens/table/seat_plate.dart';
 import 'package:blackjack21_v2/state/game_notifier.dart';
+import 'package:blackjack21_v2/widgets/playing_card_widget.dart';
 
 /// A notifier seeded with a fixed state so table layouts can be pumped
 /// directly, without driving the round through its timers.
@@ -291,6 +292,45 @@ Map<String, GameState> _scenarios() {
         ],
       ),
     ),
+    // The dealer drawing out is the case that broke on device: five cards,
+    // the "TABLE SWEEP" banner above them, and the two upper seat plates
+    // directly below. The cluster was taller than the band reserved for it, so
+    // the dealer's cards were painted over the seats and their fans.
+    'settlement-long-dealer': _base(
+      phase: RoundPhase.settlement,
+      bet: 100,
+      holeRevealed: true,
+      dealerHand: const [
+        PlayingCard(rank: 'A', suit: '♦'),
+        PlayingCard(rank: '4', suit: '♥'),
+        PlayingCard(rank: '2', suit: '♣'),
+        PlayingCard(rank: '9', suit: '♥'),
+        PlayingCard(rank: '9', suit: '♠'),
+      ],
+      hands: const [
+        Hand(
+          cards: [
+            PlayingCard(rank: '9', suit: '♠'),
+            PlayingCard(rank: 'Q', suit: '♥'),
+          ],
+          bet: 100,
+          status: HandStatus.stood,
+        ),
+      ],
+      npcSeats: _busySeats,
+      sweepAmount: 100,
+      message: 'Sweep pot: yours',
+      messageType: MessageType.win,
+      sweepInfo: const SweepInfo(
+        pot: 100,
+        winnerBet: 100,
+        totalWin: 200,
+        winner: 'Guest',
+        winnerTotal: 19,
+        heroTook: true,
+        contributors: [SweepContributor(name: 'Priya', amount: 100, reason: 'bust')],
+      ),
+    ),
     // No seat forfeited a bet, so there is no sweep pot — the result panel
     // still has to show a pot-outcome row saying so.
     'settlement-no-sweep': _base(
@@ -379,8 +419,7 @@ bool _contains(Rect outer, Rect inner) {
 }
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
-
+  
   final scenarios = _scenarios();
 
   for (final device in _devices) {
@@ -465,6 +504,47 @@ void main() {
                 _overlaps(seatRects[i], heroRect),
                 isFalse,
                 reason: 'seat $i overlaps the hero hand on $label: ${seatRects[i]} vs $heroRect',
+              );
+            }
+          }
+        });
+
+        // The dealer's cards and the seat plates share the top half of the
+        // felt. The band reserved for the dealer used to be 164 canvas units
+        // against a cluster that needs ~178 — ~220 once the sweep banner
+        // appears — so from the fourth dealer card onward the cards were drawn
+        // straight over the two upper seats.
+        testWidgets('$label keeps the dealer cards clear of the seats', (tester) async {
+          final details = await _pumpTable(tester, entry.value, device, textScale);
+          final exception = tester.takeException();
+          expect(exception, isNull, reason: _describe(exception, details));
+
+          final cardFinder = find.descendant(
+            of: find.byType(DealerArea),
+            matching: find.byType(PlayingCardFace),
+          );
+          if (cardFinder.evaluate().isEmpty) return;
+
+          // Measured as a share of the card, not as "touches at all": a seat's
+          // box is its slot, including the empty strip its own card fan sits
+          // in, so the dealer's bottom edge has always kissed the top of that
+          // strip by a pixel or two by design. What broke was a card sitting
+          // squarely on a plate, which is a fifth of the card or more.
+          const tolerance = 0.05;
+          final seatFinder = find.byType(SeatPlate);
+          for (var c = 0; c < cardFinder.evaluate().length; c++) {
+            final cardRect = tester.getRect(cardFinder.at(c));
+            final cardArea = cardRect.width * cardRect.height;
+            for (var i = 0; i < seatFinder.evaluate().length; i++) {
+              final seatRect = tester.getRect(seatFinder.at(i));
+              final overlap = cardRect.intersect(seatRect);
+              if (overlap.isEmpty) continue;
+              final share = (overlap.width * overlap.height) / cardArea;
+              expect(
+                share,
+                lessThan(tolerance),
+                reason: 'dealer card $c covers ${(share * 100).toStringAsFixed(0)}% of seat $i on '
+                    '$label: $cardRect vs $seatRect',
               );
             }
           }

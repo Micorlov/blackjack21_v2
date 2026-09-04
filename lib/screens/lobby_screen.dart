@@ -15,6 +15,7 @@ import '../utils/daily_bonus.dart';
 import '../utils/formatters.dart';
 import '../utils/leaderboard.dart';
 import '../utils/table_presence.dart';
+import '../utils/table_recommendation.dart';
 import '../widgets/avatar_circle.dart';
 import '../widgets/buttons.dart';
 import '../widgets/daily_bonus_dialog.dart';
@@ -43,8 +44,15 @@ class LobbyScreen extends ConsumerWidget {
         children: [
           _HeaderRow(state: state),
           const SizedBox(height: 20),
-          _StoriesRow(state: state, notifier: notifier),
-          const SizedBox(height: 16),
+          // The stories rail is still seeded fiction (four invented players
+          // with invented highlights). Shown to someone with an empty group it
+          // sat directly above a leaderboard reading "your leaderboard is
+          // waiting — invite a friend", so the lobby contradicted itself on
+          // one screen. It stays hidden until there are real people in it.
+          if (state.friendsAreLive) ...[
+            _StoriesRow(state: state, notifier: notifier),
+            const SizedBox(height: 16),
+          ],
           _DailyBonusCard(state: state, notifier: notifier),
           const SizedBox(height: 16),
           _TournamentCard(state: state, notifier: notifier),
@@ -55,6 +63,7 @@ class LobbyScreen extends ConsumerWidget {
               notifier: notifier,
               // Bots never carry a `tableKey`, so this is real friends only.
               here: friendsAtTable(state.friendsAreLive ? state.friends : const [], t.key),
+              recommended: t.key == recommendedTable(state.chips).key,
             ),
           const SizedBox(height: 4),
           Padding(
@@ -81,6 +90,7 @@ class LobbyScreen extends ConsumerWidget {
                   'hour by hour.',
               actionLabel: 'Invite via WhatsApp',
               onAction: notifier.shareInviteWhatsApp,
+              actionStyle: EmptyStateAction.link,
             ),
         ],
       ),
@@ -349,16 +359,30 @@ class _TournamentCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Both halves flex. A fixed pair of labels overflowed this row by
+            // ~7px on a 320-wide phone at 1.3x text: the title is a constant
+            // but the countdown beside it grows from "Ends in 3h" to "Ends in
+            // 2d 22h" as the week turns over.
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'WEEKEND CUP',
-                  style: AppText.mono(13, weight: FontWeight.w700, letterSpacing: 1.3, color: AppColors.gold),
+                Flexible(
+                  child: Text(
+                    'WEEKEND CUP',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.mono(13, weight: FontWeight.w700, letterSpacing: 1.3, color: AppColors.gold),
+                  ),
                 ),
-                Text(
-                  cupEndsLabel(DateTime.now()),
-                  style: AppText.sora(13, weight: FontWeight.w700, color: AppColors.textMuted),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    cupEndsLabel(DateTime.now()),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.end,
+                    style: AppText.sora(13, weight: FontWeight.w700, color: AppColors.textMuted),
+                  ),
                 ),
               ],
             ),
@@ -371,9 +395,16 @@ class _TournamentCard extends StatelessWidget {
                 style: AppText.sora(16, color: const Color(0xFFD8D3C6)),
               ),
             ),
-            state.tournamentJoined
-                ? GoldButton(label: 'Play a Cup hand', onPressed: notifier.openCup)
-                : GoldButton(label: 'Join tournament', onPressed: notifier.openCup),
+            // Secondary on purpose: playing a hand is the lobby's job, and
+            // this card used to fire the same gold gradient as the daily-bonus
+            // claim above it and the invite button below it. Three primaries
+            // on one screen is none.
+            OutlinePillButton(
+              label: state.tournamentJoined ? 'Play a Cup hand' : 'Join tournament',
+              onPressed: notifier.openCup,
+              verticalPadding: 16,
+              fontSize: 17,
+            ),
           ],
         ),
       ),
@@ -389,7 +420,20 @@ class _TableCard extends StatelessWidget {
   /// practice-bot roster (see [friendsAtTable]).
   final List<Friend> here;
 
-  const _TableCard({required this.table, required this.notifier, required this.here});
+  /// The highest table this bankroll can actually sit at. It carries the
+  /// lobby's one gold call to action.
+  ///
+  /// Playing a hand is what the lobby is for, and it was the only thing on the
+  /// screen without a button: three promo cards shouted in gold above a quiet
+  /// grey list, and the game itself was a chevron.
+  final bool recommended;
+
+  const _TableCard({
+    required this.table,
+    required this.notifier,
+    required this.here,
+    this.recommended = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -405,7 +449,11 @@ class _TableCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              border: Border.all(color: here.isEmpty ? AppColors.border : AppColors.gold.withValues(alpha: 0.4)),
+              border: Border.all(
+                color: recommended
+                    ? AppColors.gold.withValues(alpha: 0.55)
+                    : (here.isEmpty ? AppColors.border : AppColors.gold.withValues(alpha: 0.4)),
+              ),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Row(
@@ -458,7 +506,20 @@ class _TableCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                 ],
-                const Icon(Icons.chevron_right, color: AppColors.textLabel),
+                if (recommended)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.goldGradient,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      'PLAY',
+                      style: AppText.sora(14, weight: FontWeight.w800, letterSpacing: 0.9, color: AppColors.goldInk),
+                    ),
+                  )
+                else
+                  const Icon(Icons.chevron_right, color: AppColors.textLabel),
               ],
             ),
           ),

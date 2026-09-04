@@ -116,6 +116,51 @@ class GoldButton extends StatelessWidget {
   }
 }
 
+/// Secondary call to action: a gold-outlined pill with a transparent fill.
+///
+/// The app had four near-identical copies of this — two in the friends screen,
+/// one in the shop, one in the lobby — each with its own padding and font size.
+/// It also fills a real hierarchy gap: before it, a screen's only two choices
+/// were "gold gradient" or "plain text", so every secondary action reached for
+/// the gradient and no screen had a single obvious primary any more.
+class OutlinePillButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final double verticalPadding;
+  final double fontSize;
+  final Color color;
+  final String? semanticLabel;
+  final String? disabledReason;
+  final bool busy;
+
+  const OutlinePillButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.verticalPadding = 15,
+    this.fontSize = 16,
+    this.color = AppColors.gold,
+    this.semanticLabel,
+    this.disabledReason,
+    this.busy = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ActionPillButton(
+      label: label,
+      borderColor: color.withValues(alpha: 0.45),
+      backgroundColor: color.withValues(alpha: 0.1),
+      textColor: color,
+      onPressed: busy ? null : onPressed,
+      verticalPadding: verticalPadding,
+      fontSize: fontSize,
+      semanticLabel: semanticLabel,
+      disabledReason: disabledReason,
+    );
+  }
+}
+
 /// Outlined pill button used for CLEAR / DOUBLE / SPLIT / SURRENDER / STAND /
 /// NO THANKS actions — caller supplies the semantic colors.
 class ActionPillButton extends StatelessWidget {

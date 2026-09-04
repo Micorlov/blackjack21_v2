@@ -174,8 +174,40 @@ class FeltMetrics {
   // bands shrink and the whole felt is drawn ~30% larger on the same screen.
 
   /// Room the dealer cluster owns before the first seat row starts.
-  static const double _dealerBandSpread = 164;
+  ///
+  /// This was 164, and the cluster does not fit in it: 4 top inset + a 48
+  /// badge + 8 + the ~24 pot pill + 8 + an 86 card row is 178. The dealer's
+  /// cards therefore landed *on top of* the two upper seat plates and their
+  /// card fans from the fourth card onward — the exact overlap seen on device
+  /// when the dealer drew out to 23.
+  static const double _dealerBandSpread = 200;
   static const double _dealerBandCompact = 116;
+
+  /// Extra room the settled "TABLE SWEEP" banner needs: a 7px-padded pill of
+  /// 19px type, plus the gap above it, all of which appears
+  /// between the pot pill and the cards and pushes the whole row down.
+  static const double _sweepBannerBand = 66;
+
+  /// Painted size of one dealer/seat card, and the gap between two of them
+  /// when the row has room to breathe.
+  static const double cardWidth = 58;
+  static const double cardGap = 6;
+
+  /// Horizontal distance between the left edges of two consecutive dealer
+  /// cards, given how many there are and how much band they have.
+  ///
+  /// A dealer who keeps drawing (soft 17s, a five-card 21) would otherwise run
+  /// the row past the felt: seven cards at the full step are 442 units wide on
+  /// a 393 canvas. Past that point the cards overlap into a fan instead, which
+  /// keeps every rank corner visible and the row inside the table.
+  static double dealerCardStep(int count, double available) {
+    if (count <= 1) return cardWidth + cardGap;
+    final full = cardWidth + cardGap;
+    if (cardWidth + (count - 1) * full <= available) return full;
+    final fitted = (available - cardWidth) / (count - 1);
+    // Below this the corner index disappears under the next card.
+    return math.max(fitted, 20);
+  }
 
   /// Distance from one seat row to the next.
   static const double _seatPitchSpread = 98;
@@ -202,9 +234,19 @@ class FeltMetrics {
   /// steady so plates never jump mid-hand.
   static bool isCompactPhase(GameState state) => state.phase == RoundPhase.betting;
 
-  factory FeltMetrics.forState(GameState state, Size available) {
+  /// How much of the dealer band is type rather than fixed geometry.
+  ///
+  /// The badge total, the "DEALER" caption, the pot pill and the sweep banner
+  /// are all text, so they grow with the system font setting while the 40px
+  /// avatar and the 84px cards do not. Without this the band stayed a
+  /// constant at 1.3x and the cards were pushed down onto the seats again.
+  static const double _dealerBandTextShare = 0.45;
+
+  factory FeltMetrics.forState(GameState state, Size available, {double textScale = 1.0}) {
     final compact = isCompactPhase(state);
-    final dealerBand = compact ? _dealerBandCompact : _dealerBandSpread;
+    final rawDealerBand =
+        (compact ? _dealerBandCompact : _dealerBandSpread) + (state.sweepAmount > 0 ? _sweepBannerBand : 0);
+    final dealerBand = rawDealerBand * (1 + (textScale - 1) * _dealerBandTextShare);
     final pitch = compact ? _seatPitchCompact : _seatPitchSpread;
     final seatHeight = compact ? _seatHeightCompact : _seatHeightSpread;
     final seatsBottom = dealerBand + pitch + seatHeight + _seatBandGap;

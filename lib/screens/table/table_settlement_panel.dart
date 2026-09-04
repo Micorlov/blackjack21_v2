@@ -234,10 +234,13 @@ class TableSettlementPanel extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      // Two lines, because a winner's chosen display name can
+                      // be any length: at one line "You win the sweep pot"
+                      // truncated to "You win the sweep p…" on a stock phone.
                       Text(
                         potWinner.headline,
                         style: AppText.sora(15, weight: FontWeight.w800, color: potWinner.color),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(

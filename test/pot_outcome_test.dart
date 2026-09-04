@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'package:blackjack21_v2/data/game_data.dart';
 import 'package:blackjack21_v2/main.dart';
@@ -117,8 +116,7 @@ SweepInfo _sweep({required String winner, required bool heroTook}) {
 }
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
-
+  
   group('pot pill resolves at settlement', () {
     test('names the hero when the hero sweeps', () {
       final pot = TableCalc.midRoundPot(_settled(sweepInfo: _sweep(winner: 'You', heroTook: true), sweepAmount: 175));
@@ -182,7 +180,7 @@ void main() {
 
     test('credits the seat that took the pot', () {
       final info = TableCalc.potWinnerInfo(_settled(sweepInfo: _sweep(winner: 'Jordan', heroTook: false)));
-      expect(info.headline, 'Jordan wins the sweep pot');
+      expect(info.headline, 'Sweep pot: Jordan');
     });
   });
 

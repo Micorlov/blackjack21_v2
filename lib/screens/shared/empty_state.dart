@@ -7,6 +7,15 @@ import '../../widgets/buttons.dart';
 import '../../widgets/panel_card.dart';
 import 'async_action.dart';
 
+/// Weight an [EmptyState]'s call to action carries.
+enum EmptyStateAction {
+  /// Gold gradient. For the one empty state that *is* the screen's main job.
+  primary,
+
+  /// Underlined text link. For everywhere else.
+  link,
+}
+
 /// A designed "nothing here yet" panel with a way out of the emptiness.
 ///
 /// Several lists simply rendered an empty bordered box when they had no rows —
@@ -24,6 +33,16 @@ class EmptyState extends StatelessWidget {
   final String? actionLabel;
   final Future<void> Function()? onAction;
 
+  /// How much weight the action carries.
+  ///
+  /// Empty states are, by definition, not what the player came to the screen
+  /// to do — and there was one on the lobby, one on the shop and one on the
+  /// friends screen, each firing a full gold gradient button. Three of them
+  /// competing with the screen's real primary is why the lobby had no obvious
+  /// place to tap. [EmptyStateAction.link] keeps the way out without the
+  /// shouting.
+  final EmptyStateAction actionStyle;
+
   const EmptyState({
     super.key,
     required this.icon,
@@ -31,6 +50,7 @@ class EmptyState extends StatelessWidget {
     required this.message,
     this.actionLabel,
     this.onAction,
+    this.actionStyle = EmptyStateAction.primary,
   });
 
   @override
@@ -64,12 +84,19 @@ class EmptyState extends StatelessWidget {
               constraints: const BoxConstraints(maxWidth: 280),
               child: AsyncActionBuilder(
                 action: action,
-                builder: (context, busy, run) => GoldButton(
-                  label: busy ? 'Opening…' : label,
-                  onPressed: run,
-                  verticalPadding: AppSpacing.lg,
-                  fontSize: 16,
-                ),
+                builder: (context, busy, run) => switch (actionStyle) {
+                  EmptyStateAction.primary => GoldButton(
+                    label: busy ? 'Opening…' : label,
+                    onPressed: run,
+                    verticalPadding: AppSpacing.lg,
+                    fontSize: 16,
+                  ),
+                  EmptyStateAction.link => TextLinkButton(
+                    label: busy ? 'Opening…' : label,
+                    onPressed: run,
+                    underline: true,
+                  ),
+                },
               ),
             ),
           ],

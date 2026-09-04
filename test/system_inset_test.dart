@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'package:blackjack21_v2/main.dart';
 import 'package:blackjack21_v2/screens/table/table_betting_panel.dart';
@@ -41,8 +40,7 @@ Future<void> _enterLobbyAsGuest(WidgetTester tester) async {
 }
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
-
+  
   testWidgets('onboarding terms line clears the system navigation bar', (tester) async {
     _useEdgeToEdgePhone(tester);
     await tester.pumpWidget(const ProviderScope(child: BlackjackApp()));

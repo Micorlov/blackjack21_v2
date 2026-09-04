@@ -36,7 +36,6 @@ dependencies:
   cupertino_icons: ^1.0.8
 
   flutter_riverpod: ^2.6.1
-  google_fonts: ^6.2.1
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.2
@@ -106,22 +105,28 @@ flutter:
   # For details regarding adding assets from package dependencies, see
   # https://flutter.dev/to/asset-from-package
 
-  # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
-  # list giving the asset and other descriptors for the font. For
-  # example:
-  # fonts:
-  #   - family: Schyler
-  #     fonts:
-  #       - asset: fonts/Schyler-Regular.ttf
-  #       - asset: fonts/Schyler-Italic.ttf
-  #         style: italic
-  #   - family: Trajan Pro
-  #     fonts:
-  #       - asset: fonts/TrajanPro.ttf
-  #       - asset: fonts/TrajanPro_Bold.ttf
-  #         weight: 700
+  # Bundled rather than fetched at runtime. `google_fonts` downloaded all
+  # three families on first launch, so a cold start on a slow connection drew
+  # the entire game in the platform fallback face and then reflowed — the
+  # first thing a new player ever saw was the app changing its mind about what
+  # it looks like. These ship inside the APK, so frame one is correct and the
+  # app no longer needs the network to render text.
+  #
+  # Sora is the upstream variable font (there are no static instances in
+  # google/fonts); AppText.sora pins its `wght` axis via `fontVariations`.
+  fonts:
+    - family: Sora
+      fonts:
+        - asset: assets/fonts/Sora-Variable.ttf
+    - family: Instrument Serif
+      fonts:
+        - asset: assets/fonts/InstrumentSerif-Italic.ttf
+          style: italic
+    - family: Space Mono
+      fonts:
+        - asset: assets/fonts/SpaceMono-Regular.ttf
+        - asset: assets/fonts/SpaceMono-Bold.ttf
+          weight: 700
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package

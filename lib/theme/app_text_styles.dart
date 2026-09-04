@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
 /// Typography helpers ported from `Blackjack 21 v2.dc.html`:
 /// Sora (body), Instrument Serif italic (headings), Space Mono (numbers/labels).
+///
+/// All three families are bundled in `assets/fonts` and declared in
+/// `pubspec.yaml`. They used to come from `google_fonts`, which fetches over
+/// the network on first launch: until the download landed the whole game
+/// rendered in the platform fallback and then reflowed in front of the player.
 class AppText {
   AppText._();
+
+  /// Sora ships as a variable font, so weight is an axis rather than a
+  /// separate file. Flutter will not drive that axis from [TextStyle.fontWeight]
+  /// on its own — without this every bold label in the app would silently
+  /// render at 400.
+  static List<FontVariation> _wght(FontWeight weight) => [FontVariation('wght', weight.value.toDouble())];
 
   static TextStyle sora(
     double size, {
@@ -15,7 +25,9 @@ class AppText {
     double? height,
     double? letterSpacing,
   }) {
-    return GoogleFonts.sora(
+    return TextStyle(
+      fontFamily: 'Sora',
+      fontVariations: _wght(weight),
       fontSize: size,
       fontWeight: weight,
       color: color,
@@ -30,7 +42,8 @@ class AppText {
     double? height,
     FontWeight weight = FontWeight.w400,
   }) {
-    return GoogleFonts.instrumentSerif(
+    return TextStyle(
+      fontFamily: 'Instrument Serif',
       fontSize: size,
       fontStyle: FontStyle.italic,
       fontWeight: weight,
@@ -46,9 +59,12 @@ class AppText {
     double? letterSpacing,
     double? height,
   }) {
-    return GoogleFonts.spaceMono(
+    return TextStyle(
+      fontFamily: 'Space Mono',
       fontSize: size,
-      fontWeight: weight,
+      // Space Mono ships two static weights; anything at or above w600 takes
+      // the bold file, which is what the `weight: 700` pubspec entry maps.
+      fontWeight: weight.value >= FontWeight.w600.value ? FontWeight.w700 : FontWeight.w400,
       color: color,
       letterSpacing: letterSpacing,
       height: height,

@@ -69,6 +69,12 @@ class GameState {
   final int chips;
   final TableStake? stake;
   final int bet;
+
+  /// The stake the player last actually dealt with, so the betting panel can
+  /// offer a one-tap "deal that again". Session-only: it belongs to the sitting,
+  /// not to the bankroll, so it is deliberately outside [SavedGame].
+  final int lastBet;
+
   final RoundPhase phase;
   final List<PlayingCard> dealerHand;
   final bool holeRevealed;
@@ -197,6 +203,7 @@ class GameState {
     this.chips = 1000,
     this.stake,
     this.bet = 0,
+    this.lastBet = 0,
     this.phase = RoundPhase.betting,
     this.dealerHand = const [],
     this.holeRevealed = false,
@@ -281,6 +288,7 @@ class GameState {
     int? chips,
     Object? stake = _unset,
     int? bet,
+    int? lastBet,
     RoundPhase? phase,
     List<PlayingCard>? dealerHand,
     bool? holeRevealed,
@@ -362,6 +370,7 @@ class GameState {
       chips: chips ?? this.chips,
       stake: identical(stake, _unset) ? this.stake : stake as TableStake?,
       bet: bet ?? this.bet,
+      lastBet: lastBet ?? this.lastBet,
       phase: phase ?? this.phase,
       dealerHand: dealerHand ?? this.dealerHand,
       holeRevealed: holeRevealed ?? this.holeRevealed,

@@ -1288,6 +1288,45 @@ class GameNotifier extends StateNotifier<GameState> {
 
   void clearBet() => state = state.copyWith(bet: 0);
 
+  /// Bets the whole stack, capped at the table maximum.
+  ///
+  /// Reaching a $500 bet on the Bronze table otherwise costs a tap per chip;
+  /// worse, the biggest moment the game has — riding the lot — was the one the
+  /// interface made hardest to reach.
+  void betAllIn() {
+    if (state.phase != RoundPhase.betting) return;
+    final stake = state.stake;
+    final amount = stake?.max == null ? state.chips : min(state.chips, stake!.max);
+    if (amount <= 0) return;
+    if (stake != null && amount < stake.min) {
+      _showToast('Table minimum is \$${formatChips(stake.min)}');
+      return;
+    }
+    state = state.copyWith(bet: amount);
+    _playSfx(GameSfx.chip);
+    _hapticMedium();
+  }
+
+  /// Re-stakes [GameState.lastBet] and deals in one tap.
+  ///
+  /// A player who has settled on a stake was re-tapping the same chips every
+  /// single hand; between hands the only thing standing between them and the
+  /// next round was busywork.
+  void rebetAndDeal() {
+    final last = state.lastBet;
+    if (state.phase != RoundPhase.betting || last <= 0) return;
+    if (last > state.chips) {
+      _showToast('Not enough chips');
+      return;
+    }
+    final stake = state.stake;
+    if (stake != null && (last < stake.min || last > stake.max)) return;
+    state = state.copyWith(bet: last);
+    _playSfx(GameSfx.chip);
+    _hapticSelection();
+    dealRound();
+  }
+
   void dealRound() {
     final bet = state.bet;
     final chips = state.chips;
@@ -1295,6 +1334,11 @@ class GameNotifier extends StateNotifier<GameState> {
     if (state.phase != RoundPhase.betting || bet <= 0 || bet > chips) return;
     // The table limits are a rule, not decoration: a bet outside them never deals.
     if (stake != null && (bet < stake.min || bet > stake.max)) return;
+
+    // Recorded once here, before the three exits below: every later
+    // `copyWith` carries it forward, so the betting panel can offer this
+    // exact stake again next hand.
+    state = state.copyWith(lastBet: bet);
 
     final npcSeats = _dealNpcCards();
     if (_shoe.length < 15) _shoe = BlackjackRules.buildShoe(kDeckCount, _rng);
@@ -1841,13 +1885,22 @@ class GameNotifier extends StateNotifier<GameState> {
     final tutorialSeen = min(state.tutorialRoundsSeen + 1, kTutorialRounds);
     final tutorialAdvanced = tutorialSeen != state.tutorialRoundsSeen;
 
-    const speakers = ['Maya T.', 'Jordan K.'];
-    final speaker = speakers[_rng.nextInt(speakers.length)];
-    final line = kChatPool[_rng.nextInt(kChatPool.length)];
-    final newMessages = [
-      ...state.chatMessages,
-      ChatMessage(name: speaker, text: line, id: DateTime.now().millisecondsSinceEpoch),
-    ];
+    // Table chat used to invent a message from a hardcoded name after every
+    // hand, so a player with nobody in their group watched "Maya T." talk to
+    // them all night. Fiction in a social surface teaches players the real
+    // social features are fake too, so the filler only runs once there are
+    // actual people in the group to talk to.
+    final speakers = state.friendsAreLive ? state.friends.map((f) => f.name).toList() : const <String>[];
+    final newMessages = speakers.isEmpty
+        ? state.chatMessages
+        : [
+            ...state.chatMessages,
+            ChatMessage(
+              name: speakers[_rng.nextInt(speakers.length)],
+              text: kChatPool[_rng.nextInt(kChatPool.length)],
+              id: DateTime.now().millisecondsSinceEpoch,
+            ),
+          ];
     state = state.copyWith(
       phase: RoundPhase.betting,
       bet: 0,

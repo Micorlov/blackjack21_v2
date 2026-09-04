@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'package:blackjack21_v2/data/game_data.dart';
 import 'package:blackjack21_v2/l10n/generated/app_localizations.dart';
@@ -38,8 +37,7 @@ Widget _wrap(GameState state, Widget screen) {
 const _liveFriends = [Friend(id: 'f1', name: 'Dana', chips: 2400, online: true, dailyScore: 300, hourlyScore: 90)];
 
 void main() {
-  setUpAll(() => GoogleFonts.config.allowRuntimeFetching = false);
-
+  
   group('legal documents', () {
     testWidgets('onboarding links the consent line to the Terms', (tester) async {
       await tester.pumpWidget(const ProviderScope(child: MaterialApp(home: OnboardingScreen(isWeb: false))));

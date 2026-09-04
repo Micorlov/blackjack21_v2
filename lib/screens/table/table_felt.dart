@@ -52,7 +52,11 @@ class TableFelt extends ConsumerWidget {
           return const SizedBox.shrink();
         }
 
-        final m = FeltMetrics.forState(state, available);
+        // The dealer cluster is largely type, so the room it needs grows with
+        // the system font setting. Clamped to the same 1.0–1.3 range the app
+        // allows anywhere else.
+        final textScale = MediaQuery.textScalerOf(context).scale(12) / 12;
+        final m = FeltMetrics.forState(state, available, textScale: textScale.clamp(1.0, 1.3));
 
         return ClipRect(
           child: OverflowBox(
@@ -74,7 +78,13 @@ class TableFelt extends ConsumerWidget {
                     _topVignette(),
                     _chipTray(m),
                     _discardPile(m),
-                    DealerArea(state: state, midPot: midPot, cardBack: cardBack, inset: m.inset),
+                    DealerArea(
+                      state: state,
+                      midPot: midPot,
+                      cardBack: cardBack,
+                      inset: m.inset,
+                      contentWidth: m.contentWidth,
+                    ),
                     if (kShowFriendsAtTable) ..._seatPlates(state, m),
                     if (state.phase != RoundPhase.settlement)
                       HeroHandArea(state: state, top: m.heroTop, inset: m.inset),

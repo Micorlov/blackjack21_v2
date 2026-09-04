@@ -34,21 +34,32 @@ class TableInsurancePanel extends ConsumerWidget {
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 12),
+        // Insurance is a losing bet at every count this game deals, yet it
+        // used to be the wide gold button while declining was the small red
+        // outline — the interface pushed the player into the worst wager on
+        // the table. Declining now carries the primary weight and insuring is
+        // the considered opt-in, styled like DOUBLE rather than like DEAL.
         Row(
           children: [
             Expanded(
               child: ActionPillButton(
-                label: 'NO THANKS',
-                borderColor: AppColors.lose.withValues(alpha: 0.6),
-                backgroundColor: AppColors.lose.withValues(alpha: 0.2),
-                textColor: AppColors.loseLight,
-                onPressed: notifier.declineInsurance,
+                label: 'INSURE',
+                borderColor: AppColors.gold.withValues(alpha: 0.32),
+                backgroundColor: AppColors.gold.withValues(alpha: 0.08),
+                textColor: AppColors.gold,
+                onPressed: notifier.takeInsurance,
+                fontSize: 17,
               ),
             ),
             const SizedBox(width: 8),
             Expanded(
               flex: 2,
-              child: GoldButton(label: 'INSURE', onPressed: notifier.takeInsurance, verticalPadding: 20, fontSize: 20),
+              child: GoldButton(
+                label: 'NO THANKS',
+                onPressed: notifier.declineInsurance,
+                verticalPadding: 20,
+                fontSize: 20,
+              ),
             ),
           ],
         ),

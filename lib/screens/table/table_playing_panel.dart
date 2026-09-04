@@ -119,6 +119,11 @@ class _TablePlayingPanelState extends ConsumerState<TablePlayingPanel> {
           ],
         ),
         const SizedBox(height: AppSpacing.sm + AppSpacing.xxs),
+        // Equal halves, deliberately. HIT used to be twice as wide as STAND
+        // and the only gold button on the felt, so on a hard 19 — where
+        // standing is the only sane play — the interface still pointed at the
+        // card that busts. Neither action is right for every hand, so neither
+        // gets the extra weight; colour alone keeps them apart.
         Row(
           children: [
             Expanded(
@@ -132,7 +137,6 @@ class _TablePlayingPanelState extends ConsumerState<TablePlayingPanel> {
             ),
             const SizedBox(width: AppSpacing.sm),
             Expanded(
-              flex: 2,
               child: GoldButton(
                 label: 'HIT',
                 onPressed: _debounced(notifier.playerHit),

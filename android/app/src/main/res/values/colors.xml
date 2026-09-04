@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- AppColors.shellBlack. The launch window is painted with this so the
+         very first frame of the app is already the app's own colour: the
+         stock template left it @android:color/white, which meant every cold
+         start flashed a full white screen before a near-black game. -->
+    <color name="shell_black">#05100C</color>
+</resources>
