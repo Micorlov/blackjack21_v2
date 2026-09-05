@@ -195,6 +195,13 @@ class GameState {
   /// derived via `isRebuyReady` in utils/rebuy.dart.
   final DateTime? lastRebuyAt;
 
+  /// Whether anonymous usage and crash reporting is on.
+  ///
+  /// Defaults to on, and is a real switch rather than a label: turning it off
+  /// tells the SDKs to stop collecting, not just this app to stop calling
+  /// them.
+  final bool analyticsOn;
+
   /// Ids of achievements already paid and announced — see utils/achievements.dart.
   final List<String> unlockedAchievements;
 
@@ -299,6 +306,7 @@ class GameState {
     this.playDayStreak = 0,
     this.lastPlayDayKey = '',
     this.lastRebuyAt,
+    this.analyticsOn = true,
     this.unlockedAchievements = const [],
     this.xp = 0,
     this.missionDayKey = '',
@@ -389,6 +397,7 @@ class GameState {
     int? playDayStreak,
     String? lastPlayDayKey,
     Object? lastRebuyAt = _unset,
+    bool? analyticsOn,
     List<String>? unlockedAchievements,
     int? xp,
     String? missionDayKey,
@@ -482,6 +491,7 @@ class GameState {
       playDayStreak: playDayStreak ?? this.playDayStreak,
       lastPlayDayKey: lastPlayDayKey ?? this.lastPlayDayKey,
       lastRebuyAt: identical(lastRebuyAt, _unset) ? this.lastRebuyAt : lastRebuyAt as DateTime?,
+      analyticsOn: analyticsOn ?? this.analyticsOn,
       unlockedAchievements: unlockedAchievements ?? this.unlockedAchievements,
       xp: xp ?? this.xp,
       missionDayKey: missionDayKey ?? this.missionDayKey,

@@ -109,6 +109,26 @@ class SettingsScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 16),
+          // Deliberately its own section rather than a line buried in
+          // Notifications: it is the only switch here that changes what leaves
+          // the device, so it gets stated plainly and can be turned off.
+          //
+          // Not localized yet — the rest of this screen is, but adding ARB
+          // keys for ten locales belongs with the next translation pass rather
+          // than half-done here.
+          const SectionLabel('PRIVACY'),
+          _TogglePanel(
+            rows: [
+              _ToggleRowData(
+                'Usage & crash reports',
+                state.analyticsOn,
+                () => notifier.setAnalytics(!state.analyticsOn),
+                sublabel: 'Anonymous counts of hands played and crashes, so problems can be found and '
+                    'fixed. Never your name, your group code or your chat.',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           SectionLabel(t.settingsSectionHelp),
           _LinkPanel(
             rows: [

@@ -1,4 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'dart:ui' show PlatformDispatcher;
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -58,12 +61,41 @@ Future<void> _initServices() async {
     return;
   }
 
+  _installErrorHandlers();
+
   try {
     await GoogleSignIn.instance.initialize().timeout(_startupInitTimeout);
   } catch (error) {
     debugPrint(
       'Google sign-in init did not complete, guest play still works: $error',
     );
+  }
+}
+
+/// Routes framework and platform errors to Crashlytics.
+///
+/// The app shipped with neither handler: a Flutter framework error printed a
+/// red box in debug and did nothing in release, and an error off the main
+/// isolate simply vanished. Every failure a real player hit was invisible, so
+/// there was no way to tell a broken build from a quiet week.
+///
+/// Only installed on platforms Crashlytics supports — it has no web
+/// implementation, and calling into it there throws on first use.
+void _installErrorHandlers() {
+  if (kIsWeb) return;
+  try {
+    final crashlytics = FirebaseCrashlytics.instance;
+    final priorOnError = FlutterError.onError;
+    FlutterError.onError = (details) {
+      priorOnError?.call(details);
+      crashlytics.recordFlutterFatalError(details);
+    };
+    PlatformDispatcher.instance.onError = (error, stack) {
+      crashlytics.recordError(error, stack, fatal: true);
+      return true;
+    };
+  } catch (error) {
+    debugPrint('Crash reporting unavailable: $error');
   }
 }
 
@@ -209,6 +241,13 @@ class AppShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Screen views are logged from here rather than from each `goX()` method:
+    // navigation is a single enum field, so one listener covers every route
+    // into every screen, including the back button and deep links.
+    ref.listen(gameProvider.select((s) => s.screen), (previous, next) {
+      if (previous != next) ref.read(gameProvider.notifier).logScreenView(next);
+    });
+
     final state = ref.watch(gameProvider);
     final notifier = ref.read(gameProvider.notifier);
     final showNav =

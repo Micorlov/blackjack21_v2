@@ -94,11 +94,11 @@ const LegalDoc kTermsDoc = LegalDoc(
 
 const LegalDoc kPrivacyDoc = LegalDoc(
   title: 'Privacy Policy',
-  updated: 'Last updated 3 September 2026',
+  updated: 'Last updated 5 September 2026',
   intro:
       'The short version: $kAppName keeps your game on your device, and only sends anything to a '
-      'server when you sign in or join a friends group. There are no ads, no trackers and no '
-      'analytics in this build.',
+      'server when you sign in, join a friends group, or — unless you turn it off — report an '
+      'anonymous count of what happened in a hand. There are no ads and no third-party trackers.',
   sections: [
     LegalSection(
       'What stays on your device',
@@ -125,10 +125,18 @@ const LegalDoc kPrivacyDoc = LegalDoc(
           'revoke the permission entirely in your system settings.',
     ),
     LegalSection(
-      'No advertising or analytics',
-      'This build contains no advertising SDK, no analytics SDK and no third-party trackers. The '
-          '"watch an ad" row in the Shop is a simulated reward — no ad is loaded and no ad network '
-          'sees you.',
+      'Usage and crash reports',
+      'The app reports anonymous counts of what happens in the game — hands played and their '
+          'result, daily bonuses claimed, missions and achievements completed, levels reached, '
+          'which screens are opened — and sends a report when it crashes, through Google Firebase '
+          'Analytics and Crashlytics. These carry no display name, no group code, no account '
+          'identifier and nothing you type. Turn the whole thing off under Privacy in Settings and '
+          'nothing further is collected.',
+    ),
+    LegalSection(
+      'No advertising',
+      'This build contains no advertising SDK and no third-party trackers. The "watch an ad" row '
+          'in the Shop is a simulated reward — no ad is loaded and no ad network sees you.',
     ),
     LegalSection(
       'Location',

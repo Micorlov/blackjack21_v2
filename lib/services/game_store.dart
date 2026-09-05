@@ -78,6 +78,9 @@ class SavedGame {
   /// Epoch-ms of the last table Rebuy; 0 means never, restoring as null.
   final int lastRebuyAtMs;
 
+  /// Whether anonymous usage and crash reporting is on.
+  final bool analyticsOn;
+
   /// Ids of achievements already awarded, so their one-time chip reward is
   /// paid once and their unlock announced once. Before this, achievements
   /// were recomputed from stats on every build and paid nothing, so crossing
@@ -123,6 +126,7 @@ class SavedGame {
     this.playDayStreak = 0,
     this.lastPlayDayKey = '',
     this.lastRebuyAtMs = 0,
+    this.analyticsOn = true,
     this.unlockedAchievements = const [],
     this.xp = 0,
     this.missionDayKey = '',
@@ -173,6 +177,7 @@ class SavedGame {
     'playDayStreak': playDayStreak,
     'lastPlayDayKey': lastPlayDayKey,
     'lastRebuyAtMs': lastRebuyAtMs,
+    'analyticsOn': analyticsOn,
     'unlockedAchievements': unlockedAchievements,
     'xp': xp,
     'missionDayKey': missionDayKey,
@@ -240,6 +245,7 @@ class SavedGame {
       // Left empty on purpose: an existing player's already-earned badges are
       // then awarded (and celebrated) on their next hand, rather than being
       // silently marked as claimed and paying nothing.
+      analyticsOn: _bool(json['analyticsOn'], defaults.analyticsOn),
       unlockedAchievements: _strings(json['unlockedAchievements']),
       xp: _int(json['xp'], 0),
       missionDayKey: _str(json['missionDayKey'], ''),

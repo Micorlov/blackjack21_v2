@@ -59,7 +59,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Privacy Policy'), findsOneWidget);
-      expect(find.text('No advertising or analytics'), findsOneWidget);
+      // The policy has to state, in the app itself, what the app actually
+      // does: it now reports anonymous usage and crashes, and says so.
+      expect(find.text('Usage and crash reports'), findsOneWidget);
+      expect(find.text('No advertising'), findsOneWidget);
     });
 
     testWidgets('settings offers both documents and the build version', (tester) async {

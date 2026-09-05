@@ -59,6 +59,8 @@ dependencies:
   # fragment — needed for the invite deep link to work on web.
   flutter_web_plugins:
     sdk: flutter
+  firebase_analytics: ^12.5.0
+  firebase_crashlytics: ^5.3.0
 
 dev_dependencies:
   flutter_test:

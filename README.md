@@ -264,6 +264,8 @@ on a Play-distributed one. One-time manual steps to fix that:
 | `google_sign_in` | Google account picker for sign-in |
 | `google_sign_in_web` | Renders Google's own Identity Services button on web — `authenticate()` isn't supported there |
 | `cloud_firestore` | Friends groups and live hourly/daily score sync |
+| `firebase_analytics` | Anonymous counts of what happens in the game — see **Privacy** below |
+| `firebase_crashlytics` | Crash and non-fatal error reporting; installs the app's only `FlutterError.onError` / `PlatformDispatcher.onError` handlers |
 | `url_launcher` | Opens WhatsApp with the prefilled invite link, and the Play Store from the web install banner |
 | `share_plus` | The system share sheet for the invite link, alongside the WhatsApp button |
 | `flutter_web_plugins` | `usePathUrlStrategy()`, so a web invite link resolves `/join/CODE` from the real URL path instead of the default `#/` hash fragment |
@@ -409,6 +411,24 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-05 (4)
+- feat: **The app can finally tell a broken build from a quiet week.** It shipped with no
+  analytics and, more seriously, no error handlers at all: a framework error printed a red box in
+  debug and did nothing in release, an error off the main isolate vanished outright, and the
+  catch blocks in the social, save and notification services each `debugPrint`ed their failures
+  into a console no player has. Firebase Crashlytics now takes both handler slots, and Firebase
+  Analytics records counts of what happens — hands played and their result, daily bonuses,
+  missions, achievements, levels, screens opened, invites shared.
+- feat: **A privacy switch that actually switches something.** Settings → Privacy turns usage and
+  crash reporting off, and the toggle reaches the SDKs' own collection flags rather than just
+  stopping this app from calling them. Nothing logged carries a display name, a group code, an
+  account identifier or anything typed.
+- fix: **The Privacy Policy no longer says something untrue.** It claimed "no analytics SDK";
+  it now describes exactly what is collected, names the two SDKs, and points at the switch.
+  **Michael: the Play Console data-safety form needs updating to match before the next release.**
+- chore: `firebase_auth` 6.5.6 → 6.6.1 and `cloud_firestore` 6.7.1 → 6.9.0, forced by the
+  `firebase_core` 4.14.0 that the new packages pull in — 6.5.6 fails to compile against it.
 
 ### 2026-09-05 (3)
 - feat: **Achievements finally do something.** The seven badges were recomputed from stats on

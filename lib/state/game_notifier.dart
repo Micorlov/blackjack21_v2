@@ -3,7 +3,9 @@ import 'dart:math';
 
 import 'dart:ui' show Locale, PlatformDispatcher;
 
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,6 +22,7 @@ import '../models/hand.dart';
 import '../models/playing_card.dart';
 import '../models/social_models.dart';
 import '../models/table_pot.dart';
+import '../services/analytics.dart';
 import '../services/daily_bonus_store.dart';
 import '../services/game_store.dart';
 import '../services/local_notifier.dart';
@@ -61,8 +64,9 @@ class _SeatResult {
 class GameNotifier extends StateNotifier<GameState> {
   /// [sound] is a seam for tests, which need to see which channel a call-out
   /// was handed to — the app always builds its own.
-  GameNotifier({@visibleForTesting SoundPlayer? sound})
+  GameNotifier({@visibleForTesting SoundPlayer? sound, @visibleForTesting Analytics? analytics})
       : _sound = sound ?? SoundPlayer(),
+        _analytics = analytics ?? _defaultAnalytics(),
         super(const GameState(friends: kInitialFriends)) {
     _shoe = BlackjackRules.buildShoe(kDeckCount, _rng);
     // `authenticate()` throws UnimplementedError on web — Google Identity
@@ -75,8 +79,22 @@ class GameNotifier extends StateNotifier<GameState> {
     unawaited(_boot());
   }
 
+  /// Reporting is off on web (Crashlytics has no web implementation) and in
+  /// tests, where a null pair makes every call a no-op rather than making each
+  /// call site guard.
+  static Analytics _defaultAnalytics() {
+    if (kIsWeb) return Analytics();
+    try {
+      return Analytics(analytics: FirebaseAnalytics.instance, crashlytics: FirebaseCrashlytics.instance);
+    } on Object catch (e) {
+      debugPrint('Analytics unavailable: $e');
+      return Analytics();
+    }
+  }
+
   final Random _rng = Random();
   final SoundPlayer _sound;
+  final Analytics _analytics;
   final SocialService _social = SocialService();
   final LocalNotifier _notifs = LocalNotifier();
   final DailyBonusStore _bonusStore = DailyBonusStore();
@@ -501,6 +519,7 @@ class GameNotifier extends StateNotifier<GameState> {
       lastRebuyAt: saved.lastRebuyAtMs == 0
           ? null
           : DateTime.fromMillisecondsSinceEpoch(saved.lastRebuyAtMs),
+      analyticsOn: saved.analyticsOn,
       unlockedAchievements: saved.unlockedAchievements,
       xp: saved.xp,
       // Yesterday's missions are not today's: the set is redrawn from the day
@@ -543,6 +562,7 @@ class GameNotifier extends StateNotifier<GameState> {
     playDayStreak: state.playDayStreak,
     lastPlayDayKey: state.lastPlayDayKey,
     lastRebuyAtMs: state.lastRebuyAt?.millisecondsSinceEpoch ?? 0,
+    analyticsOn: state.analyticsOn,
     unlockedAchievements: state.unlockedAchievements,
     xp: state.xp,
     missionDayKey: state.missionDayKey,
@@ -814,6 +834,9 @@ class GameNotifier extends StateNotifier<GameState> {
     final text = Uri.encodeComponent(_inviteText(code));
     final opened = await _openExternal(Uri.parse('https://wa.me/?text=$text'));
     if (!opened) _showToast('Could not open WhatsApp');
+    // The invite is the app's only growth loop, so whether it was even opened
+    // is worth knowing. The code itself is never logged.
+    unawaited(_analytics.logEvent(AnalyticsEvent.inviteShared, {'channel': 'whatsapp', 'opened': opened ? 1 : 0}));
   }
 
   /// The system share sheet — for friends not reachable over WhatsApp.
@@ -1096,6 +1119,7 @@ class GameNotifier extends StateNotifier<GameState> {
     // Sitting at the VIP table is an achievement in its own right, and it can
     // happen without a hand being played.
     _awardAchievements();
+    unawaited(_analytics.logEvent(AnalyticsEvent.tableEntered, {'stake': t.key}));
   }
 
   List<NpcSeat> _rollNpcSeats(int minBet) {
@@ -1296,6 +1320,7 @@ class GameNotifier extends StateNotifier<GameState> {
     );
     _playSfx(GameSfx.win);
     _hapticMedium();
+    unawaited(_analytics.logEvent(AnalyticsEvent.dailyBonusClaimed, {'day': day, 'reward': reward}));
   }
 
   String get _playStreakLabel {
@@ -1929,6 +1954,19 @@ class GameNotifier extends StateNotifier<GameState> {
 
     _reportScore();
     _scheduleSave();
+
+    // Counts and outcomes only — never a name, a group code or a uid. This is
+    // the event the whole funnel hangs off: without it there is no way to tell
+    // how many hands a session actually runs to.
+    unawaited(
+      _analytics.logEvent(AnalyticsEvent.handPlayed, {
+        'result': messageType.name,
+        'stake': state.stake?.key ?? 'none',
+        'net': sessionNetDelta,
+        'swept': heroTakesPot ? 1 : 0,
+        'blackjack': bjDelta > 0 ? 1 : 0,
+      }),
+    );
   }
 
   // ---------------------------------------------------------------------
@@ -1954,6 +1992,23 @@ class GameNotifier extends StateNotifier<GameState> {
     );
     _hapticMedium();
     _scheduleSave();
+    for (final def in earned) {
+      unawaited(_analytics.logEvent(AnalyticsEvent.achievementUnlocked, {'id': def.id}));
+    }
+  }
+
+  /// Records that the player moved to [screen]. Called from the shell, which
+  /// is the one place every navigation passes through.
+  void logScreenView(AppScreen screen) => unawaited(_analytics.logScreen(screen.name));
+
+  /// Turns anonymous usage and crash reporting on or off.
+  ///
+  /// The switch reaches the SDKs, not just this app's call sites, so "off"
+  /// means nothing is collected rather than nothing being sent by us.
+  void setAnalytics(bool on) {
+    state = state.copyWith(analyticsOn: on);
+    unawaited(_analytics.setEnabled(on));
+    _scheduleSave();
   }
 
   /// Dismisses the achievement banner.
@@ -1972,6 +2027,9 @@ class GameNotifier extends StateNotifier<GameState> {
     final xp = state.xp + gained;
     final after = Xp.levelFor(xp);
     state = state.copyWith(xp: xp, levelUpTo: after > before ? after : null);
+    if (after > before) {
+      unawaited(_analytics.logEvent(AnalyticsEvent.levelUp, {'level': after}));
+    }
   }
 
   /// Dismisses the level-up sheet.
@@ -2017,6 +2075,7 @@ class GameNotifier extends StateNotifier<GameState> {
       chips: state.chips + mission.reward,
       missionsClaimed: [...state.missionsClaimed, id],
     );
+    unawaited(_analytics.logEvent(AnalyticsEvent.missionClaimed, {'id': mission.id, 'reward': mission.reward}));
     _showToast('Mission complete — ${mission.label}, +${formatChips(mission.reward)} chips');
     _playSfx(GameSfx.win);
     _hapticMedium();
@@ -2110,6 +2169,7 @@ class GameNotifier extends StateNotifier<GameState> {
     _showToast('+${formatChips(kRebuyChips)} rebuy chips');
     _playSfx(GameSfx.win);
     _hapticMedium();
+    unawaited(_analytics.logEvent(AnalyticsEvent.rebuy));
   }
 
   // ---------------------------------------------------------------------
