@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,27 +10,24 @@ import '../state/game_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
-import '../utils/cup.dart';
 import '../utils/daily_bonus.dart';
 import '../utils/formatters.dart';
-import '../utils/leaderboard.dart';
 import '../utils/table_presence.dart';
 import '../utils/table_recommendation.dart';
-import '../utils/xp.dart';
 import '../widgets/avatar_circle.dart';
 import '../widgets/buttons.dart';
 import '../widgets/count_up_text.dart';
 import '../widgets/daily_bonus_dialog.dart';
-import '../widgets/missions_card.dart';
 import '../widgets/panel_card.dart';
 import 'shared/avatar_initial.dart';
-import 'shared/empty_state.dart';
 
-/// Home / lobby screen: welcome header, stories, daily bonus, tournament
-/// promo, table picker, and a "Top players" leaderboard preview. Ported 1:1
-/// from the `screen==='lobby'` block in `Blackjack 21 v2.dc.html`
-/// (lines 45-128). The bottom nav bar and toast/reaction overlays live in the
-/// app shell, not here.
+/// Home screen: who you are and what you have, today's bonus, and the three
+/// tables. That is the whole list.
+///
+/// It used to stack seven things — a rank ticker, an XP level, the bonus,
+/// three missions, a tournament promo, the tables and a leaderboard preview —
+/// and the game itself was the one item without a button. Everything that was
+/// not "sit down and play" is gone; the friends race lives on its own tab.
 class LobbyScreen extends ConsumerWidget {
   const LobbyScreen({super.key});
 
@@ -39,29 +35,17 @@ class LobbyScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(gameProvider);
     final notifier = ref.read(gameProvider.notifier);
-    final topPlayers = buildLeaderboard(state).take(3).toList();
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _HeaderRow(state: state),
-          const SizedBox(height: 20),
-          // The stories rail is still seeded fiction (four invented players
-          // with invented highlights). Shown to someone with an empty group it
-          // sat directly above a leaderboard reading "your leaderboard is
-          // waiting — invite a friend", so the lobby contradicted itself on
-          // one screen. It stays hidden until there are real people in it.
-          if (state.friendsAreLive) ...[
-            _StoriesRow(state: state, notifier: notifier),
-            const SizedBox(height: 16),
-          ],
+          const SizedBox(height: 24),
           _DailyBonusCard(state: state, notifier: notifier),
-          const SizedBox(height: 16),
-          const MissionsCard(),
-          _TournamentCard(state: state, notifier: notifier),
-          const SectionLabel('Choose your table'),
+          const SizedBox(height: 24),
+          const SectionLabel('Tables'),
           for (final t in kTables)
             _TableCard(
               table: t,
@@ -69,33 +53,6 @@ class LobbyScreen extends ConsumerWidget {
               // Bots never carry a `tableKey`, so this is real friends only.
               here: friendsAtTable(state.friendsAreLive ? state.friends : const [], t.key),
               recommended: t.key == recommendedTable(state.chips).key,
-            ),
-          const SizedBox(height: 4),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(2, 8, 2, 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('TOP PLAYERS', style: AppText.sectionLabel()),
-                TextLinkButton(label: 'See all', onPressed: () => notifier.goFriends()),
-              ],
-            ),
-          ),
-          // Same rule as the friends screen and the world standings: the
-          // seeded practice bots are not people, so they do not get to stand
-          // on a leaderboard next to the player's real score.
-          if (state.friendsAreLive)
-            _LeaderboardCard(entries: topPlayers)
-          else
-            EmptyState(
-              icon: Icons.emoji_events_outlined,
-              title: 'Your leaderboard is waiting',
-              message:
-                  'Invite a friend with your group code and their scores race yours here, '
-                  'hour by hour.',
-              actionLabel: 'Invite via WhatsApp',
-              onAction: notifier.shareInviteWhatsApp,
-              actionStyle: EmptyStateAction.link,
             ),
         ],
       ),
@@ -119,116 +76,35 @@ class _HeaderRow extends StatelessWidget {
             initial: avatarInitialOf(state.displayName, fallback: '?'),
             color: state.avatarColor,
             size: 40,
-            goldRing: state.avatarFrameGold,
             photoUrl: state.photoUrl,
           ),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 12),
         Expanded(
-          child: MergeSemantics(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // The level replaces a bare "Welcome back": it is the one
-                // number in the app that only ever goes up, so it is worth
-                // more at the top of the screen than a greeting.
-                Text(
-                  levelLabel(state.xp),
-                  style: AppText.sora(13, weight: FontWeight.w700, color: AppColors.gold),
-                ),
-                Text(
-                  state.displayName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.sora(18, weight: FontWeight.w800),
-                ),
-              ],
-            ),
+          child: Text(
+            state.displayName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppText.sora(18, weight: FontWeight.w700),
           ),
         ),
         Semantics(
           // "● 1,150" is a chip glyph and a bare number to a screen reader.
           label: 'Balance: ${formatChips(state.chips)} chips',
           excludeSemantics: true,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
-            decoration: BoxDecoration(
-              color: AppColors.navSurface,
-              borderRadius: BorderRadius.circular(AppRadius.xl),
-              border: Border.all(color: AppColors.gold.withValues(alpha: 0.25)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('●', style: AppText.mono(15, color: AppColors.gold, height: 1)),
-                const SizedBox(width: 7),
-                CountUpText(value: state.chips, style: AppText.mono(17, weight: FontWeight.w700)),
-              ],
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('●', style: AppText.mono(13, color: AppColors.gold, height: 1)),
+              const SizedBox(width: 7),
+              CountUpText(
+                value: state.chips,
+                style: AppText.mono(18, weight: FontWeight.w700),
+              ),
+            ],
           ),
         ),
       ],
-    );
-  }
-}
-
-class _StoriesRow extends StatelessWidget {
-  final GameState state;
-  final GameNotifier notifier;
-
-  const _StoriesRow({required this.state, required this.notifier});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 86,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: kStoriesData.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 14),
-        itemBuilder: (context, i) {
-          final story = kStoriesData[i];
-          final viewed = state.viewedStories.contains(story.id);
-          return Semantics(
-            button: true,
-            // Without this the whole row is a strip of unnamed circles that
-            // each read as a single capital letter.
-            label: viewed ? '${story.name}, story seen' : '${story.name}, new story',
-            excludeSemantics: true,
-            child: GestureDetector(
-              onTap: () => notifier.openStory(story.id),
-              child: SizedBox(
-                width: 60,
-                child: Column(
-                  children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: story.color,
-                        border: Border.all(color: viewed ? const Color(0xFF3A4A42) : AppColors.gold, width: 2),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        story.initial,
-                        style: AppText.sora(20, weight: FontWeight.w800, color: AppColors.goldInk),
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      story.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.sora(12.5, weight: FontWeight.w700, color: AppColors.textBody),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        },
-      ),
     );
   }
 }
@@ -267,159 +143,54 @@ class _DailyBonusCardState extends State<_DailyBonusCard> {
     final ready = isDailyBonusReady(lastClaim, now);
     final claimDay = nextDailyBonusStreakDay(widget.state.dailyBonusStreakDay, lastClaim, now);
     final reward = dailyBonusRewardForDay(claimDay);
+    final streakDay = widget.state.dailyBonusStreakDay;
+
+    final String sub;
+    if (ready) {
+      sub = streakDay > 0 ? 'Day $claimDay of your streak' : '+${formatChips(reward)} chips, every day';
+    } else {
+      sub = 'Next in ${dailyBonusCountdownLabel(lastClaim!, now)}';
+    }
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: AppColors.feltCardGradient,
-        border: Border.all(color: AppColors.gold),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-      ),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: panelDecoration(),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // The reward figure and the streak line are both wider at a large
-          // font scale than the card has room for beside the claim button, so
-          // the label block takes the leftover width and scales into it
-          // rather than pushing the button off the card.
           Expanded(
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'DAILY BONUS',
-                    style: AppText.mono(13, weight: FontWeight.w700, letterSpacing: 1.3, color: AppColors.gold),
-                  ),
-                  const SizedBox(height: 4),
-                  Text('+$reward chips', style: AppText.mono(22, weight: FontWeight.w700)),
-                  if (widget.state.dailyBonusStreakDay > 0)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        ready
-                            ? 'Day $claimDay of your streak'
-                            : 'Streak day ${widget.state.dailyBonusStreakDay} banked',
-                        style: AppText.sora(12.5, weight: FontWeight.w700, color: AppColors.textMuted),
-                      ),
-                    ),
-                ],
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Daily bonus', style: AppText.sora(16, weight: FontWeight.w700)),
+                const SizedBox(height: 2),
+                Text(sub, style: AppText.sora(13, color: AppColors.textMuted)),
+              ],
             ),
           ),
           const SizedBox(width: 12),
           if (ready)
-            SizedBox(
-              width: 110,
-              child: GoldButton(
-                label: 'Claim',
-                onPressed: () => showDailyBonusDialog(context),
-                verticalPadding: 16,
-                fontSize: 16,
-              ),
+            GoldButton(
+              label: '+${formatChips(reward)}',
+              semanticLabel: 'Claim ${formatChips(reward)} chips',
+              onPressed: () => showDailyBonusDialog(context),
+              verticalPadding: 12,
+              horizontalPadding: 18,
+              fontSize: 15,
             )
           else
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+            Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.check_circle, color: AppColors.win, size: 18),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Claimed',
-                      style: AppText.sora(15, weight: FontWeight.w800, color: AppColors.win),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 3),
+                const Icon(Icons.check_rounded, color: AppColors.win, size: 18),
+                const SizedBox(width: 4),
                 Text(
-                  'Next in ${dailyBonusCountdownLabel(lastClaim!, now)}',
-                  style: AppText.sora(12.5, weight: FontWeight.w700, color: AppColors.textMuted),
+                  'Claimed',
+                  style: AppText.sora(14, weight: FontWeight.w600, color: AppColors.win),
                 ),
               ],
             ),
         ],
-      ),
-    );
-  }
-}
-
-class _TournamentCard extends StatelessWidget {
-  final GameState state;
-  final GameNotifier notifier;
-
-  const _TournamentCard({required this.state, required this.notifier});
-
-  @override
-  Widget build(BuildContext context) {
-    // Only real group members are counted. Adding the practice bots made a
-    // solo player's card claim a five-player race that does not exist.
-    final players = state.friendsAreLive ? state.friends.length + 1 : 1;
-    return GestureDetector(
-      onTap: notifier.openCup,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: AppColors.feltCardGradient,
-          border: Border.all(color: AppColors.border),
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Both halves flex. A fixed pair of labels overflowed this row by
-            // ~7px on a 320-wide phone at 1.3x text: the title is a constant
-            // but the countdown beside it grows from "Ends in 3h" to "Ends in
-            // 2d 22h" as the week turns over.
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Flexible(
-                  child: Text(
-                    'WEEKEND CUP',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppText.mono(13, weight: FontWeight.w700, letterSpacing: 1.3, color: AppColors.gold),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    cupEndsLabel(DateTime.now()),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    textAlign: TextAlign.end,
-                    style: AppText.sora(13, weight: FontWeight.w700, color: AppColors.textMuted),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                '${formatChips(kCupPrizePool)} chip prize pool · '
-                '${players > 1 ? '$players players in your group' : 'your friends group race'}',
-                style: AppText.sora(16, color: AppColors.textBody),
-              ),
-            ),
-            // Secondary on purpose: playing a hand is the lobby's job, and
-            // this card used to fire the same gold gradient as the daily-bonus
-            // claim above it and the invite button below it. Three primaries
-            // on one screen is none.
-            OutlinePillButton(
-              label: state.tournamentJoined ? 'Play a Cup hand' : 'Join tournament',
-              onPressed: notifier.openCup,
-              verticalPadding: 16,
-              fontSize: 17,
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -434,19 +205,11 @@ class _TableCard extends StatelessWidget {
   final List<Friend> here;
 
   /// The highest table this bankroll can actually sit at. It carries the
-  /// lobby's one gold call to action.
-  ///
-  /// Playing a hand is what the lobby is for, and it was the only thing on the
-  /// screen without a button: three promo cards shouted in gold above a quiet
-  /// grey list, and the game itself was a chevron.
+  /// screen's one gold call to action, because playing a hand is what the
+  /// screen is for.
   final bool recommended;
 
-  const _TableCard({
-    required this.table,
-    required this.notifier,
-    required this.here,
-    this.recommended = false,
-  });
+  const _TableCard({required this.table, required this.notifier, required this.here, this.recommended = false});
 
   @override
   Widget build(BuildContext context) {
@@ -460,52 +223,39 @@ class _TableCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.lg),
           onTap: () => notifier.enterTable(table),
           child: Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
             decoration: BoxDecoration(
-              border: Border.all(
-                color: recommended
-                    ? AppColors.gold.withValues(alpha: 0.55)
-                    : (here.isEmpty ? AppColors.border : AppColors.gold.withValues(alpha: 0.4)),
-              ),
+              border: Border.all(color: recommended ? AppColors.borderStrong : AppColors.border),
               borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
             child: Row(
               children: [
                 Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(color: table.tintDim, borderRadius: BorderRadius.circular(AppRadius.md)),
-                  alignment: Alignment.center,
-                  child: Transform.rotate(
-                    angle: math.pi / 4,
-                    child: Container(
-                      width: 15,
-                      height: 15,
-                      decoration: BoxDecoration(color: table.tint, borderRadius: BorderRadius.circular(2)),
-                    ),
-                  ),
+                  width: 12,
+                  height: 12,
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: table.tint),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(table.name, style: AppText.sora(17, weight: FontWeight.w800)),
+                      Text(table.name, style: AppText.sora(16, weight: FontWeight.w700)),
                       const SizedBox(height: 2),
                       Text(
                         label.isEmpty ? '\$${table.min} – \$${table.max}' : '\$${table.min} – \$${table.max} · $label',
-                        style: AppText.sora(14, color: label.isEmpty ? AppColors.textMuted : AppColors.gold),
+                        style: AppText.sora(13, color: label.isEmpty ? AppColors.textMuted : AppColors.gold),
                       ),
                     ],
                   ),
                 ),
                 if (here.isNotEmpty) ...[
                   SizedBox(
-                    width: 20.0 * math.min(here.length, 3) + 8,
+                    width: 20.0 * (here.length > 3 ? 3 : here.length) + 8,
                     height: 28,
                     child: Stack(
                       children: [
-                        for (var i = 0; i < math.min(here.length, 3); i++)
+                        for (var i = 0; i < (here.length > 3 ? 3 : here.length); i++)
                           Positioned(
                             left: i * 16.0,
                             child: AvatarCircle(
@@ -520,73 +270,20 @@ class _TableCard extends StatelessWidget {
                   const SizedBox(width: 4),
                 ],
                 if (recommended)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-                    decoration: BoxDecoration(
-                      gradient: AppColors.goldGradient,
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                    ),
-                    child: Text(
-                      'PLAY',
-                      style: AppText.sora(14, weight: FontWeight.w800, letterSpacing: 0.9, color: AppColors.goldInk),
-                    ),
+                  GoldButton(
+                    label: 'Play',
+                    semanticLabel: 'Play at the ${table.name}',
+                    onPressed: () => notifier.enterTable(table),
+                    verticalPadding: 10,
+                    horizontalPadding: 20,
+                    fontSize: 14,
                   )
                 else
-                  const Icon(Icons.chevron_right, color: AppColors.textLabel),
+                  const Icon(Icons.chevron_right, color: AppColors.textFaint),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _LeaderboardCard extends StatelessWidget {
-  final List<LeaderboardEntry> entries;
-
-  const _LeaderboardCard({required this.entries});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: panelDecoration(),
-      child: Column(
-        children: [
-          for (var i = 0; i < entries.length; i++)
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(
-                border: i < entries.length - 1 ? const Border(bottom: BorderSide(color: AppColors.border)) : null,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    width: 22,
-                    height: 22,
-                    decoration: BoxDecoration(shape: BoxShape.circle, color: entries[i].medalColor),
-                    alignment: Alignment.center,
-                    child: Text(
-                      '${entries[i].rank}',
-                      style: AppText.sora(13, weight: FontWeight.w800, color: AppColors.goldInk),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      entries[i].name,
-                      style: AppText.sora(16, weight: FontWeight.w700, color: entries[i].nameColor),
-                    ),
-                  ),
-                  Text(
-                    entries[i].scoreLabel,
-                    style: AppText.sora(16, weight: FontWeight.w800, color: entries[i].nameColor),
-                  ),
-                ],
-              ),
-            ),
-        ],
       ),
     );
   }

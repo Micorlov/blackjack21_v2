@@ -13,25 +13,18 @@ import 'firebase_options.dart';
 import 'l10n/generated/app_localizations.dart';
 import 'models/enums.dart';
 import 'models/game_state.dart';
-import 'screens/cup_screen.dart';
 import 'screens/friends_screen.dart';
 import 'screens/lobby_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/settings_screen.dart';
-import 'screens/shop_screen.dart';
 import 'screens/stats_screen.dart';
 import 'screens/table_screen.dart';
-import 'screens/tips_screen.dart';
 import 'state/game_notifier.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
-import 'widgets/achievement_toast.dart';
 import 'widgets/app_lifecycle_bridge.dart';
 import 'widgets/bottom_nav_bar.dart';
-import 'widgets/level_up_sheet.dart';
 import 'widgets/overlays.dart';
-import 'widgets/rank_strip.dart';
-import 'widgets/story_overlay.dart';
 import 'widgets/web_viewport_scaler.dart';
 
 /// Neither service is needed to render the first frame — the game plays offline
@@ -53,9 +46,7 @@ Future<void> main() async {
 
 Future<void> _initServices() async {
   try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    ).timeout(_startupInitTimeout);
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform).timeout(_startupInitTimeout);
   } catch (error) {
     debugPrint('Firebase init did not complete, continuing offline: $error');
     return;
@@ -66,9 +57,7 @@ Future<void> _initServices() async {
   try {
     await GoogleSignIn.instance.initialize().timeout(_startupInitTimeout);
   } catch (error) {
-    debugPrint(
-      'Google sign-in init did not complete, guest play still works: $error',
-    );
+    debugPrint('Google sign-in init did not complete, guest play still works: $error');
   }
 }
 
@@ -106,9 +95,7 @@ class BlackjackApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // `select` so this only rebuilds the whole MaterialApp (and its Navigator)
     // when the language actually changes, not on every other state change.
-    final languageOverride = ref.watch(
-      gameProvider.select((s) => s.languageOverride),
-    );
+    final languageOverride = ref.watch(gameProvider.select((s) => s.languageOverride));
     return MaterialApp(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
@@ -220,10 +207,6 @@ class AppShell extends ConsumerWidget {
     switch (screen) {
       case AppScreen.onboarding:
         return const OnboardingScreen();
-      case AppScreen.tips:
-        return const TipsScreen();
-      case AppScreen.cup:
-        return const CupScreen();
       case AppScreen.lobby:
         return const LobbyScreen();
       case AppScreen.table:
@@ -232,8 +215,6 @@ class AppShell extends ConsumerWidget {
         return const StatsScreen();
       case AppScreen.friends:
         return const FriendsScreen();
-      case AppScreen.shop:
-        return const ShopScreen();
       case AppScreen.settings:
         return const SettingsScreen();
     }
@@ -250,11 +231,7 @@ class AppShell extends ConsumerWidget {
 
     final state = ref.watch(gameProvider);
     final notifier = ref.read(gameProvider.notifier);
-    final showNav =
-        state.screen != AppScreen.table &&
-        state.screen != AppScreen.onboarding &&
-        state.screen != AppScreen.tips &&
-        state.screen != AppScreen.cup;
+    final showNav = state.screen != AppScreen.table && state.screen != AppScreen.onboarding;
 
     void onNavSelect(AppScreen screen) {
       switch (screen) {
@@ -264,13 +241,9 @@ class AppShell extends ConsumerWidget {
           notifier.goStats();
         case AppScreen.friends:
           notifier.goFriends();
-        case AppScreen.shop:
-          notifier.goShop();
         case AppScreen.settings:
           notifier.goSettings();
         case AppScreen.onboarding:
-        case AppScreen.tips:
-        case AppScreen.cup:
         case AppScreen.table:
           break;
       }
@@ -281,28 +254,20 @@ class AppShell extends ConsumerWidget {
     // Navigation here is an enum on the state, not a `Navigator` stack, so
     // there is nothing for the framework to pop and Back quit the app from
     // wherever the player happened to be. Fixing it only on the table left the
-    // same trap everywhere else: leaving the Weekend Cup, Stats, Friends, Shop
-    // or Settings still dropped the player onto their home screen. Found on a
-    // real device — Back out of the Weekend Cup closed the game.
+    // same trap everywhere else: leaving Stats, Friends or Settings still
+    // dropped the player onto their home screen. Found on a real device.
     //
     // Handled in one place rather than per screen so the peel order is
     // consistent: overlays first, then the screen, then the app.
     final canLeaveApp =
-        state.activeStoryId == null &&
         !state.tableChatOpen &&
         !state.tableMenuOpen &&
-        (state.screen == AppScreen.lobby ||
-            state.screen == AppScreen.onboarding ||
-            state.screen == AppScreen.tips);
+        (state.screen == AppScreen.lobby || state.screen == AppScreen.onboarding);
 
     return PopScope(
       canPop: canLeaveApp,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop) return;
-        if (state.activeStoryId != null) {
-          notifier.closeStory();
-          return;
-        }
         if (state.tableChatOpen) {
           notifier.toggleTableChat();
           return;
@@ -316,17 +281,14 @@ class AppShell extends ConsumerWidget {
           // timers, the same way the header's chevron does.
           case AppScreen.table:
             notifier.exitTable();
-          case AppScreen.cup:
           case AppScreen.stats:
           case AppScreen.friends:
-          case AppScreen.shop:
           case AppScreen.settings:
             notifier.goLobby();
           // Nothing sits behind these, so Back means "leave", which `canPop`
           // has already allowed.
           case AppScreen.lobby:
           case AppScreen.onboarding:
-          case AppScreen.tips:
             break;
         }
       },
@@ -334,40 +296,22 @@ class AppShell extends ConsumerWidget {
     );
   }
 
-  Widget _buildShell(
-    BuildContext context,
-    GameState state,
-    void Function(AppScreen) onNavSelect,
-    bool showNav,
-  ) {
+  Widget _buildShell(BuildContext context, GameState state, void Function(AppScreen) onNavSelect, bool showNav) {
     return Scaffold(
       backgroundColor: AppColors.surface,
       body: SafeArea(
-        top:
-            state.screen != AppScreen.onboarding &&
-            state.screen != AppScreen.tips,
+        top: state.screen != AppScreen.onboarding,
         bottom: false,
         child: Stack(
           children: [
             Column(
               children: [
-                const RankStrip(),
                 Expanded(child: _buildScreen(state.screen)),
-                if (showNav)
-                  AppBottomNavBar(current: state.screen, onSelect: onNavSelect),
+                if (showNav) AppBottomNavBar(current: state.screen, onSelect: onNavSelect),
               ],
             ),
-            // Above the toast, because an achievement is the rarer event and
-            // should not be pushed off screen by a routine "chips added".
-            const Align(alignment: Alignment.topCenter, child: AchievementToast()),
             ToastBanner(text: state.toast),
-            const LevelUpSheet(),
-            ReactionFloatOverlay(
-              text: state.reactionFloat,
-              triggerId: state.reactionId,
-            ),
-            if (state.activeStoryId != null)
-              const Positioned.fill(child: StoryOverlay()),
+            ReactionFloatOverlay(text: state.reactionFloat, triggerId: state.reactionId),
           ],
         ),
       ),

@@ -35,21 +35,12 @@ SavedGame sample({
   notifSocial: false,
   notifLeaderboard: false,
   notifDaily: true,
-  themeChoice: 'ocean',
-  cardBackSkin: 'midnight',
-  avatarFrameGold: true,
-  claimedTiers: const ['tier1'],
   tutorialRoundsSeen: 2,
   tutorialDismissed: false,
   rewardedReferralIds: const ['u1', 'u2'],
   playDayStreak: 4,
   lastPlayDayKey: '2026-09-04',
   lastRebuyAtMs: 1756900000000,
-  unlockedAchievements: const ['first', 'bj'],
-  xp: 1840,
-  missionDayKey: '2026-09-05',
-  missionProgress: const {'win3': 2, 'play5': 5},
-  missionsClaimed: const ['play5'],
 );
 
 void main() {
@@ -72,10 +63,6 @@ void main() {
       expect(restored.voiceOn, isFalse);
       expect(restored.hapticsOn, isFalse);
       expect(restored.notifDaily, isTrue);
-      expect(restored.themeChoice, 'ocean');
-      expect(restored.cardBackSkin, 'midnight');
-      expect(restored.avatarFrameGold, isTrue);
-      expect(restored.claimedTiers, ['tier1']);
       expect(restored.tutorialRoundsSeen, 2);
       expect(restored.tutorialDismissed, isFalse);
       expect(restored.rewardedReferralIds, ['u1', 'u2']);
@@ -99,9 +86,7 @@ void main() {
       // which is what that player has been hearing all along.
       expect(restored.voiceOn, isTrue);
       expect(restored.hapticsOn, defaults.hapticsOn);
-      expect(restored.themeChoice, defaults.themeChoice);
       expect(restored.history, isEmpty);
-      expect(restored.claimedTiers, isEmpty);
       expect(restored.tutorialRoundsSeen, 0);
       expect(restored.tutorialDismissed, isFalse);
       expect(restored.rewardedReferralIds, isEmpty);
@@ -132,13 +117,13 @@ void main() {
         'chips': 'not-a-number',
         'soundOn': 3,
         'history': 'not-a-list',
-        'claimedTiers': [1, 'tier2'],
+        'rewardedReferralIds': [1, 'u2'],
       });
 
       expect(restored.chips, const GameState().chips);
       expect(restored.soundOn, const GameState().soundOn);
       expect(restored.history, isEmpty);
-      expect(restored.claimedTiers, ['tier2']);
+      expect(restored.rewardedReferralIds, ['u2']);
     });
 
     test('drops unreadable history entries rather than guessing a result', () {
@@ -181,41 +166,27 @@ void main() {
       expect((await store.load())?.chips, 900);
     });
 
-    test('round-trips the progression fields', () {
-      final restored = SavedGame.fromJson(sample().toJson());
-
-      expect(restored.unlockedAchievements, ['first', 'bj']);
-      expect(restored.xp, 1840);
-      expect(restored.missionDayKey, '2026-09-05');
-      expect(restored.missionProgress, {'win3': 2, 'play5': 5});
-      expect(restored.missionsClaimed, ['play5']);
-    });
-
-    test('an older blob with no progression keys restores as a fresh start', () {
-      // Every existing player's save predates these fields. Achievements in
-      // particular must come back *empty* rather than pre-claimed, so their
-      // one-time rewards are paid on the next hand instead of silently lost.
+    test('a blob carrying the removed shop, cup and progression keys still restores', () {
+      // Every existing player's save was written before the 2026-09-05
+      // simplification and still carries these keys. They are ignored; the
+      // bankroll and settings beside them are what matter.
       final old = sample().toJson()
-        ..remove('unlockedAchievements')
-        ..remove('xp')
-        ..remove('missionDayKey')
-        ..remove('missionProgress')
-        ..remove('missionsClaimed');
+        ..['themeChoice'] = 'ocean'
+        ..['cardBackSkin'] = 'crimson'
+        ..['avatarFrameGold'] = true
+        ..['claimedTiers'] = ['t1']
+        ..['tipsSeen'] = true
+        ..['tournamentJoined'] = true
+        ..['unlockedAchievements'] = ['first']
+        ..['xp'] = 1840
+        ..['missionDayKey'] = '2026-09-05'
+        ..['missionProgress'] = {'win3': 2}
+        ..['missionsClaimed'] = ['play5'];
       final restored = SavedGame.fromJson(old);
 
-      expect(restored.unlockedAchievements, isEmpty);
-      expect(restored.xp, 0);
-      expect(restored.missionDayKey, '');
-      expect(restored.missionProgress, isEmpty);
-      expect(restored.missionsClaimed, isEmpty);
-      expect(restored.chips, 1250, reason: 'the rest of the blob still has to restore');
-    });
-
-    test('drops mission counters that are not numbers', () {
-      final blob = sample().toJson();
-      blob['missionProgress'] = {'win3': 'two', 'play5': 5};
-
-      expect(SavedGame.fromJson(blob).missionProgress, {'play5': 5});
+      expect(restored.chips, 1250);
+      expect(restored.soundOn, isFalse);
+      expect(restored.playDayStreak, 4);
     });
 
     test('discards a blob written by an unknown schema version', () async {

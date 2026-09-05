@@ -48,12 +48,7 @@ class TablePhaseBanner extends StatelessWidget {
   /// the one state the player has to notice from across the room.
   final bool isHeroTurn;
 
-  const TablePhaseBanner({
-    super.key,
-    required this.phase,
-    required this.turnLabel,
-    required this.isHeroTurn,
-  });
+  const TablePhaseBanner({super.key, required this.phase, required this.turnLabel, required this.isHeroTurn});
 
   /// Builds the banner's copy from the round state, so the felt, the action
   /// panel and this line can never disagree about whose turn it is.
@@ -63,9 +58,8 @@ class TablePhaseBanner extends StatelessWidget {
       RoundPhase.betting => 'Place your bet',
       RoundPhase.insurance => 'Insurance offered',
       RoundPhase.npcs => '${_actingName(state)} is playing',
-      RoundPhase.playing => split
-          ? 'Your turn · hand ${state.activeHandIndex + 1} of ${state.hands.length}'
-          : 'Your turn',
+      RoundPhase.playing =>
+        split ? 'Your turn · hand ${state.activeHandIndex + 1} of ${state.hands.length}' : 'Your turn',
       RoundPhase.dealer => 'Dealer is playing',
       RoundPhase.settlement => 'Round result',
     };
@@ -75,9 +69,7 @@ class TablePhaseBanner extends StatelessWidget {
       // Betting and insurance are the player's move as much as `playing` is —
       // the gold means "the table is waiting for you", not "you may hit".
       isHeroTurn:
-          state.phase == RoundPhase.playing ||
-          state.phase == RoundPhase.betting ||
-          state.phase == RoundPhase.insurance,
+          state.phase == RoundPhase.playing || state.phase == RoundPhase.betting || state.phase == RoundPhase.insurance,
     );
   }
 
@@ -104,12 +96,7 @@ class TablePhaseBanner extends StatelessWidget {
           // A live region: the turn changing is the most important
           // announcement on this screen and it happens without the player
           // touching anything.
-          Semantics(
-            liveRegion: true,
-            label: turnLabel,
-            excludeSemantics: true,
-            child: _headline(context),
-          ),
+          Semantics(liveRegion: true, label: turnLabel, excludeSemantics: true, child: _headline(context)),
           const SizedBox(height: AppSpacing.xs),
           _StepTrack(currentIndex: curIdx, stepName: _kPhaseLabels[_kPhaseOrder[curIdx]]!),
         ],
@@ -123,8 +110,7 @@ class TablePhaseBanner extends StatelessWidget {
       curve: AppMotion.emphasized,
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
       decoration: BoxDecoration(
-        gradient: isHeroTurn ? AppColors.goldGradient : null,
-        color: isHeroTurn ? null : Colors.black.withValues(alpha: 0.42),
+        color: isHeroTurn ? AppColors.gold : Colors.black.withValues(alpha: 0.42),
         border: Border.all(color: isHeroTurn ? Colors.transparent : AppColors.gold.withValues(alpha: 0.3)),
         borderRadius: AppRadius.pillAll,
       ),

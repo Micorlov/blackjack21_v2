@@ -86,6 +86,7 @@ class GameState {
   final StatsSummary stats;
   final SessionSummary session;
   final List<RoundResult> history;
+
   /// Moment of the last daily-bonus claim (persisted across launches by
   /// DailyBonusStore); null means never claimed. Readiness is derived via
   /// `isDailyBonusReady` in utils/daily_bonus.dart.
@@ -96,18 +97,13 @@ class GameState {
   /// `nextDailyBonusStreakDay` in utils/daily_bonus.dart.
   final int dailyBonusStreakDay;
 
-  /// True once the "Four things to know" new-player tips screen has been
-  /// dismissed, so it is only ever shown once.
-  final bool tipsSeen;
   final String toast;
   final String reactionFloat;
   final int reactionId;
-  final AdState adState;
   final List<Friend> friends;
   final LeaderboardPeriod leaderboardPeriod;
   final String friendCodeInput;
   final StatsTab statsTab;
-  final String themeChoice;
   final bool hapticsOn;
   final bool soundOn;
 
@@ -124,10 +120,7 @@ class GameState {
   final bool notifLeaderboard;
   final bool notifDaily;
   final Color avatarColor;
-  final bool tournamentJoined;
   final int referralsCount;
-  final List<String> claimedTiers;
-  final bool visitedVIP;
   final List<ChatMessage> chatMessages;
   final bool tableMenuOpen;
   final bool tableChatOpen;
@@ -138,25 +131,14 @@ class GameState {
   final int roundStake;
   final int roundHandNet;
   final SweepInfo? sweepInfo;
-  final String cardBackSkin;
-  final bool avatarFrameGold;
-  final bool highlight1Liked;
-  final int highlight1Count;
-  final bool highlight2Liked;
-  final int highlight2Count;
-  final String? activeStoryId;
-  final List<String> viewedStories;
   final bool socialReady;
   final String? groupCode;
   final int heroHourlyPoints;
   final int heroDailyPoints;
   final String heroHourKey;
   final String heroDayKey;
-  final bool badgeHourly;
   final String? heroUid;
   final bool friendsAreLive;
-  final List<Friend> globalHourly;
-  final List<Friend> globalDaily;
 
   /// Hands the first-run tutorial has already coached, which doubles as the
   /// index of the lesson now showing. Advanced by `nextHand()` and capped at
@@ -202,27 +184,6 @@ class GameState {
   /// them.
   final bool analyticsOn;
 
-  /// Ids of achievements already paid and announced — see utils/achievements.dart.
-  final List<String> unlockedAchievements;
-
-  /// Lifetime experience; the player's level is derived from it via utils/xp.dart.
-  final int xp;
-
-  /// Day the current three missions were drawn for, their progress, and which
-  /// have been claimed — see utils/missions.dart.
-  final String missionDayKey;
-  final Map<String, int> missionProgress;
-  final List<String> missionsClaimed;
-
-  /// The achievement whose unlock banner is showing, if any. Session-only: a
-  /// celebration is for the moment it happens, not something to restore two
-  /// days later on a cold launch.
-  final String? achievementBanner;
-
-  /// Level the player just reached, driving the level-up sheet. Also
-  /// session-only, for the same reason.
-  final int? levelUpTo;
-
   const GameState({
     this.screen = AppScreen.onboarding,
     this.signedIn = false,
@@ -245,16 +206,13 @@ class GameState {
     this.history = const [],
     this.lastDailyBonusClaimAt,
     this.dailyBonusStreakDay = 0,
-    this.tipsSeen = false,
     this.toast = '',
     this.reactionFloat = '',
     this.reactionId = 0,
-    this.adState = AdState.ready,
     this.friends = const [],
     this.leaderboardPeriod = LeaderboardPeriod.alltime,
     this.friendCodeInput = '',
     this.statsTab = StatsTab.recent,
-    this.themeChoice = 'default',
     this.hapticsOn = true,
     this.soundOn = true,
     this.voiceOn = true,
@@ -265,10 +223,7 @@ class GameState {
     // Settings "Daily reminder" toggle turns it off.
     this.notifDaily = true,
     this.avatarColor = const Color(0xFF1E7D5D),
-    this.tournamentJoined = false,
     this.referralsCount = 0,
-    this.claimedTiers = const [],
-    this.visitedVIP = false,
     this.chatMessages = const [],
     this.tableMenuOpen = false,
     this.tableChatOpen = false,
@@ -279,25 +234,14 @@ class GameState {
     this.roundStake = 0,
     this.roundHandNet = 0,
     this.sweepInfo,
-    this.cardBackSkin = 'gold',
-    this.avatarFrameGold = false,
-    this.highlight1Liked = false,
-    this.highlight1Count = 24,
-    this.highlight2Liked = false,
-    this.highlight2Count = 12,
-    this.activeStoryId,
-    this.viewedStories = const [],
     this.socialReady = false,
     this.groupCode,
     this.heroHourlyPoints = 0,
     this.heroDailyPoints = 0,
     this.heroHourKey = '',
     this.heroDayKey = '',
-    this.badgeHourly = true,
     this.heroUid,
     this.friendsAreLive = false,
-    this.globalHourly = const [],
-    this.globalDaily = const [],
     this.tutorialRoundsSeen = 0,
     this.tutorialDismissed = false,
     this.pendingJoinCode,
@@ -307,13 +251,6 @@ class GameState {
     this.lastPlayDayKey = '',
     this.lastRebuyAt,
     this.analyticsOn = true,
-    this.unlockedAchievements = const [],
-    this.xp = 0,
-    this.missionDayKey = '',
-    this.missionProgress = const {},
-    this.missionsClaimed = const [],
-    this.achievementBanner,
-    this.levelUpTo,
   });
 
   GameState copyWith({
@@ -338,16 +275,13 @@ class GameState {
     List<RoundResult>? history,
     Object? lastDailyBonusClaimAt = _unset,
     int? dailyBonusStreakDay,
-    bool? tipsSeen,
     String? toast,
     String? reactionFloat,
     int? reactionId,
-    AdState? adState,
     List<Friend>? friends,
     LeaderboardPeriod? leaderboardPeriod,
     String? friendCodeInput,
     StatsTab? statsTab,
-    String? themeChoice,
     bool? hapticsOn,
     bool? soundOn,
     bool? voiceOn,
@@ -356,10 +290,7 @@ class GameState {
     bool? notifLeaderboard,
     bool? notifDaily,
     Color? avatarColor,
-    bool? tournamentJoined,
     int? referralsCount,
-    List<String>? claimedTiers,
-    bool? visitedVIP,
     List<ChatMessage>? chatMessages,
     bool? tableMenuOpen,
     bool? tableChatOpen,
@@ -370,25 +301,14 @@ class GameState {
     int? roundStake,
     int? roundHandNet,
     Object? sweepInfo = _unset,
-    String? cardBackSkin,
-    bool? avatarFrameGold,
-    bool? highlight1Liked,
-    int? highlight1Count,
-    bool? highlight2Liked,
-    int? highlight2Count,
-    Object? activeStoryId = _unset,
-    List<String>? viewedStories,
     bool? socialReady,
     Object? groupCode = _unset,
     int? heroHourlyPoints,
     int? heroDailyPoints,
     String? heroHourKey,
     String? heroDayKey,
-    bool? badgeHourly,
     Object? heroUid = _unset,
     bool? friendsAreLive,
-    List<Friend>? globalHourly,
-    List<Friend>? globalDaily,
     int? tutorialRoundsSeen,
     bool? tutorialDismissed,
     Object? pendingJoinCode = _unset,
@@ -398,13 +318,6 @@ class GameState {
     String? lastPlayDayKey,
     Object? lastRebuyAt = _unset,
     bool? analyticsOn,
-    List<String>? unlockedAchievements,
-    int? xp,
-    String? missionDayKey,
-    Map<String, int>? missionProgress,
-    List<String>? missionsClaimed,
-    Object? achievementBanner = _unset,
-    Object? levelUpTo = _unset,
   }) {
     return GameState(
       screen: screen ?? this.screen,
@@ -430,30 +343,22 @@ class GameState {
           ? this.lastDailyBonusClaimAt
           : lastDailyBonusClaimAt as DateTime?,
       dailyBonusStreakDay: dailyBonusStreakDay ?? this.dailyBonusStreakDay,
-      tipsSeen: tipsSeen ?? this.tipsSeen,
       toast: toast ?? this.toast,
       reactionFloat: reactionFloat ?? this.reactionFloat,
       reactionId: reactionId ?? this.reactionId,
-      adState: adState ?? this.adState,
       friends: friends ?? this.friends,
       leaderboardPeriod: leaderboardPeriod ?? this.leaderboardPeriod,
       friendCodeInput: friendCodeInput ?? this.friendCodeInput,
       statsTab: statsTab ?? this.statsTab,
-      themeChoice: themeChoice ?? this.themeChoice,
       hapticsOn: hapticsOn ?? this.hapticsOn,
       soundOn: soundOn ?? this.soundOn,
       voiceOn: voiceOn ?? this.voiceOn,
-      languageOverride: identical(languageOverride, _unset)
-          ? this.languageOverride
-          : languageOverride as String?,
+      languageOverride: identical(languageOverride, _unset) ? this.languageOverride : languageOverride as String?,
       notifSocial: notifSocial ?? this.notifSocial,
       notifLeaderboard: notifLeaderboard ?? this.notifLeaderboard,
       notifDaily: notifDaily ?? this.notifDaily,
       avatarColor: avatarColor ?? this.avatarColor,
-      tournamentJoined: tournamentJoined ?? this.tournamentJoined,
       referralsCount: referralsCount ?? this.referralsCount,
-      claimedTiers: claimedTiers ?? this.claimedTiers,
-      visitedVIP: visitedVIP ?? this.visitedVIP,
       chatMessages: chatMessages ?? this.chatMessages,
       tableMenuOpen: tableMenuOpen ?? this.tableMenuOpen,
       tableChatOpen: tableChatOpen ?? this.tableChatOpen,
@@ -464,25 +369,14 @@ class GameState {
       roundStake: roundStake ?? this.roundStake,
       roundHandNet: roundHandNet ?? this.roundHandNet,
       sweepInfo: identical(sweepInfo, _unset) ? this.sweepInfo : sweepInfo as SweepInfo?,
-      cardBackSkin: cardBackSkin ?? this.cardBackSkin,
-      avatarFrameGold: avatarFrameGold ?? this.avatarFrameGold,
-      highlight1Liked: highlight1Liked ?? this.highlight1Liked,
-      highlight1Count: highlight1Count ?? this.highlight1Count,
-      highlight2Liked: highlight2Liked ?? this.highlight2Liked,
-      highlight2Count: highlight2Count ?? this.highlight2Count,
-      activeStoryId: identical(activeStoryId, _unset) ? this.activeStoryId : activeStoryId as String?,
-      viewedStories: viewedStories ?? this.viewedStories,
       socialReady: socialReady ?? this.socialReady,
       groupCode: identical(groupCode, _unset) ? this.groupCode : groupCode as String?,
       heroHourlyPoints: heroHourlyPoints ?? this.heroHourlyPoints,
       heroDailyPoints: heroDailyPoints ?? this.heroDailyPoints,
       heroHourKey: heroHourKey ?? this.heroHourKey,
       heroDayKey: heroDayKey ?? this.heroDayKey,
-      badgeHourly: badgeHourly ?? this.badgeHourly,
       heroUid: identical(heroUid, _unset) ? this.heroUid : heroUid as String?,
       friendsAreLive: friendsAreLive ?? this.friendsAreLive,
-      globalHourly: globalHourly ?? this.globalHourly,
-      globalDaily: globalDaily ?? this.globalDaily,
       tutorialRoundsSeen: tutorialRoundsSeen ?? this.tutorialRoundsSeen,
       tutorialDismissed: tutorialDismissed ?? this.tutorialDismissed,
       pendingJoinCode: identical(pendingJoinCode, _unset) ? this.pendingJoinCode : pendingJoinCode as String?,
@@ -492,15 +386,6 @@ class GameState {
       lastPlayDayKey: lastPlayDayKey ?? this.lastPlayDayKey,
       lastRebuyAt: identical(lastRebuyAt, _unset) ? this.lastRebuyAt : lastRebuyAt as DateTime?,
       analyticsOn: analyticsOn ?? this.analyticsOn,
-      unlockedAchievements: unlockedAchievements ?? this.unlockedAchievements,
-      xp: xp ?? this.xp,
-      missionDayKey: missionDayKey ?? this.missionDayKey,
-      missionProgress: missionProgress ?? this.missionProgress,
-      missionsClaimed: missionsClaimed ?? this.missionsClaimed,
-      achievementBanner: identical(achievementBanner, _unset)
-          ? this.achievementBanner
-          : achievementBanner as String?,
-      levelUpTo: identical(levelUpTo, _unset) ? this.levelUpTo : levelUpTo as int?,
     );
   }
 }

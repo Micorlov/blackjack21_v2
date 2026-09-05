@@ -30,18 +30,15 @@ import '../services/local_notifier.dart';
 import '../services/social_service.dart';
 import '../services/sound_player.dart';
 import '../services/spoken_amount.dart';
-import '../utils/achievements.dart';
 import '../utils/comeback.dart';
 import '../utils/daily_bonus.dart';
 import '../utils/formatters.dart';
 import '../utils/invite_link.dart';
-import '../utils/missions.dart';
 import '../utils/play_streak.dart';
 import '../utils/points.dart';
 import '../utils/rebuy.dart';
 import '../utils/referrals.dart';
 import '../utils/table_seats.dart';
-import '../utils/xp.dart';
 
 class _SeatResult {
   final String name;
@@ -66,9 +63,9 @@ class GameNotifier extends StateNotifier<GameState> {
   /// [sound] is a seam for tests, which need to see which channel a call-out
   /// was handed to — the app always builds its own.
   GameNotifier({@visibleForTesting SoundPlayer? sound, @visibleForTesting Analytics? analytics})
-      : _sound = sound ?? SoundPlayer(),
-        _analytics = analytics ?? _defaultAnalytics(),
-        super(const GameState(friends: kInitialFriends)) {
+    : _sound = sound ?? SoundPlayer(),
+      _analytics = analytics ?? _defaultAnalytics(),
+      super(const GameState(friends: kInitialFriends)) {
     _shoe = BlackjackRules.buildShoe(kDeckCount, _rng);
     // `authenticate()` throws UnimplementedError on web — Google Identity
     // Services requires its own rendered button there (see
@@ -106,10 +103,6 @@ class GameNotifier extends StateNotifier<GameState> {
   Timer? _saveTimer;
   StreamSubscription<GoogleSignInAuthenticationEvent>? _authEventsSub;
   StreamSubscription<List<Friend>>? _groupSub;
-  StreamSubscription<List<Friend>>? _hourlySub;
-  StreamSubscription<List<Friend>>? _dailySub;
-  String _hourlySubKey = '';
-  String _dailySubKey = '';
   Timer? _heartbeatTimer;
 
   /// True once a live (non-empty) member snapshot has arrived, so the first
@@ -128,8 +121,6 @@ class GameNotifier extends StateNotifier<GameState> {
   Timer? _dealerTimer;
   Timer? _toastTimer;
   Timer? _reactTimer;
-  Timer? _adWatchTimer;
-  Timer? _adCooldownTimer;
   Timer? _voiceTimer;
   Timer? _potTimer;
   Timer? _celebrationTimer;
@@ -153,8 +144,6 @@ class GameNotifier extends StateNotifier<GameState> {
     _dealerTimer?.cancel();
     _toastTimer?.cancel();
     _reactTimer?.cancel();
-    _adWatchTimer?.cancel();
-    _adCooldownTimer?.cancel();
     _voiceTimer?.cancel();
     _potTimer?.cancel();
     _celebrationTimer?.cancel();
@@ -163,8 +152,6 @@ class GameNotifier extends StateNotifier<GameState> {
     _heartbeatTimer?.cancel();
     unawaited(_authEventsSub?.cancel());
     unawaited(_groupSub?.cancel());
-    unawaited(_hourlySub?.cancel());
-    unawaited(_dailySub?.cancel());
     unawaited(_sound.dispose());
     super.dispose();
   }
@@ -261,10 +248,7 @@ class GameNotifier extends StateNotifier<GameState> {
       final endsAt = await _sound.playVoice(voice);
       if (!celebrate || endsAt == null || !state.soundOn) return;
       _celebrationTimer?.cancel();
-      _celebrationTimer = Timer(
-        endsAt.difference(DateTime.now()),
-        () => _playSfx(GameSfx.potCelebration),
-      );
+      _celebrationTimer = Timer(endsAt.difference(DateTime.now()), () => _playSfx(GameSfx.potCelebration));
     });
   }
 
@@ -362,7 +346,6 @@ class GameNotifier extends StateNotifier<GameState> {
   /// separate pieces of news rather than one run-on sentence.
   static const Duration kPostPotPause = Duration(seconds: 1);
 
-
   /// Speaks the hero's hand total — the number shown in the hand-total circle
   /// in [HeroHandArea] — when the action reaches them, and again after every
   /// card they take: a hit, a double, or a split. Going over 21 is called as
@@ -379,10 +362,7 @@ class GameNotifier extends StateNotifier<GameState> {
   /// [lead] holds the line back until the tone that cued it has finished:
   /// [kHandTotalVoiceLead] clears `deal.wav` (0.09s) as a card lands,
   /// [kTurnVoiceLead] clears the longer `turn.wav` (0.60s) at the hero's turn.
-  void _announceHandTotal(
-    List<PlayingCard> cards, {
-    Duration lead = kHandTotalVoiceLead,
-  }) {
+  void _announceHandTotal(List<PlayingCard> cards, {Duration lead = kHandTotalVoiceLead}) {
     if (!_voiceOn) return;
     final value = BlackjackRules.handValue(cards);
     final List<String> line;
@@ -503,35 +483,18 @@ class GameNotifier extends StateNotifier<GameState> {
       notifSocial: saved.notifSocial,
       notifLeaderboard: saved.notifLeaderboard,
       notifDaily: saved.notifDaily,
-      themeChoice: saved.themeChoice,
-      cardBackSkin: saved.cardBackSkin,
-      avatarFrameGold: saved.avatarFrameGold,
-      claimedTiers: saved.claimedTiers,
       tutorialRoundsSeen: saved.tutorialRoundsSeen,
       tutorialDismissed: saved.tutorialDismissed,
-      tipsSeen: saved.tipsSeen,
-      tournamentJoined: saved.tournamentJoined,
-      // Send a returning player where they belong instead of back through the
+      // Send a returning player to the lobby instead of back through the
       // sign-in gate. `screen` itself is never persisted — dropping someone
-      // onto the felt mid-round is not "where I left off" — so onboarding
-      // resolves to the same destination it would have after signing in.
-      screen: saved.onboardingDone ? _postOnboardingScreenFor(saved) : null,
+      // onto the felt mid-round is not "where I left off".
+      screen: saved.onboardingDone ? AppScreen.lobby : null,
       avatarColor: saved.avatarColor == 0 ? null : Color(saved.avatarColor),
       rewardedReferralIds: saved.rewardedReferralIds,
       playDayStreak: saved.playDayStreak,
       lastPlayDayKey: saved.lastPlayDayKey,
-      lastRebuyAt: saved.lastRebuyAtMs == 0
-          ? null
-          : DateTime.fromMillisecondsSinceEpoch(saved.lastRebuyAtMs),
+      lastRebuyAt: saved.lastRebuyAtMs == 0 ? null : DateTime.fromMillisecondsSinceEpoch(saved.lastRebuyAtMs),
       analyticsOn: saved.analyticsOn,
-      unlockedAchievements: saved.unlockedAchievements,
-      xp: saved.xp,
-      // Yesterday's missions are not today's: the set is redrawn from the day
-      // key, so stale progress has to go with it or a player would open the
-      // app to three new goals already part-finished.
-      missionDayKey: saved.missionDayKey == dayKey ? saved.missionDayKey : dayKey,
-      missionProgress: saved.missionDayKey == dayKey ? saved.missionProgress : const {},
-      missionsClaimed: saved.missionDayKey == dayKey ? saved.missionsClaimed : const [],
     );
   }
 
@@ -550,14 +513,8 @@ class GameNotifier extends StateNotifier<GameState> {
     notifSocial: state.notifSocial,
     notifLeaderboard: state.notifLeaderboard,
     notifDaily: state.notifDaily,
-    themeChoice: state.themeChoice,
-    cardBackSkin: state.cardBackSkin,
-    avatarFrameGold: state.avatarFrameGold,
-    claimedTiers: state.claimedTiers,
     tutorialRoundsSeen: state.tutorialRoundsSeen,
     tutorialDismissed: state.tutorialDismissed,
-    tipsSeen: state.tipsSeen,
-    tournamentJoined: state.tournamentJoined,
     // Anywhere past the gate counts as done: the player got in, whether by
     // signing in or as a guest.
     onboardingDone: state.screen != AppScreen.onboarding,
@@ -567,15 +524,10 @@ class GameNotifier extends StateNotifier<GameState> {
     lastPlayDayKey: state.lastPlayDayKey,
     lastRebuyAtMs: state.lastRebuyAt?.millisecondsSinceEpoch ?? 0,
     analyticsOn: state.analyticsOn,
-    unlockedAchievements: state.unlockedAchievements,
-    xp: state.xp,
-    missionDayKey: state.missionDayKey,
-    missionProgress: state.missionProgress,
-    missionsClaimed: state.missionsClaimed,
   );
 
-  /// Coalesces the writes a fast player generates — settling a hand, flipping
-  /// a toggle and buying a skin inside the same second become one disk write.
+  /// Coalesces the writes a fast player generates — settling a hand and
+  /// flipping a toggle inside the same second become one disk write.
   void _scheduleSave() {
     _saveTimer?.cancel();
     _saveTimer = Timer(_kSaveDebounce, () => unawaited(_store.save(_snapshot())));
@@ -598,9 +550,8 @@ class GameNotifier extends StateNotifier<GameState> {
       state = state.copyWith(signedIn: true, displayName: user.displayName ?? 'Player', photoUrl: user.photoURL);
     }
     state = state.copyWith(socialReady: true, heroUid: _social.uid);
-    _subscribeGlobals();
-    // Publish immediately so this player exists on the world list from the
-    // first launch, not only after the first settled hand.
+    // Publish immediately so this player exists in the group from the first
+    // launch, not only after the first settled hand.
     _reportScore();
     final code = await _social.fetchMyGroupCode();
     if (!mounted) return;
@@ -626,12 +577,14 @@ class GameNotifier extends StateNotifier<GameState> {
     unawaited(_groupSub?.cancel());
     _groupLive = false;
     state = state.copyWith(groupCode: code);
-    _groupSub = _social.watchMembers(code).listen(
-      _onGroupUpdate,
-      // A broken stream (offline, rules) must not kill the game; the last
-      // known friends list simply stays on screen until it recovers.
-      onError: (Object e) => debugPrint('group stream error: $e'),
-    );
+    _groupSub = _social
+        .watchMembers(code)
+        .listen(
+          _onGroupUpdate,
+          // A broken stream (offline, rules) must not kill the game; the last
+          // known friends list simply stays on screen until it recovers.
+          onError: (Object e) => debugPrint('group stream error: $e'),
+        );
   }
 
   void _onGroupUpdate(List<Friend> members) {
@@ -663,10 +616,7 @@ class GameNotifier extends StateNotifier<GameState> {
     _groupLive = members.isNotEmpty;
     // Alone in the group → practice bots keep the table lively, but
     // `friendsAreLive` stays false so friend lists can tell bots from people.
-    state = state.copyWith(
-      friends: members.isEmpty ? kInitialFriends : members,
-      friendsAreLive: members.isNotEmpty,
-    );
+    state = state.copyWith(friends: members.isEmpty ? kInitialFriends : members, friendsAreLive: members.isNotEmpty);
 
     _payOutstandingReferrals(members, wasWatchingBefore: wasGroupLive);
   }
@@ -700,16 +650,15 @@ class GameNotifier extends StateNotifier<GameState> {
       }
     }
     state = state.copyWith(referralsCount: referralCount(members, me));
-    // "Well Connected" is the one achievement nothing the player does at the
-    // table can trigger — it lands when someone else accepts an invite.
-    _awardAchievements();
   }
 
   void _notifyOvertaken(List<RankedPlayer> hourly, List<RankedPlayer> daily) {
     if (hourly.isEmpty && daily.isEmpty) return;
     final leadName = (hourly.isNotEmpty ? hourly : daily).first.name;
     final period = hourly.isNotEmpty ? 'hourly' : 'daily';
-    final count = {for (final p in [...hourly, ...daily]) p.id}.length;
+    final count = {
+      for (final p in [...hourly, ...daily]) p.id,
+    }.length;
     final body = count == 1
         ? '$leadName just passed you on the $period leaderboard. Win your spot back!'
         : '$count friends just passed you on the leaderboard. Win your spot back!';
@@ -731,7 +680,6 @@ class GameNotifier extends StateNotifier<GameState> {
         heroDayKey: dayKey,
       );
     }
-    _subscribeGlobals();
     _reportScore();
   }
 
@@ -754,30 +702,6 @@ class GameNotifier extends StateNotifier<GameState> {
     if (_saveTimer?.isActive ?? false) {
       _saveTimer!.cancel();
       unawaited(_store.save(_snapshot()));
-    }
-  }
-
-  /// (Re)subscribes the world top-10 streams; called at init and again from
-  /// the heartbeat so a new hour/day swaps in a fresh query.
-  void _subscribeGlobals() {
-    final now = DateTime.now();
-    final hourKey = hourKeyOf(now);
-    final dayKey = dayKeyOf(now);
-    if (_hourlySubKey != hourKey) {
-      _hourlySubKey = hourKey;
-      unawaited(_hourlySub?.cancel());
-      _hourlySub = _social.watchTopPlayers(hourly: true, periodKey: hourKey).listen(
-        (players) => state = state.copyWith(globalHourly: players),
-        onError: (Object e) => debugPrint('world hourly stream error: $e'),
-      );
-    }
-    if (_dailySubKey != dayKey) {
-      _dailySubKey = dayKey;
-      unawaited(_dailySub?.cancel());
-      _dailySub = _social.watchTopPlayers(hourly: false, periodKey: dayKey).listen(
-        (players) => state = state.copyWith(globalDaily: players),
-        onError: (Object e) => debugPrint('world daily stream error: $e'),
-      );
     }
   }
 
@@ -954,8 +878,6 @@ class GameNotifier extends StateNotifier<GameState> {
     }
   }
 
-  void toggleBadgePeriod() => state = state.copyWith(badgeHourly: !state.badgeHourly);
-
   /// Comeback dealing: when the hero is short-stacked or on a losing streak,
   /// the opening hand is the best of [kComebackTries] candidate pairs instead
   /// of one blind draw. See `utils/comeback.dart` for the mechanics.
@@ -1029,7 +951,7 @@ class GameNotifier extends StateNotifier<GameState> {
         signedIn: true,
         displayName: user?.displayName ?? account.displayName ?? 'Player',
         photoUrl: user?.photoURL ?? account.photoUrl,
-        screen: _postOnboardingScreen,
+        screen: AppScreen.lobby,
         heroUid: _social.uid,
       );
       _reportScore();
@@ -1059,30 +981,7 @@ class GameNotifier extends StateNotifier<GameState> {
   }
 
   void playGuest() =>
-      state = state.copyWith(signedIn: false, displayName: 'Guest', photoUrl: null, screen: _postOnboardingScreen);
-
-  /// Where leaving onboarding lands: brand-new players get the one-time
-  /// "Four things to know" primer first; anyone with hands on the clock (or
-  /// who already saw it) goes straight to the lobby.
-  AppScreen get _postOnboardingScreen =>
-      !state.tipsSeen && state.stats.handsPlayed == 0 ? AppScreen.tips : AppScreen.lobby;
-
-  /// The same rule, applied to a blob being restored — at hydrate time the
-  /// live state has not been populated yet, so it cannot be asked.
-  static AppScreen _postOnboardingScreenFor(SavedGame saved) =>
-      !saved.tipsSeen && saved.stats.handsPlayed == 0 ? AppScreen.tips : AppScreen.lobby;
-
-  /// Both exits of the tips screen. "I've played before — skip" also turns
-  /// the three-hand tutorial off, since the player just said they know the
-  /// game; "Deal me in" leaves it on.
-  void finishTips({bool skipTutorial = false}) {
-    state = state.copyWith(
-      tipsSeen: true,
-      screen: AppScreen.lobby,
-      tutorialDismissed: skipTutorial ? true : state.tutorialDismissed,
-    );
-    _scheduleSave();
-  }
+      state = state.copyWith(signedIn: false, displayName: 'Guest', photoUrl: null, screen: AppScreen.lobby);
 
   Future<void> signOutUser() async {
     await Future.wait([GoogleSignIn.instance.signOut(), FirebaseAuth.instance.signOut()]);
@@ -1096,7 +995,7 @@ class GameNotifier extends StateNotifier<GameState> {
     state = state.copyWith(screen: AppScreen.friends);
     unawaited(prefillJoinFromClipboard());
   }
-  void goShop() => state = state.copyWith(screen: AppScreen.shop);
+
   void goSettings() => state = state.copyWith(screen: AppScreen.settings);
 
   // ---------------------------------------------------------------------
@@ -1114,15 +1013,11 @@ class GameNotifier extends StateNotifier<GameState> {
       activeHandIndex: 0,
       message: '',
       messageType: MessageType.none,
-      visitedVIP: state.visitedVIP || t.key == 'vip',
       npcSeats: _rollNpcSeats(t.min),
     );
     // Publish table presence immediately rather than waiting up to 60s for
     // the heartbeat, so a friend's lobby card shows "here" right away.
     _reportScore();
-    // Sitting at the VIP table is an achievement in its own right, and it can
-    // happen without a hand being played.
-    _awardAchievements();
     unawaited(_analytics.logEvent(AnalyticsEvent.tableEntered, {'stake': t.key}));
   }
 
@@ -1299,9 +1194,8 @@ class GameNotifier extends StateNotifier<GameState> {
   /// ladder — see utils/play_streak.dart. Kept as one place both
   /// `claimDailyBonus` and `_syncDailyBonusReminder` (which must quote the
   /// same total in the notification) read from.
-  int _playStreakBonusNow(DateTime now) => playStreakBonusChips(
-    livePlayStreak(streak: state.playDayStreak, lastDayKey: state.lastPlayDayKey, now: now),
-  );
+  int _playStreakBonusNow(DateTime now) =>
+      playStreakBonusChips(livePlayStreak(streak: state.playDayStreak, lastDayKey: state.lastPlayDayKey, now: now));
 
   void claimDailyBonus() {
     final now = DateTime.now();
@@ -1309,11 +1203,7 @@ class GameNotifier extends StateNotifier<GameState> {
     final day = nextDailyBonusStreakDay(state.dailyBonusStreakDay, state.lastDailyBonusClaimAt, now);
     final streakBonus = _playStreakBonusNow(now);
     final reward = dailyBonusRewardForDay(day) + streakBonus;
-    state = state.copyWith(
-      chips: state.chips + reward,
-      lastDailyBonusClaimAt: now,
-      dailyBonusStreakDay: day,
-    );
+    state = state.copyWith(chips: state.chips + reward, lastDailyBonusClaimAt: now, dailyBonusStreakDay: day);
     unawaited(_bonusStore.saveClaim(now, day));
     unawaited(_syncDailyBonusReminder());
     _scheduleSave();
@@ -1630,11 +1520,7 @@ class GameNotifier extends StateNotifier<GameState> {
     // Reveal the hole card and hand the stage over *before* drawing, so the
     // flip is its own beat rather than one frame of a pile-up.
     state = state.copyWith(holeRevealed: true, phase: RoundPhase.dealer);
-    _dealerBeat(
-      floor: kDealerRevealPause,
-      lead: kDealerRevealVoiceLead,
-      opening: true,
-    );
+    _dealerBeat(floor: kDealerRevealPause, lead: kDealerRevealVoiceLead, opening: true);
   }
 
   /// The dealer says what it now holds, then plays on — after the line has
@@ -1645,11 +1531,7 @@ class GameNotifier extends StateNotifier<GameState> {
   /// it would be two cards ahead of what the player is being told it holds.
   /// The floor still sets the rhythm when there is nothing to say — the voice
   /// is off — and when the line is short enough to fit inside it.
-  void _dealerBeat({
-    required Duration floor,
-    Duration lead = kDealerVoiceLead,
-    bool opening = false,
-  }) {
+  void _dealerBeat({required Duration floor, Duration lead = kDealerVoiceLead, bool opening = false}) {
     _dealerTimer?.cancel();
     _dealerTotalTimer?.cancel();
     final floorEndsAt = DateTime.now().add(floor);
@@ -1942,20 +1824,6 @@ class GameNotifier extends StateNotifier<GameState> {
     }
     if (streakExtended) unawaited(_syncStreakReminder());
 
-    // Progression is read from the hand that just settled, in this order:
-    // missions first (their targets are about what happened), then experience,
-    // then achievements — which can be triggered by any of the above, and by
-    // the chips the first two just paid.
-    _advanceMissions(
-      won: winsDelta > 0 && lossesDelta == 0,
-      blackjack: bjDelta > 0,
-      sweptPot: heroTakesPot,
-      winStreak: newStreak,
-      dayKey: dayKey,
-    );
-    _awardXp(won: winsDelta > 0 && lossesDelta == 0, blackjack: bjDelta > 0, sweptPot: heroTakesPot);
-    _awardAchievements();
-
     _reportScore();
     _scheduleSave();
 
@@ -1974,32 +1842,8 @@ class GameNotifier extends StateNotifier<GameState> {
   }
 
   // ---------------------------------------------------------------------
-  // Progression: achievements, experience, daily missions
+  // Analytics
   // ---------------------------------------------------------------------
-
-  /// Pays and announces any achievement the current state has just satisfied.
-  ///
-  /// Called after every settled hand and after the two events that can unlock
-  /// one without a hand being played — sitting at the VIP table, and a friend
-  /// accepting an invite. Idempotent: an id in [GameState.unlockedAchievements]
-  /// is never considered again, so nothing pays twice.
-  void _awardAchievements() {
-    final earned = newlyUnlocked(state, state.unlockedAchievements);
-    if (earned.isEmpty) return;
-    final reward = achievementReward(earned);
-    state = state.copyWith(
-      chips: state.chips + reward,
-      unlockedAchievements: [...state.unlockedAchievements, ...earned.map((d) => d.id)],
-      // One banner at a time, showing the first: two celebrations stacked on
-      // one hand is noise, and the rest are on the Awards tab anyway.
-      achievementBanner: earned.first.id,
-    );
-    _hapticMedium();
-    _scheduleSave();
-    for (final def in earned) {
-      unawaited(_analytics.logEvent(AnalyticsEvent.achievementUnlocked, {'id': def.id}));
-    }
-  }
 
   /// Records that the player moved to [screen]. Called from the shell, which
   /// is the one place every navigation passes through.
@@ -2013,78 +1857,6 @@ class GameNotifier extends StateNotifier<GameState> {
     state = state.copyWith(analyticsOn: on);
     unawaited(_analytics.setEnabled(on));
     _scheduleSave();
-  }
-
-  /// Dismisses the achievement banner.
-  void clearAchievementBanner() => state = state.copyWith(achievementBanner: null);
-
-  /// Adds the hand's experience and, if it crossed a threshold, flags the
-  /// level-up so the table can show it.
-  void _awardXp({required bool won, required bool blackjack, required bool sweptPot}) {
-    final before = Xp.levelFor(state.xp);
-    final gained = Xp.forRound(
-      won: won,
-      blackjack: blackjack,
-      sweptPot: sweptPot,
-      stake: state.stake?.min ?? 25,
-    );
-    final xp = state.xp + gained;
-    final after = Xp.levelFor(xp);
-    state = state.copyWith(xp: xp, levelUpTo: after > before ? after : null);
-    if (after > before) {
-      unawaited(_analytics.logEvent(AnalyticsEvent.levelUp, {'level': after}));
-    }
-  }
-
-  /// Dismisses the level-up sheet.
-  void clearLevelUp() => state = state.copyWith(levelUpTo: null);
-
-  /// Rolls the day's missions over if the date changed, then counts this hand
-  /// against them.
-  void _advanceMissions({
-    required bool won,
-    required bool blackjack,
-    required bool sweptPot,
-    required int winStreak,
-    required String dayKey,
-  }) {
-    final rolled = state.missionDayKey != dayKey;
-    final progress = rolled ? const <String, int>{} : state.missionProgress;
-    final next = advanceMissions(
-      missions: missionsForDay(dayKey),
-      progress: progress,
-      event: MissionEvent(
-        won: won,
-        blackjack: blackjack,
-        sweptPot: sweptPot,
-        stake: state.stake?.min ?? 25,
-        winStreak: winStreak,
-      ),
-    );
-    state = state.copyWith(
-      missionDayKey: dayKey,
-      missionProgress: next,
-      missionsClaimed: rolled ? const [] : state.missionsClaimed,
-    );
-  }
-
-  /// Pays a finished mission. Ignored unless it is actually finished and
-  /// unclaimed, so a double tap cannot pay twice.
-  void claimMission(String id) {
-    final today = dayKeyOf(DateTime.now());
-    final mission = missionsForDay(today).where((m) => m.id == id).firstOrNull;
-    if (mission == null) return;
-    if (!missionIsClaimable(mission, state.missionProgress, state.missionsClaimed)) return;
-    state = state.copyWith(
-      chips: state.chips + mission.reward,
-      missionsClaimed: [...state.missionsClaimed, id],
-    );
-    unawaited(_analytics.logEvent(AnalyticsEvent.missionClaimed, {'id': mission.id, 'reward': mission.reward}));
-    _showToast('Mission complete — ${mission.label}, +${formatChips(mission.reward)} chips');
-    _playSfx(GameSfx.win);
-    _hapticMedium();
-    _scheduleSave();
-    _awardAchievements();
   }
 
   void nextHand() {
@@ -2182,7 +1954,6 @@ class GameNotifier extends StateNotifier<GameState> {
 
   void setStatsRecent() => state = state.copyWith(statsTab: StatsTab.recent);
   void setStatsAlltime() => state = state.copyWith(statsTab: StatsTab.alltime);
-  void setStatsAchievements() => state = state.copyWith(statsTab: StatsTab.achievements);
   void setLeaderboardHourly() => state = state.copyWith(leaderboardPeriod: LeaderboardPeriod.hourly);
   void setLeaderboardDaily() => state = state.copyWith(leaderboardPeriod: LeaderboardPeriod.daily);
   void setLeaderboardAlltime() => state = state.copyWith(leaderboardPeriod: LeaderboardPeriod.alltime);
@@ -2193,157 +1964,15 @@ class GameNotifier extends StateNotifier<GameState> {
 
   void onFriendCodeInput(String value) => state = state.copyWith(friendCodeInput: value.toUpperCase());
 
-
-  void joinTournament() {
-    if (state.tournamentJoined) return;
-    state = state.copyWith(tournamentJoined: true);
-    _scheduleSave();
-    _showToast("You're in! Good luck in the Weekend Cup.");
-  }
-
-  /// Lobby Weekend Cup card → the tournament screen.
-  void openCup() => state = state.copyWith(screen: AppScreen.cup);
-
-  void claimTier(String id, int need, int reward) {
-    if (state.referralsCount < need || state.claimedTiers.contains(id)) return;
-    state = state.copyWith(chips: state.chips + reward, claimedTiers: [...state.claimedTiers, id]);
-    _scheduleSave();
-    _showToast('+$reward chips claimed!');
-  }
-
-  void giftChips(String id) {
-    if (state.chips < 100) {
-      _showToast('Not enough chips to gift');
-      return;
-    }
-    Friend? friend;
-    final newFriends = state.friends.map((f) {
-      if (f.id == id) {
-        friend = f;
-        return f.copyWith(chips: f.chips + 100);
-      }
-      return f;
-    }).toList();
-    state = state.copyWith(chips: state.chips - 100, friends: newFriends);
-    _showToast('Gifted 100 chips to ${friend?.name ?? 'friend'}!');
-  }
-
-
   // ---------------------------------------------------------------------
-  // Stories
-  // ---------------------------------------------------------------------
-
-  void openStory(String id) {
-    final viewed = state.viewedStories.contains(id) ? state.viewedStories : [...state.viewedStories, id];
-    state = state.copyWith(activeStoryId: id, viewedStories: viewed);
-  }
-
-  void closeStory() => state = state.copyWith(activeStoryId: null);
-
-  void nextStory() {
-    final idx = kStoriesData.indexWhere((s) => s.id == state.activeStoryId);
-    if (idx < 0) return;
-    if (idx < kStoriesData.length - 1) {
-      openStory(kStoriesData[idx + 1].id);
-    } else {
-      closeStory();
-    }
-  }
-
-  void sendGGActiveStory() {
-    final matches = kStoriesData.where((s) => s.id == state.activeStoryId);
-    _showToast('Sent GG to ${matches.isNotEmpty ? matches.first.name : 'friend'}!');
-    closeStory();
-  }
-
-  // ---------------------------------------------------------------------
-  // Shop / cosmetics / settings
+  // Settings
   // ---------------------------------------------------------------------
 
   void selectAvatarColor(Color color) {
     state = state.copyWith(avatarColor: color);
     _scheduleSave();
   }
-  /// The player's level, derived from lifetime experience.
-  int get level => Xp.levelFor(state.xp);
 
-  void selectCardBack(String id) {
-    final def = kCardBackDefs.where((c) => c.id == id).firstOrNull;
-    if (def == null) return;
-    // Refused rather than silently ignored: a locked swatch that simply does
-    // nothing on tap reads as a broken button.
-    if (def.requiredLevel > level) {
-      _showToast('${def.label} unlocks at level ${def.requiredLevel}');
-      return;
-    }
-    state = state.copyWith(cardBackSkin: id);
-    _scheduleSave();
-  }
-
-  void selectFelt(String id) {
-    final def = kFeltDefs.where((f) => f.id == id).firstOrNull;
-    if (def == null) return;
-    if (def.requiredLevel > level) {
-      _showToast('${def.label} unlocks at level ${def.requiredLevel}');
-      return;
-    }
-    state = state.copyWith(themeChoice: id);
-    _scheduleSave();
-  }
-
-  void setAvatarFrame(bool gold) {
-    if (gold && level < kAvatarFrameLevel) {
-      _showToast('The gold frame unlocks at level $kAvatarFrameLevel');
-      return;
-    }
-    state = state.copyWith(avatarFrameGold: gold);
-    _scheduleSave();
-  }
-
-  void toggleLike1() => state = state.copyWith(
-    highlight1Liked: !state.highlight1Liked,
-    highlight1Count: state.highlight1Count + (state.highlight1Liked ? -1 : 1),
-  );
-
-  void toggleLike2() => state = state.copyWith(
-    highlight2Liked: !state.highlight2Liked,
-    highlight2Count: state.highlight2Count + (state.highlight2Liked ? -1 : 1),
-  );
-
-  void sendGGHighlight1() => _showToast('Sent GG to Maya T.!');
-  void sendGGHighlight2() => _showToast('Sent GG to Jordan K.!');
-
-  void vipLearnMore() => _showToast('VIP Club — coming soon');
-
-  void buyPack(ShopPackDef pack) {
-    state = state.copyWith(chips: state.chips + pack.amount);
-    _showToast('Purchased ${formatChips(pack.amount)} chips!');
-    _playSfx(GameSfx.win);
-    _hapticMedium();
-  }
-
-  void watchAd() {
-    if (state.adState != AdState.ready) return;
-    state = state.copyWith(adState: AdState.watching);
-    _adWatchTimer = Timer(const Duration(milliseconds: 1200), () {
-      state = state.copyWith(chips: state.chips + 200, adState: AdState.cooldown);
-      _showToast('+200 chips!');
-      _playSfx(GameSfx.win);
-      _hapticMedium();
-      _adCooldownTimer = Timer(const Duration(milliseconds: 8000), () {
-        state = state.copyWith(adState: AdState.ready);
-      });
-    });
-  }
-
-  void _setTheme(String choice) {
-    state = state.copyWith(themeChoice: choice);
-    _scheduleSave();
-  }
-
-  void selectThemeDefault() => _setTheme('default');
-  void selectThemeOcean() => _setTheme('ocean');
-  void selectThemeEmber() => _setTheme('ember');
   void toggleHaptics() {
     final next = !state.hapticsOn;
     state = state.copyWith(hapticsOn: next);
@@ -2385,6 +2014,7 @@ class GameNotifier extends StateNotifier<GameState> {
     }
     _scheduleSave();
   }
+
   /// Sets the UI language override; null reverts to following the device
   /// locale. Voice call-outs follow this too (see `SoundPlayer.setLanguage`,
   /// wired once the voice pipeline gains per-language asset sets), so a
@@ -2396,6 +2026,7 @@ class GameNotifier extends StateNotifier<GameState> {
 
   void toggleTableMenu() => state = state.copyWith(tableMenuOpen: !state.tableMenuOpen);
   void toggleTableChat() => state = state.copyWith(tableChatOpen: !state.tableChatOpen, tableMenuOpen: false);
+
   /// Asks the OS for notification permission the first time the player turns
   /// one of these on, and reports back whether they can actually be notified.
   ///

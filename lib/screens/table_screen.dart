@@ -34,9 +34,7 @@ class TableScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(gameProvider);
-    // The Appearance/Table-felt choice restyles the whole table, not just
-    // the swatch: this background plus the felt ellipse in TableFelt.
-    final felt = feltById(state.themeChoice);
+    const felt = kFelt;
 
     // Android Back is handled once, app-wide, in `AppShell` — it peels the
     // chat sheet and menu before leaving the table, and reaches the same
@@ -51,9 +49,7 @@ class TableScreen extends ConsumerWidget {
 
           return Stack(
             children: [
-              landscape
-                  ? _landscape(state, available)
-                  : _portrait(state, available),
+              landscape ? _landscape(state, available) : _portrait(state, available),
               if (state.tableMenuOpen) const TableMenuDropdown(),
               if (state.tableChatOpen) const TableChatSheet(),
             ],
@@ -77,10 +73,7 @@ class TableScreen extends ConsumerWidget {
         const Expanded(child: TableFelt()),
         ConstrainedBox(
           constraints: BoxConstraints(maxHeight: panelMaxHeight),
-          child: const SingleChildScrollView(
-            reverse: true,
-            child: TableActionPanel(),
-          ),
+          child: const SingleChildScrollView(reverse: true, child: TableActionPanel()),
         ),
       ],
     );
@@ -116,9 +109,7 @@ class TableScreen extends ConsumerWidget {
                   top: false,
                   child: Padding(
                     padding: EdgeInsets.fromLTRB(0, 0, gutter, 0),
-                    child: SingleChildScrollView(
-                      child: TableActionPanel(inSideRail: true),
-                    ),
+                    child: SingleChildScrollView(child: TableActionPanel(inSideRail: true)),
                   ),
                 ),
               ),

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/game_data.dart';
 import '../data/tutorial_data.dart';
 import '../l10n/generated/app_localizations.dart';
 import '../state/game_notifier.dart';
@@ -19,7 +18,7 @@ import 'shared/async_action.dart';
 import 'shared/avatar_initial.dart';
 import 'shared/confirm_dialog.dart';
 
-/// Settings screen — account, avatar color, appearance, sound/haptics,
+/// Settings screen — account, avatar color, language, sound/haptics,
 /// notifications, help, the legal documents and build version, and
 /// reset-bankroll.
 class SettingsScreen extends ConsumerWidget {
@@ -43,7 +42,6 @@ class SettingsScreen extends ConsumerWidget {
             signedIn: state.signedIn,
             avatarInitial: avatarInitial,
             avatarColor: state.avatarColor,
-            avatarFrameGold: state.avatarFrameGold,
             displayName: state.displayName,
             photoUrl: state.photoUrl,
             onSignIn: notifier.signInGoogle,
@@ -52,14 +50,6 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 16),
           SectionLabel(t.settingsSectionAvatarColor),
           _AvatarColorPanel(selected: state.avatarColor, onSelect: notifier.selectAvatarColor),
-          const SizedBox(height: 16),
-          SectionLabel(t.settingsSectionAppearance),
-          _AppearancePanel(
-            themeChoice: state.themeChoice,
-            onSelectDefault: notifier.selectThemeDefault,
-            onSelectOcean: notifier.selectThemeOcean,
-            onSelectEmber: notifier.selectThemeEmber,
-          ),
           const SizedBox(height: 16),
           SectionLabel(t.settingsSectionLanguage),
           _LanguagePanel(selected: state.languageOverride, onSelect: notifier.setLanguage),
@@ -116,14 +106,15 @@ class SettingsScreen extends ConsumerWidget {
           // Not localized yet — the rest of this screen is, but adding ARB
           // keys for ten locales belongs with the next translation pass rather
           // than half-done here.
-          const SectionLabel('PRIVACY'),
+          const SectionLabel('Privacy'),
           _TogglePanel(
             rows: [
               _ToggleRowData(
                 'Usage & crash reports',
                 state.analyticsOn,
                 () => notifier.setAnalytics(!state.analyticsOn),
-                sublabel: 'Anonymous counts of hands played and crashes, so problems can be found and '
+                sublabel:
+                    'Anonymous counts of hands played and crashes, so problems can be found and '
                     'fixed. Never your name, your group code or your chat.',
               ),
             ],
@@ -176,7 +167,6 @@ class _AccountPanel extends StatelessWidget {
   final bool signedIn;
   final String avatarInitial;
   final Color avatarColor;
-  final bool avatarFrameGold;
   final String displayName;
   final String? photoUrl;
 
@@ -188,7 +178,6 @@ class _AccountPanel extends StatelessWidget {
     required this.signedIn,
     required this.avatarInitial,
     required this.avatarColor,
-    required this.avatarFrameGold,
     required this.displayName,
     required this.photoUrl,
     required this.onSignIn,
@@ -223,13 +212,7 @@ class _AccountPanel extends StatelessWidget {
       children: [
         Row(
           children: [
-            AvatarCircle(
-              initial: avatarInitial,
-              color: avatarColor,
-              size: 44,
-              goldRing: avatarFrameGold,
-              photoUrl: photoUrl,
-            ),
+            AvatarCircle(initial: avatarInitial, color: avatarColor, size: 44, photoUrl: photoUrl),
             const SizedBox(width: 10),
             // Google account names run far longer than "Guest" — without a
             // flex the name ran straight off the panel's right edge.
@@ -316,126 +299,12 @@ class _AvatarColorPanel extends StatelessWidget {
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: color,
-                  boxShadow: isSelected ? const [BoxShadow(color: AppColors.gold, spreadRadius: 2)] : null,
+                  border: isSelected ? Border.all(color: AppColors.textPrimary, width: 3) : null,
                 ),
               ),
             ),
           );
         }).toList(),
-      ),
-    );
-  }
-}
-
-class _ThemeOption {
-  final String id;
-  final String label;
-  final RadialGradient gradient;
-  final Color ringColor;
-  final VoidCallback onTap;
-
-  const _ThemeOption({
-    required this.id,
-    required this.label,
-    required this.gradient,
-    required this.ringColor,
-    required this.onTap,
-  });
-}
-
-/// Default / Ocean / Ember appearance picker — reuses the felt swatch
-/// gradients since `themeChoice` drives both the shop's table felt and this
-/// selector.
-class _AppearancePanel extends StatelessWidget {
-  final String themeChoice;
-  final VoidCallback onSelectDefault;
-  final VoidCallback onSelectOcean;
-  final VoidCallback onSelectEmber;
-
-  const _AppearancePanel({
-    required this.themeChoice,
-    required this.onSelectDefault,
-    required this.onSelectOcean,
-    required this.onSelectEmber,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final t = AppLocalizations.of(context);
-    final options = [
-      _ThemeOption(
-        id: 'default',
-        label: t.themeDefault,
-        gradient: kFeltDefs[0].swatchGradient,
-        ringColor: AppColors.gold,
-        onTap: onSelectDefault,
-      ),
-      _ThemeOption(
-        id: 'ocean',
-        label: t.themeOcean,
-        gradient: kFeltDefs[1].swatchGradient,
-        ringColor: const Color(0xFFF5C451),
-        onTap: onSelectOcean,
-      ),
-      _ThemeOption(
-        id: 'ember',
-        label: t.themeEmber,
-        gradient: kFeltDefs[2].swatchGradient,
-        ringColor: const Color(0xFFFFB457),
-        onTap: onSelectEmber,
-      ),
-    ];
-
-    return Container(
-      decoration: panelDecoration(),
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          for (var i = 0; i < options.length; i++) ...[
-            if (i > 0) const SizedBox(width: 18),
-            _ThemeSwatch(option: options[i], selected: themeChoice == options[i].id),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _ThemeSwatch extends StatelessWidget {
-  final _ThemeOption option;
-  final bool selected;
-
-  const _ThemeSwatch({required this.option, required this.selected});
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: AppLocalizations.of(context).themeFeltSemanticLabel(option.label),
-      excludeSemantics: true,
-      child: InkWell(
-        onTap: option.onTap,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: AppTouch.minTarget,
-              height: AppTouch.minTarget,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: option.gradient,
-                boxShadow: selected ? [BoxShadow(color: option.ringColor, spreadRadius: 2)] : null,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              option.label,
-              style: AppText.sora(13, weight: FontWeight.w700, color: selected ? AppColors.gold : AppColors.textMuted),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -467,9 +336,7 @@ class _LanguagePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = AppLocalizations.of(context);
-    final codes = [
-      for (final locale in AppLocalizations.supportedLocales) locale.languageCode,
-    ];
+    final codes = [for (final locale in AppLocalizations.supportedLocales) locale.languageCode];
     return Container(
       decoration: panelDecoration(),
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -495,12 +362,7 @@ class _LanguageRow extends StatelessWidget {
   final bool isLast;
   final VoidCallback onTap;
 
-  const _LanguageRow({
-    required this.label,
-    required this.isSelected,
-    required this.isLast,
-    required this.onTap,
-  });
+  const _LanguageRow({required this.label, required this.isSelected, required this.isLast, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -518,7 +380,9 @@ class _LanguageRow extends StatelessWidget {
           child: ExcludeSemantics(
             child: Row(
               children: [
-                Expanded(child: Text(label, style: AppText.sora(16, weight: FontWeight.w600))),
+                Expanded(
+                  child: Text(label, style: AppText.sora(16, weight: FontWeight.w600)),
+                ),
                 if (isSelected) const Icon(Icons.check, color: AppColors.gold),
               ],
             ),
@@ -715,4 +579,3 @@ class _InfoRow extends StatelessWidget {
     );
   }
 }
-

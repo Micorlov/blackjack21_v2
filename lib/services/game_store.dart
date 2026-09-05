@@ -14,12 +14,15 @@ const int kSavedHistoryLimit = 50;
 /// Bumped only when a change to [SavedGame.toJson] cannot be read by the
 /// defensive defaults in [SavedGame.fromJson]; an unrecognised version is
 /// discarded rather than guessed at.
+///
+/// Still 1 after the 2026-09-05 simplification: the shop, cup, mission, XP and
+/// achievement keys were dropped from the blob, and a blob that still carries
+/// them is read fine — unknown keys are ignored, so nobody's bankroll is lost.
 const int _kSchemaVersion = 1;
 
 /// The slice of [GameState] that has to outlive the app process: the bankroll
 /// the whole game is scored on, all-time stats, the recent-hand history that
-/// drives comeback dealing, the live point buckets, and the player's settings
-/// and cosmetics.
+/// drives comeback dealing, the live point buckets, and the player's settings.
 ///
 /// Deliberately excludes everything belonging to one sitting — the shoe, the
 /// current hand, toasts, the friends list — which is rebuilt on launch.
@@ -42,14 +45,8 @@ class SavedGame {
   final bool notifSocial;
   final bool notifLeaderboard;
   final bool notifDaily;
-  final String themeChoice;
-  final String cardBackSkin;
-  final bool avatarFrameGold;
-  final List<String> claimedTiers;
   final int tutorialRoundsSeen;
   final bool tutorialDismissed;
-  final bool tipsSeen;
-  final bool tournamentJoined;
 
   /// Whether this player has already been past the sign-in gate.
   ///
@@ -81,22 +78,6 @@ class SavedGame {
   /// Whether anonymous usage and crash reporting is on.
   final bool analyticsOn;
 
-  /// Ids of achievements already awarded, so their one-time chip reward is
-  /// paid once and their unlock announced once. Before this, achievements
-  /// were recomputed from stats on every build and paid nothing, so crossing
-  /// one was an event the game never noticed.
-  final List<String> unlockedAchievements;
-
-  /// Lifetime experience. Levels are derived from it — see utils/xp.dart.
-  final int xp;
-
-  /// The day the three daily missions were drawn for, their per-mission
-  /// progress, and which have been claimed. A day-key change resets all
-  /// three; see utils/missions.dart.
-  final String missionDayKey;
-  final Map<String, int> missionProgress;
-  final List<String> missionsClaimed;
-
   const SavedGame({
     required this.chips,
     required this.stats,
@@ -112,14 +93,8 @@ class SavedGame {
     required this.notifSocial,
     required this.notifLeaderboard,
     required this.notifDaily,
-    required this.themeChoice,
-    required this.cardBackSkin,
-    required this.avatarFrameGold,
-    required this.claimedTiers,
     required this.tutorialRoundsSeen,
     required this.tutorialDismissed,
-    this.tipsSeen = false,
-    this.tournamentJoined = false,
     this.onboardingDone = false,
     this.avatarColor = 0,
     this.rewardedReferralIds = const [],
@@ -127,11 +102,6 @@ class SavedGame {
     this.lastPlayDayKey = '',
     this.lastRebuyAtMs = 0,
     this.analyticsOn = true,
-    this.unlockedAchievements = const [],
-    this.xp = 0,
-    this.missionDayKey = '',
-    this.missionProgress = const {},
-    this.missionsClaimed = const [],
   });
 
   Map<String, Object?> toJson() => {
@@ -147,9 +117,8 @@ class SavedGame {
       'bestStreak': stats.bestStreak,
     },
     'history': [
-      for (final r in history.length > kSavedHistoryLimit
-          ? history.sublist(history.length - kSavedHistoryLimit)
-          : history)
+      for (final r
+          in history.length > kSavedHistoryLimit ? history.sublist(history.length - kSavedHistoryLimit) : history)
         r.name,
     ],
     'hourlyPoints': hourlyPoints,
@@ -163,14 +132,8 @@ class SavedGame {
     'notifSocial': notifSocial,
     'notifLeaderboard': notifLeaderboard,
     'notifDaily': notifDaily,
-    'themeChoice': themeChoice,
-    'cardBackSkin': cardBackSkin,
-    'avatarFrameGold': avatarFrameGold,
-    'claimedTiers': claimedTiers,
     'tutorialRoundsSeen': tutorialRoundsSeen,
     'tutorialDismissed': tutorialDismissed,
-    'tipsSeen': tipsSeen,
-    'tournamentJoined': tournamentJoined,
     'onboardingDone': onboardingDone,
     'avatarColor': avatarColor,
     'rewardedReferralIds': rewardedReferralIds,
@@ -178,11 +141,6 @@ class SavedGame {
     'lastPlayDayKey': lastPlayDayKey,
     'lastRebuyAtMs': lastRebuyAtMs,
     'analyticsOn': analyticsOn,
-    'unlockedAchievements': unlockedAchievements,
-    'xp': xp,
-    'missionDayKey': missionDayKey,
-    'missionProgress': missionProgress,
-    'missionsClaimed': missionsClaimed,
   };
 
   /// Every field falls back to the [GameState] default it mirrors, so a blob
@@ -219,19 +177,11 @@ class SavedGame {
       notifSocial: _bool(json['notifSocial'], defaults.notifSocial),
       notifLeaderboard: _bool(json['notifLeaderboard'], defaults.notifLeaderboard),
       notifDaily: _bool(json['notifDaily'], defaults.notifDaily),
-      themeChoice: _str(json['themeChoice'], defaults.themeChoice),
-      cardBackSkin: _str(json['cardBackSkin'], defaults.cardBackSkin),
-      avatarFrameGold: _bool(json['avatarFrameGold'], defaults.avatarFrameGold),
-      claimedTiers: _strings(json['claimedTiers']),
       // A blob written before the tutorial existed has no progress to restore,
       // and re-teaching a player who has already played hands would be worse
       // than skipping it — so hands played stands in for lessons seen.
       tutorialRoundsSeen: _int(json['tutorialRoundsSeen'], handsPlayed.clamp(0, kTutorialRounds)),
       tutorialDismissed: _bool(json['tutorialDismissed'], defaults.tutorialDismissed),
-      // A blob from before the tips screen existed belongs to a player who
-      // has already seen the lobby — never re-show them the primer.
-      tipsSeen: _bool(json['tipsSeen'], true),
-      tournamentJoined: _bool(json['tournamentJoined'], defaults.tournamentJoined),
       // A blob written before this key existed belongs to someone who already
       // got through the gate — the same reasoning as tipsSeen above. Defaulting
       // to false would send every existing tester back to the sign-in screen.
@@ -241,16 +191,7 @@ class SavedGame {
       playDayStreak: _int(json['playDayStreak'], 0),
       lastPlayDayKey: _str(json['lastPlayDayKey'], ''),
       lastRebuyAtMs: _int(json['lastRebuyAtMs'], 0),
-      // A blob written before achievements paid anything has no unlock list.
-      // Left empty on purpose: an existing player's already-earned badges are
-      // then awarded (and celebrated) on their next hand, rather than being
-      // silently marked as claimed and paying nothing.
       analyticsOn: _bool(json['analyticsOn'], defaults.analyticsOn),
-      unlockedAchievements: _strings(json['unlockedAchievements']),
-      xp: _int(json['xp'], 0),
-      missionDayKey: _str(json['missionDayKey'], ''),
-      missionProgress: _counters(json['missionProgress']),
-      missionsClaimed: _strings(json['missionsClaimed']),
     );
   }
 
@@ -258,16 +199,12 @@ class SavedGame {
   static bool _bool(Object? v, bool fallback) => v is bool ? v : fallback;
   static String _str(Object? v, String fallback) => v is String ? v : fallback;
 
-  static List<String> _strings(Object? v) =>
-      v is List ? [for (final e in v) if (e is String) e] : const [];
-
-  static Map<String, int> _counters(Object? v) {
-    if (v is! Map) return const {};
-    return {
-      for (final entry in v.entries)
-        if (entry.key is String && entry.value is int) entry.key as String: entry.value as int,
-    };
-  }
+  static List<String> _strings(Object? v) => v is List
+      ? [
+          for (final e in v)
+            if (e is String) e,
+        ]
+      : const [];
 
   /// Unreadable entries are dropped rather than defaulted: a wrong result in
   /// the tail would silently change whether comeback dealing kicks in.

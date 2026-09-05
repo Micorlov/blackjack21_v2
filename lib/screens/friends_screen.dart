@@ -1,13 +1,9 @@
-import 'dart:math';
-
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../data/game_data.dart';
 import '../models/enums.dart';
-import '../models/game_state.dart';
 import '../models/social_models.dart';
 import '../state/game_notifier.dart';
 import '../theme/app_colors.dart';
@@ -23,8 +19,7 @@ import 'shared/async_action.dart';
 import 'shared/empty_state.dart';
 import 'shared/tab_pill.dart';
 
-/// Friends screen: invite code, referral rewards, add-a-friend, leaderboard,
-/// and friends list. Ported from `Blackjack 21 v2.dc.html` lines 545-611.
+/// Friends screen: invite code, add-a-friend, leaderboard, and friends list.
 class FriendsScreen extends ConsumerWidget {
   const FriendsScreen({super.key});
 
@@ -59,12 +54,7 @@ class FriendsScreen extends ConsumerWidget {
                   child: Text(
                     inviteCode,
                     textAlign: TextAlign.center,
-                    style: AppText.mono(
-                      28,
-                      weight: FontWeight.w700,
-                      color: AppColors.gold,
-                      letterSpacing: 3.36,
-                    ),
+                    style: AppText.mono(28, weight: FontWeight.w700, color: AppColors.gold, letterSpacing: 3.36),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -80,10 +70,8 @@ class FriendsScreen extends ConsumerWidget {
                 // network work; the button used to look idle throughout.
                 AsyncActionBuilder(
                   action: notifier.shareInviteWhatsApp,
-                  builder: (context, busy, run) => GoldButton(
-                    label: busy ? 'Opening WhatsApp…' : 'Invite via WhatsApp',
-                    onPressed: run,
-                  ),
+                  builder: (context, busy, run) =>
+                      GoldButton(label: busy ? 'Opening WhatsApp…' : 'Invite via WhatsApp', onPressed: run),
                 ),
                 const SizedBox(height: 8),
                 Row(
@@ -119,20 +107,9 @@ class FriendsScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-                if (kIsWeb && state.joinedViaLink) ...[
-                  const SizedBox(height: 12),
-                  const _WebInstallBanner(),
-                ],
+                if (kIsWeb && state.joinedViaLink) ...[const SizedBox(height: 12), const _WebInstallBanner()],
               ],
             ),
-          ),
-
-          const SectionLabel('Referral rewards'),
-          _DividedPanel(
-            rows: [
-              for (final tier in kReferralTierDefs)
-                _referralRow(state, notifier, tier),
-            ],
           ),
 
           const SectionLabel('Join a friends group'),
@@ -142,10 +119,7 @@ class FriendsScreen extends ConsumerWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: _GroupCodeField(
-                    value: state.friendCodeInput,
-                    onChanged: notifier.onFriendCodeInput,
-                  ),
+                  child: _GroupCodeField(value: state.friendCodeInput, onChanged: notifier.onFriendCodeInput),
                 ),
                 const SizedBox(width: 8),
                 // Joining hits Firestore. Kept enabled on a short code on
@@ -153,20 +127,16 @@ class FriendsScreen extends ConsumerWidget {
                 // is more use than a dead button with no stated reason.
                 AsyncActionBuilder(
                   action: notifier.joinGroupByCode,
-                  builder: (context, busy, run) => OutlinePillButton(
-                    label: busy ? 'Joining…' : 'Join',
-                    onPressed: run,
-                    neutral: true,
-                  ),
+                  builder: (context, busy, run) =>
+                      OutlinePillButton(label: busy ? 'Joining…' : 'Join', onPressed: run, neutral: true),
                 ),
               ],
             ),
           ),
 
           // `state.friends` is seeded with practice bots so the table is never
-          // empty. They are opponents, not people: showing them here as real
-          // friends — with working "Gift 100" buttons — was a lie the world
-          // standings screen already knew not to tell. Same test, same answer.
+          // empty. They are opponents, not people, so they are never listed as
+          // friends.
           if (state.friendsAreLive) ...[
             const SectionLabel('Leaderboard'),
             TabPillRow(
@@ -189,18 +159,9 @@ class FriendsScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: 2),
-            _DividedPanel(
-              rows: [
-                for (final entry in buildLeaderboard(state))
-                  _leaderboardRow(entry),
-              ],
-            ),
+            _DividedPanel(rows: [for (final entry in buildLeaderboard(state)) _leaderboardRow(entry)]),
             const SectionLabel('Friends'),
-            _DividedPanel(
-              rows: [
-                for (final f in state.friends) _friendRow(state, notifier, f),
-              ],
-            ),
+            _DividedPanel(rows: [for (final f in state.friends) _friendRow(f)]),
           ] else ...[
             const SectionLabel('Friends'),
             EmptyState(
@@ -218,95 +179,35 @@ class FriendsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _referralRow(
-    GameState state,
-    GameNotifier notifier,
-    ReferralTierDef tier,
-  ) {
-    final progress = '${min(state.referralsCount, tier.need)}/${tier.need}';
-    final claimed = state.claimedTiers.contains(tier.id);
-    final met = state.referralsCount >= tier.need;
-    final label = claimed ? 'Claimed' : (met ? 'Claim' : 'Locked');
-    final claimable = met && !claimed;
-
-    return Row(
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                tier.label,
-                style: AppText.sora(16, weight: FontWeight.w700),
-              ),
-              Text(
-                '+${tier.reward} chips · $progress',
-                style: AppText.sora(14, color: AppColors.textMuted),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-        // Gold only while it can actually be claimed; a claimed or locked
-        // tier is a neutral outline, so the eye lands on the one that pays.
-        claimable
-            ? GoldButton(
-                label: label,
-                onPressed: () => notifier.claimTier(tier.id, tier.need, tier.reward),
-                verticalPadding: 14,
-                fontSize: 15,
-              )
-            : OutlinePillButton(label: label, onPressed: null, neutral: true, verticalPadding: 14, fontSize: 15),
-      ],
-    );
-  }
-
   Widget _leaderboardRow(LeaderboardEntry entry) {
     return Row(
       children: [
         Container(
           width: 22,
           height: 22,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: entry.medalColor,
-          ),
+          decoration: BoxDecoration(shape: BoxShape.circle, color: entry.medalColor),
           alignment: Alignment.center,
           child: Text(
             '${entry.rank}',
-            style: AppText.sora(
-              13,
-              weight: FontWeight.w800,
-              color: AppColors.goldInk,
-            ),
+            style: AppText.sora(13, weight: FontWeight.w800, color: AppColors.goldInk),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
             entry.name,
-            style: AppText.sora(
-              16,
-              weight: FontWeight.w700,
-              color: entry.nameColor,
-            ),
+            style: AppText.sora(16, weight: FontWeight.w700, color: entry.nameColor),
           ),
         ),
         Text(
           entry.scoreLabel,
-          style: AppText.sora(
-            16,
-            weight: FontWeight.w800,
-            color: entry.nameColor,
-          ),
+          style: AppText.sora(16, weight: FontWeight.w800, color: entry.nameColor),
         ),
       ],
     );
   }
 
-  Widget _friendRow(GameState state, GameNotifier notifier, Friend f) {
-    final giftEnabled = state.chips >= 100;
+  Widget _friendRow(Friend f) {
     return Row(
       children: [
         Semantics(
@@ -356,21 +257,6 @@ class FriendsScreen extends ConsumerWidget {
             ],
           ),
         ),
-        const SizedBox(width: 12),
-        Semantics(
-          button: true,
-          enabled: giftEnabled,
-          // Every row's button says "Gift 100"; only its position says who it
-          // gifts, which is invisible to a screen reader.
-          label: 'Gift 100 chips to ${f.name}',
-          hint: giftEnabled ? null : 'You need 100 chips to gift',
-          excludeSemantics: true,
-          child: OutlinePillButton(
-            label: 'Gift 100',
-            onPressed: giftEnabled ? () => notifier.giftChips(f.id) : null,
-            neutral: true,
-          ),
-        ),
       ],
     );
   }
@@ -396,10 +282,7 @@ class _WebInstallBanner extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              'Playing in the browser — get the Android app',
-              style: AppText.sora(13, color: AppColors.gold),
-            ),
+            child: Text('Playing in the browser — get the Android app', style: AppText.sora(13, color: AppColors.gold)),
           ),
           TextLinkButton(
             label: 'Get it on Google Play',
@@ -427,9 +310,7 @@ class _DividedPanel extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(vertical: 15),
               decoration: BoxDecoration(
-                border: i < rows.length - 1
-                    ? const Border(bottom: BorderSide(color: AppColors.border))
-                    : null,
+                border: i < rows.length - 1 ? const Border(bottom: BorderSide(color: AppColors.border)) : null,
               ),
               child: rows[i],
             ),
@@ -459,9 +340,7 @@ class _GroupCodeField extends StatefulWidget {
 }
 
 class _GroupCodeFieldState extends State<_GroupCodeField> {
-  late final TextEditingController _controller = TextEditingController(
-    text: widget.value,
-  );
+  late final TextEditingController _controller = TextEditingController(text: widget.value);
 
   @override
   void didUpdateWidget(covariant _GroupCodeField oldWidget) {
@@ -492,11 +371,7 @@ class _GroupCodeFieldState extends State<_GroupCodeField> {
       style: AppText.sora(17, weight: FontWeight.w700, letterSpacing: 1.36),
       decoration: InputDecoration(
         hintText: 'Group code',
-        hintStyle: AppText.sora(
-          17,
-          weight: FontWeight.w700,
-          color: AppColors.textFaint,
-        ),
+        hintStyle: AppText.sora(17, weight: FontWeight.w700, color: AppColors.textFaint),
         filled: true,
         fillColor: AppColors.surface,
         counterText: '',

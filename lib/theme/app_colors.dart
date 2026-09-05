@@ -1,15 +1,21 @@
 import 'package:flutter/material.dart';
 
-/// Design tokens ported from `Blackjack 21 v2.dc.html` (Omaha poker-app system).
+/// Design tokens.
+///
+/// Calmed on 2026-09-05: the surfaces lost most of their green cast and sit a
+/// step lighter, so the app reads as a quiet dark room rather than a lit
+/// casino floor. The felt keeps its greens — a card table is baize — and gold
+/// stays the single accent, but it is now a flat fill: the gradients and glows
+/// are gone.
 class AppColors {
   AppColors._();
 
   // Shell / backgrounds
-  static const Color shellBlack = Color(0xFF05100C);
-  static const Color surface = Color(0xFF0E1412);
-  static const Color panel = Color(0xFF1A2320);
-  static const Color navSurface = Color(0xFF182420);
-  static const Color border = Color(0xFF31403A);
+  static const Color shellBlack = Color(0xFF0B0E0D);
+  static const Color surface = Color(0xFF131716);
+  static const Color panel = Color(0xFF1C2120);
+  static const Color navSurface = Color(0xFF171B1A);
+  static const Color border = Color(0xFF2B3230);
 
   // Felt greens
   static const Color felt = Color(0xFF175943);
@@ -29,12 +35,12 @@ class AppColors {
   /// [border] is 1.71:1 against [surface] — fine for a decorative hairline,
   /// but below the 3:1 that a control outline needs to be perceivable. Use
   /// this where the edge is the only thing defining a tappable thing.
-  static const Color borderStrong = Color(0xFF577167);
+  static const Color borderStrong = Color(0xFF6B7572);
 
   // Gold accent
-  static const Color goldLight = Color(0xFFF3E0A3);
-  static const Color gold = Color(0xFFE8C77A);
-  static const Color goldDark = Color(0xFFD9AD5C);
+  static const Color goldLight = Color(0xFFEBD7A0);
+  static const Color gold = Color(0xFFDCBF7A);
+  static const Color goldDark = Color(0xFFC9A75C);
   static const Color goldInk = Color(0xFF1A1408);
 
   // Win / lose / push
@@ -103,20 +109,6 @@ class AppColors {
     win,
   ];
 
-  static const LinearGradient goldGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [goldLight, gold, goldDark],
-    stops: [0.0, 0.55, 1.0],
-  );
-
-  static const LinearGradient feltCardGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [felt, feltDark],
-    stops: [0.0, 0.7],
-  );
-
   static Color medalColor(int rank) {
     switch (rank) {
       case 1:
@@ -143,9 +135,4 @@ class AppColors {
   /// The true black behind a modal, and under the felt's vignette. Written as
   /// a raw `#040806` in eight places, the theme itself included.
   static const Color scrim = Color(0xFF040806);
-
-  /// Selection rings on the two non-default felt swatches — three different
-  /// golds in one row of three, before these were named.
-  static const Color ringOcean = Color(0xFFF5C451);
-  static const Color ringEmber = Color(0xFFFFB457);
 }

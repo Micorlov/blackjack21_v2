@@ -11,7 +11,8 @@ BoxDecoration panelDecoration({Color? borderColor, Color? background, double rad
   );
 }
 
-/// Uppercase mono section header, e.g. "CHOOSE YOUR TABLE".
+/// Section header, e.g. "Tables". Rendered as written — no more forced
+/// capitals.
 class SectionLabel extends StatelessWidget {
   final String text;
   final EdgeInsetsGeometry margin;
@@ -20,15 +21,15 @@ class SectionLabel extends StatelessWidget {
   const SectionLabel(
     this.text, {
     super.key,
-    this.margin = const EdgeInsets.fromLTRB(2, 8, 2, 10),
-    this.color = AppColors.textLabel,
+    this.margin = const EdgeInsets.fromLTRB(2, 4, 2, 10),
+    this.color = AppColors.textFaint,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: margin,
-      child: Text(text.toUpperCase(), style: AppText.sectionLabel(color: color)),
+      child: Text(text, style: AppText.sectionLabel(color: color)),
     );
   }
 }
@@ -43,7 +44,7 @@ class ScreenTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
-      child: Text(text, style: AppText.serifItalic(36, height: 1.1)),
+      child: Text(text, style: AppText.serifItalic(32, height: 1.1)),
     );
   }
 }

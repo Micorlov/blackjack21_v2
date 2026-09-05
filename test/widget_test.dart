@@ -11,22 +11,14 @@ void main() {
     expect(find.text('Play as Guest'), findsOneWidget);
   });
 
-  testWidgets('playing as guest shows the new-player tips, then the lobby', (WidgetTester tester) async {
+  testWidgets('playing as guest lands straight in the lobby', (WidgetTester tester) async {
     await tester.pumpWidget(const ProviderScope(child: BlackjackApp()));
 
     await tester.tap(find.text('Play as Guest'));
     await tester.pumpAndSettle();
 
-    // A brand-new player gets the one-time "Four things to know" primer.
-    expect(find.text('Four things to know'), findsOneWidget);
-
-    await tester.ensureVisible(find.text('Deal me in'));
-    await tester.tap(find.text('Deal me in'));
-    await tester.pumpAndSettle();
-
-    // The greeting line now carries the player's level, which is the one
-    // figure in the app that only ever goes up.
-    expect(find.textContaining('Level 1'), findsOneWidget);
+    expect(find.text('Daily bonus'), findsOneWidget);
+    expect(find.text('Bronze Table'), findsOneWidget);
   });
 
   // Regression: StatsScreen used Row(crossAxisAlignment: stretch) directly
@@ -38,11 +30,8 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: BlackjackApp()));
     await tester.tap(find.text('Play as Guest'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Deal me in'));
-    await tester.tap(find.text('Deal me in'));
-    await tester.pumpAndSettle();
 
-    for (final label in ['Stats', 'Friends', 'Shop', 'Settings', 'Lobby']) {
+    for (final label in ['Stats', 'Friends', 'Settings', 'Home']) {
       await tester.tap(find.text(label));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull, reason: 'navigating to $label threw');

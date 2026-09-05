@@ -56,11 +56,10 @@ const LegalDoc kTermsDoc = LegalDoc(
           'real-money wager is ever placed. Success here does not predict success at real gambling.',
     ),
     LegalSection(
-      'Chip packs and rewards',
-      'The Shop\'s chip packs, the daily bonus and the "watch an ad" reward all grant play chips '
-          'inside the game. This build takes no payment for any of them — no money changes hands and '
-          'no payment details are collected. If that ever changes, prices and terms will be shown '
-          'before anything is charged.',
+      'Rewards',
+      'The daily bonus, the table rebuy and referral rewards all grant play chips inside the game. '
+          'There is nothing to buy: no money changes hands and no payment details are collected. If '
+          'that ever changes, prices and terms will be shown before anything is charged.',
     ),
     LegalSection(
       'Your account',
@@ -135,8 +134,8 @@ const LegalDoc kPrivacyDoc = LegalDoc(
     ),
     LegalSection(
       'No advertising',
-      'This build contains no advertising SDK and no third-party trackers. The "watch an ad" row '
-          'in the Shop is a simulated reward — no ad is loaded and no ad network sees you.',
+      'This build contains no advertising SDK and no third-party trackers. No ad is ever loaded '
+          'and no ad network sees you.',
     ),
     LegalSection(
       'Location',

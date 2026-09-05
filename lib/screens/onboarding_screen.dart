@@ -98,15 +98,8 @@ class OnboardingScreen extends ConsumerWidget {
                                 height: 88,
                                 margin: const EdgeInsets.only(bottom: 22),
                                 decoration: BoxDecoration(
-                                  gradient: AppColors.goldGradient,
+                                  color: AppColors.gold,
                                   borderRadius: BorderRadius.circular(AppRadius.xxl),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.goldDark.withValues(alpha: 0.3),
-                                      blurRadius: 30,
-                                      offset: const Offset(0, 10),
-                                    ),
-                                  ],
                                 ),
                                 alignment: Alignment.center,
                                 child: Text(

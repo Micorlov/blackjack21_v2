@@ -227,7 +227,7 @@ class _DealerAreaState extends State<DealerArea> {
             const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(gradient: AppColors.goldGradient, borderRadius: BorderRadius.circular(6)),
+              decoration: BoxDecoration(color: AppColors.gold, borderRadius: BorderRadius.circular(6)),
               child: Text(
                 'YOU LEAD',
                 style: AppText.mono(12, weight: FontWeight.w700, letterSpacing: 1, color: AppColors.goldInk),
@@ -242,7 +242,7 @@ class _DealerAreaState extends State<DealerArea> {
   Widget _sweepBanner() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-      decoration: BoxDecoration(gradient: AppColors.goldGradient, borderRadius: BorderRadius.circular(18)),
+      decoration: BoxDecoration(color: AppColors.gold, borderRadius: BorderRadius.circular(18)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

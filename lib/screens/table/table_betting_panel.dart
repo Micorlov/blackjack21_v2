@@ -29,8 +29,7 @@ class TableBettingPanel extends ConsumerWidget {
     final dealDisabled = !(state.bet > 0 && state.bet <= state.chips) || belowTableMin;
     // With nothing staked yet, the last stake the player actually dealt is
     // one tap away instead of three: same chips, same table, straight in.
-    final canGoAllIn =
-        state.chips >= tableMin && state.bet < state.chips && (tableMax == null || state.bet < tableMax);
+    final canGoAllIn = state.chips >= tableMin && state.bet < state.chips && (tableMax == null || state.bet < tableMax);
     final canRebet =
         state.bet == 0 &&
         state.lastBet > 0 &&
@@ -57,11 +56,7 @@ class TableBettingPanel extends ConsumerWidget {
                   children: [
                     TextSpan(
                       text: 'Bet ',
-                      style: AppText.mono(
-                        12,
-                        letterSpacing: 1.2,
-                        color: AppColors.textPrimary.withValues(alpha: 0.82),
-                      ),
+                      style: AppText.mono(12, letterSpacing: 1.2, color: AppColors.textPrimary.withValues(alpha: 0.82)),
                     ),
                     TextSpan(
                       text: '\$${state.bet}',
@@ -149,10 +144,7 @@ class TableBettingPanel extends ConsumerWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             spacing: AppSpacing.sm,
             children: [
-              Text(
-                'Playing with practice bots',
-                style: AppText.mono(12, letterSpacing: 0.6, color: AppColors.textMuted),
-              ),
+              Text('Playing with practice bots', style: AppText.sora(13, color: AppColors.textMuted)),
               TextLinkButton(label: 'Invite friends', onPressed: notifier.shareInviteWhatsApp, fontSize: 14),
             ],
           ),

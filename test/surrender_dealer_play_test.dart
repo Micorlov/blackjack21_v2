@@ -32,7 +32,10 @@ const _stake = TableStake(
 const _liveSeats = [
   NpcSeat(
     bet: 100,
-    cards: [PlayingCard(rank: '4', suit: '♠'), PlayingCard(rank: '5', suit: '♣')],
+    cards: [
+      PlayingCard(rank: '4', suit: '♠'),
+      PlayingCard(rank: '5', suit: '♣'),
+    ],
     action: 'STAND',
     done: true,
   ),
@@ -55,8 +58,7 @@ void main() {
     }
   }
 
-  testWidgets('surrendering still plays the dealer out for the live NPC seats',
-      (tester) async {
+  testWidgets('surrendering still plays the dealer out for the live NPC seats', (tester) async {
     // Dealer's opening two cards total 5 — nowhere near the 17-stand
     // threshold, so a completed hand is only possible if the dealer keeps
     // drawing after the hero surrenders.
@@ -72,7 +74,15 @@ void main() {
         phase: RoundPhase.playing,
         dealerHand: dealerOpening,
         holeRevealed: false,
-        hands: const [Hand(cards: [PlayingCard(rank: '9', suit: '♠'), PlayingCard(rank: '6', suit: '♣')], bet: 100)],
+        hands: const [
+          Hand(
+            cards: [
+              PlayingCard(rank: '9', suit: '♠'),
+              PlayingCard(rank: '6', suit: '♣'),
+            ],
+            bet: 100,
+          ),
+        ],
         friends: kInitialFriends,
         npcSeats: _liveSeats,
       ),
@@ -87,11 +97,15 @@ void main() {
     expect(
       notifier.state.phase,
       RoundPhase.dealer,
-      reason: 'the dealer must hold the stage rather than resolving in the '
+      reason:
+          'the dealer must hold the stage rather than resolving in the '
           'same frame the player acted',
     );
-    expect(notifier.state.holeRevealed, isTrue,
-        reason: 'the hole card turns over before the dealer draws, as its own beat');
+    expect(
+      notifier.state.holeRevealed,
+      isTrue,
+      reason: 'the hole card turns over before the dealer draws, as its own beat',
+    );
 
     await settleDealer(tester, notifier);
 
@@ -99,24 +113,15 @@ void main() {
     expect(
       BlackjackRules.handValue(notifier.state.dealerHand),
       greaterThanOrEqualTo(17),
-      reason: 'the dealer must finish its hand so the live NPC seat settles against a real total, '
+      reason:
+          'the dealer must finish its hand so the live NPC seat settles against a real total, '
           'not the un-played opening two cards',
     );
 
     // Bet was 100; surrender refunds floor(100/2)=50 immediately, so the true
     // net loss for this hand is 50 — before the fix, _settle() never
     // subtracted it from sessionNetDelta and the panel showed +$0 instead.
-    //
-    // The extra 100 is the "First Hand" achievement, which pays on the first
-    // settled hand of a fresh state. Asserted explicitly rather than absorbed
-    // into the figure, so a change to either number has to be deliberate.
-    const firstHandAchievement = 100;
-    expect(
-      notifier.state.chips,
-      950 + firstHandAchievement,
-      reason: 'starting 900 (post-deal) + the 50 surrender refund + the first-hand achievement',
-    );
-    expect(notifier.state.unlockedAchievements, contains('first'));
+    expect(notifier.state.chips, 950, reason: 'starting 900 (post-deal) + the 50 surrender refund');
     expect(notifier.state.roundHandNet, -50, reason: 'the settlement panel must show the real -\$50 loss, not \$0');
 
     // GameNotifier keeps a heartbeat, a save timer and the post-settlement

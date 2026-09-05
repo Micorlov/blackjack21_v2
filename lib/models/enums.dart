@@ -1,13 +1,11 @@
 /// Enum types mirroring string-based state fields in the JS design spec.
-enum AppScreen { onboarding, tips, lobby, table, stats, friends, shop, settings, cup }
+enum AppScreen { onboarding, lobby, table, stats, friends, settings }
 
 enum RoundPhase { betting, insurance, npcs, playing, dealer, settlement }
 
-enum StatsTab { recent, alltime, achievements }
+enum StatsTab { recent, alltime }
 
 enum LeaderboardPeriod { hourly, daily, alltime }
-
-enum AdState { ready, watching, cooldown }
 
 enum HandStatus { active, stood, busted, blackjack, surrendered }
 

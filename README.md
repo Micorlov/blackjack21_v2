@@ -1,6 +1,6 @@
 # blackjack21_v2
 
-A Flutter blackjack game with a multi-seat table, social features, and a shop.
+A Flutter blackjack game with a multi-seat table and a friends race. Four tabs, one felt, no shop.
 
 > **Contributor rule:** every change to this project must update this file in the same
 > commit. See [CLAUDE.md](CLAUDE.md) for the exact requirements.
@@ -31,20 +31,16 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   +200 welcome chips the moment they join, and the inviter gets +100 chips per real friend who
   joins their link, with a toast and (when enabled) a local notification ("Maya joined your
   table!"). Credit is derived live from who invited whom, never a counter that can drift, and each
-  join pays exactly once even across a relaunch. The existing referral-count milestones
-  (+100 / +500 / +1,500 chips) sit on top as bigger goals
+  join pays exactly once even across a relaunch
 - **Real table presence** — a lobby table card shows real friends actually seated there right now
   ("Maya is here", with her avatar) and lets you tap straight in to join them — replacing the old
   hardcoded "2 friends here" placeholder text
 - **Play-day streak** — playing at least one hand a day builds a streak that adds up to +250 chips
   on top of the daily bonus (+50 per consecutive day, capped at 5 days), with a local "your streak
   ends tonight" reminder if the day is about to lapse unplayed
-- **World leaderboard** — swipe the standings panel at the table between three pages: FRIENDS,
-  WORLD · THIS HOUR, and WORLD · TODAY. The world pages are the live global top players by
-  hourly and daily points; your own row stays visible even when you are outside the top
-- **Always-visible rank strip** — a ticker above every screen, including the table, showing your
-  live position vs your friends' hourly or daily points and who you're chasing (tap to flip
-  hourly ↔ daily)
+- **Friends standings at the table** — while the other seats and the dealer play, the action
+  panel shows your group's hourly race (your row always visible). Only once real friends have
+  joined; with practice bots at the seats there is nothing to rank
 - **Hourly & daily points** — net chips won roll into real per-hour and per-day buckets that reset
   on the clock and sync to the group after every hand and once a minute
 - **Overtake alerts** — when a friend's score passes yours, you get an in-app toast plus a local
@@ -63,15 +59,6 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   every 4 hours (with a live countdown while cooling down). Replaces the old free, unlimited
   "Reset bankroll to 1,000" in Settings — without a real cost to running out of chips, there was no
   reason to ever claim the daily bonus or invite anyone to race you
-- **Weekend Cup screen** — the lobby's Weekend Cup card now opens a real tournament screen: the
-  5,000-chip prize pool with a live countdown to the end of the week (Monday 00:00 local), your
-  standing in your group's daily points race, the prize table (2,000 / 1,200 / 800 / 200), and the
-  top of the table built from the same friends standings the leaderboard uses. Joining is
-  persisted, and "Play a Cup hand" drops you straight onto the Bronze table
-- **New-player tips screen** — a one-time "Four things to know" primer between onboarding and the
-  lobby for brand-new players (beat the dealer, 3:2 blackjack, the sweep pot, never go broke).
-  "Deal me in" continues into the coached first hands; "I've played before — skip" also turns the
-  tutorial off. Either way it never shows again (persisted)
 - **Comeback dealing** — short-stacked or on a two-loss streak, your opening hand is the best of
   3 candidate pairs from the real shoe instead of one blind draw, so sessions last longer
 - **Social table** — friends, lobby, leaderboard, seat plates with avatars, and a table-chat
@@ -79,7 +66,7 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   quick-reply chips (GG, Nice hand, Ouch, One more, Dealer luck) that post a real "You" bubble
   and float the reaction over the table — canned replies only, so there is nothing to moderate
 - **Progress that survives a relaunch** — your bankroll, all-time stats, recent-hand history,
-  live hourly/daily points, settings and shop cosmetics are written to disk after every settled
+  live hourly/daily points and settings are written to disk after every settled
   hand and every settings change, then restored before the app publishes anything to your
   friends' group. Point buckets still roll over on the clock, so a relaunch can never resurrect
   a finished hour's score, and the rebuy offer now appears whenever your stack falls below the
@@ -95,7 +82,11 @@ A Flutter blackjack game with a multi-seat table, social features, and a shop.
   payouts, the sweep pot, chips and limits) in a bottom sheet, reachable from Settings → Help
   and from "Full rules" on the tutorial card without leaving a hand in progress. Settings → Help
   also replays the three-hand tutorial
-- **Progression** — stats screen, shop, onboarding and story overlays
+- **Stats** — this session and all time (hands, wins, win rate, blackjacks, streaks) plus the
+  last ten hands as a colour-and-glyph strip
+- **A calm dark theme** — one flat gold accent on near-neutral charcoal surfaces; no gradients,
+  glows or letter-spaced capitals outside the felt. Four bottom tabs: Home, Stats, Friends,
+  Settings
 - **Sound effects** — deal, chip, turn, win, lose, push, and blackjack cues, plus spoken
   "Stand"/"Bust" voice lines when an NPC seat finishes its turn
 - **Spoken results** — every settled hand plays its outcome tone and then says the result:
@@ -165,8 +156,7 @@ lib/
 ├── main.dart
 ├── data/          # static game data, tutorial_data (3 lessons + "How to play" guide copy)
 ├── models/        # enums, game_state, hand, playing_card, social_models, table_pot
-├── screens/       # lobby, table, friends, settings, shop, stats, onboarding,
-│   │              #   tips (one-time new-player primer), cup (Weekend Cup tournament)
+├── screens/       # lobby, table, friends, settings, stats, onboarding
 │   ├── legal/     # Terms + Privacy copy and the in-app reader (offline, no webview)
 │   ├── shared/    # cross-screen pieces: tab_pill, async_action (pending state),
 │   │              #   confirm_dialog, empty_state, avatar_initial
@@ -184,10 +174,9 @@ lib/
 │                  #   (durations, curves, reduced-motion), app_text_styles (+ type ramp)
 ├── utils/         # formatters, leaderboard, points (hourly/daily buckets), comeback,
 │                  #   daily_bonus (pure cooldown + 7-day streak logic),
-│                  #   cup (pure Weekend Cup countdown/prizes),
 │                  #   tutorial (pure "which coaching card, if any, right now?"),
 │                  #   table_seats (pads real friends to 4 table seats with practice bots)
-└── widgets/       # shared UI (buttons, overlays, cards, nav bar, rank_strip,
+└── widgets/       # shared UI (buttons, overlays, cards, nav bar,
                    #   tutorial_coach_card, how_to_play_sheet, daily_bonus_dialog,
                    #   web_viewport_scaler)
 
@@ -367,9 +356,9 @@ flutter test
 
 ### Layout sweeps
 
-`test/screen_overflow_test.dart` pumps **every screen and overlay** — onboarding, tips, lobby,
-stats (all three tabs), friends, shop, settings, the Weekend Cup, the table in five states, the
-daily-bonus dialog, the how-to-play sheet, the story overlay and the full standings list — on
+`test/screen_overflow_test.dart` pumps **every screen and overlay** — onboarding, lobby, stats
+(both tabs), friends, settings, the table in five states, the daily-bonus dialog, the
+how-to-play sheet, the out-of-chips sheet and the friends standings card — on
 five phone/tablet sizes at both text scales the app allows, and fails on any `RenderFlex`
 overflow. Half the scenarios use "loaded account" data (a 35-character Google display name,
 seven-figure bankrolls, a full hand history) because every row in the design was drawn around
@@ -411,6 +400,28 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-05 (6)
+- refactor: **The app got simpler.** Removed outright: the Shop (chip packs, card backs, the
+  Ocean/Ember felts, the avatar frame, the simulated "watch an ad" reward), the Weekend Cup,
+  the three daily missions, XP and levels, achievements and the Awards tab, the rank strip
+  ticker above every screen, the stories rail and overlay, the world leaderboard (hourly and
+  daily global top lists), the referral-count milestone tiers, "Gift 100" between friends, and
+  the one-time "Four things to know" tips screen. The lobby is now the player's name and
+  balance, the daily bonus, and the three tables; the bottom bar has four tabs (Home, Stats,
+  Friends, Settings). Saved games written by the previous build still load — the dropped keys
+  are ignored, and the bankroll, stats and settings beside them restore as before.
+- feat: **A calmer dark theme.** Surfaces lost their green cast and sit a step lighter; gold is
+  a single flat fill rather than a three-stop gradient under a glow; section headings are
+  sentence-case body type instead of letter-spaced mono capitals; buttons weigh w700 with no
+  tracking; the nav bar is opaque and quiet instead of blurred and gold-lit; the daily-bonus
+  card is a plain panel with one small gold button. The felt keeps its greens. All WCAG AA
+  pairings still hold (`test/theme_contrast_test.dart`).
+- refactor: `GameState` lost 22 fields and `GameNotifier` about 350 lines with the features
+  above; `game_data.dart` keeps one felt and one card back. Deleted: `shop_screen`,
+  `cup_screen`, `tips_screen`, `world_leaderboard_screen`, `rank_strip`, `level_up_sheet`,
+  `achievement_toast`, `story_overlay`, `missions_card`, and the `cup`, `xp`, `missions`,
+  `achievements` and `world_standings` utils with their tests.
 
 ### 2026-09-05 (5)
 - refactor: **The design system stopped drifting.** `AppAlpha` names the ten opacity steps that

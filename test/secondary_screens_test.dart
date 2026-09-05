@@ -37,7 +37,6 @@ Widget _wrap(GameState state, Widget screen) {
 const _liveFriends = [Friend(id: 'f1', name: 'Dana', chips: 2400, online: true, dailyScore: 300, hourlyScore: 90)];
 
 void main() {
-  
   group('legal documents', () {
     testWidgets('onboarding links the consent line to the Terms', (tester) async {
       await tester.pumpWidget(const ProviderScope(child: MaterialApp(home: OnboardingScreen(isWeb: false))));
@@ -75,18 +74,17 @@ void main() {
   });
 
   group('friends are only friends when they are live', () {
-    testWidgets('seeded practice bots are not listed, and cannot be gifted', (tester) async {
+    testWidgets('seeded practice bots are not listed', (tester) async {
       await tester.pumpWidget(
         _wrap(const GameState(screen: AppScreen.friends, friends: kInitialFriends, chips: 5000), const FriendsScreen()),
       );
 
       // kInitialFriends is the practice-bot roster.
       expect(find.text(kInitialFriends.first.name), findsNothing);
-      expect(find.text('Gift 100'), findsNothing);
       expect(find.text('No friends in your group yet'), findsOneWidget);
     });
 
-    testWidgets('real group members are listed with their gift action', (tester) async {
+    testWidgets('real group members are listed', (tester) async {
       await tester.pumpWidget(
         _wrap(
           const GameState(screen: AppScreen.friends, friends: _liveFriends, friendsAreLive: true, chips: 5000),
@@ -96,7 +94,6 @@ void main() {
 
       // Once in the leaderboard, once in the friends list.
       expect(find.text('Dana'), findsNWidgets(2));
-      expect(find.text('Gift 100'), findsOneWidget);
       expect(find.text('No friends in your group yet'), findsNothing);
     });
   });

@@ -29,18 +29,14 @@ void _useEdgeToEdgePhone(WidgetTester tester) {
 double _systemBarTop(WidgetTester tester) =>
     tester.view.physicalSize.height / tester.view.devicePixelRatio - _systemBarHeight;
 
-/// Walks a fresh install through guest entry and the one-time primer, which
-/// is where `widget_test.dart` also starts a lobby-side journey.
+/// Walks a fresh install through guest entry, which is where
+/// `widget_test.dart` also starts a lobby-side journey.
 Future<void> _enterLobbyAsGuest(WidgetTester tester) async {
   await tester.tap(find.text('Play as Guest'));
-  await tester.pumpAndSettle();
-  await tester.ensureVisible(find.text('Deal me in'));
-  await tester.tap(find.text('Deal me in'));
   await tester.pumpAndSettle();
 }
 
 void main() {
-  
   testWidgets('onboarding terms line clears the system navigation bar', (tester) async {
     _useEdgeToEdgePhone(tester);
     await tester.pumpWidget(const ProviderScope(child: BlackjackApp()));
@@ -58,7 +54,7 @@ void main() {
     await _enterLobbyAsGuest(tester);
 
     final limit = _systemBarTop(tester);
-    for (final label in ['Lobby', 'Stats', 'Friends', 'Shop', 'Settings']) {
+    for (final label in ['Home', 'Stats', 'Friends', 'Settings']) {
       expect(
         tester.getRect(find.text(label)).bottom,
         lessThanOrEqualTo(limit),

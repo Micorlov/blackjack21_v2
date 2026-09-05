@@ -11,10 +11,10 @@ import 'table_waiting_indicator.dart';
 ///
 /// This stretch of the round used to be a single pulsing line of text over a
 /// third of an empty screen — the player's only job was to wait, and the app
-/// gave them nothing to look at while they did. The standings card that used
-/// to crowd the betting panel lives here instead: the hourly race is the one
-/// thing a player genuinely wants to check between decisions, and this is the
-/// only part of the hand where checking it costs nothing.
+/// gave them nothing to look at while they did. The friends standings live
+/// here instead: the hourly race is the one thing a player genuinely wants to
+/// check between decisions, and this is the only part of the hand where
+/// checking it costs nothing.
 class TableWaitingPanel extends StatelessWidget {
   final GameState state;
   final GameNotifier notifier;
@@ -37,8 +37,12 @@ class TableWaitingPanel extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         TableWaitingIndicator(text: text, fontSize: fontSize),
-        const SizedBox(height: AppSpacing.sm),
-        StandingsMiniTable(state: state, notifier: notifier),
+        // Only once there are real people to race. With bots-only seats the
+        // card used to fill this space with invented world standings.
+        if (state.friendsAreLive) ...[
+          const SizedBox(height: AppSpacing.sm),
+          StandingsMiniTable(state: state, notifier: notifier),
+        ],
       ],
     );
   }

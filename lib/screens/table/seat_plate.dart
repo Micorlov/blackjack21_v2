@@ -216,7 +216,7 @@ class SeatPlate extends StatelessWidget {
   Widget _potBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(gradient: AppColors.goldGradient, borderRadius: BorderRadius.circular(AppRadius.sm)),
+      decoration: BoxDecoration(color: AppColors.gold, borderRadius: BorderRadius.circular(AppRadius.sm)),
       child: Text(
         data.potLabel,
         style: AppText.mono(12, weight: FontWeight.w700, color: AppColors.goldInk, letterSpacing: 0.5),

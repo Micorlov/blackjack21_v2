@@ -71,9 +71,10 @@ class AppText {
     );
   }
 
-  /// Uppercase mono section label, e.g. "CHOOSE YOUR TABLE".
-  static TextStyle sectionLabel({Color color = AppColors.textLabel}) {
-    return mono(13, letterSpacing: 1.3, color: color);
+  /// Section label, e.g. "Tables". Sentence case in the body face: the old
+  /// letter-spaced mono capitals made every heading shout.
+  static TextStyle sectionLabel({Color color = AppColors.textFaint}) {
+    return sora(13, weight: FontWeight.w600, color: color);
   }
 
   // ── Type ramp ──────────────────────────────────────────────────────────
@@ -128,11 +129,7 @@ class AppText {
   }
 
   /// Money and counts.
-  static TextStyle numeral(
-    double size, {
-    Color color = AppColors.textPrimary,
-    FontWeight weight = FontWeight.w700,
-  }) {
+  static TextStyle numeral(double size, {Color color = AppColors.textPrimary, FontWeight weight = FontWeight.w700}) {
     return mono(size, weight: weight, color: color);
   }
 }

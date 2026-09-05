@@ -95,8 +95,6 @@ GameState _state({
   int chips = 1150,
   List<Friend> friends = kInitialFriends,
   bool friendsAreLive = false,
-  List<Friend> globalHourly = const [],
-  List<Friend> globalDaily = const [],
   StatsTab statsTab = StatsTab.recent,
   LeaderboardPeriod leaderboardPeriod = LeaderboardPeriod.alltime,
   StatsSummary stats = const StatsSummary(),
@@ -105,12 +103,9 @@ GameState _state({
   DateTime? lastDailyBonusClaimAt,
   int dailyBonusStreakDay = 0,
   DateTime? lastRebuyAt,
-  bool tournamentJoined = false,
   int referralsCount = 0,
-  List<String> claimedTiers = const [],
   String toast = '',
   String? groupCode,
-  String? activeStoryId,
   int heroHourlyPoints = 0,
   int heroDailyPoints = 0,
   bool signedIn = false,
@@ -146,8 +141,6 @@ GameState _state({
     npcSeats: npcSeats,
     friends: friends,
     friendsAreLive: friendsAreLive,
-    globalHourly: globalHourly,
-    globalDaily: globalDaily,
     statsTab: statsTab,
     leaderboardPeriod: leaderboardPeriod,
     stats: stats,
@@ -156,13 +149,9 @@ GameState _state({
     lastDailyBonusClaimAt: lastDailyBonusClaimAt,
     dailyBonusStreakDay: dailyBonusStreakDay,
     lastRebuyAt: lastRebuyAt,
-    tipsSeen: true,
-    tournamentJoined: tournamentJoined,
     referralsCount: referralsCount,
-    claimedTiers: claimedTiers,
     toast: toast,
     groupCode: groupCode,
-    activeStoryId: activeStoryId,
     heroHourlyPoints: heroHourlyPoints,
     heroDailyPoints: heroDailyPoints,
     heroHourKey: hourKeyOf(now),
@@ -191,25 +180,39 @@ const _heroPair = [PlayingCard(rank: 'A', suit: '♥'), PlayingCard(rank: '2', s
 const List<NpcSeat> _busySeats = [
   NpcSeat(
     bet: 100,
-    cards: [PlayingCard(rank: '3', suit: '♥'), PlayingCard(rank: 'A', suit: '♠'), PlayingCard(rank: 'J', suit: '♦')],
+    cards: [
+      PlayingCard(rank: '3', suit: '♥'),
+      PlayingCard(rank: 'A', suit: '♠'),
+      PlayingCard(rank: 'J', suit: '♦'),
+    ],
     action: 'BUST',
     done: true,
   ),
   NpcSeat(
     bet: 100,
-    cards: [PlayingCard(rank: '7', suit: '♥'), PlayingCard(rank: '7', suit: '♠'), PlayingCard(rank: 'K', suit: '♦')],
+    cards: [
+      PlayingCard(rank: '7', suit: '♥'),
+      PlayingCard(rank: '7', suit: '♠'),
+      PlayingCard(rank: 'K', suit: '♦'),
+    ],
     action: 'BUST',
     done: true,
   ),
   NpcSeat(
     bet: 50,
-    cards: [PlayingCard(rank: '5', suit: '♠'), PlayingCard(rank: 'Q', suit: '♣')],
+    cards: [
+      PlayingCard(rank: '5', suit: '♠'),
+      PlayingCard(rank: 'Q', suit: '♣'),
+    ],
     action: 'STAND',
     done: true,
   ),
   NpcSeat(
     bet: 50,
-    cards: [PlayingCard(rank: '6', suit: '♦'), PlayingCard(rank: 'J', suit: '♠')],
+    cards: [
+      PlayingCard(rank: '6', suit: '♦'),
+      PlayingCard(rank: 'J', suit: '♠'),
+    ],
     action: 'STAND',
     done: true,
   ),
@@ -244,14 +247,9 @@ Map<String, GameState> _scenarios() {
 
   return {
     'onboarding': _state(screen: AppScreen.onboarding),
-    'tips': _state(screen: AppScreen.tips),
 
     'lobby-fresh': _state(screen: AppScreen.lobby),
-    'lobby-bonus-cooldown': _state(
-      screen: AppScreen.lobby,
-      lastDailyBonusClaimAt: claimedAt,
-      dailyBonusStreakDay: 6,
-    ),
+    'lobby-bonus-cooldown': _state(screen: AppScreen.lobby, lastDailyBonusClaimAt: claimedAt, dailyBonusStreakDay: 6),
     'lobby-loaded': _state(
       screen: AppScreen.lobby,
       displayName: _longName,
@@ -277,13 +275,6 @@ Map<String, GameState> _scenarios() {
       displayName: _longName,
       session: const SessionSummary(hands: 240, wins: 131, net: -184320),
     ),
-    'stats-achievements': _state(
-      screen: AppScreen.stats,
-      statsTab: StatsTab.achievements,
-      stats: _bigStats,
-      chips: 1284500,
-      referralsCount: 5,
-    ),
 
     'friends-fresh': _state(screen: AppScreen.friends),
     'friends-loaded': _state(
@@ -294,31 +285,13 @@ Map<String, GameState> _scenarios() {
       friendsAreLive: true,
       groupCode: 'A1B2C3',
       referralsCount: 5,
-      claimedTiers: const ['r1', 'r3'],
       leaderboardPeriod: LeaderboardPeriod.hourly,
       heroHourlyPoints: 45210,
       heroDailyPoints: 184320,
     ),
 
-    'shop': _state(screen: AppScreen.shop, chips: 1284500, displayName: _longName),
     'settings-guest': _state(screen: AppScreen.settings),
-    'settings-signed-in': _state(
-      screen: AppScreen.settings,
-      signedIn: true,
-      displayName: _longName,
-      chips: 1284500,
-    ),
-
-    'cup-open': _state(screen: AppScreen.cup, friends: _longNamedFriends, friendsAreLive: true),
-    'cup-joined': _state(
-      screen: AppScreen.cup,
-      tournamentJoined: true,
-      displayName: _longName,
-      friends: _longNamedFriends,
-      friendsAreLive: true,
-      heroDailyPoints: 184320,
-      chips: 1284500,
-    ),
+    'settings-signed-in': _state(screen: AppScreen.settings, signedIn: true, displayName: _longName, chips: 1284500),
 
     // The felt with real people at it. `table_layout_test.dart` covers every
     // round phase, but only ever with "Guest" and the built-in bots — these
@@ -330,8 +303,6 @@ Map<String, GameState> _scenarios() {
       chips: 1284500,
       friends: _longNamedFriends,
       friendsAreLive: true,
-      globalHourly: _longNamedFriends,
-      globalDaily: _longNamedFriends,
       bet: 100,
       npcSeats: _busySeats,
       heroHourlyPoints: 45210,
@@ -346,7 +317,10 @@ Map<String, GameState> _scenarios() {
       bet: 100,
       hands: const [Hand(cards: _heroPair, bet: 100)],
       npcSeats: _busySeats,
-      dealerHand: const [PlayingCard(rank: '10', suit: '♠'), PlayingCard(rank: '9', suit: '♦')],
+      dealerHand: const [
+        PlayingCard(rank: '10', suit: '♠'),
+        PlayingCard(rank: '9', suit: '♦'),
+      ],
       tableChatOpen: true,
       chatMessages: const [
         ChatMessage(id: 1, name: 'Alexandra Konstantinopoulos', text: 'Dealer luck'),
@@ -369,7 +343,10 @@ Map<String, GameState> _scenarios() {
       bet: 100,
       hands: const [Hand(cards: _heroPair, bet: 100)],
       npcSeats: _busySeats,
-      dealerHand: const [PlayingCard(rank: '10', suit: '♠'), PlayingCard(rank: '9', suit: '♦')],
+      dealerHand: const [
+        PlayingCard(rank: '10', suit: '♠'),
+        PlayingCard(rank: '9', suit: '♦'),
+      ],
       tutorialDismissed: false,
     ),
     'table-settlement-live': _state(
@@ -381,7 +358,10 @@ Map<String, GameState> _scenarios() {
       phase: RoundPhase.settlement,
       bet: 100,
       holeRevealed: true,
-      dealerHand: const [PlayingCard(rank: '10', suit: '♠'), PlayingCard(rank: '9', suit: '♦')],
+      dealerHand: const [
+        PlayingCard(rank: '10', suit: '♠'),
+        PlayingCard(rank: '9', suit: '♦'),
+      ],
       hands: const [
         Hand(
           cards: [
@@ -425,7 +405,6 @@ Map<String, GameState> _scenarios() {
       friends: _longNamedFriends,
       toast: 'Bartholomew Fitzgerald-Wright just passed you on the hourly leaderboard',
     ),
-    'lobby-story': _state(screen: AppScreen.lobby, activeStoryId: kStoriesData.first.id),
   };
 }
 
@@ -576,10 +555,9 @@ void main() {
         );
       });
 
-      // The full standings list, reached by tapping the table's mini
-      // standings card — which lives in the waiting panel now, shown while the
-      // other seats and the dealer play, rather than in the betting panel.
-      testWidgets('${device.name} @${textScale}x world standings lays out without overflow', (tester) async {
+      // The friends standings card, shown in the waiting panel while the
+      // other seats and the dealer play.
+      testWidgets('${device.name} @${textScale}x friends standings lays out without overflow', (tester) async {
         final details = await _pumpScreen(
           tester,
           _state(
@@ -589,50 +567,23 @@ void main() {
             chips: 1284500,
             friends: _longNamedFriends,
             friendsAreLive: true,
-            globalHourly: _longNamedFriends,
-            globalDaily: _longNamedFriends,
             heroHourlyPoints: 45210,
             heroDailyPoints: 184320,
           ),
           device,
           textScale,
         );
-        expect(tester.takeException(), isNull, reason: _describe(null, details));
-
-        // The action panel is a capped, bottom-anchored scroll view: on the
-        // smallest device at the largest text size its content can be taller
-        // than the 62% of the screen it is allowed, so the standings card may
-        // start outside the viewport. The test scrolls to it the way a player
-        // would rather than asserting it happens to be on screen.
         // Fixed pumps rather than `pumpAndSettle`: the waiting panel carries
-        // the dealer/NPC pulse, which repeats forever by design, so settling
-        // never completes here.
-        // Fixed pumps rather than `pumpAndSettle`: the waiting panel carries
-        // the dealer/NPC pulse, which repeats forever by design, so settling
-        // never completes here. Several pumps, because opening the standings
-        // is a pushed route with its own transition.
-        Future<void> advance() async {
-          for (var i = 0; i < 6; i++) {
-            await tester.pump(const Duration(milliseconds: 200));
-          }
+        // the dealer/NPC pulse, which repeats forever by design.
+        for (var i = 0; i < 6; i++) {
+          await tester.pump(const Duration(milliseconds: 200));
         }
-
-        await tester.ensureVisible(find.text('FRIENDS'));
-        await advance();
-        await tester.tap(find.text('FRIENDS'));
-        await advance();
-
-        for (final tab in ['Friends', 'World · this hour', 'World · today']) {
-          await tester.tap(find.text(tab));
-          await advance();
-          final exception = tester.takeException();
-          expect(
-            exception,
-            isNull,
-            reason: 'standings tab "$tab" overflows on ${device.name} @${textScale}x\n'
-                '${_describe(exception, details)}',
-          );
-        }
+        final exception = tester.takeException();
+        expect(
+          exception,
+          isNull,
+          reason: 'friends standings overflow on ${device.name} @${textScale}x\n${_describe(exception, details)}',
+        );
       });
     }
   }

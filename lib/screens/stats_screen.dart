@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../data/game_data.dart';
 import '../models/enums.dart';
 import '../models/game_state.dart';
 import '../state/game_notifier.dart';
@@ -12,8 +11,7 @@ import '../utils/formatters.dart';
 import '../widgets/panel_card.dart';
 import 'shared/tab_pill.dart';
 
-/// Stats screen: Recent / All time / Awards tabs plus a "last 10 hands"
-/// history strip. Ported from `Blackjack 21 v2.dc.html` lines 490-543.
+/// Stats screen: Recent / All time tabs plus a "last 10 hands" history strip.
 class StatsScreen extends ConsumerWidget {
   const StatsScreen({super.key});
 
@@ -38,15 +36,9 @@ class StatsScreen extends ConsumerWidget {
                 active: state.statsTab == StatsTab.alltime,
                 onTap: notifier.setStatsAlltime,
               ),
-              TabPillItem(
-                label: 'Awards',
-                active: state.statsTab == StatsTab.achievements,
-                onTap: notifier.setStatsAchievements,
-              ),
             ],
           ),
           const SizedBox(height: 16),
-          if (state.statsTab == StatsTab.achievements) _AchievementsList(state: state),
           if (state.statsTab == StatsTab.recent) ...[
             IntrinsicHeight(
               child: Row(
@@ -231,129 +223,6 @@ class _StatTile extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(label, style: AppText.sora(14, color: AppColors.textMuted)),
-        ],
-      ),
-    );
-  }
-}
-
-class _AchievementsList extends StatelessWidget {
-  final GameState state;
-
-  const _AchievementsList({required this.state});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (final def in kAchievementDefs) ...[
-          _AchievementRow(
-            unlocked: state.unlockedAchievements.contains(def.id) || def.check(state),
-            name: def.name,
-            desc: def.desc,
-            reward: def.reward,
-            progress: def.progress?.call(state),
-          ),
-          const SizedBox(height: 10),
-        ],
-      ],
-    );
-  }
-}
-
-class _AchievementRow extends StatelessWidget {
-  final bool unlocked;
-  final String name;
-  final String desc;
-
-  /// One-time chips this pays. Shown so the list reads as something to earn
-  /// rather than a set of badges.
-  final int reward;
-
-  /// Where the player currently stands, when the achievement counts toward
-  /// something. "Play 100 hands" told nobody they were on 12.
-  final (int, int)? progress;
-
-  const _AchievementRow({
-    required this.unlocked,
-    required this.name,
-    required this.desc,
-    required this.reward,
-    this.progress,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final ringColor = unlocked ? AppColors.gold : AppColors.border;
-    final iconColor = unlocked ? AppColors.goldInk : AppColors.textFaint;
-    final nameColor = unlocked ? AppColors.gold : AppColors.textFaint;
-
-    return Container(
-      decoration: panelDecoration(borderColor: ringColor, radius: 14),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(shape: BoxShape.circle, color: ringColor),
-            alignment: Alignment.center,
-            child: Icon(Icons.check_rounded, size: 18, color: iconColor),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.sora(16, weight: FontWeight.w800, color: nameColor),
-                ),
-                Text(
-                  desc,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.sora(14, color: AppColors.textMuted),
-                ),
-                if (!unlocked && progress != null) ...[
-                  const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: ClipRRect(
-                          borderRadius: AppRadius.smAll,
-                          child: LinearProgressIndicator(
-                            value: progress!.$2 == 0 ? 0 : (progress!.$1 / progress!.$2).clamp(0.0, 1.0),
-                            minHeight: 5,
-                            backgroundColor: AppColors.border,
-                            valueColor: const AlwaysStoppedAnimation(AppColors.gold),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '${formatChips(progress!.$1)}/${formatChips(progress!.$2)}',
-                        style: AppText.mono(12, color: AppColors.textFaint),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            unlocked ? 'PAID' : '+${formatChips(reward)}',
-            style: AppText.mono(
-              12,
-              weight: FontWeight.w700,
-              color: unlocked ? AppColors.win : AppColors.gold,
-            ),
-          ),
         ],
       ),
     );

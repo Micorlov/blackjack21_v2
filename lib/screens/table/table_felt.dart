@@ -45,8 +45,8 @@ class TableFelt extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(gameProvider);
     final midPot = TableCalc.midRoundPot(state);
-    final cardBack = kCardBackDefs.firstWhere((c) => c.id == state.cardBackSkin, orElse: () => kCardBackDefs.first);
-    final felt = feltById(state.themeChoice);
+    const cardBack = kCardBack;
+    const felt = kFelt;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -95,7 +95,9 @@ class TableFelt extends ConsumerWidget {
                     // nothing: both layers ignore pointers, so the READY
                     // button underneath stays tappable through them.
                     if (state.phase == RoundPhase.settlement) ...[
-                      Positioned.fill(child: ChipFlightLayer(state: state, metrics: m)),
+                      Positioned.fill(
+                        child: ChipFlightLayer(state: state, metrics: m),
+                      ),
                       if (_deservesConfetti(state))
                         Positioned.fill(
                           child: ConfettiBurst(trigger: state.roundNet, origin: Alignment(0, _confettiOrigin(m))),
@@ -160,7 +162,7 @@ class TableFelt extends ConsumerWidget {
         avatarBg: AppColors.seatColors[i % AppColors.seatColors.length],
         takesPot: takesPot,
         sweepTotalWin: state.sweepInfo?.totalWin ?? 0,
-        hourly: state.badgeHourly,
+        hourly: true,
       );
       // Seats alternate left, right, left, right — two columns of two.
       final rightSide = i.isOdd;
@@ -232,7 +234,6 @@ class TableFelt extends ConsumerWidget {
             child: DecoratedBox(
               decoration: ShapeDecoration(
                 shape: OvalBorder(side: BorderSide(color: AppColors.gold.withValues(alpha: 0.16), width: 2)),
-                // The player's chosen felt (Casino Green / Deep Ocean / Ember).
                 gradient: felt.ovalGradient,
               ),
               // Stands in for the design's `inset 0 26px 60px` felt shadow.
@@ -295,11 +296,7 @@ class TableFelt extends ConsumerWidget {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [
-                AppColors.scrim,
-                AppColors.scrim.withValues(alpha: 0.55),
-                const Color(0x00040806),
-              ],
+              colors: [AppColors.scrim, AppColors.scrim.withValues(alpha: 0.55), const Color(0x00040806)],
             ),
           ),
         ),

@@ -8,8 +8,6 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/daily_bonus.dart';
 import '../utils/formatters.dart';
-import '../utils/missions.dart';
-import '../utils/points.dart';
 import '../utils/rebuy.dart';
 import 'buttons.dart';
 
@@ -18,8 +16,8 @@ import 'buttons.dart';
 /// Running dry used to surface as a single "Rebuy in 3h 21m" pill inside the
 /// betting panel with a line of grey text under it. A player who found it on
 /// cooldown was, as far as the interface was concerned, finished — while a
-/// daily bonus, an unclaimed mission and a referral reward might all have been
-/// sitting there unmentioned.
+/// daily bonus and a referral reward might both have been sitting there
+/// unmentioned.
 Future<void> showOutOfChipsSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
@@ -59,16 +57,9 @@ class _OutOfChipsSheet extends ConsumerWidget {
             children: [
               Text('Out of chips', style: AppText.serifItalic(28), textAlign: TextAlign.center),
               const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Here is every way to get back to the table.',
-                textAlign: TextAlign.center,
-                style: AppText.bodySm(),
-              ),
+              Text('Here is every way to get back to the table.', textAlign: TextAlign.center, style: AppText.bodySm()),
               const SizedBox(height: AppSpacing.lg),
-              for (final route in routes) ...[
-                _RouteRow(route: route),
-                const SizedBox(height: AppSpacing.sm),
-              ],
+              for (final route in routes) ...[_RouteRow(route: route), const SizedBox(height: AppSpacing.sm)],
               const SizedBox(height: AppSpacing.xs),
               if (first != null)
                 GoldButton(
@@ -79,10 +70,13 @@ class _OutOfChipsSheet extends ConsumerWidget {
                   },
                 )
               else
-                OutlinePillButton(label: 'Back to the lobby', onPressed: () {
-                  Navigator.of(context).pop();
-                  notifier.exitTable();
-                }),
+                OutlinePillButton(
+                  label: 'Back to the lobby',
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    notifier.exitTable();
+                  },
+                ),
             ],
           ),
         ),
@@ -93,10 +87,6 @@ class _OutOfChipsSheet extends ConsumerWidget {
   List<_Route> _routes(GameState state, DateTime now) {
     final bonusReady = isDailyBonusReady(state.lastDailyBonusClaimAt, now);
     final rebuyReady = isRebuyReady(state.lastRebuyAt, now);
-    final missions = missionsForDay(dayKeyOf(now));
-    final claimable = missions
-        .where((m) => missionIsClaimable(m, state.missionProgress, state.missionsClaimed))
-        .toList();
 
     return [
       _Route(
@@ -119,17 +109,6 @@ class _OutOfChipsSheet extends ConsumerWidget {
         action: 'Claim the daily bonus',
         onTap: (n) => n.goLobby(),
       ),
-      if (claimable.isNotEmpty)
-        _Route(
-          icon: Icons.flag,
-          title: 'Finished missions',
-          detail: claimable.length == 1
-              ? '${claimable.first.label} — +${formatChips(claimable.first.reward)} chips'
-              : '${claimable.length} missions ready to claim',
-          ready: true,
-          action: 'Claim in the lobby',
-          onTap: (n) => n.goLobby(),
-        ),
       _Route(
         icon: Icons.person_add_alt,
         title: 'Invite a friend',
@@ -193,14 +172,13 @@ class _RouteRow extends StatelessWidget {
                   route.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: AppText.sora(15, weight: FontWeight.w700, color: route.ready ? AppColors.textPrimary : AppColors.textMuted),
+                  style: AppText.sora(
+                    15,
+                    weight: FontWeight.w700,
+                    color: route.ready ? AppColors.textPrimary : AppColors.textMuted,
+                  ),
                 ),
-                Text(
-                  route.detail,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppText.bodySm(),
-                ),
+                Text(route.detail, maxLines: 2, overflow: TextOverflow.ellipsis, style: AppText.bodySm()),
               ],
             ),
           ),

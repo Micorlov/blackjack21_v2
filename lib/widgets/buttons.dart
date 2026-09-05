@@ -26,12 +26,14 @@ import '../theme/app_text_styles.dart';
 /// generalises that: it is announced to screen readers and shown on
 /// long-press.
 
-/// Primary gold-gradient CTA (DEAL, CLAIM, sign-in, etc.). Disabled when
-/// [onPressed] is null.
+/// Primary CTA (DEAL, sign-in, claim). A flat gold fill — it used to be a
+/// three-stop gradient under a 20px glow, which made every primary the
+/// brightest thing on its screen. Disabled when [onPressed] is null.
 class GoldButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
   final double verticalPadding;
+  final double horizontalPadding;
   final double fontSize;
 
   /// Announced instead of [label] when the visible text is not a full
@@ -51,8 +53,9 @@ class GoldButton extends StatelessWidget {
     super.key,
     required this.label,
     required this.onPressed,
-    this.verticalPadding = 17,
-    this.fontSize = 18,
+    this.verticalPadding = 16,
+    this.horizontalPadding = 0,
+    this.fontSize = 17,
     this.semanticLabel,
     this.disabledReason,
     this.busy = false,
@@ -75,21 +78,9 @@ class GoldButton extends StatelessWidget {
             onTap: busy ? null : onPressed,
             child: Container(
               constraints: const BoxConstraints(minHeight: AppTouch.minTarget),
-              padding: EdgeInsets.symmetric(vertical: verticalPadding),
+              padding: EdgeInsets.symmetric(vertical: verticalPadding, horizontal: horizontalPadding),
               alignment: Alignment.center,
-              decoration: BoxDecoration(
-                gradient: AppColors.goldGradient,
-                borderRadius: AppRadius.lgAll,
-                boxShadow: disabled
-                    ? null
-                    : [
-                        BoxShadow(
-                          color: AppColors.goldDark.withValues(alpha: 0.4),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-              ),
+              decoration: const BoxDecoration(color: AppColors.gold, borderRadius: AppRadius.lgAll),
               child: busy
                   ? SizedBox(
                       height: fontSize,
@@ -103,9 +94,9 @@ class GoldButton extends StatelessWidget {
                       label: label,
                       style: AppText.sora(
                         fontSize,
-                        weight: FontWeight.w800,
+                        weight: FontWeight.w700,
                         color: AppColors.goldInk,
-                        letterSpacing: 0.9,
+                        letterSpacing: 0.2,
                       ),
                     ),
             ),
@@ -118,8 +109,8 @@ class GoldButton extends StatelessWidget {
 
 /// Secondary call to action: a gold-outlined pill with a transparent fill.
 ///
-/// The app had four near-identical copies of this — two in the friends screen,
-/// one in the shop, one in the lobby — each with its own padding and font size.
+/// The app had four near-identical copies of this, each with its own padding
+/// and font size.
 /// It also fills a real hierarchy gap: before it, a screen's only two choices
 /// were "gold gradient" or "plain text", so every secondary action reached for
 /// the gradient and no screen had a single obvious primary any more.
@@ -260,17 +251,12 @@ class ActionPillButton extends StatelessWidget {
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: backgroundColor,
-                border: Border.all(color: borderColor, width: 2),
+                border: Border.all(color: borderColor, width: 1.5),
                 borderRadius: AppRadius.lgAll,
               ),
               child: _FittedLabel(
                 label: label,
-                style: AppText.sora(
-                  fontSize,
-                  weight: FontWeight.w800,
-                  color: textColor,
-                  letterSpacing: 0.9,
-                ),
+                style: AppText.sora(fontSize, weight: FontWeight.w700, color: textColor, letterSpacing: 0.2),
               ),
             ),
           ),
@@ -369,11 +355,7 @@ class ChipButton extends StatelessWidget {
                 child: Center(
                   child: Text(
                     '\$$amount',
-                    style: AppText.mono(
-                      14,
-                      weight: FontWeight.w700,
-                      color: AppColors.textPrimary,
-                    ),
+                    style: AppText.mono(14, weight: FontWeight.w700, color: AppColors.textPrimary),
                   ),
                 ),
               ),
@@ -420,13 +402,7 @@ class _ChipEdgePainter extends CustomPainter {
     const sweep = math.pi / 14;
     for (var i = 0; i < _spotCount; i++) {
       final start = (2 * math.pi / _spotCount) * i - sweep / 2;
-      canvas.drawArc(
-        Rect.fromCircle(center: centre, radius: radius - 2.5),
-        start,
-        sweep,
-        false,
-        spotPaint,
-      );
+      canvas.drawArc(Rect.fromCircle(center: centre, radius: radius - 2.5), start, sweep, false, spotPaint);
     }
 
     // Inner ring separating the face from the rim.
@@ -484,10 +460,7 @@ class TextLinkButton extends StatelessWidget {
       child: TextButton(
         onPressed: onPressed,
         style: TextButton.styleFrom(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: 14,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 14),
           minimumSize: const Size(0, AppTouch.minTarget),
         ),
         child: Text(
@@ -497,9 +470,7 @@ class TextLinkButton extends StatelessWidget {
             weight: FontWeight.w700,
             color: color,
             height: 1,
-          ).copyWith(
-            decoration: underline ? TextDecoration.underline : TextDecoration.none,
-          ),
+          ).copyWith(decoration: underline ? TextDecoration.underline : TextDecoration.none),
         ),
       ),
     );
@@ -550,11 +521,7 @@ class AppIconButton extends StatelessWidget {
           child: Container(
             constraints: AppTouch.minTargetConstraints,
             alignment: Alignment.center,
-            child: Icon(
-              icon,
-              size: iconSize,
-              color: color ?? AppColors.textPrimary,
-            ),
+            child: Icon(icon, size: iconSize, color: color ?? AppColors.textPrimary),
           ),
         ),
       ),
@@ -594,10 +561,6 @@ class _ButtonSemantics extends StatelessWidget {
       child: child,
     );
     if (hint == null) return semantics;
-    return Tooltip(
-      message: hint,
-      waitDuration: AppMotion.celebratory,
-      child: semantics,
-    );
+    return Tooltip(message: hint, waitDuration: AppMotion.celebratory, child: semantics);
   }
 }
