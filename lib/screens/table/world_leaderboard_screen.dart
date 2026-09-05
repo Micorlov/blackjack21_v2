@@ -4,11 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/game_state.dart';
 import '../../state/game_notifier.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/flags.dart';
 import '../../utils/formatters.dart';
 import '../../utils/world_standings.dart';
 import '../../widgets/panel_card.dart';
+import '../shared/tab_pill.dart';
 
 /// Full "see all players" view pushed from the betting panel's mini
 /// standings card — same FRIENDS / WORLD · THIS HOUR / WORLD · TODAY pages,
@@ -50,12 +52,14 @@ class _WorldLeaderboardScreenState extends ConsumerState<WorldLeaderboardScreen>
                   const Expanded(child: ScreenTitle('Standings')),
                 ],
               ),
-              Row(
-                children: [
-                  for (var i = 0; i < _titles.length; i++) ...[
-                    if (i > 0) const SizedBox(width: 8),
-                    _TabPill(label: _titles[i], active: _tab == i, onTap: () => setState(() => _tab = i)),
-                  ],
+              // The shared control, not a fourth copy of it. The local one
+              // this replaces had drifted: 13px instead of 14, a decorative
+              // border that fails 3:1, and no minimum touch height, so these
+              // tabs were ~44px against the 48dp floor the shared one keeps.
+              TabPillRow(
+                items: [
+                  for (var i = 0; i < _titles.length; i++)
+                    TabPillItem(label: _titles[i], active: _tab == i, onTap: () => setState(() => _tab = i)),
                 ],
               ),
               const SizedBox(height: 12),
@@ -86,7 +90,7 @@ class _WorldLeaderboardScreenState extends ConsumerState<WorldLeaderboardScreen>
               onTap: notifier.shareInviteWhatsApp,
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                decoration: BoxDecoration(gradient: AppColors.goldGradient, borderRadius: BorderRadius.circular(999)),
+                decoration: BoxDecoration(gradient: AppColors.goldGradient, borderRadius: BorderRadius.circular(AppRadius.pill)),
                 child: Text(
                   'Invite friends on WhatsApp',
                   style: AppText.sora(14, weight: FontWeight.w800, color: AppColors.goldInk),
@@ -163,38 +167,3 @@ class _StandingsList extends StatelessWidget {
   }
 }
 
-/// Local copy of friends_screen.dart's `_TabPill` — kept private to each
-/// screen since the two aren't otherwise coupled.
-class _TabPill extends StatelessWidget {
-  final String label;
-  final bool active;
-  final VoidCallback onTap;
-
-  const _TabPill({required this.label, required this.active, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(999),
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: active ? AppColors.gold : AppColors.border),
-              color: active ? AppColors.gold.withValues(alpha: 0.12) : Colors.transparent,
-            ),
-            child: Text(
-              label,
-              style: AppText.sora(13, weight: FontWeight.w700, color: active ? AppColors.gold : AppColors.textFaint),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}

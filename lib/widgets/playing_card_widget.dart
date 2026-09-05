@@ -51,7 +51,7 @@ class PlayingCardFace extends StatelessWidget {
             colors: [AppColors.cardFaceTop, AppColors.cardFaceBottom],
           ),
           borderRadius: BorderRadius.circular(AppRadius.sm * scale),
-          border: Border.all(color: Colors.black.withValues(alpha: 0.12)),
+          border: Border.all(color: Colors.black.withValues(alpha: AppAlpha.subtle)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.45),

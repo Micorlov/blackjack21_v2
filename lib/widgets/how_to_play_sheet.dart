@@ -114,7 +114,7 @@ class _GuideLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isBullet = line.startsWith(_bulletPrefix);
-    final style = AppText.sora(14.5, color: const Color(0xFFD8D3C6), height: 1.5);
+    final style = AppText.sora(14.5, color: AppColors.textBody, height: 1.5);
 
     if (!isBullet) {
       return Padding(

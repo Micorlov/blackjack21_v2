@@ -64,7 +64,7 @@ class TabPill extends StatelessWidget {
                 // borderStrong, not border: the outline is the only thing
                 // saying "this is a control", so it has to clear 3:1.
                 border: Border.all(color: item.active ? AppColors.gold : AppColors.borderStrong),
-                color: item.active ? AppColors.gold.withValues(alpha: 0.12) : Colors.transparent,
+                color: item.active ? AppColors.gold.withValues(alpha: AppAlpha.subtle) : Colors.transparent,
               ),
               child: Text(
                 item.label,

@@ -129,4 +129,23 @@ class AppColors {
         return border;
     }
   }
+
+  // ── Colours that were repeated as literals across the screens ──
+  //
+  // Each appeared as a bare hex in several files, close to but not equal to an
+  // existing token, which is how a palette drifts: the next person copies
+  // whichever literal is nearest.
+
+  /// Body copy on a panel. Sat as a raw `#D8D3C6` in five places, a shade off
+  /// [textMuted] for no stated reason.
+  static const Color textBody = Color(0xFFD8D3C6);
+
+  /// The true black behind a modal, and under the felt's vignette. Written as
+  /// a raw `#040806` in eight places, the theme itself included.
+  static const Color scrim = Color(0xFF040806);
+
+  /// Selection rings on the two non-default felt swatches — three different
+  /// golds in one row of three, before these were named.
+  static const Color ringOcean = Color(0xFFF5C451);
+  static const Color ringEmber = Color(0xFFFFB457);
 }

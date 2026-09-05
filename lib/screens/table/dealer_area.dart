@@ -7,6 +7,7 @@ import '../../models/game_state.dart';
 import '../../models/playing_card.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_motion.dart';
+import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/card_animations.dart';
@@ -123,8 +124,8 @@ class _DealerAreaState extends State<DealerArea> {
     return Container(
       padding: const EdgeInsets.fromLTRB(4, 4, 16, 4),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.72),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.32)),
+        color: Colors.black.withValues(alpha: AppAlpha.heavy),
+        border: Border.all(color: AppColors.gold.withValues(alpha: AppAlpha.muted)),
         borderRadius: BorderRadius.circular(26),
       ),
       child: Row(
@@ -152,7 +153,7 @@ class _DealerAreaState extends State<DealerArea> {
             children: [
               Text(
                 'DEALER',
-                style: AppText.mono(12, letterSpacing: 1.6, color: AppColors.gold.withValues(alpha: 0.85)),
+                style: AppText.mono(12, letterSpacing: 1.6, color: AppColors.gold.withValues(alpha: AppAlpha.scrim)),
               ),
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -171,13 +172,13 @@ class _DealerAreaState extends State<DealerArea> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                       decoration: BoxDecoration(
-                        color: AppColors.lose.withValues(alpha: 0.22),
-                        border: Border.all(color: AppColors.lose.withValues(alpha: 0.6)),
+                        color: AppColors.lose.withValues(alpha: AppAlpha.tint),
+                        border: Border.all(color: AppColors.lose.withValues(alpha: AppAlpha.strong)),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         'BUST',
-                        style: AppText.mono(11, weight: FontWeight.w700, letterSpacing: 1, color: AppColors.loseLight),
+                        style: AppText.mono(12, weight: FontWeight.w700, letterSpacing: 1, color: AppColors.loseLight),
                       ),
                     ),
                   ],
@@ -195,8 +196,8 @@ class _DealerAreaState extends State<DealerArea> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.6),
-        border: Border.all(color: AppColors.gold.withValues(alpha: 0.22)),
+        color: Colors.black.withValues(alpha: AppAlpha.strong),
+        border: Border.all(color: AppColors.gold.withValues(alpha: AppAlpha.tint)),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
@@ -210,7 +211,7 @@ class _DealerAreaState extends State<DealerArea> {
               midPot.potLabelText,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppText.mono(11, letterSpacing: 1.4, color: AppColors.gold.withValues(alpha: 0.7)),
+              style: AppText.mono(12, letterSpacing: 1.4, color: AppColors.gold.withValues(alpha: 0.7)),
             ),
           ),
           // Empty while no seat has forfeited: "NO SWEEP POT" stands alone
@@ -229,7 +230,7 @@ class _DealerAreaState extends State<DealerArea> {
               decoration: BoxDecoration(gradient: AppColors.goldGradient, borderRadius: BorderRadius.circular(6)),
               child: Text(
                 'YOU LEAD',
-                style: AppText.mono(10, weight: FontWeight.w700, letterSpacing: 1, color: AppColors.goldInk),
+                style: AppText.mono(12, weight: FontWeight.w700, letterSpacing: 1, color: AppColors.goldInk),
               ),
             ),
           ],
@@ -245,7 +246,7 @@ class _DealerAreaState extends State<DealerArea> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('TABLE SWEEP', style: AppText.mono(11, letterSpacing: 1.4, color: AppColors.goldInk)),
+          Text('TABLE SWEEP', style: AppText.mono(12, letterSpacing: 1.4, color: AppColors.goldInk)),
           const SizedBox(width: 9),
           Text(
             '+\$${formatChips(widget.state.sweepAmount)}',

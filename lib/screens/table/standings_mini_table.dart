@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/game_state.dart';
 import '../../state/game_notifier.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/flags.dart';
 import '../../utils/formatters.dart';
@@ -68,14 +69,14 @@ class _StandingsMiniTableState extends State<StandingsMiniTable> {
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         onTap: () => _openFullList(context),
         child: Container(
           padding: const EdgeInsets.fromLTRB(12, 6, 12, 6),
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: 0.35),
-            border: Border.all(color: AppColors.gold.withValues(alpha: 0.18)),
-            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.gold.withValues(alpha: AppAlpha.border)),
+            borderRadius: BorderRadius.circular(AppRadius.md),
           ),
           child: Column(
             children: [
@@ -89,7 +90,7 @@ class _StandingsMiniTableState extends State<StandingsMiniTable> {
                       _titles[_page],
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppText.sora(10, weight: FontWeight.w800, color: AppColors.textFaint, letterSpacing: 1),
+                      style: AppText.sora(12, weight: FontWeight.w800, color: AppColors.textFaint, letterSpacing: 1),
                     ),
                   ),
                   const SizedBox(width: 6),

@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../state/game_notifier.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
-import 'chip_disc.dart';
-import 'count_up_text.dart';
 import '../utils/daily_bonus.dart';
 import 'buttons.dart';
+import 'chip_disc.dart';
+import 'count_up_text.dart';
 
 /// The daily-bonus claim overlay ("proposed · new screen" 15 in the design
 /// doc): gold coin, today's reward, the D1..D7 streak ladder, and a single
@@ -131,11 +132,11 @@ class _DayCell extends StatelessWidget {
               ? AppColors.gold.withValues(alpha: 0.35)
               : AppColors.border,
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Column(
         children: [
-          Text('D$day', style: AppText.mono(11, color: AppColors.textFaint)),
+          Text('D$day', style: AppText.mono(12, color: AppColors.textFaint)),
           const SizedBox(height: 4),
           banked
               ? Container(

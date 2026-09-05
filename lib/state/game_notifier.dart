@@ -4,6 +4,7 @@ import 'dart:math';
 import 'dart:ui' show Locale, PlatformDispatcher;
 
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
@@ -83,7 +84,10 @@ class GameNotifier extends StateNotifier<GameState> {
   /// tests, where a null pair makes every call a no-op rather than making each
   /// call site guard.
   static Analytics _defaultAnalytics() {
-    if (kIsWeb) return Analytics();
+    // No app means Firebase never came up — offline, or a test harness. Asked
+    // rather than caught, so the normal case does not throw and log on every
+    // construction.
+    if (kIsWeb || Firebase.apps.isEmpty) return Analytics();
     try {
       return Analytics(analytics: FirebaseAnalytics.instance, crashlytics: FirebaseCrashlytics.instance);
     } on Object catch (e) {

@@ -7,6 +7,7 @@ import '../../models/game_state.dart';
 import '../../models/hand.dart';
 import '../../models/playing_card.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/count_up_text.dart';
@@ -149,7 +150,7 @@ class _HeroHandBlock extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.gold.withValues(alpha: 0.45), width: 2),
-        gradient: RadialGradient(colors: [AppColors.gold.withValues(alpha: 0.1), Colors.black.withValues(alpha: 0.28)]),
+        gradient: RadialGradient(colors: [AppColors.gold.withValues(alpha: AppAlpha.hairline), Colors.black.withValues(alpha: 0.28)]),
       ),
       alignment: Alignment.center,
       // The circle is a fixed 70px disc, but the figure inside it is live text
@@ -174,7 +175,7 @@ class _HeroHandBlock extends StatelessWidget {
                   ),
                 ],
               )
-            : Text('BET', style: AppText.mono(11, letterSpacing: 1, color: AppColors.gold.withValues(alpha: 0.5))),
+            : Text('BET', style: AppText.mono(12, letterSpacing: 1, color: AppColors.gold.withValues(alpha: AppAlpha.half))),
       ),
     );
   }
@@ -207,7 +208,7 @@ class _HeroHandBlock extends StatelessWidget {
     final blackjack = hand.status == HandStatus.blackjack;
     final value = BlackjackRules.handValue(hand.cards);
     final ringColor = busted
-        ? AppColors.lose.withValues(alpha: 0.6)
+        ? AppColors.lose.withValues(alpha: AppAlpha.strong)
         : blackjack
         ? AppColors.gold
         : AppColors.gold.withValues(alpha: 0.45);
@@ -218,7 +219,7 @@ class _HeroHandBlock extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: ringColor, width: 2),
-        gradient: RadialGradient(colors: [AppColors.gold.withValues(alpha: 0.1), Colors.black.withValues(alpha: 0.28)]),
+        gradient: RadialGradient(colors: [AppColors.gold.withValues(alpha: AppAlpha.hairline), Colors.black.withValues(alpha: 0.28)]),
       ),
       alignment: Alignment.center,
       child: FittedBox(
@@ -237,7 +238,7 @@ class _HeroHandBlock extends StatelessWidget {
       decoration: BoxDecoration(
         color: active ? AppColors.gold.withValues(alpha: 0.16) : Colors.black.withValues(alpha: 0.64),
         border: Border.all(
-          color: active ? AppColors.gold.withValues(alpha: 0.55) : Colors.white.withValues(alpha: 0.1),
+          color: active ? AppColors.gold.withValues(alpha: 0.55) : Colors.white.withValues(alpha: AppAlpha.hairline),
         ),
         borderRadius: BorderRadius.circular(26),
       ),

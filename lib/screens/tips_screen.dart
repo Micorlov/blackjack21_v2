@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../state/game_notifier.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../widgets/buttons.dart';
 
@@ -116,8 +117,8 @@ class _TipCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.black.withValues(alpha: 0.35),
-          border: Border.all(color: AppColors.gold.withValues(alpha: 0.22)),
-          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.gold.withValues(alpha: AppAlpha.tint)),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,

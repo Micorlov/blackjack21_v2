@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 
 /// A casino chip, painted rather than tapped.
@@ -36,7 +37,7 @@ class ChipDisc extends StatelessWidget {
           colors: [Color(0xFF1E2A26), Color(0xFF0C1110)],
         ),
         boxShadow: [
-          BoxShadow(color: Colors.black.withValues(alpha: 0.5), blurRadius: size * 0.2, offset: Offset(0, size * 0.08)),
+          BoxShadow(color: Colors.black.withValues(alpha: AppAlpha.half), blurRadius: size * 0.2, offset: Offset(0, size * 0.08)),
         ],
       ),
       child: CustomPaint(

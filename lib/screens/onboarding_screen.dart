@@ -64,7 +64,7 @@ class OnboardingScreen extends ConsumerWidget {
                   angle: 12 * 3.14159265 / 180,
                   child: Text(
                     '♦',
-                    style: TextStyle(fontSize: 240, height: 1, color: AppColors.gold.withValues(alpha: 0.05)),
+                    style: TextStyle(fontSize: 240, height: 1, color: AppColors.gold.withValues(alpha: AppAlpha.ghost)),
                   ),
                 ),
               ),
@@ -99,7 +99,7 @@ class OnboardingScreen extends ConsumerWidget {
                                 margin: const EdgeInsets.only(bottom: 22),
                                 decoration: BoxDecoration(
                                   gradient: AppColors.goldGradient,
-                                  borderRadius: BorderRadius.circular(24),
+                                  borderRadius: BorderRadius.circular(AppRadius.xxl),
                                   boxShadow: [
                                     BoxShadow(
                                       color: AppColors.goldDark.withValues(alpha: 0.3),
@@ -127,7 +127,7 @@ class OnboardingScreen extends ConsumerWidget {
                                   textAlign: TextAlign.center,
                                   style: AppText.sora(
                                     18,
-                                    color: AppColors.textPrimary.withValues(alpha: 0.85),
+                                    color: AppColors.textPrimary.withValues(alpha: AppAlpha.scrim),
                                     height: 1.55,
                                   ),
                                 ),
@@ -314,7 +314,7 @@ class _VoiceToggle extends StatelessWidget {
     // of as an unnamed toggle sitting next to some text.
     return MergeSemantics(
       child: Material(
-        color: Colors.black.withValues(alpha: 0.22),
+        color: Colors.black.withValues(alpha: AppAlpha.tint),
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
           borderRadius: BorderRadius.circular(14),

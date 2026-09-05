@@ -5,6 +5,7 @@ import '../../state/game_notifier.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
+import '../../widgets/buttons.dart';
 import 'table_layout.dart';
 
 /// Table-screen header: back chevron, centered stake name + range, and
@@ -24,7 +25,11 @@ class TableHeader extends ConsumerWidget {
       padding: EdgeInsets.fromLTRB(gutter, AppSpacing.xxs, gutter, AppSpacing.xs),
       child: Row(
         children: [
-          _HeaderIconButton(icon: Icons.chevron_left, semanticLabel: 'Leave the table', onTap: notifier.exitTable),
+          CircleIconButton(
+            icon: Icons.chevron_left,
+            semanticLabel: 'Leave the table',
+            onPressed: notifier.exitTable,
+          ),
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -53,52 +58,20 @@ class TableHeader extends ConsumerWidget {
           Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              _HeaderIconButton(
+              CircleIconButton(
                 icon: Icons.chat_bubble_outline,
                 semanticLabel: state.tableChatOpen ? 'Close table chat' : 'Open table chat',
-                onTap: notifier.toggleTableChat,
+                onPressed: notifier.toggleTableChat,
               ),
               const SizedBox(width: AppSpacing.sm),
-              _HeaderIconButton(
+              CircleIconButton(
                 icon: Icons.more_vert,
                 semanticLabel: state.tableMenuOpen ? 'Close table menu' : 'Open table menu',
-                onTap: notifier.toggleTableMenu,
+                onPressed: notifier.toggleTableMenu,
               ),
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Icon-only control, so it carries its own accessible name — the glyph says
-/// nothing to a screen reader — and it is sized to [AppTouch.minTarget] rather
-/// than the 46px it used to be, which missed the minimum on every device.
-class _HeaderIconButton extends StatelessWidget {
-  final IconData icon;
-  final String semanticLabel;
-  final VoidCallback onTap;
-
-  const _HeaderIconButton({required this.icon, required this.semanticLabel, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      label: semanticLabel,
-      child: Material(
-        color: Colors.black.withValues(alpha: 0.32),
-        shape: const CircleBorder(),
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: onTap,
-          child: SizedBox(
-            width: AppTouch.minTarget,
-            height: AppTouch.minTarget,
-            child: Icon(icon, color: AppColors.textPrimary, size: 21),
-          ),
-        ),
       ),
     );
   }
@@ -134,7 +107,7 @@ class TableMenuDropdown extends ConsumerWidget {
               color: AppColors.navSurface,
               borderRadius: AppRadius.mdAll,
               elevation: 8,
-              shadowColor: Colors.black.withValues(alpha: 0.5),
+              shadowColor: Colors.black.withValues(alpha: AppAlpha.half),
               child: InkWell(
                 borderRadius: AppRadius.mdAll,
                 onTap: notifier.exitTable,
@@ -144,7 +117,7 @@ class TableMenuDropdown extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
                   decoration: BoxDecoration(
                     borderRadius: AppRadius.mdAll,
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                    border: Border.all(color: Colors.white.withValues(alpha: AppAlpha.hairline)),
                   ),
                   child: Text('Leave Table', style: AppText.sora(17, color: AppColors.loseSoft)),
                 ),

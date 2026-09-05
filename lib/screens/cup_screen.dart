@@ -127,7 +127,7 @@ class _BackCircle extends StatelessWidget {
       button: true,
       label: 'Back to lobby',
       child: Material(
-        color: Colors.black.withValues(alpha: 0.32),
+        color: Colors.black.withValues(alpha: AppAlpha.muted),
         shape: const CircleBorder(),
         clipBehavior: Clip.antiAlias,
         child: InkWell(

@@ -178,7 +178,7 @@ class _RouteRow extends StatelessWidget {
             height: 36,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: tint.withValues(alpha: 0.12),
+              color: tint.withValues(alpha: AppAlpha.subtle),
             ),
             alignment: Alignment.center,
             child: Icon(route.icon, size: 18, color: tint),

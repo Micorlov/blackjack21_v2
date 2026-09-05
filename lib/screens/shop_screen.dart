@@ -5,12 +5,13 @@ import '../data/game_data.dart';
 import '../models/enums.dart';
 import '../models/social_models.dart';
 import '../state/game_notifier.dart';
-import '../utils/xp.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/formatters.dart';
+import '../utils/xp.dart';
 import '../widgets/avatar_circle.dart';
+import '../widgets/buttons.dart';
 import '../widgets/panel_card.dart';
 import '../widgets/playing_card_widget.dart';
 import 'shared/avatar_initial.dart';
@@ -137,7 +138,7 @@ class _VipBanner extends StatelessWidget {
           stops: [0, 0.65],
         ),
         border: Border.all(color: AppColors.gold),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: Row(
         children: [
@@ -154,39 +155,8 @@ class _VipBanner extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          _PillButton(label: 'Learn more', onTap: onLearnMore),
+          OutlinePillButton(label: 'Learn more', onPressed: onLearnMore, verticalPadding: 14, fontSize: 15),
         ],
-      ),
-    );
-  }
-}
-
-/// Small gold outlined pill button (e.g. "Learn more").
-class _PillButton extends StatelessWidget {
-  final String label;
-  final VoidCallback onTap;
-
-  const _PillButton({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          decoration: BoxDecoration(
-            border: Border.all(color: AppColors.gold),
-            color: AppColors.gold.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(
-            label,
-            style: AppText.sora(15, weight: FontWeight.w800, color: AppColors.gold),
-          ),
-        ),
       ),
     );
   }
@@ -367,7 +337,7 @@ class _ChipPackCard extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         onTap: onTap,
         child: Container(
           clipBehavior: Clip.none,
@@ -406,7 +376,7 @@ class _ChipPackCard extends StatelessWidget {
                   right: 8,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(color: AppColors.gold, borderRadius: BorderRadius.circular(999)),
+                    decoration: BoxDecoration(color: AppColors.gold, borderRadius: BorderRadius.circular(AppRadius.pill)),
                     child: Text(
                       pack.badge,
                       // Was 9px — below the app's 12px floor and unreadable
@@ -471,7 +441,7 @@ class _SelectableSwatch extends StatelessWidget {
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Column(
@@ -619,7 +589,7 @@ class _AvatarFrameOption extends StatelessWidget {
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -710,7 +680,7 @@ class _AdButton extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
           onTap: isEnabled ? onTap : null,
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
@@ -719,7 +689,7 @@ class _AdButton extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: isGold ? AppColors.goldGradient : null,
               color: isGold ? null : AppColors.border,
-              borderRadius: BorderRadius.circular(999),
+              borderRadius: BorderRadius.circular(AppRadius.pill),
             ),
             child: Text(
               label,

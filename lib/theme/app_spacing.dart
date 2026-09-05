@@ -67,3 +67,43 @@ class AppTouch {
     minHeight: minTarget,
   );
 }
+
+/// Opacity steps.
+///
+/// The app used 36 distinct alpha values, with clusters — 0.1, 0.12, 0.14,
+/// 0.15 — doing the same job in different files, because a raw number gives
+/// the next person nothing to match against. These name the steps that were
+/// already load-bearing; reach for one before writing a literal.
+class AppAlpha {
+  AppAlpha._();
+
+  /// Barely there: a panel tint over the felt.
+  static const double ghost = 0.05;
+
+  /// A hairline fill — the resting state of an outlined control.
+  static const double hairline = 0.1;
+
+  /// A tinted surface that still reads as a surface.
+  static const double subtle = 0.12;
+
+  /// Borders meant to be felt rather than seen.
+  static const double border = 0.18;
+
+  /// A coloured wash behind text, e.g. a status pill.
+  static const double tint = 0.22;
+
+  /// A visible border in the accent colour.
+  static const double muted = 0.32;
+
+  /// Half strength: dividers, disabled glyphs.
+  static const double half = 0.5;
+
+  /// Secondary text and strong borders.
+  static const double strong = 0.6;
+
+  /// Nearly solid — a badge over a busy background.
+  static const double heavy = 0.72;
+
+  /// The scrim behind a modal.
+  static const double scrim = 0.85;
+}

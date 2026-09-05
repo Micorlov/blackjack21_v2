@@ -416,7 +416,7 @@ class _ThemeSwatch extends StatelessWidget {
       excludeSemantics: true,
       child: InkWell(
         onTap: option.onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

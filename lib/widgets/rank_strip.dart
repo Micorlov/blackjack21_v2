@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/enums.dart';
 import '../state/game_notifier.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/formatters.dart';
 import '../utils/points.dart';
@@ -62,7 +63,7 @@ class RankStrip extends ConsumerWidget {
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(color: AppColors.gold, borderRadius: BorderRadius.circular(999)),
+              decoration: BoxDecoration(color: AppColors.gold, borderRadius: BorderRadius.circular(AppRadius.pill)),
               child: Text(
                 '#$rank/$playerCount',
                 style: AppText.sora(12, weight: FontWeight.w800, color: AppColors.goldInk),
@@ -71,7 +72,7 @@ class RankStrip extends ConsumerWidget {
             const SizedBox(width: 6),
             Text(
               hourly ? 'HOURLY' : 'DAILY',
-              style: AppText.sora(11, weight: FontWeight.w700, color: AppColors.textFaint, letterSpacing: 1),
+              style: AppText.sora(12, weight: FontWeight.w700, color: AppColors.textFaint, letterSpacing: 1),
             ),
             const SizedBox(width: 6),
             Flexible(

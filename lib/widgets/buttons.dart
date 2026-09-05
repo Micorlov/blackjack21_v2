@@ -133,6 +133,11 @@ class OutlinePillButton extends StatelessWidget {
   final String? disabledReason;
   final bool busy;
 
+  /// Neutral outline instead of the accent one, for a secondary action that
+  /// is not asking to be noticed — the friends screen's "Copy link", a
+  /// claimed reward.
+  final bool neutral;
+
   const OutlinePillButton({
     super.key,
     required this.label,
@@ -143,20 +148,68 @@ class OutlinePillButton extends StatelessWidget {
     this.semanticLabel,
     this.disabledReason,
     this.busy = false,
+    this.neutral = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return ActionPillButton(
       label: label,
-      borderColor: color.withValues(alpha: 0.45),
-      backgroundColor: color.withValues(alpha: 0.1),
-      textColor: color,
+      // The outline is the whole control, so it has to clear 3:1:
+      // AppColors.border is 1.71:1 and decorative only.
+      borderColor: neutral ? AppColors.borderStrong : color.withValues(alpha: 0.45),
+      backgroundColor: neutral ? Colors.transparent : color.withValues(alpha: AppAlpha.hairline),
+      textColor: neutral ? AppColors.textPrimary : color,
       onPressed: busy ? null : onPressed,
       verticalPadding: verticalPadding,
       fontSize: fontSize,
       semanticLabel: semanticLabel,
       disabledReason: disabledReason,
+    );
+  }
+}
+
+/// A circular icon button on a dark scrim: the table's back chevron, chat and
+/// kebab, and the Cup screen's back button.
+///
+/// There were three of these — [AppIconButton], the table header's own, and
+/// the Cup screen's — and the Cup's began life as a 46px `GestureDetector`
+/// around a bare chevron: under the 48dp minimum, with no button role and no
+/// name in the semantics tree at all. One implementation means that floor is
+/// enforced in one place.
+class CircleIconButton extends StatelessWidget {
+  final IconData icon;
+  final String semanticLabel;
+  final VoidCallback? onPressed;
+  final double iconSize;
+
+  const CircleIconButton({
+    super.key,
+    required this.icon,
+    required this.semanticLabel,
+    required this.onPressed,
+    this.iconSize = 21,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _ButtonSemantics(
+      label: semanticLabel,
+      enabled: onPressed != null,
+      child: Material(
+        color: Colors.black.withValues(alpha: AppAlpha.muted),
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: onPressed,
+          child: SizedBox(
+            width: AppTouch.minTarget,
+            height: AppTouch.minTarget,
+            child: Icon(icon, color: AppColors.textPrimary, size: iconSize),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -305,7 +358,7 @@ class ChipButton extends StatelessWidget {
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.5),
+                    color: Colors.black.withValues(alpha: AppAlpha.half),
                     blurRadius: 12,
                     offset: const Offset(0, 5),
                   ),
@@ -396,7 +449,7 @@ class _ChipEdgePainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.5
-        ..color = Colors.white.withValues(alpha: 0.18),
+        ..color = Colors.white.withValues(alpha: AppAlpha.border),
     );
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_motion.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 
 /// Top-of-screen toast pill, driven by `GameState.toast`.
@@ -37,13 +38,13 @@ class ToastBanner extends StatelessWidget {
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.navSurface,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(AppRadius.xl),
                       border: Border.all(
                         color: AppColors.gold.withValues(alpha: 0.4),
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.5),
+                          color: Colors.black.withValues(alpha: AppAlpha.half),
                           blurRadius: 20,
                           offset: const Offset(0, 6),
                         ),
@@ -142,7 +143,7 @@ class _ReactionFloatOverlayState extends State<ReactionFloatOverlay>
                   decoration: BoxDecoration(
                     color: AppColors.navSurface.withValues(alpha: 0.95),
                     border: Border.all(color: AppColors.gold),
-                    borderRadius: BorderRadius.circular(999),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
                   ),
                   child: Text(
                     widget.text,

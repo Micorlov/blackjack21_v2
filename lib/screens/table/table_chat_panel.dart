@@ -5,6 +5,7 @@ import '../../data/game_data.dart';
 import '../../models/social_models.dart';
 import '../../state/game_notifier.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/table_seats.dart';
 
@@ -29,7 +30,7 @@ class TableChatSheet extends ConsumerWidget {
           Positioned.fill(
             child: GestureDetector(
               onTap: notifier.toggleTableChat,
-              child: ColoredBox(color: const Color(0xFF040806).withValues(alpha: 0.5)),
+              child: ColoredBox(color: AppColors.scrim.withValues(alpha: AppAlpha.half)),
             ),
           ),
           Positioned(
@@ -49,7 +50,7 @@ class TableChatSheet extends ConsumerWidget {
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                 border: Border(top: BorderSide(color: AppColors.gold.withValues(alpha: 0.3))),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.6), blurRadius: 50, offset: const Offset(0, -20)),
+                  BoxShadow(color: Colors.black.withValues(alpha: AppAlpha.strong), blurRadius: 50, offset: const Offset(0, -20)),
                 ],
               ),
               child: Column(
@@ -109,8 +110,8 @@ class TableChatSheet extends ConsumerWidget {
                           onPressed: () => notifier.sendChatMessage(label),
                           style: OutlinedButton.styleFrom(
                             side: BorderSide(color: AppColors.gold.withValues(alpha: 0.35)),
-                            backgroundColor: AppColors.gold.withValues(alpha: 0.1),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+                            backgroundColor: AppColors.gold.withValues(alpha: AppAlpha.hairline),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.pill)),
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                           ),
                           child: Text(
@@ -144,7 +145,7 @@ class _ChatBubble extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 9),
       decoration: BoxDecoration(
         color: isSelf ? AppColors.gold.withValues(alpha: 0.14) : Colors.white.withValues(alpha: 0.07),
-        border: Border.all(color: isSelf ? AppColors.gold.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.1)),
+        border: Border.all(color: isSelf ? AppColors.gold.withValues(alpha: 0.3) : Colors.white.withValues(alpha: AppAlpha.hairline)),
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(14),
           topRight: const Radius.circular(14),

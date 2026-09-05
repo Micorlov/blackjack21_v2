@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../models/playing_card.dart';
 import '../../models/social_models.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/playing_card_widget.dart';
@@ -215,7 +216,7 @@ class SeatPlate extends StatelessWidget {
   Widget _potBadge() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(gradient: AppColors.goldGradient, borderRadius: BorderRadius.circular(8)),
+      decoration: BoxDecoration(gradient: AppColors.goldGradient, borderRadius: BorderRadius.circular(AppRadius.sm)),
       child: Text(
         data.potLabel,
         style: AppText.mono(12, weight: FontWeight.w700, color: AppColors.goldInk, letterSpacing: 0.5),
@@ -229,7 +230,7 @@ class SeatPlate extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: 0.8),
         border: Border.all(color: data.actionColor),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Text(
         data.actionLabel,
@@ -260,12 +261,12 @@ class SeatPlate extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
       decoration: BoxDecoration(
-        color: data.acting ? AppColors.gold.withValues(alpha: 0.18) : Colors.black.withValues(alpha: 0.62),
+        color: data.acting ? AppColors.gold.withValues(alpha: AppAlpha.border) : Colors.black.withValues(alpha: 0.62),
         border: Border.all(
-          color: data.acting ? AppColors.gold : AppColors.gold.withValues(alpha: 0.22),
+          color: data.acting ? AppColors.gold : AppColors.gold.withValues(alpha: AppAlpha.tint),
           width: data.acting ? 2 : 1,
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(AppRadius.xxl),
       ),
       child: Row(
         children: [

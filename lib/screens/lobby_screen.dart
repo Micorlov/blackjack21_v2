@@ -9,6 +9,7 @@ import '../models/game_state.dart';
 import '../models/social_models.dart';
 import '../state/game_notifier.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/cup.dart';
 import '../utils/daily_bonus.dart';
@@ -20,8 +21,8 @@ import '../utils/xp.dart';
 import '../widgets/avatar_circle.dart';
 import '../widgets/buttons.dart';
 import '../widgets/count_up_text.dart';
-import '../widgets/missions_card.dart';
 import '../widgets/daily_bonus_dialog.dart';
+import '../widgets/missions_card.dart';
 import '../widgets/panel_card.dart';
 import 'shared/avatar_initial.dart';
 import 'shared/empty_state.dart';
@@ -153,7 +154,7 @@ class _HeaderRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
             decoration: BoxDecoration(
               color: AppColors.navSurface,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(AppRadius.xl),
               border: Border.all(color: AppColors.gold.withValues(alpha: 0.25)),
             ),
             child: Row(
@@ -219,7 +220,7 @@ class _StoriesRow extends StatelessWidget {
                       story.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: AppText.sora(12.5, weight: FontWeight.w700, color: const Color(0xFFD8D3C6)),
+                      style: AppText.sora(12.5, weight: FontWeight.w700, color: AppColors.textBody),
                     ),
                   ],
                 ),
@@ -272,7 +273,7 @@ class _DailyBonusCardState extends State<_DailyBonusCard> {
       decoration: BoxDecoration(
         gradient: AppColors.feltCardGradient,
         border: Border.all(color: AppColors.gold),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -366,7 +367,7 @@ class _TournamentCard extends StatelessWidget {
         decoration: BoxDecoration(
           gradient: AppColors.feltCardGradient,
           border: Border.all(color: AppColors.border),
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -404,7 +405,7 @@ class _TournamentCard extends StatelessWidget {
               child: Text(
                 '${formatChips(kCupPrizePool)} chip prize pool · '
                 '${players > 1 ? '$players players in your group' : 'your friends group race'}',
-                style: AppText.sora(16, color: const Color(0xFFD8D3C6)),
+                style: AppText.sora(16, color: AppColors.textBody),
               ),
             ),
             // Secondary on purpose: playing a hand is the lobby's job, and
@@ -454,9 +455,9 @@ class _TableCard extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 10),
       child: Material(
         color: AppColors.panel,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
           onTap: () => notifier.enterTable(table),
           child: Container(
             padding: const EdgeInsets.all(14),
@@ -466,14 +467,14 @@ class _TableCard extends StatelessWidget {
                     ? AppColors.gold.withValues(alpha: 0.55)
                     : (here.isEmpty ? AppColors.border : AppColors.gold.withValues(alpha: 0.4)),
               ),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
             child: Row(
               children: [
                 Container(
                   width: 44,
                   height: 44,
-                  decoration: BoxDecoration(color: table.tintDim, borderRadius: BorderRadius.circular(12)),
+                  decoration: BoxDecoration(color: table.tintDim, borderRadius: BorderRadius.circular(AppRadius.md)),
                   alignment: Alignment.center,
                   child: Transform.rotate(
                     angle: math.pi / 4,
@@ -509,7 +510,7 @@ class _TableCard extends StatelessWidget {
                             left: i * 16.0,
                             child: AvatarCircle(
                               initial: here[i].initial,
-                              color: AppColors.gold.withValues(alpha: 0.22),
+                              color: AppColors.gold.withValues(alpha: AppAlpha.tint),
                               size: 28,
                             ),
                           ),
@@ -523,7 +524,7 @@ class _TableCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
                     decoration: BoxDecoration(
                       gradient: AppColors.goldGradient,
-                      borderRadius: BorderRadius.circular(999),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
                     ),
                     child: Text(
                       'PLAY',

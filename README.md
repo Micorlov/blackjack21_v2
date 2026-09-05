@@ -412,6 +412,23 @@ emulator testing.
 
 ## Changelog
 
+### 2026-09-05 (5)
+- refactor: **The design system stopped drifting.** `AppAlpha` names the ten opacity steps that
+  were already doing the work — the app had 36 distinct alpha values, with 0.1/0.12/0.14/0.15 all
+  serving the same role in different files, because a bare number gives the next person nothing to
+  match against. `AppColors` gained `textBody`, `scrim`, `ringOcean` and `ringEmber` for hexes that
+  were repeated as literals across five, eight and two files. Every `BorderRadius.circular(999)`
+  is now `AppRadius.pill`, and the radii that map exactly onto tokens use them.
+- refactor: **Four copies of the same button became one.** `OutlinePillButton` replaces the
+  friends screen's two private pills and the shop's, and `CircleIconButton` replaces the table
+  header's and the Cup screen's. The world-standings tab bar now uses the shared `TabPillRow`
+  rather than its own copy, which had drifted to 13px type, a border that fails 3:1 contrast, and
+  no minimum touch height — its tabs were about 44px against the 48dp floor the shared one keeps.
+- fix: **No type below 12px anywhere.** The ramp documented a 12px floor and eleven places broke
+  it at 10 or 11 — the dealer's pot pill, the sweep banner, the settlement breakdown, the bet
+  label, the rank strip, the tutorial card. All raised, and the layout sweep confirms nothing
+  overflows as a result.
+
 ### 2026-09-05 (4)
 - feat: **The app can finally tell a broken build from a quiet week.** It shipped with no
   analytics and, more seriously, no error handlers at all: a framework error printed a red box in

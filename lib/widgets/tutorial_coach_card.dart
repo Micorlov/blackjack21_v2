@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/tutorial_data.dart';
 import '../state/game_notifier.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/tutorial.dart';
 import 'how_to_play_sheet.dart';
@@ -27,7 +28,7 @@ class TutorialCoachCard extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.fromLTRB(12, 9, 12, 9),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.72),
+        color: Colors.black.withValues(alpha: AppAlpha.heavy),
         border: Border.all(color: AppColors.gold.withValues(alpha: 0.55)),
         borderRadius: BorderRadius.circular(14),
       ),
@@ -49,7 +50,7 @@ class TutorialCoachCard extends ConsumerWidget {
                     children: [
                       Text(
                         tip.stepLabel,
-                        style: AppText.mono(10, weight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.gold),
+                        style: AppText.mono(12, weight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.gold),
                         maxLines: 1,
                       ),
                       const SizedBox(width: 8),
@@ -81,7 +82,7 @@ class TutorialCoachCard extends ConsumerWidget {
           const SizedBox(height: 3),
           Text(
             tip.body,
-            style: AppText.sora(13, color: const Color(0xFFD8D3C6), height: 1.42),
+            style: AppText.sora(13, color: AppColors.textBody, height: 1.42),
           ),
         ],
       ),

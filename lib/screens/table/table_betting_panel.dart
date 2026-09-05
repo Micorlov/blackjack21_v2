@@ -87,7 +87,7 @@ class TableBettingPanel extends ConsumerWidget {
                 label: 'ALL IN',
                 semanticLabel: 'Bet everything',
                 borderColor: AppColors.gold.withValues(alpha: 0.45),
-                backgroundColor: AppColors.gold.withValues(alpha: 0.1),
+                backgroundColor: AppColors.gold.withValues(alpha: AppAlpha.hairline),
                 textColor: AppColors.gold,
                 onPressed: notifier.betAllIn,
                 verticalPadding: 6,
@@ -106,7 +106,7 @@ class TableBettingPanel extends ConsumerWidget {
             Expanded(
               child: ActionPillButton(
                 label: 'CLEAR',
-                borderColor: AppColors.lose.withValues(alpha: 0.6),
+                borderColor: AppColors.lose.withValues(alpha: AppAlpha.strong),
                 backgroundColor: AppColors.lose.withValues(alpha: 0.2),
                 textColor: AppColors.loseLight,
                 onPressed: notifier.clearBet,

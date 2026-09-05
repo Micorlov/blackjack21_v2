@@ -7,6 +7,7 @@ import '../../models/playing_card.dart';
 import '../../models/social_models.dart';
 import '../../models/table_pot.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
 import '../../utils/formatters.dart';
 import '../../utils/table_seats.dart';
 
@@ -120,7 +121,7 @@ class TableCalc {
         initial: '—',
         avatarBg: const Color(0xFF3D4A45),
         color: AppColors.textPrimary,
-        rowBg: Colors.white.withValues(alpha: 0.05),
+        rowBg: Colors.white.withValues(alpha: AppAlpha.ghost),
         rowBorder: Colors.white.withValues(alpha: 0.14),
         headline: 'No sweep pot',
         sub: 'NO SEAT FORFEITED A BET',
@@ -131,7 +132,7 @@ class TableCalc {
         initial: 'D',
         avatarBg: const Color(0xFF5A6763),
         color: AppColors.loseLight,
-        rowBg: AppColors.lose.withValues(alpha: 0.12),
+        rowBg: AppColors.lose.withValues(alpha: AppAlpha.subtle),
         rowBorder: AppColors.lose.withValues(alpha: 0.35),
         headline: 'Dealer keeps the pot',
         sub: 'NOBODY BEAT THE DEALER',
@@ -144,7 +145,7 @@ class TableCalc {
         avatarBg: AppColors.gold,
         color: AppColors.gold,
         rowBg: AppColors.gold.withValues(alpha: 0.14),
-        rowBorder: AppColors.gold.withValues(alpha: 0.5),
+        rowBorder: AppColors.gold.withValues(alpha: AppAlpha.half),
         headline: 'Sweep pot: yours',
         sub: 'BET \$${formatChips(info.winnerBet)} + POT \$${formatChips(info.pot)}',
       );
@@ -154,7 +155,7 @@ class TableCalc {
       initial: info.winner.isNotEmpty ? info.winner[0].toUpperCase() : '?',
       avatarBg: AppColors.seatColors[(idx < 0 ? 0 : idx) % AppColors.seatColors.length],
       color: AppColors.textPrimary,
-      rowBg: Colors.white.withValues(alpha: 0.05),
+      rowBg: Colors.white.withValues(alpha: AppAlpha.ghost),
       rowBorder: Colors.white.withValues(alpha: 0.14),
       headline: 'Sweep pot: ${info.winner}',
       sub: 'BET \$${formatChips(info.winnerBet)} + POT \$${formatChips(info.pot)}',

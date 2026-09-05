@@ -180,7 +180,7 @@ class _StepTrack extends StatelessWidget {
                         ? AppColors.gold
                         : (i < currentIndex
                               ? AppColors.gold.withValues(alpha: 0.45)
-                              : AppColors.textPrimary.withValues(alpha: 0.18)),
+                              : AppColors.textPrimary.withValues(alpha: AppAlpha.border)),
                   ),
                 ),
               ),

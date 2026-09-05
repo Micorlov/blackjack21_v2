@@ -75,7 +75,7 @@ class _TablePlayingPanelState extends ConsumerState<TablePlayingPanel> {
               flex: 3,
               child: ActionPillButton(
                 label: 'DOUBLE',
-                borderColor: AppColors.gold.withValues(alpha: 0.32),
+                borderColor: AppColors.gold.withValues(alpha: AppAlpha.muted),
                 backgroundColor: AppColors.gold.withValues(alpha: 0.08),
                 textColor: AppColors.gold,
                 onPressed: _debounced(canDouble ? notifier.playerDouble : null),
@@ -88,7 +88,7 @@ class _TablePlayingPanelState extends ConsumerState<TablePlayingPanel> {
               flex: 3,
               child: ActionPillButton(
                 label: 'SPLIT',
-                borderColor: AppColors.gold.withValues(alpha: 0.32),
+                borderColor: AppColors.gold.withValues(alpha: AppAlpha.muted),
                 backgroundColor: AppColors.gold.withValues(alpha: 0.08),
                 textColor: AppColors.gold,
                 onPressed: _debounced(canSplit ? notifier.playerSplit : null),
@@ -129,7 +129,7 @@ class _TablePlayingPanelState extends ConsumerState<TablePlayingPanel> {
             Expanded(
               child: ActionPillButton(
                 label: 'STAND',
-                borderColor: AppColors.win.withValues(alpha: 0.6),
+                borderColor: AppColors.win.withValues(alpha: AppAlpha.strong),
                 backgroundColor: AppColors.win.withValues(alpha: 0.2),
                 textColor: AppColors.winLight,
                 onPressed: _debounced(notifier.playerStand),

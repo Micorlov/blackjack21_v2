@@ -8,6 +8,7 @@ import '../../models/enums.dart';
 import '../../models/game_state.dart';
 import '../../state/game_notifier.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
 import '../../utils/table_seats.dart';
 import '../../widgets/confetti_burst.dart';
 import 'chip_flight_layer.dart';
@@ -271,8 +272,8 @@ class TableFelt extends ConsumerWidget {
               colors: [
                 Colors.transparent,
                 Colors.transparent,
-                const Color(0xFF040806).withValues(alpha: 0.28),
-                const Color(0xFF040806).withValues(alpha: 0.55),
+                AppColors.scrim.withValues(alpha: 0.28),
+                AppColors.scrim.withValues(alpha: 0.55),
               ],
               stops: const [0.0, 0.42, 0.78, 1.0],
             ),
@@ -295,8 +296,8 @@ class TableFelt extends ConsumerWidget {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                const Color(0xFF040806),
-                const Color(0xFF040806).withValues(alpha: 0.55),
+                AppColors.scrim,
+                AppColors.scrim.withValues(alpha: 0.55),
                 const Color(0x00040806),
               ],
             ),
@@ -330,7 +331,7 @@ class TableFelt extends ConsumerWidget {
                       end: Alignment.bottomRight,
                       colors: [Color(0xFF9A332E), Color(0xFF5A1B18)],
                     ),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+                    border: Border.all(color: Colors.white.withValues(alpha: AppAlpha.tint)),
                   ),
                 ),
               ),
@@ -341,7 +342,7 @@ class TableFelt extends ConsumerWidget {
                 height: 44,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(3),
-                  color: Colors.black.withValues(alpha: 0.6),
+                  color: Colors.black.withValues(alpha: AppAlpha.strong),
                   border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
                 ),
               ),
@@ -368,7 +369,7 @@ class TableFelt extends ConsumerWidget {
               colors: [Color(0xFF2A2018), Color(0xFF15100B)],
             ),
             border: Border.all(color: AppColors.gold.withValues(alpha: 0.2)),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(AppRadius.sm),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,

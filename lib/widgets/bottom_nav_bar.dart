@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../models/enums.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 
 class _NavItem {
@@ -34,7 +35,7 @@ class AppBottomNavBar extends StatelessWidget {
         filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
         child: Container(
           decoration: BoxDecoration(
-            color: AppColors.shellBlack.withValues(alpha: 0.85),
+            color: AppColors.shellBlack.withValues(alpha: AppAlpha.scrim),
             border: const Border(top: BorderSide(color: Colors.white10)),
           ),
           padding: const EdgeInsets.fromLTRB(4, 12, 4, 14),

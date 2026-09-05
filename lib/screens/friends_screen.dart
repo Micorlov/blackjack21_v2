@@ -153,9 +153,10 @@ class FriendsScreen extends ConsumerWidget {
                 // is more use than a dead button with no stated reason.
                 AsyncActionBuilder(
                   action: notifier.joinGroupByCode,
-                  builder: (context, busy, run) => _OutlinedPillButton(
+                  builder: (context, busy, run) => OutlinePillButton(
                     label: busy ? 'Joining…' : 'Join',
-                    onTap: run,
+                    onPressed: run,
+                    neutral: true,
                   ),
                 ),
               ],
@@ -247,13 +248,16 @@ class FriendsScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(width: 12),
-        _RewardPillButton(
-          label: label,
-          enabled: claimable,
-          onTap: claimable
-              ? () => notifier.claimTier(tier.id, tier.need, tier.reward)
-              : null,
-        ),
+        // Gold only while it can actually be claimed; a claimed or locked
+        // tier is a neutral outline, so the eye lands on the one that pays.
+        claimable
+            ? GoldButton(
+                label: label,
+                onPressed: () => notifier.claimTier(tier.id, tier.need, tier.reward),
+                verticalPadding: 14,
+                fontSize: 15,
+              )
+            : OutlinePillButton(label: label, onPressed: null, neutral: true, verticalPadding: 14, fontSize: 15),
       ],
     );
   }
@@ -361,9 +365,10 @@ class FriendsScreen extends ConsumerWidget {
           label: 'Gift 100 chips to ${f.name}',
           hint: giftEnabled ? null : 'You need 100 chips to gift',
           excludeSemantics: true,
-          child: _OutlinedPillButton(
+          child: OutlinePillButton(
             label: 'Gift 100',
-            onTap: giftEnabled ? () => notifier.giftChips(f.id) : null,
+            onPressed: giftEnabled ? () => notifier.giftChips(f.id) : null,
+            neutral: true,
           ),
         ),
       ],
@@ -385,7 +390,7 @@ class _WebInstallBanner extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: AppColors.gold.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: AppColors.gold.withValues(alpha: 0.3)),
       ),
       child: Row(
@@ -429,92 +434,6 @@ class _DividedPanel extends StatelessWidget {
               child: rows[i],
             ),
         ],
-      ),
-    );
-  }
-}
-
-/// Outlined pill (used for "Add" and "Gift 100"); dims and disables when
-/// [onTap] is null.
-class _OutlinedPillButton extends StatelessWidget {
-  final String label;
-  final VoidCallback? onTap;
-
-  const _OutlinedPillButton({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final disabled = onTap == null;
-    return Opacity(
-      opacity: disabled ? 0.4 : 1,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(999),
-          onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-            constraints: AppTouch.minTargetConstraints,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(999),
-              // The outline is the whole control here, so it has to be visible:
-              // AppColors.border is 1.71:1 and decorative only.
-              border: Border.all(color: AppColors.borderStrong),
-            ),
-            child: Text(
-              label,
-              style: AppText.sora(
-                15,
-                weight: FontWeight.w700,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Referral-tier pill: gold-filled when claimable, muted outline otherwise
-/// (covers both "Claimed" and "Locked" states).
-class _RewardPillButton extends StatelessWidget {
-  final String label;
-  final bool enabled;
-  final VoidCallback? onTap;
-
-  const _RewardPillButton({
-    required this.label,
-    required this.enabled,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          constraints: AppTouch.minTargetConstraints,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(999),
-            gradient: enabled ? AppColors.goldGradient : null,
-            border: enabled ? null : Border.all(color: AppColors.borderStrong),
-          ),
-          child: Text(
-            label,
-            style: AppText.sora(
-              15,
-              weight: FontWeight.w800,
-              color: enabled ? AppColors.goldInk : AppColors.textMuted,
-            ),
-          ),
-        ),
       ),
     );
   }

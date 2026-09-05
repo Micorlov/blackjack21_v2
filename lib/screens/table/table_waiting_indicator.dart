@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
 import '../../theme/app_motion.dart';
+import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 
 /// Centered pulsing-dot + status text, used for the `npcs` ("{name} is
@@ -52,7 +53,7 @@ class _TableWaitingIndicatorState extends State<TableWaitingIndicator> with Sing
           Flexible(
             child: Text(
               widget.text,
-              style: AppText.sora(widget.fontSize, color: AppColors.textPrimary.withValues(alpha: 0.85)),
+              style: AppText.sora(widget.fontSize, color: AppColors.textPrimary.withValues(alpha: AppAlpha.scrim)),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),

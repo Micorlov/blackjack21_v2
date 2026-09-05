@@ -5,6 +5,7 @@ import '../../models/enums.dart';
 import '../../models/game_state.dart';
 import '../../state/game_notifier.dart';
 import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
 import '../../utils/formatters.dart';
 import '../../widgets/buttons.dart';
@@ -48,7 +49,7 @@ class TableSettlementPanel extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.72),
+        color: Colors.black.withValues(alpha: AppAlpha.heavy),
         border: Border.all(color: roundNetColor, width: 2),
         borderRadius: BorderRadius.circular(18),
       ),
@@ -106,7 +107,7 @@ class TableSettlementPanel extends ConsumerWidget {
                               style: AppText.mono(
                                 12,
                                 letterSpacing: 0.06,
-                                color: AppColors.textPrimary.withValues(alpha: 0.6),
+                                color: AppColors.textPrimary.withValues(alpha: AppAlpha.strong),
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -134,7 +135,7 @@ class TableSettlementPanel extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.only(top: 7),
             decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.1))),
+              border: Border(top: BorderSide(color: Colors.white.withValues(alpha: AppAlpha.hairline))),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -206,9 +207,9 @@ class TableSettlementPanel extends ConsumerWidget {
       decoration: BoxDecoration(
         color: sweep != null ? AppColors.gold.withValues(alpha: 0.06) : Colors.white.withValues(alpha: 0.03),
         border: Border.all(
-          color: sweep != null ? AppColors.gold.withValues(alpha: 0.3) : Colors.white.withValues(alpha: 0.1),
+          color: sweep != null ? AppColors.gold.withValues(alpha: 0.3) : Colors.white.withValues(alpha: AppAlpha.hairline),
         ),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -278,7 +279,7 @@ class TableSettlementPanel extends ConsumerWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.5),
+                      color: Colors.black.withValues(alpha: AppAlpha.half),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text.rich(
@@ -286,11 +287,11 @@ class TableSettlementPanel extends ConsumerWidget {
                         children: [
                           TextSpan(
                             text: '${c.name} ${c.reason} ',
-                            style: AppText.mono(11, color: AppColors.textPrimary.withValues(alpha: 0.6)),
+                            style: AppText.mono(12, color: AppColors.textPrimary.withValues(alpha: AppAlpha.strong)),
                           ),
                           TextSpan(
                             text: '−\$${formatChips(c.amount)}',
-                            style: AppText.mono(11, weight: FontWeight.w700, color: AppColors.loseLight),
+                            style: AppText.mono(12, weight: FontWeight.w700, color: AppColors.loseLight),
                           ),
                         ],
                       ),
