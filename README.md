@@ -415,6 +415,16 @@ emulator testing.
 
 ## Changelog
 
+### 2026-09-05 (8)
+- chore: **Released to Google Play as 1.4.0 (version code 5), at 100% rollout.** The store
+  listing carries four new phone screenshots taken from this build: a hand in play with every
+  seat's cards showing, the sweep-pot result card, the betting tray, and the lobby.
+- fix: the release bundle no longer requests `com.google.android.gms.permission.AD_ID`.
+  Firebase Analytics contributes it through `play-services-measurement`, but the game shows no
+  ads and the Play listing declares that it does not use an advertising ID — a mismatch Play
+  rejects the release for. The manifest removes the permission with `tools:node="remove"`;
+  analytics still works, it simply cannot read the advertising ID.
+
 ### 2026-09-05 (7)
 - feat: **The table is drawn for players over sixty.** Everything on the screen is a size up
   and it is the default, not a setting: header title 24px and a shorter stake line

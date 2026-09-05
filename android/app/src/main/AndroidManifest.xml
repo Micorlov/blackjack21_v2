@@ -1,5 +1,12 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Firebase Analytics brings this in through play-services-measurement, but
+         the game shows no ads and profiles nobody: the Play listing declares that
+         it does not use an advertising ID, and the manifest has to say the same
+         or the release is rejected. Analytics still works; it simply cannot read
+         the advertising ID. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove"/>
     <application
         android:label="21 Sweet Pot"
         android:name="${applicationName}"
