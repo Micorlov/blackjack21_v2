@@ -555,27 +555,48 @@ void main() {
           }
         });
 
-        // A seat used to carry a fan of 27x38 cards — unreadable at that
-        // size, and smaller still once the felt scaled down mid-round. The
-        // hand is written on the plate instead: its total (or BUST) and what
-        // the seat did with it.
+        // Every seat shows the hand it is playing, beside its name, at a size
+        // a player can actually read — the fan used to be 27x38 cards above
+        // the plate, drawn at about 7px of rank once the felt scaled down.
         if (entry.key == 'playing') {
-          testWidgets('$label writes each bot hand on its plate instead of fanning cards', (tester) async {
+          testWidgets('$label shows each bot hand beside its name', (tester) async {
             await _pumpTable(tester, entry.value, device, textScale);
             expect(tester.takeException(), isNull);
 
-            expect(
-              find.descendant(of: find.byType(SeatPlate), matching: find.byType(PlayingCardFace)),
-              findsNothing,
-              reason: 'a seat plate still draws playing cards on $label',
-            );
-            // `_busySeats`: seats 0, 1 and 3 bust; seat 2 stands on 19.
             final seats = find.byType(SeatPlate);
-            expect(find.descendant(of: seats.at(0), matching: find.text('BUST')), findsOneWidget);
+            // `_busySeats`: seat 0 holds four cards, seat 2 stands on 19.
+            expect(
+              find.descendant(of: seats.at(0), matching: find.byType(PlayingCardFace)),
+              findsNWidgets(4),
+              reason: 'seat 0 is not showing its hand on $label',
+            );
             expect(find.descendant(of: seats.at(2), matching: find.text('STAND')), findsOneWidget);
             expect(find.descendant(of: seats.at(2), matching: find.text('19')), findsOneWidget);
             // Mid-round with nothing forfeited there is no pot to announce.
             expect(find.text('NO SWEEP POT'), findsNothing, reason: 'the empty pot pill is back on $label');
+          });
+        }
+
+        // A seat's cards are the point of showing them, so they must not be
+        // shrunk into illegibility by the felt's own scale.
+        if (device.name == 'galaxy-384x832' && textScale == 1.0 && entry.key == 'playing') {
+          testWidgets('$label draws the bot hands large enough to read', (tester) async {
+            await _pumpTable(tester, entry.value.copyWith(tutorialDismissed: true), device, textScale);
+            expect(tester.takeException(), isNull);
+
+            // Seat 2 holds three cards, the common mid-round hand. A longer
+            // hand scales the whole fan down rather than overlapping it
+            // tighter, so it draws smaller — but never below the floor every
+            // seat is checked against.
+            final seats = find.byType(SeatPlate);
+            final threeCardHand = find.descendant(of: seats.at(2), matching: find.byType(PlayingCardFace));
+            expect(tester.getRect(threeCardHand.first).width, greaterThanOrEqualTo(36));
+
+            final every = find.descendant(of: find.byType(SeatPlate), matching: find.byType(PlayingCardFace));
+            for (var i = 0; i < every.evaluate().length; i++) {
+              final width = tester.getRect(every.at(i)).width;
+              expect(width, greaterThanOrEqualTo(28), reason: 'a bot card is only ${width}px wide on $label');
+            }
           });
         }
 

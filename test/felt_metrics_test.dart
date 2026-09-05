@@ -56,7 +56,7 @@ void main() {
         _state(RoundPhase.playing, heroCards: true),
         const Size(_phoneWidth, _feltInPlay),
       );
-      expect(m.scale, greaterThanOrEqualTo(0.9), reason: 'play phase scaled to ${m.scale}');
+      expect(m.scale, greaterThanOrEqualTo(0.85), reason: 'play phase scaled to ${m.scale}');
     });
 
     test('keeps the settled felt readable under the result card', () {

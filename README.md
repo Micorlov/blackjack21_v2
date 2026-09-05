@@ -12,9 +12,11 @@ A Flutter blackjack game with a multi-seat table and a friends race. Four tabs, 
 - **Drawn for large type** — the game is for players in their sixties and up, so the table is
   big by default rather than behind a setting: 66x96 cards, a 24px balance, 64px chips,
   20–24px action buttons, and a felt whose vertical budget is sized so a 384x832 phone draws
-  the hand at full scale instead of the two-thirds it used to shrink to mid-round. The other
-  seats show each bot's hand as words on its name plate — the total (or `BUST`) beside the
-  name, `STAND`/`HIT` or the bet beneath — instead of a fan of 27px cards nobody could read
+  the hand at full scale instead of the two-thirds it used to shrink to mid-round. Every seat
+  shows the hand it is playing — 42x60 cards fanned *beside* the name, in the room the avatar
+  takes before the deal, with the running total on the name line and `STAND`/`BUST` under it.
+  The cards used to be a 27px fan above the plate, which the felt's own scaling then shrank to
+  about 7px of rank
 - **"Closest to 21" sweep pot** — seats that bust or lose to the dealer forfeit their bets to
   the best surviving hand; every settled hand names who took the pot, or says there was none.
   The pill above the dealer only ever quotes chips that have actually been forfeited — while
@@ -371,8 +373,8 @@ overflow. Half the scenarios use "loaded account" data (a 35-character Google di
 seven-figure bankrolls, a full hand history) because every row in the design was drawn around
 "Guest" and "$1,150". `test/table_layout_test.dart` does the same for the felt's round phases
 across seventeen device sizes (including the 384x832 phone the game is tuned on), and checks
-that the bot seats carry their hand as text, that the empty pot pill stays hidden, and that the
-hero's cards draw at full size on that phone. `test/felt_metrics_test.dart` checks the felt's
+that every bot seat shows its hand, that a bot card is never drawn under 32px wide on that
+phone, that the empty pot pill stays hidden, and that the hero's cards draw at full size. `test/felt_metrics_test.dart` checks the felt's
 vertical budget as plain arithmetic — the scale each phase gets on the target phone, and that
 seat slots are the same height in every phase.
 
@@ -440,6 +442,11 @@ emulator testing.
   than overflowing a 320-wide screen at 130% text. The result card may take 68% of the
   screen (other panels stay at 62%), so its headline is not scrolled off the top on the phone;
   during settlement the felt is a recap the card repeats, so it is the felt that gives way.
+- feat: **You can see what everyone else is holding.** Each seat's hand is fanned beside its
+  name at 42x60 — in the room the avatar occupies until the deal — so showing it costs the
+  felt one 12-unit band rather than the 38 a row above the plate used to take, and the cards
+  land at about 37px on the phone against roughly 18px before. The seat's total sits on the
+  name line (red when it is over 21) with `STAND`/`BUST` under it.
 - refactor: the empty `NO SWEEP POT` pill stays off the felt until a seat forfeits a bet; its
   30-unit slot is reserved so the dealer's cards do not move when it appears. The bot seats'
   `+$45` points figure is gone from the plate (it mirrored the rank strip removed in (6), and

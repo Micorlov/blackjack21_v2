@@ -226,11 +226,13 @@ class FeltMetrics {
   }
 
   /// Distance from one seat row to the next: the slot plus a 6 gap.
-  static const double _seatPitch = 66;
+  static const double _seatPitch = 78;
 
-  /// One seat slot: a name plate of ~58 (46 avatar + padding + border; 60
-  /// with the acting seat's 2px border).
-  static const double _seatHeight = 60;
+  /// One seat slot: a name plate of ~70 — the seat's own hand (60) plus the
+  /// plate's padding and border. The same in every phase, so plates do not
+  /// jump when the cards arrive; before a deal the hand's room holds the
+  /// 46px avatar instead.
+  static const double _seatHeight = 72;
 
   /// Breathing room under the lower seat row before the hero's block starts.
   static const double _seatBandGap = 6;
