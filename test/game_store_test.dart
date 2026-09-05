@@ -45,6 +45,11 @@ SavedGame sample({
   playDayStreak: 4,
   lastPlayDayKey: '2026-09-04',
   lastRebuyAtMs: 1756900000000,
+  unlockedAchievements: const ['first', 'bj'],
+  xp: 1840,
+  missionDayKey: '2026-09-05',
+  missionProgress: const {'win3': 2, 'play5': 5},
+  missionsClaimed: const ['play5'],
 );
 
 void main() {
@@ -174,6 +179,43 @@ void main() {
       await store.save(sample(chips: 900));
 
       expect((await store.load())?.chips, 900);
+    });
+
+    test('round-trips the progression fields', () {
+      final restored = SavedGame.fromJson(sample().toJson());
+
+      expect(restored.unlockedAchievements, ['first', 'bj']);
+      expect(restored.xp, 1840);
+      expect(restored.missionDayKey, '2026-09-05');
+      expect(restored.missionProgress, {'win3': 2, 'play5': 5});
+      expect(restored.missionsClaimed, ['play5']);
+    });
+
+    test('an older blob with no progression keys restores as a fresh start', () {
+      // Every existing player's save predates these fields. Achievements in
+      // particular must come back *empty* rather than pre-claimed, so their
+      // one-time rewards are paid on the next hand instead of silently lost.
+      final old = sample().toJson()
+        ..remove('unlockedAchievements')
+        ..remove('xp')
+        ..remove('missionDayKey')
+        ..remove('missionProgress')
+        ..remove('missionsClaimed');
+      final restored = SavedGame.fromJson(old);
+
+      expect(restored.unlockedAchievements, isEmpty);
+      expect(restored.xp, 0);
+      expect(restored.missionDayKey, '');
+      expect(restored.missionProgress, isEmpty);
+      expect(restored.missionsClaimed, isEmpty);
+      expect(restored.chips, 1250, reason: 'the rest of the blob still has to restore');
+    });
+
+    test('drops mission counters that are not numbers', () {
+      final blob = sample().toJson();
+      blob['missionProgress'] = {'win3': 'two', 'play5': 5};
+
+      expect(SavedGame.fromJson(blob).missionProgress, {'play5': 5});
     });
 
     test('discards a blob written by an unknown schema version', () async {

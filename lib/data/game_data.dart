@@ -16,7 +16,27 @@ class AchievementDef {
   final String desc;
   final bool Function(GameState) check;
 
-  const AchievementDef({required this.id, required this.name, required this.desc, required this.check});
+  /// One-time chip reward, paid the first time [check] passes.
+  ///
+  /// These were decorative for the whole life of the app: recomputed from
+  /// stats on every build, paying nothing, announcing nothing. A player could
+  /// cross "Play 100 hands" and the game would not react.
+  final int reward;
+
+  /// Where the player currently stands, for the ones that count toward
+  /// something — `(12, 100)` for the hundredth hand. Null for the ones that
+  /// simply happen, like a first blackjack, where a bar would be a two-state
+  /// checkbox drawn as a progress meter.
+  final (int, int) Function(GameState)? progress;
+
+  const AchievementDef({
+    required this.id,
+    required this.name,
+    required this.desc,
+    required this.check,
+    required this.reward,
+    this.progress,
+  });
 }
 
 class ReferralTierDef {
@@ -47,6 +67,13 @@ class CardBackDef {
   final Color colorA;
   final Color colorB;
 
+  /// Level this becomes available at. 1 means "from the first hand".
+  ///
+  /// Every cosmetic used to be free and unlocked immediately, which left the
+  /// shop with a wall of things nobody had any reason to want. Two of them now
+  /// arrive as the player levels up, so playing on leads somewhere.
+  final int requiredLevel;
+
   const CardBackDef({
     required this.id,
     required this.label,
@@ -54,6 +81,7 @@ class CardBackDef {
     required this.pattern,
     required this.colorA,
     required this.colorB,
+    this.requiredLevel = 1,
   });
 }
 
@@ -69,6 +97,9 @@ class FeltDef {
   /// The felt ellipse itself, inside the wooden rim.
   final RadialGradient ovalGradient;
 
+  /// Level this felt becomes available at. See [CardBackDef.requiredLevel].
+  final int requiredLevel;
+
   const FeltDef({
     required this.id,
     required this.label,
@@ -76,6 +107,7 @@ class FeltDef {
     required this.swatchGradient,
     required this.tableGradient,
     required this.ovalGradient,
+    this.requiredLevel = 1,
   });
 }
 
@@ -131,13 +163,59 @@ const List<TableStake> kTables = [
 ];
 
 final List<AchievementDef> kAchievementDefs = [
-  AchievementDef(id: 'first', name: 'First Hand', desc: 'Play your first hand', check: (s) => s.stats.handsPlayed >= 1),
-  AchievementDef(id: 'bj', name: 'Blackjack!', desc: 'Hit a natural 21', check: (s) => s.stats.blackjacks >= 1),
-  AchievementDef(id: 'streak3', name: 'On Fire', desc: 'Win 3 hands in a row', check: (s) => s.stats.bestStreak >= 3),
-  AchievementDef(id: 'highroller', name: 'High Roller', desc: 'Reach 5,000 chips', check: (s) => s.chips >= 5000),
-  AchievementDef(id: 'century', name: 'Century', desc: 'Play 100 hands', check: (s) => s.stats.handsPlayed >= 100),
-  AchievementDef(id: 'social', name: 'Well Connected', desc: 'Add 3 friends', check: (s) => s.referralsCount >= 3),
-  AchievementDef(id: 'vip', name: 'VIP Status', desc: 'Play at the VIP table', check: (s) => s.visitedVIP),
+  AchievementDef(
+    id: 'first',
+    name: 'First Hand',
+    desc: 'Play your first hand',
+    reward: 100,
+    check: (s) => s.stats.handsPlayed >= 1,
+  ),
+  AchievementDef(
+    id: 'bj',
+    name: 'Blackjack!',
+    desc: 'Hit a natural 21',
+    reward: 250,
+    check: (s) => s.stats.blackjacks >= 1,
+  ),
+  AchievementDef(
+    id: 'streak3',
+    name: 'On Fire',
+    desc: 'Win 3 hands in a row',
+    reward: 300,
+    check: (s) => s.stats.bestStreak >= 3,
+    progress: (s) => (s.stats.bestStreak.clamp(0, 3), 3),
+  ),
+  AchievementDef(
+    id: 'highroller',
+    name: 'High Roller',
+    desc: 'Reach 5,000 chips',
+    reward: 500,
+    check: (s) => s.chips >= 5000,
+    progress: (s) => (s.chips.clamp(0, 5000), 5000),
+  ),
+  AchievementDef(
+    id: 'century',
+    name: 'Century',
+    desc: 'Play 100 hands',
+    reward: 1000,
+    check: (s) => s.stats.handsPlayed >= 100,
+    progress: (s) => (s.stats.handsPlayed.clamp(0, 100), 100),
+  ),
+  AchievementDef(
+    id: 'social',
+    name: 'Well Connected',
+    desc: 'Add 3 friends',
+    reward: 500,
+    check: (s) => s.referralsCount >= 3,
+    progress: (s) => (s.referralsCount.clamp(0, 3), 3),
+  ),
+  AchievementDef(
+    id: 'vip',
+    name: 'VIP Status',
+    desc: 'Play at the VIP table',
+    reward: 750,
+    check: (s) => s.visitedVIP,
+  ),
 ];
 
 const List<ReferralTierDef> kReferralTierDefs = [
@@ -207,6 +285,7 @@ const List<CardBackDef> kCardBackDefs = [
     pattern: CardBackPattern.gradient,
     colorA: Color(0xFF9A332E),
     colorB: Color(0xFF5A1B18),
+    requiredLevel: 8,
   ),
 ];
 
@@ -267,6 +346,7 @@ const List<FeltDef> kFeltDefs = [
       colors: [Color(0xFFB0503C), Color(0xFF7A3325), Color(0xFF401A11), Color(0xFF2A100A)],
       stops: [0.0, 0.42, 0.78, 1.0],
     ),
+    requiredLevel: 5,
   ),
 ];
 

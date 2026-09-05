@@ -195,6 +195,27 @@ class GameState {
   /// derived via `isRebuyReady` in utils/rebuy.dart.
   final DateTime? lastRebuyAt;
 
+  /// Ids of achievements already paid and announced — see utils/achievements.dart.
+  final List<String> unlockedAchievements;
+
+  /// Lifetime experience; the player's level is derived from it via utils/xp.dart.
+  final int xp;
+
+  /// Day the current three missions were drawn for, their progress, and which
+  /// have been claimed — see utils/missions.dart.
+  final String missionDayKey;
+  final Map<String, int> missionProgress;
+  final List<String> missionsClaimed;
+
+  /// The achievement whose unlock banner is showing, if any. Session-only: a
+  /// celebration is for the moment it happens, not something to restore two
+  /// days later on a cold launch.
+  final String? achievementBanner;
+
+  /// Level the player just reached, driving the level-up sheet. Also
+  /// session-only, for the same reason.
+  final int? levelUpTo;
+
   const GameState({
     this.screen = AppScreen.onboarding,
     this.signedIn = false,
@@ -278,6 +299,13 @@ class GameState {
     this.playDayStreak = 0,
     this.lastPlayDayKey = '',
     this.lastRebuyAt,
+    this.unlockedAchievements = const [],
+    this.xp = 0,
+    this.missionDayKey = '',
+    this.missionProgress = const {},
+    this.missionsClaimed = const [],
+    this.achievementBanner,
+    this.levelUpTo,
   });
 
   GameState copyWith({
@@ -361,6 +389,13 @@ class GameState {
     int? playDayStreak,
     String? lastPlayDayKey,
     Object? lastRebuyAt = _unset,
+    List<String>? unlockedAchievements,
+    int? xp,
+    String? missionDayKey,
+    Map<String, int>? missionProgress,
+    List<String>? missionsClaimed,
+    Object? achievementBanner = _unset,
+    Object? levelUpTo = _unset,
   }) {
     return GameState(
       screen: screen ?? this.screen,
@@ -447,6 +482,15 @@ class GameState {
       playDayStreak: playDayStreak ?? this.playDayStreak,
       lastPlayDayKey: lastPlayDayKey ?? this.lastPlayDayKey,
       lastRebuyAt: identical(lastRebuyAt, _unset) ? this.lastRebuyAt : lastRebuyAt as DateTime?,
+      unlockedAchievements: unlockedAchievements ?? this.unlockedAchievements,
+      xp: xp ?? this.xp,
+      missionDayKey: missionDayKey ?? this.missionDayKey,
+      missionProgress: missionProgress ?? this.missionProgress,
+      missionsClaimed: missionsClaimed ?? this.missionsClaimed,
+      achievementBanner: identical(achievementBanner, _unset)
+          ? this.achievementBanner
+          : achievementBanner as String?,
+      levelUpTo: identical(levelUpTo, _unset) ? this.levelUpTo : levelUpTo as int?,
     );
   }
 }

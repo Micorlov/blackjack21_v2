@@ -5,6 +5,7 @@ import '../data/game_data.dart';
 import '../models/enums.dart';
 import '../models/social_models.dart';
 import '../state/game_notifier.dart';
+import '../utils/xp.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
@@ -75,10 +76,18 @@ class ShopScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 10),
           const SectionLabel('Card backs'),
-          _CardBacksRow(equippedId: state.cardBackSkin, onSelect: notifier.selectCardBack),
+          _CardBacksRow(
+            equippedId: state.cardBackSkin,
+            onSelect: notifier.selectCardBack,
+            level: Xp.levelFor(state.xp),
+          ),
           const SizedBox(height: 10),
           const SectionLabel('Table felt'),
-          _TableFeltRow(equippedId: state.themeChoice, onSelect: notifier.selectFelt),
+          _TableFeltRow(
+            equippedId: state.themeChoice,
+            onSelect: notifier.selectFelt,
+            level: Xp.levelFor(state.xp),
+          ),
           const SizedBox(height: 10),
           const SectionLabel('Avatar frame'),
           _AvatarFrameRow(
@@ -436,14 +445,29 @@ class _SelectableSwatch extends StatelessWidget {
   final bool equipped;
   final VoidCallback onTap;
 
-  const _SelectableSwatch({required this.preview, required this.label, required this.equipped, required this.onTap});
+  /// Level needed to equip this, when it is not available yet.
+  ///
+  /// Everything in the shop used to be free and unlocked from the first hand,
+  /// so the cosmetics section was a wall of things there was no reason to
+  /// want. A locked swatch is still tappable — it says what it needs rather
+  /// than doing nothing.
+  final int? lockedAtLevel;
+
+  const _SelectableSwatch({
+    required this.preview,
+    required this.label,
+    required this.equipped,
+    required this.onTap,
+    this.lockedAtLevel,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final locked = lockedAtLevel != null;
     return Semantics(
       button: true,
       selected: equipped,
-      label: equipped ? '$label, equipped' : label,
+      label: locked ? '$label, locked until level $lockedAtLevel' : (equipped ? '$label, equipped' : label),
       excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
@@ -456,7 +480,7 @@ class _SelectableSwatch extends StatelessWidget {
                 clipBehavior: Clip.none,
                 alignment: Alignment.center,
                 children: [
-                  preview,
+                  Opacity(opacity: locked ? 0.4 : 1, child: preview),
                   if (equipped)
                     Positioned(
                       top: -4,
@@ -468,15 +492,18 @@ class _SelectableSwatch extends StatelessWidget {
                         child: const Icon(Icons.check, size: 10, color: AppColors.goldInk),
                       ),
                     ),
+                  if (locked) const Icon(Icons.lock, size: 16, color: AppColors.textPrimary),
                 ],
               ),
               const SizedBox(height: 6),
               Text(
-                label,
+                locked ? 'Level $lockedAtLevel' : label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: AppText.sora(
                   12.5,
                   weight: FontWeight.w700,
-                  color: equipped ? AppColors.gold : AppColors.textMuted,
+                  color: locked ? AppColors.textFaint : (equipped ? AppColors.gold : AppColors.textMuted),
                 ),
               ),
             ],
@@ -490,8 +517,9 @@ class _SelectableSwatch extends StatelessWidget {
 class _CardBacksRow extends StatelessWidget {
   final String equippedId;
   final void Function(String id) onSelect;
+  final int level;
 
-  const _CardBacksRow({required this.equippedId, required this.onSelect});
+  const _CardBacksRow({required this.equippedId, required this.onSelect, required this.level});
 
   @override
   Widget build(BuildContext context) {
@@ -500,6 +528,7 @@ class _CardBacksRow extends StatelessWidget {
         return _SelectableSwatch(
           equipped: equippedId == cb.id,
           label: cb.label,
+          lockedAtLevel: cb.requiredLevel > level ? cb.requiredLevel : null,
           onTap: () => onSelect(cb.id),
           preview: PlayingCardBack(width: 50, height: 34, skin: cb),
         );
@@ -511,8 +540,9 @@ class _CardBacksRow extends StatelessWidget {
 class _TableFeltRow extends StatelessWidget {
   final String equippedId;
   final void Function(String id) onSelect;
+  final int level;
 
-  const _TableFeltRow({required this.equippedId, required this.onSelect});
+  const _TableFeltRow({required this.equippedId, required this.onSelect, required this.level});
 
   @override
   Widget build(BuildContext context) {
@@ -521,6 +551,7 @@ class _TableFeltRow extends StatelessWidget {
         return _SelectableSwatch(
           equipped: equippedId == ft.id,
           label: ft.label,
+          lockedAtLevel: ft.requiredLevel > level ? ft.requiredLevel : null,
           onTap: () => onSelect(ft.id),
           preview: Container(
             width: 50,

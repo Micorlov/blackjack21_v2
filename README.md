@@ -410,6 +410,33 @@ emulator testing.
 
 ## Changelog
 
+### 2026-09-05 (3)
+- feat: **Achievements finally do something.** The seven badges were recomputed from stats on
+  every build, paid nothing and announced nothing — a player could cross their hundredth hand and
+  find out days later by opening a tab. Each now carries a one-time chip reward (100–1,000),
+  lands as a gold banner the moment it is earned, and is recorded in the save so it pays exactly
+  once. The Awards list shows the reward and, for the ones that count toward something, how far
+  along you are.
+- feat: **Levels.** Every hand earns experience — more for a win, a blackjack, a sweep, and a
+  bigger table — and experience only ever accumulates, so an hour of bad cards still leaves
+  something behind. Levelling up interrupts the felt with a sheet listing what it unlocked, and
+  the lobby header carries the level in place of "Welcome back". The Ember felt (level 5), the
+  Crimson card back (level 8) and the gold avatar frame (level 3) are now things to reach rather
+  than things that were always free.
+- feat: **Three daily missions.** Drawn from the day's date, so every device agrees without
+  storing anything; all reachable in one sitting; reset at midnight with nothing taken away for
+  missing a day. They sit under the daily bonus on the lobby with a progress bar and a claim
+  button each.
+- feat: **A real way out of being broke.** Running dry used to show one "Rebuy in 3h 21m" pill in
+  the betting panel: a player who found it on cooldown was finished, while a daily bonus, a
+  finished mission and a referral reward might all have been waiting unmentioned. There is now a
+  sheet listing every route back with its live state, and exactly one primary button — the one
+  that is actually available right now.
+- test: `test/achievements_test.dart`, `test/xp_test.dart` and `test/missions_test.dart` cover the
+  new pure logic; `test/game_store_test.dart` covers the new persisted fields and, specifically,
+  that an existing save with none of them restores as "nothing earned yet" so the rewards are
+  paid rather than silently marked claimed.
+
 ### 2026-09-05 (2)
 - feat: **Winning looks like winning.** Sweeping the table or hitting a natural 21 now bursts
   confetti over the felt and flies each beaten seat's chips across to your plate — the sweep pot

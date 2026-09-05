@@ -248,7 +248,13 @@ class _AchievementsList extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         for (final def in kAchievementDefs) ...[
-          _AchievementRow(unlocked: def.check(state), name: def.name, desc: def.desc),
+          _AchievementRow(
+            unlocked: state.unlockedAchievements.contains(def.id) || def.check(state),
+            name: def.name,
+            desc: def.desc,
+            reward: def.reward,
+            progress: def.progress?.call(state),
+          ),
           const SizedBox(height: 10),
         ],
       ],
@@ -261,7 +267,21 @@ class _AchievementRow extends StatelessWidget {
   final String name;
   final String desc;
 
-  const _AchievementRow({required this.unlocked, required this.name, required this.desc});
+  /// One-time chips this pays. Shown so the list reads as something to earn
+  /// rather than a set of badges.
+  final int reward;
+
+  /// Where the player currently stands, when the achievement counts toward
+  /// something. "Play 100 hands" told nobody they were on 12.
+  final (int, int)? progress;
+
+  const _AchievementRow({
+    required this.unlocked,
+    required this.name,
+    required this.desc,
+    required this.reward,
+    this.progress,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -289,10 +309,49 @@ class _AchievementRow extends StatelessWidget {
               children: [
                 Text(
                   name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: AppText.sora(16, weight: FontWeight.w800, color: nameColor),
                 ),
-                Text(desc, style: AppText.sora(14, color: AppColors.textMuted)),
+                Text(
+                  desc,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.sora(14, color: AppColors.textMuted),
+                ),
+                if (!unlocked && progress != null) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: AppRadius.smAll,
+                          child: LinearProgressIndicator(
+                            value: progress!.$2 == 0 ? 0 : (progress!.$1 / progress!.$2).clamp(0.0, 1.0),
+                            minHeight: 5,
+                            backgroundColor: AppColors.border,
+                            valueColor: const AlwaysStoppedAnimation(AppColors.gold),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '${formatChips(progress!.$1)}/${formatChips(progress!.$2)}',
+                        style: AppText.mono(12, color: AppColors.textFaint),
+                      ),
+                    ],
+                  ),
+                ],
               ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            unlocked ? 'PAID' : '+${formatChips(reward)}',
+            style: AppText.mono(
+              12,
+              weight: FontWeight.w700,
+              color: unlocked ? AppColors.win : AppColors.gold,
             ),
           ),
         ],

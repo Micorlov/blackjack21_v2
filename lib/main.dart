@@ -22,8 +22,10 @@ import 'screens/tips_screen.dart';
 import 'state/game_notifier.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
+import 'widgets/achievement_toast.dart';
 import 'widgets/app_lifecycle_bridge.dart';
 import 'widgets/bottom_nav_bar.dart';
+import 'widgets/level_up_sheet.dart';
 import 'widgets/overlays.dart';
 import 'widgets/rank_strip.dart';
 import 'widgets/story_overlay.dart';
@@ -316,7 +318,11 @@ class AppShell extends ConsumerWidget {
                   AppBottomNavBar(current: state.screen, onSelect: onNavSelect),
               ],
             ),
+            // Above the toast, because an achievement is the rarer event and
+            // should not be pushed off screen by a routine "chips added".
+            const Align(alignment: Alignment.topCenter, child: AchievementToast()),
             ToastBanner(text: state.toast),
+            const LevelUpSheet(),
             ReactionFloatOverlay(
               text: state.reactionFloat,
               triggerId: state.reactionId,

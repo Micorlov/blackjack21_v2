@@ -78,6 +78,22 @@ class SavedGame {
   /// Epoch-ms of the last table Rebuy; 0 means never, restoring as null.
   final int lastRebuyAtMs;
 
+  /// Ids of achievements already awarded, so their one-time chip reward is
+  /// paid once and their unlock announced once. Before this, achievements
+  /// were recomputed from stats on every build and paid nothing, so crossing
+  /// one was an event the game never noticed.
+  final List<String> unlockedAchievements;
+
+  /// Lifetime experience. Levels are derived from it — see utils/xp.dart.
+  final int xp;
+
+  /// The day the three daily missions were drawn for, their per-mission
+  /// progress, and which have been claimed. A day-key change resets all
+  /// three; see utils/missions.dart.
+  final String missionDayKey;
+  final Map<String, int> missionProgress;
+  final List<String> missionsClaimed;
+
   const SavedGame({
     required this.chips,
     required this.stats,
@@ -107,6 +123,11 @@ class SavedGame {
     this.playDayStreak = 0,
     this.lastPlayDayKey = '',
     this.lastRebuyAtMs = 0,
+    this.unlockedAchievements = const [],
+    this.xp = 0,
+    this.missionDayKey = '',
+    this.missionProgress = const {},
+    this.missionsClaimed = const [],
   });
 
   Map<String, Object?> toJson() => {
@@ -152,6 +173,11 @@ class SavedGame {
     'playDayStreak': playDayStreak,
     'lastPlayDayKey': lastPlayDayKey,
     'lastRebuyAtMs': lastRebuyAtMs,
+    'unlockedAchievements': unlockedAchievements,
+    'xp': xp,
+    'missionDayKey': missionDayKey,
+    'missionProgress': missionProgress,
+    'missionsClaimed': missionsClaimed,
   };
 
   /// Every field falls back to the [GameState] default it mirrors, so a blob
@@ -210,6 +236,15 @@ class SavedGame {
       playDayStreak: _int(json['playDayStreak'], 0),
       lastPlayDayKey: _str(json['lastPlayDayKey'], ''),
       lastRebuyAtMs: _int(json['lastRebuyAtMs'], 0),
+      // A blob written before achievements paid anything has no unlock list.
+      // Left empty on purpose: an existing player's already-earned badges are
+      // then awarded (and celebrated) on their next hand, rather than being
+      // silently marked as claimed and paying nothing.
+      unlockedAchievements: _strings(json['unlockedAchievements']),
+      xp: _int(json['xp'], 0),
+      missionDayKey: _str(json['missionDayKey'], ''),
+      missionProgress: _counters(json['missionProgress']),
+      missionsClaimed: _strings(json['missionsClaimed']),
     );
   }
 
@@ -219,6 +254,14 @@ class SavedGame {
 
   static List<String> _strings(Object? v) =>
       v is List ? [for (final e in v) if (e is String) e] : const [];
+
+  static Map<String, int> _counters(Object? v) {
+    if (v is! Map) return const {};
+    return {
+      for (final entry in v.entries)
+        if (entry.key is String && entry.value is int) entry.key as String: entry.value as int,
+    };
+  }
 
   /// Unreadable entries are dropped rather than defaulted: a wrong result in
   /// the tail would silently change whether comeback dealing kicks in.

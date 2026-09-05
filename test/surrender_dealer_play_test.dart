@@ -106,7 +106,17 @@ void main() {
     // Bet was 100; surrender refunds floor(100/2)=50 immediately, so the true
     // net loss for this hand is 50 — before the fix, _settle() never
     // subtracted it from sessionNetDelta and the panel showed +$0 instead.
-    expect(notifier.state.chips, 950, reason: 'starting 900 (post-deal) + the 50 surrender refund');
+    //
+    // The extra 100 is the "First Hand" achievement, which pays on the first
+    // settled hand of a fresh state. Asserted explicitly rather than absorbed
+    // into the figure, so a change to either number has to be deliberate.
+    const firstHandAchievement = 100;
+    expect(
+      notifier.state.chips,
+      950 + firstHandAchievement,
+      reason: 'starting 900 (post-deal) + the 50 surrender refund + the first-hand achievement',
+    );
+    expect(notifier.state.unlockedAchievements, contains('first'));
     expect(notifier.state.roundHandNet, -50, reason: 'the settlement panel must show the real -\$50 loss, not \$0');
 
     // GameNotifier keeps a heartbeat, a save timer and the post-settlement

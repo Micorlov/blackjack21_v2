@@ -26,15 +26,18 @@ import '../services/local_notifier.dart';
 import '../services/social_service.dart';
 import '../services/sound_player.dart';
 import '../services/spoken_amount.dart';
+import '../utils/achievements.dart';
 import '../utils/comeback.dart';
 import '../utils/daily_bonus.dart';
 import '../utils/formatters.dart';
 import '../utils/invite_link.dart';
+import '../utils/missions.dart';
 import '../utils/play_streak.dart';
 import '../utils/points.dart';
 import '../utils/rebuy.dart';
 import '../utils/referrals.dart';
 import '../utils/table_seats.dart';
+import '../utils/xp.dart';
 
 class _SeatResult {
   final String name;
@@ -498,6 +501,14 @@ class GameNotifier extends StateNotifier<GameState> {
       lastRebuyAt: saved.lastRebuyAtMs == 0
           ? null
           : DateTime.fromMillisecondsSinceEpoch(saved.lastRebuyAtMs),
+      unlockedAchievements: saved.unlockedAchievements,
+      xp: saved.xp,
+      // Yesterday's missions are not today's: the set is redrawn from the day
+      // key, so stale progress has to go with it or a player would open the
+      // app to three new goals already part-finished.
+      missionDayKey: saved.missionDayKey == dayKey ? saved.missionDayKey : dayKey,
+      missionProgress: saved.missionDayKey == dayKey ? saved.missionProgress : const {},
+      missionsClaimed: saved.missionDayKey == dayKey ? saved.missionsClaimed : const [],
     );
   }
 
@@ -532,6 +543,11 @@ class GameNotifier extends StateNotifier<GameState> {
     playDayStreak: state.playDayStreak,
     lastPlayDayKey: state.lastPlayDayKey,
     lastRebuyAtMs: state.lastRebuyAt?.millisecondsSinceEpoch ?? 0,
+    unlockedAchievements: state.unlockedAchievements,
+    xp: state.xp,
+    missionDayKey: state.missionDayKey,
+    missionProgress: state.missionProgress,
+    missionsClaimed: state.missionsClaimed,
   );
 
   /// Coalesces the writes a fast player generates — settling a hand, flipping
@@ -660,6 +676,9 @@ class GameNotifier extends StateNotifier<GameState> {
       }
     }
     state = state.copyWith(referralsCount: referralCount(members, me));
+    // "Well Connected" is the one achievement nothing the player does at the
+    // table can trigger — it lands when someone else accepts an invite.
+    _awardAchievements();
   }
 
   void _notifyOvertaken(List<RankedPlayer> hourly, List<RankedPlayer> daily) {
@@ -1074,6 +1093,9 @@ class GameNotifier extends StateNotifier<GameState> {
     // Publish table presence immediately rather than waiting up to 60s for
     // the heartbeat, so a friend's lobby card shows "here" right away.
     _reportScore();
+    // Sitting at the VIP table is an achievement in its own right, and it can
+    // happen without a hand being played.
+    _awardAchievements();
   }
 
   List<NpcSeat> _rollNpcSeats(int minBet) {
@@ -1891,8 +1913,115 @@ class GameNotifier extends StateNotifier<GameState> {
     }
     if (streakExtended) unawaited(_syncStreakReminder());
 
+    // Progression is read from the hand that just settled, in this order:
+    // missions first (their targets are about what happened), then experience,
+    // then achievements — which can be triggered by any of the above, and by
+    // the chips the first two just paid.
+    _advanceMissions(
+      won: winsDelta > 0 && lossesDelta == 0,
+      blackjack: bjDelta > 0,
+      sweptPot: heroTakesPot,
+      winStreak: newStreak,
+      dayKey: dayKey,
+    );
+    _awardXp(won: winsDelta > 0 && lossesDelta == 0, blackjack: bjDelta > 0, sweptPot: heroTakesPot);
+    _awardAchievements();
+
     _reportScore();
     _scheduleSave();
+  }
+
+  // ---------------------------------------------------------------------
+  // Progression: achievements, experience, daily missions
+  // ---------------------------------------------------------------------
+
+  /// Pays and announces any achievement the current state has just satisfied.
+  ///
+  /// Called after every settled hand and after the two events that can unlock
+  /// one without a hand being played — sitting at the VIP table, and a friend
+  /// accepting an invite. Idempotent: an id in [GameState.unlockedAchievements]
+  /// is never considered again, so nothing pays twice.
+  void _awardAchievements() {
+    final earned = newlyUnlocked(state, state.unlockedAchievements);
+    if (earned.isEmpty) return;
+    final reward = achievementReward(earned);
+    state = state.copyWith(
+      chips: state.chips + reward,
+      unlockedAchievements: [...state.unlockedAchievements, ...earned.map((d) => d.id)],
+      // One banner at a time, showing the first: two celebrations stacked on
+      // one hand is noise, and the rest are on the Awards tab anyway.
+      achievementBanner: earned.first.id,
+    );
+    _hapticMedium();
+    _scheduleSave();
+  }
+
+  /// Dismisses the achievement banner.
+  void clearAchievementBanner() => state = state.copyWith(achievementBanner: null);
+
+  /// Adds the hand's experience and, if it crossed a threshold, flags the
+  /// level-up so the table can show it.
+  void _awardXp({required bool won, required bool blackjack, required bool sweptPot}) {
+    final before = Xp.levelFor(state.xp);
+    final gained = Xp.forRound(
+      won: won,
+      blackjack: blackjack,
+      sweptPot: sweptPot,
+      stake: state.stake?.min ?? 25,
+    );
+    final xp = state.xp + gained;
+    final after = Xp.levelFor(xp);
+    state = state.copyWith(xp: xp, levelUpTo: after > before ? after : null);
+  }
+
+  /// Dismisses the level-up sheet.
+  void clearLevelUp() => state = state.copyWith(levelUpTo: null);
+
+  /// Rolls the day's missions over if the date changed, then counts this hand
+  /// against them.
+  void _advanceMissions({
+    required bool won,
+    required bool blackjack,
+    required bool sweptPot,
+    required int winStreak,
+    required String dayKey,
+  }) {
+    final rolled = state.missionDayKey != dayKey;
+    final progress = rolled ? const <String, int>{} : state.missionProgress;
+    final next = advanceMissions(
+      missions: missionsForDay(dayKey),
+      progress: progress,
+      event: MissionEvent(
+        won: won,
+        blackjack: blackjack,
+        sweptPot: sweptPot,
+        stake: state.stake?.min ?? 25,
+        winStreak: winStreak,
+      ),
+    );
+    state = state.copyWith(
+      missionDayKey: dayKey,
+      missionProgress: next,
+      missionsClaimed: rolled ? const [] : state.missionsClaimed,
+    );
+  }
+
+  /// Pays a finished mission. Ignored unless it is actually finished and
+  /// unclaimed, so a double tap cannot pay twice.
+  void claimMission(String id) {
+    final today = dayKeyOf(DateTime.now());
+    final mission = missionsForDay(today).where((m) => m.id == id).firstOrNull;
+    if (mission == null) return;
+    if (!missionIsClaimable(mission, state.missionProgress, state.missionsClaimed)) return;
+    state = state.copyWith(
+      chips: state.chips + mission.reward,
+      missionsClaimed: [...state.missionsClaimed, id],
+    );
+    _showToast('Mission complete — ${mission.label}, +${formatChips(mission.reward)} chips');
+    _playSfx(GameSfx.win);
+    _hapticMedium();
+    _scheduleSave();
+    _awardAchievements();
   }
 
   void nextHand() {
@@ -2071,15 +2200,38 @@ class GameNotifier extends StateNotifier<GameState> {
     state = state.copyWith(avatarColor: color);
     _scheduleSave();
   }
+  /// The player's level, derived from lifetime experience.
+  int get level => Xp.levelFor(state.xp);
+
   void selectCardBack(String id) {
+    final def = kCardBackDefs.where((c) => c.id == id).firstOrNull;
+    if (def == null) return;
+    // Refused rather than silently ignored: a locked swatch that simply does
+    // nothing on tap reads as a broken button.
+    if (def.requiredLevel > level) {
+      _showToast('${def.label} unlocks at level ${def.requiredLevel}');
+      return;
+    }
     state = state.copyWith(cardBackSkin: id);
     _scheduleSave();
   }
+
   void selectFelt(String id) {
+    final def = kFeltDefs.where((f) => f.id == id).firstOrNull;
+    if (def == null) return;
+    if (def.requiredLevel > level) {
+      _showToast('${def.label} unlocks at level ${def.requiredLevel}');
+      return;
+    }
     state = state.copyWith(themeChoice: id);
     _scheduleSave();
   }
+
   void setAvatarFrame(bool gold) {
+    if (gold && level < kAvatarFrameLevel) {
+      _showToast('The gold frame unlocks at level $kAvatarFrameLevel');
+      return;
+    }
     state = state.copyWith(avatarFrameGold: gold);
     _scheduleSave();
   }

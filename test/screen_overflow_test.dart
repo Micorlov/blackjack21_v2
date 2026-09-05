@@ -13,6 +13,7 @@ import 'package:blackjack21_v2/state/game_notifier.dart';
 import 'package:blackjack21_v2/utils/points.dart';
 import 'package:blackjack21_v2/widgets/daily_bonus_dialog.dart';
 import 'package:blackjack21_v2/widgets/how_to_play_sheet.dart';
+import 'package:blackjack21_v2/widgets/out_of_chips_sheet.dart';
 
 import 'support/real_fonts.dart';
 
@@ -103,6 +104,7 @@ GameState _state({
   List<RoundResult> history = const [],
   DateTime? lastDailyBonusClaimAt,
   int dailyBonusStreakDay = 0,
+  DateTime? lastRebuyAt,
   bool tournamentJoined = false,
   int referralsCount = 0,
   List<String> claimedTiers = const [],
@@ -153,6 +155,7 @@ GameState _state({
     history: history,
     lastDailyBonusClaimAt: lastDailyBonusClaimAt,
     dailyBonusStreakDay: dailyBonusStreakDay,
+    lastRebuyAt: lastRebuyAt,
     tipsSeen: true,
     tournamentJoined: tournamentJoined,
     referralsCount: referralsCount,
@@ -520,6 +523,35 @@ void main() {
           exception,
           isNull,
           reason: 'daily-bonus dialog overflows on ${device.name} @${textScale}x\n${_describe(exception, details)}',
+        );
+      });
+
+      // The way back when the stack runs out. Seeded broke, with the rebuy on
+      // cooldown, which is the state the sheet exists for.
+      testWidgets('${device.name} @${textScale}x out-of-chips sheet lays out without overflow', (tester) async {
+        final details = await _pumpScreen(
+          tester,
+          _state(
+            screen: AppScreen.table,
+            displayName: _longName,
+            chips: 40,
+            lastRebuyAt: DateTime.now().subtract(const Duration(minutes: 12)),
+            lastDailyBonusClaimAt: DateTime.now().subtract(const Duration(hours: 3)),
+          ),
+          device,
+          textScale,
+        );
+        expect(tester.takeException(), isNull, reason: _describe(null, details));
+
+        final context = tester.element(find.byType(Scaffold).first);
+        showOutOfChipsSheet(context).ignore();
+        await tester.pumpAndSettle();
+
+        final exception = tester.takeException();
+        expect(
+          exception,
+          isNull,
+          reason: 'out-of-chips sheet overflows on ${device.name} @${textScale}x\n${_describe(exception, details)}',
         );
       });
 

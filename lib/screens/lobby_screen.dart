@@ -16,9 +16,11 @@ import '../utils/formatters.dart';
 import '../utils/leaderboard.dart';
 import '../utils/table_presence.dart';
 import '../utils/table_recommendation.dart';
+import '../utils/xp.dart';
 import '../widgets/avatar_circle.dart';
 import '../widgets/buttons.dart';
 import '../widgets/count_up_text.dart';
+import '../widgets/missions_card.dart';
 import '../widgets/daily_bonus_dialog.dart';
 import '../widgets/panel_card.dart';
 import 'shared/avatar_initial.dart';
@@ -56,6 +58,7 @@ class LobbyScreen extends ConsumerWidget {
           ],
           _DailyBonusCard(state: state, notifier: notifier),
           const SizedBox(height: 16),
+          const MissionsCard(),
           _TournamentCard(state: state, notifier: notifier),
           const SectionLabel('Choose your table'),
           for (final t in kTables)
@@ -125,11 +128,19 @@ class _HeaderRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // The level replaces a bare "Welcome back": it is the one
+                // number in the app that only ever goes up, so it is worth
+                // more at the top of the screen than a greeting.
                 Text(
-                  'Welcome back',
-                  style: AppText.sora(14, weight: FontWeight.w600, color: AppColors.textMuted),
+                  levelLabel(state.xp),
+                  style: AppText.sora(13, weight: FontWeight.w700, color: AppColors.gold),
                 ),
-                Text(state.displayName, style: AppText.sora(18, weight: FontWeight.w800)),
+                Text(
+                  state.displayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.sora(18, weight: FontWeight.w800),
+                ),
               ],
             ),
           ),

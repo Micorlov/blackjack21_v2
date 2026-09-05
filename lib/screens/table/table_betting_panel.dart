@@ -10,6 +10,7 @@ import '../../theme/app_text_styles.dart';
 import '../../utils/formatters.dart';
 import '../../utils/rebuy.dart';
 import '../../widgets/buttons.dart';
+import '../../widgets/out_of_chips_sheet.dart';
 
 /// Betting-phase bottom panel: current bet readout, the denomination chips the
 /// table allows, CLEAR/DEAL row, and (when broke) a complimentary-chips button.
@@ -162,31 +163,32 @@ class TableBettingPanel extends ConsumerWidget {
         // permanent dead end. Limited to once per `kRebuyCooldown`: an
         // unlimited free refill would remove the entire reason to claim the
         // daily bonus or invite anyone to race you.
+        // Below the table minimum the player cannot legally bet, and the way
+        // back is no longer one pill with a countdown on it: a player who
+        // found the rebuy on cooldown was, as far as this panel was
+        // concerned, finished, while a daily bonus, a finished mission and a
+        // referral reward might all have been waiting unmentioned.
         if (state.chips < (state.stake?.min ?? kStartingChips)) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Builder(
             builder: (context) {
-              final now = DateTime.now();
-              final ready = isRebuyReady(state.lastRebuyAt, now);
+              final ready = isRebuyReady(state.lastRebuyAt, DateTime.now());
               return SizedBox(
                 width: double.infinity,
-                child: ActionPillButton(
-                  label: ready ? 'Rebuy 1,000 chips' : 'Rebuy in ${rebuyCountdownLabel(state.lastRebuyAt!, now)}',
-                  borderColor: AppColors.gold.withValues(alpha: 0.32),
-                  backgroundColor: AppColors.gold.withValues(alpha: 0.08),
-                  textColor: AppColors.gold,
-                  onPressed: ready ? notifier.rebuy : null,
+                child: GoldButton(
+                  label: ready ? 'Rebuy 1,000 chips' : 'Ways to get chips',
+                  onPressed: ready ? notifier.rebuy : () => showOutOfChipsSheet(context),
                   verticalPadding: 12,
                   fontSize: 16,
                 ),
               );
             },
           ),
-          const SizedBox(height: 6),
-          Text(
-            'Or claim your daily bonus in the lobby',
-            textAlign: TextAlign.center,
-            style: AppText.mono(11, letterSpacing: 0.6, color: AppColors.textMuted),
+          const SizedBox(height: AppSpacing.xs),
+          TextLinkButton(
+            label: 'See every way to get chips',
+            onPressed: () => showOutOfChipsSheet(context),
+            fontSize: 13,
           ),
         ],
       ],

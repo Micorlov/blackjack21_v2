@@ -24,7 +24,9 @@ void main() {
     await tester.tap(find.text('Deal me in'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Welcome back'), findsOneWidget);
+    // The greeting line now carries the player's level, which is the one
+    // figure in the app that only ever goes up.
+    expect(find.textContaining('Level 1'), findsOneWidget);
   });
 
   // Regression: StatsScreen used Row(crossAxisAlignment: stretch) directly
