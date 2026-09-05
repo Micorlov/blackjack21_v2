@@ -5,6 +5,7 @@ import '../../state/game_notifier.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
+import '../../utils/formatters.dart';
 import '../../widgets/buttons.dart';
 import 'table_layout.dart';
 
@@ -36,18 +37,21 @@ class TableHeader extends ConsumerWidget {
               children: [
                 Text(
                   stake?.name ?? '',
-                  style: AppText.sora(21, weight: FontWeight.w700),
+                  style: AppText.sora(24, weight: FontWeight.w700),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 // The stake line is a single unsplittable fact — shrinking it
-                // keeps "PAYS 3:2" readable where an ellipsis would eat it.
+                // keeps "3:2" readable where an ellipsis would eat it. It is
+                // short on purpose: between the three round buttons the title
+                // column is ~200px, and the old "$100 – $1000 · PAYS 3:2" was
+                // being shrunk to 14px type however large it was asked to be.
                 if (stake != null)
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     child: Text(
-                      '\$${stake.min} – \$${stake.max} · PAYS 3:2',
-                      style: AppText.mono(15, color: AppColors.textPrimary.withValues(alpha: 0.82)),
+                      '\$${formatChips(stake.min)}–\$${formatChips(stake.max)} · 3:2',
+                      style: AppText.mono(17, color: AppColors.textPrimary.withValues(alpha: 0.82)),
                       maxLines: 1,
                       softWrap: false,
                     ),
@@ -119,7 +123,7 @@ class TableMenuDropdown extends ConsumerWidget {
                     borderRadius: AppRadius.mdAll,
                     border: Border.all(color: Colors.white.withValues(alpha: AppAlpha.hairline)),
                   ),
-                  child: Text('Leave Table', style: AppText.sora(17, color: AppColors.loseSoft)),
+                  child: Text('Leave Table', style: AppText.sora(19, color: AppColors.loseSoft)),
                 ),
               ),
             ),

@@ -22,12 +22,12 @@ class TableInsurancePanel extends ConsumerWidget {
       children: [
         Text.rich(
           TextSpan(
-            style: AppText.sora(17, color: AppColors.textPrimary.withValues(alpha: AppAlpha.scrim), height: 1.45),
+            style: AppText.sora(20, color: AppColors.textPrimary.withValues(alpha: AppAlpha.scrim), height: 1.4),
             children: [
               const TextSpan(text: 'Dealer shows an Ace. Insure for '),
               TextSpan(
                 text: '\$${formatChips(state.insuranceBet)}',
-                style: AppText.mono(17, weight: FontWeight.w700, color: AppColors.gold),
+                style: AppText.mono(20, weight: FontWeight.w700, color: AppColors.gold),
               ),
               const TextSpan(text: '? Pays 2:1.'),
             ],
@@ -49,7 +49,8 @@ class TableInsurancePanel extends ConsumerWidget {
                 backgroundColor: AppColors.gold.withValues(alpha: 0.08),
                 textColor: AppColors.gold,
                 onPressed: notifier.takeInsurance,
-                fontSize: 17,
+                verticalPadding: 22,
+                fontSize: 20,
               ),
             ),
             const SizedBox(width: 8),
@@ -58,8 +59,8 @@ class TableInsurancePanel extends ConsumerWidget {
               child: GoldButton(
                 label: 'NO THANKS',
                 onPressed: notifier.declineInsurance,
-                verticalPadding: 20,
-                fontSize: 20,
+                verticalPadding: 22,
+                fontSize: 24,
               ),
             ),
           ],

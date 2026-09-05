@@ -179,7 +179,7 @@ class CircleIconButton extends StatelessWidget {
     required this.icon,
     required this.semanticLabel,
     required this.onPressed,
-    this.iconSize = 21,
+    this.iconSize = 24,
   });
 
   @override
@@ -214,6 +214,11 @@ class ActionPillButton extends StatelessWidget {
   final Color textColor;
   final VoidCallback? onPressed;
   final double verticalPadding;
+
+  /// Room between the outline and the label. Zero for a pill that fills a
+  /// row (its width is the row's); a pill sized by its own label — ALL IN —
+  /// needs some, or the outline hugs the glyphs.
+  final double horizontalPadding;
   final double fontSize;
   final String? semanticLabel;
   final String? disabledReason;
@@ -226,6 +231,7 @@ class ActionPillButton extends StatelessWidget {
     required this.textColor,
     required this.onPressed,
     this.verticalPadding = 20,
+    this.horizontalPadding = 0,
     this.fontSize = 20,
     this.semanticLabel,
     this.disabledReason,
@@ -247,7 +253,7 @@ class ActionPillButton extends StatelessWidget {
             onTap: onPressed,
             child: Container(
               constraints: const BoxConstraints(minHeight: AppTouch.minTarget),
-              padding: EdgeInsets.symmetric(vertical: verticalPadding),
+              padding: EdgeInsets.symmetric(vertical: verticalPadding, horizontal: horizontalPadding),
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: backgroundColor,
@@ -309,7 +315,7 @@ class ChipButton extends StatelessWidget {
     required this.disabled,
     required this.onPressed,
     this.disabledReason,
-    this.size = 60,
+    this.size = 64,
   });
 
   @override
@@ -355,7 +361,7 @@ class ChipButton extends StatelessWidget {
                 child: Center(
                   child: Text(
                     '\$$amount',
-                    style: AppText.mono(14, weight: FontWeight.w700, color: AppColors.textPrimary),
+                    style: AppText.mono(16, weight: FontWeight.w700, color: AppColors.textPrimary),
                   ),
                 ),
               ),

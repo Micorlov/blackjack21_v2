@@ -14,9 +14,18 @@ import '../../widgets/count_up_text.dart';
 import '../../widgets/playing_card_widget.dart';
 import 'dealt_card.dart';
 import 'table_calc.dart';
+import 'table_layout.dart';
 
-/// The player's own hand(s) below center on the felt: fanned cards, a bet
-/// circle, and a name+stack plate. Hidden entirely during settlement (the
+/// Line height for the block's monospaced figures — see the same constant in
+/// the seat plate for why Space Mono needs one.
+const double _kMonoHeight = 1.15;
+
+/// Diameter of the bet circle and the hand-total circle.
+const double _kCircle = 78;
+
+/// The player's own hand(s) below center on the felt: fanned cards over one
+/// row holding the bet circle, the running total and the name+stack plate.
+/// Hidden entirely during settlement (the
 /// bottom result card takes over the recap). Renders one block per
 /// `state.hands` entry, stacked vertically — a split hand adds a second
 /// block below the first, matching the source design.
@@ -90,34 +99,37 @@ class _HeroHandBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final n = hand.cards.length;
     final betAmount = hand.bet != 0 ? hand.bet : state.bet;
+    // The circles used to sit on a row of their own above the plate, which
+    // cost the felt a 70-unit band every hand. Side by side with the plate
+    // they read as one line — what you bet, what you hold, what you have.
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (n > 0) ...[_cardsFan(n), const SizedBox(height: 5)],
+        if (n > 0) ...[_cardsFan(n), const SizedBox(height: 4)],
         Row(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             _betCircle(betAmount),
-            if (n > 0) ...[const SizedBox(width: 10), _handTotalCircle()],
+            if (n > 0) ...[const SizedBox(width: 8), _handTotalCircle()],
+            const SizedBox(width: 8),
+            _plate(betAmount),
           ],
         ),
-        const SizedBox(height: 5),
-        _plate(betAmount),
       ],
     );
   }
 
   Widget _cardsFan(int n) {
     return Padding(
-      padding: const EdgeInsets.only(left: 18),
+      padding: const EdgeInsets.only(left: 20),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           for (var ci = 0; ci < n; ci++)
             Transform.translate(
-              offset: Offset(ci == 0 ? 0 : -21.0, 0),
+              offset: Offset(ci == 0 ? 0 : -24.0, 0),
               child: Transform.rotate(
                 angle: (ci - (n - 1) / 2) * 4 * (math.pi / 180),
                 // Keyed by hand *and* slot so a card joining the fan animates
@@ -125,7 +137,11 @@ class _HeroHandBlock extends StatelessWidget {
                 // its deal-in on each hit.
                 child: DealtCard(
                   key: ValueKey('hero-$handIndex-$ci'),
-                  child: PlayingCardFace(card: hand.cards[ci], width: 58, height: 84),
+                  child: PlayingCardFace(
+                    card: hand.cards[ci],
+                    width: FeltMetrics.cardWidth,
+                    height: FeltMetrics.cardHeight,
+                  ),
                 ),
               ),
             ),
@@ -145,15 +161,15 @@ class _HeroHandBlock extends StatelessWidget {
 
   Widget _betCircleBox(int betAmount, bool hasBet) {
     return Container(
-      width: 70,
-      height: 70,
+      width: _kCircle,
+      height: _kCircle,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.gold.withValues(alpha: 0.45), width: 2),
         gradient: RadialGradient(colors: [AppColors.gold.withValues(alpha: AppAlpha.hairline), Colors.black.withValues(alpha: 0.28)]),
       ),
       alignment: Alignment.center,
-      // The circle is a fixed 70px disc, but the figure inside it is live text
+      // The circle is a fixed disc, but the figure inside it is live text
       // that grows with the system font setting. Scaling the contents keeps a
       // seven-figure bet — or a 200% text scale — inside the chip instead of
       // bursting out of it.
@@ -164,18 +180,26 @@ class _HeroHandBlock extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    width: 26,
-                    height: 19,
+                    width: 30,
+                    height: 22,
                     decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.gold),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     '\$${formatChips(betAmount)}',
-                    style: AppText.mono(15, weight: FontWeight.w700, color: AppColors.gold),
+                    style: AppText.mono(18, weight: FontWeight.w700, color: AppColors.gold, height: _kMonoHeight),
                   ),
                 ],
               )
-            : Text('BET', style: AppText.mono(12, letterSpacing: 1, color: AppColors.gold.withValues(alpha: AppAlpha.half))),
+            : Text(
+                'BET',
+                style: AppText.mono(
+                  14,
+                  letterSpacing: 1,
+                  color: AppColors.gold.withValues(alpha: AppAlpha.half),
+                  height: _kMonoHeight,
+                ),
+              ),
       ),
     );
   }
@@ -214,8 +238,8 @@ class _HeroHandBlock extends StatelessWidget {
         : AppColors.gold.withValues(alpha: 0.45);
     final numberColor = busted ? AppColors.loseLight : AppColors.gold;
     return Container(
-      width: 70,
-      height: 70,
+      width: _kCircle,
+      height: _kCircle,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: ringColor, width: 2),
@@ -226,7 +250,7 @@ class _HeroHandBlock extends StatelessWidget {
         fit: BoxFit.scaleDown,
         child: Text(
           '$value',
-          style: AppText.mono(26, weight: FontWeight.w800, color: numberColor),
+          style: AppText.mono(32, weight: FontWeight.w800, color: numberColor, height: _kMonoHeight),
         ),
       ),
     );
@@ -246,13 +270,13 @@ class _HeroHandBlock extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 52,
+            height: 52,
             decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.gold),
             alignment: Alignment.center,
             child: Text(
               state.displayName.isNotEmpty ? state.displayName[0].toUpperCase() : 'G',
-              style: AppText.sora(21, weight: FontWeight.w800, color: AppColors.goldInk),
+              style: AppText.sora(24, weight: FontWeight.w800, color: AppColors.goldInk),
             ),
           ),
           const SizedBox(width: 10),
@@ -262,7 +286,7 @@ class _HeroHandBlock extends StatelessWidget {
             children: [
               Text(
                 TableCalc.handLabelFor(hand),
-                style: AppText.sora(16, color: active ? AppColors.gold : AppColors.textPrimary.withValues(alpha: 0.9)),
+                style: AppText.sora(18, color: active ? AppColors.gold : AppColors.textPrimary.withValues(alpha: 0.9)),
               ),
               // Rolls rather than snapping: this is the number the whole game
               // is scored on, and a win used to be indistinguishable from a
@@ -273,7 +297,7 @@ class _HeroHandBlock extends StatelessWidget {
                 child: CountUpText(
                   value: state.chips,
                   haptic: true,
-                  style: AppText.mono(19, weight: FontWeight.w700, color: Colors.white),
+                  style: AppText.mono(24, weight: FontWeight.w700, color: Colors.white, height: _kMonoHeight),
                 ),
               ),
             ],

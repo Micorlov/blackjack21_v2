@@ -13,6 +13,7 @@ import 'package:blackjack21_v2/models/social_models.dart';
 import 'package:blackjack21_v2/screens/table/dealer_area.dart';
 import 'package:blackjack21_v2/screens/table/hero_hand_area.dart';
 import 'package:blackjack21_v2/screens/table/seat_plate.dart';
+import 'package:blackjack21_v2/screens/table/table_settlement_panel.dart';
 import 'package:blackjack21_v2/state/game_notifier.dart';
 import 'package:blackjack21_v2/widgets/playing_card_widget.dart';
 
@@ -49,6 +50,10 @@ const List<_Device> _devices = [
   _Device('iphone-375x812', Size(375, 812), topPadding: 44, bottomPadding: 34),
   _Device('iphone-390x844', Size(390, 844), topPadding: 47, bottomPadding: 34),
   _Device('design-393x852', Size(393, 852), topPadding: 47, bottomPadding: 34),
+  // The phone the game is tuned on (a 1080x2340 Samsung at 450dpi), with a
+  // three-button navigation bar — the felt budget is sized so this device
+  // draws every phase at full scale.
+  _Device('galaxy-384x832', Size(384, 832), topPadding: 40, bottomPadding: 48),
   _Device('android-412x915', Size(412, 915), topPadding: 40, bottomPadding: 24),
   _Device('foldable-540x720', Size(540, 720), topPadding: 40, bottomPadding: 24),
   _Device('tablet-800x1280', Size(800, 1280)),
@@ -549,6 +554,86 @@ void main() {
             }
           }
         });
+
+        // A seat used to carry a fan of 27x38 cards — unreadable at that
+        // size, and smaller still once the felt scaled down mid-round. The
+        // hand is written on the plate instead: its total (or BUST) and what
+        // the seat did with it.
+        if (entry.key == 'playing') {
+          testWidgets('$label writes each bot hand on its plate instead of fanning cards', (tester) async {
+            await _pumpTable(tester, entry.value, device, textScale);
+            expect(tester.takeException(), isNull);
+
+            expect(
+              find.descendant(of: find.byType(SeatPlate), matching: find.byType(PlayingCardFace)),
+              findsNothing,
+              reason: 'a seat plate still draws playing cards on $label',
+            );
+            // `_busySeats`: seats 0, 1 and 3 bust; seat 2 stands on 19.
+            final seats = find.byType(SeatPlate);
+            expect(find.descendant(of: seats.at(0), matching: find.text('BUST')), findsOneWidget);
+            expect(find.descendant(of: seats.at(2), matching: find.text('STAND')), findsOneWidget);
+            expect(find.descendant(of: seats.at(2), matching: find.text('19')), findsOneWidget);
+            // Mid-round with nothing forfeited there is no pot to announce.
+            expect(find.text('NO SWEEP POT'), findsNothing, reason: 'the empty pot pill is back on $label');
+          });
+        }
+
+        // The felt is scaled to fit the height it is given, and on the target
+        // phone the play phase used to fit only at ~0.65 — every card and
+        // figure at two-thirds size for the whole hand. The band budget in
+        // `FeltMetrics` is sized so that phone draws the hand near full size.
+        if (device.name == 'galaxy-384x832' && textScale == 1.0 && entry.key == 'playing') {
+          testWidgets('$label draws the hero cards at full size', (tester) async {
+            // Measured once the first-run coach card is gone: that card sits
+            // above the action panel for the first three hands only, and
+            // takes ~100px of felt while it does.
+            await _pumpTable(tester, entry.value.copyWith(tutorialDismissed: true), device, textScale);
+            expect(tester.takeException(), isNull);
+
+            final heroCard = find.descendant(of: find.byType(HeroHandArea), matching: find.byType(PlayingCardFace));
+            expect(heroCard, findsWidgets);
+            final width = tester.getRect(heroCard.first).width;
+            expect(width, greaterThanOrEqualTo(0.9 * 66), reason: 'hero card drawn at ${width}px on $label');
+          });
+        }
+
+        // The result card is bottom-anchored and scrolls, so content taller
+        // than its cap loses its *top* — which is where the outcome is
+        // written. On the target phone at the largest text the app allows,
+        // the whole card has to fit.
+        if (device.name == 'galaxy-384x832' && entry.key.startsWith('settlement')) {
+          testWidgets('$label keeps the result headline on screen', (tester) async {
+            await _pumpTable(tester, entry.value, device, textScale);
+            expect(tester.takeException(), isNull);
+
+            final screen = Rect.fromLTWH(0, 0, device.size.width, device.size.height);
+            // The card's own headline, by its serif face: the same words can
+            // also appear inside the pot-detail row below it.
+            final message = find.descendant(
+              of: find.byType(TableSettlementPanel),
+              matching: find.byWidgetPredicate(
+                (w) => w is Text && w.data == entry.value.message && w.style?.fontFamily == 'Instrument Serif',
+                description: 'result headline',
+              ),
+            );
+            expect(message, findsOneWidget, reason: 'no outcome message on $label');
+            final rect = tester.getRect(message);
+            expect(
+              _contains(screen, rect),
+              isTrue,
+              reason: 'the outcome message is cut off on $label: $rect vs $screen',
+            );
+          });
+        }
+
+        if (entry.key == 'settlement-no-sweep') {
+          testWidgets('$label still names the pot outcome once settled', (tester) async {
+            await _pumpTable(tester, entry.value, device, textScale);
+            expect(tester.takeException(), isNull);
+            expect(find.text('NO SWEEP'), findsOneWidget);
+          });
+        }
 
         // The four seats read as two columns, so the pair on each side has to
         // share one vertical edge. A plate that shrinks inside its slot

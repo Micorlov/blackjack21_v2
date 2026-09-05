@@ -121,7 +121,7 @@ class _ChipFlightLayerState extends State<ChipFlightLayer> with SingleTickerProv
     final lift = -28 * (1 - (2 * eased - 1).abs());
     // Fades only at the very end, as it lands on the plate.
     final opacity = t > 0.85 ? (1 - (t - 0.85) / 0.15) : 1.0;
-    const size = 26.0;
+    const size = 30.0;
 
     return Positioned(
       left: pos.dx - size / 2,

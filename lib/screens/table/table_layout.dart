@@ -141,10 +141,14 @@ class FeltMetrics {
     required this.compact,
   });
 
-  /// The width the felt's fixed-size parts were drawn for: a 58x84 card, a
-  /// 40px avatar, a 17px stack figure. It is a *reference* for choosing a
+  /// The width the felt's fixed-size parts were drawn for: a 66x96 card, a
+  /// 46px avatar, a 19px stack figure. It is a *reference* for choosing a
   /// scale, not a canvas the layout is pinned to.
-  static const double referenceWidth = 393;
+  ///
+  /// 384 is a 1080-wide Android phone at 450dpi — the device this game is
+  /// tuned on — so that phone draws the felt at exactly 1.0 rather than the
+  /// 0.977 the old 393 reference gave it.
+  static const double referenceWidth = 384;
 
   /// Upper bound on the content scale.
   ///
@@ -163,42 +167,54 @@ class FeltMetrics {
   /// name tag and starts looking like a banner.
   static const double maxSeatWidth = 260;
 
+  /// Gap under the lower seat row, exposed so the tests can check the hero
+  /// block starts exactly where the seats end.
+  static double get seatBandGap => _seatBandGap;
+
   /// Gap between the two seat columns, so the left and right plates never
   /// touch on a narrow canvas.
   static const double _seatColumnGap = 8;
 
   // ── Vertical anatomy, in canvas units ──
   //
-  // Mid-round ("spread") the dealer shows cards and every seat has a card row
-  // above its plate. In the betting phase ("compact") neither is true, so the
-  // bands shrink and the whole felt is drawn ~30% larger on the same screen.
+  // Mid-round ("spread") the dealer shows cards and the hero has a fan. In
+  // the betting phase ("compact") neither is true, so those two bands shrink
+  // and the felt is drawn larger on the same screen. The seat rows are the
+  // same height in both: a seat is a name plate, never a card row, so the
+  // plates never jump between phases.
+  //
+  // The whole budget is sized so a 384x832 phone draws the felt at 1.0 in
+  // every phase. It used to need 615 units mid-round against ~400 available,
+  // which put every card, total and balance on the felt at two-thirds size
+  // for the entire hand — the part of the game that matters most.
 
   /// Room the dealer cluster owns before the first seat row starts.
   ///
-  /// This was 164, and the cluster does not fit in it: 4 top inset + a 48
-  /// badge + 8 + the ~24 pot pill + 8 + an 86 card row is 178. The dealer's
-  /// cards therefore landed *on top of* the two upper seat plates and their
-  /// card fans from the fourth card onward — the exact overlap seen on device
-  /// when the dealer drew out to 23.
-  static const double _dealerBandSpread = 200;
-  static const double _dealerBandCompact = 116;
+  /// Spread: a 56 badge (46 avatar + padding + border) + 8 + the 30 pot-pill
+  /// slot + 8 + a 96 card row. Compact drops the card row. The pill's slot is
+  /// reserved even while the pill is hidden, so the felt does not re-scale
+  /// the moment the first seat busts and a pot appears.
+  static const double _dealerBandSpread = 198;
+  static const double _dealerBandCompact = 102;
 
   /// Extra room the settled "TABLE SWEEP" banner needs: a 7px-padded pill of
-  /// 19px type, plus the gap above it, all of which appears
+  /// 24px type, plus the gap above it, all of which appears
   /// between the pot pill and the cards and pushes the whole row down.
-  static const double _sweepBannerBand = 66;
+  static const double _sweepBannerBand = 56;
 
-  /// Painted size of one dealer/seat card, and the gap between two of them
-  /// when the row has room to breathe.
-  static const double cardWidth = 58;
+  /// Painted size of one dealer/hero card, and the gap between two of them
+  /// when the row has room to breathe. Every card on the felt reads these so
+  /// a size change here is a size change everywhere.
+  static const double cardWidth = 66;
+  static const double cardHeight = 96;
   static const double cardGap = 6;
 
   /// Horizontal distance between the left edges of two consecutive dealer
   /// cards, given how many there are and how much band they have.
   ///
   /// A dealer who keeps drawing (soft 17s, a five-card 21) would otherwise run
-  /// the row past the felt: seven cards at the full step are 442 units wide on
-  /// a 393 canvas. Past that point the cards overlap into a fan instead, which
+  /// the row past the felt: six cards at the full step are 426 units wide on
+  /// a 384 canvas. Past that point the cards overlap into a fan instead, which
   /// keeps every rank corner visible and the row inside the table.
   static double dealerCardStep(int count, double available) {
     if (count <= 1) return cardWidth + cardGap;
@@ -209,36 +225,36 @@ class FeltMetrics {
     return math.max(fitted, 20);
   }
 
-  /// Distance from one seat row to the next.
-  static const double _seatPitchSpread = 98;
-  static const double _seatPitchCompact = 66;
+  /// Distance from one seat row to the next: the slot plus a 6 gap.
+  static const double _seatPitch = 66;
 
-  /// One seat slot: a card row (38) over a name plate (~50), or just the plate.
-  static const double _seatHeightSpread = 92;
-  static const double _seatHeightCompact = 54;
+  /// One seat slot: a name plate of ~58 (46 avatar + padding + border; 60
+  /// with the acting seat's 2px border).
+  static const double _seatHeight = 60;
 
   /// Breathing room under the lower seat row before the hero's block starts.
-  static const double _seatBandGap = 8;
+  static const double _seatBandGap = 6;
 
-  /// The hero's block: a card row (84) over the bet circle (70) over the name
-  /// plate (~52), plus the gaps between them.
-  static const double _heroBandWithCards = 217;
+  /// The hero's block: a card row (96) over one row holding the bet circle,
+  /// the total circle (78 each) and the name plate, plus the gap between and
+  /// a little for the fanned cards' rotated corners.
+  static const double _heroBandWithCards = 182;
 
-  /// The same block before any card is dealt — no card row, no gap under it.
+  /// The same block before any card is dealt — the circle-and-plate row alone.
   /// Reserving the full [_heroBandWithCards] this early would shrink every
   /// seat plate on the felt for a row that is not on screen yet.
-  static const double _heroBandNoCards = 128;
+  static const double _heroBandNoCards = 80;
 
-  /// The betting phase is the only compact one: no dealer cards, no NPC card
-  /// rows, no hero fan. From the first deal onward the spread layout holds
-  /// steady so plates never jump mid-hand.
+  /// The betting phase is the only compact one: no dealer cards and no hero
+  /// fan. From the first deal onward the spread layout holds steady so nothing
+  /// on the felt jumps mid-hand.
   static bool isCompactPhase(GameState state) => state.phase == RoundPhase.betting;
 
   /// How much of the dealer band is type rather than fixed geometry.
   ///
   /// The badge total, the "DEALER" caption, the pot pill and the sweep banner
-  /// are all text, so they grow with the system font setting while the 40px
-  /// avatar and the 84px cards do not. Without this the band stayed a
+  /// are all text, so they grow with the system font setting while the 46px
+  /// avatar and the 96px cards do not. Without this the band stayed a
   /// constant at 1.3x and the cards were pushed down onto the seats again.
   static const double _dealerBandTextShare = 0.45;
 
@@ -247,8 +263,8 @@ class FeltMetrics {
     final rawDealerBand =
         (compact ? _dealerBandCompact : _dealerBandSpread) + (state.sweepAmount > 0 ? _sweepBannerBand : 0);
     final dealerBand = rawDealerBand * (1 + (textScale - 1) * _dealerBandTextShare);
-    final pitch = compact ? _seatPitchCompact : _seatPitchSpread;
-    final seatHeight = compact ? _seatHeightCompact : _seatHeightSpread;
+    const pitch = _seatPitch;
+    const seatHeight = _seatHeight;
     final seatsBottom = dealerBand + pitch + seatHeight + _seatBandGap;
 
     // Settlement hides the hero's hand — the bottom result card recaps it

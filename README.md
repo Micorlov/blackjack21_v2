@@ -9,10 +9,17 @@ A Flutter blackjack game with a multi-seat table and a friends race. Four tabs, 
 
 - **Blackjack table** — multi-seat felt with dealer area, hero hand, betting, insurance,
   splits/doubles, and settlement panels
+- **Drawn for large type** — the game is for players in their sixties and up, so the table is
+  big by default rather than behind a setting: 66x96 cards, a 24px balance, 64px chips,
+  20–24px action buttons, and a felt whose vertical budget is sized so a 384x832 phone draws
+  the hand at full scale instead of the two-thirds it used to shrink to mid-round. The other
+  seats show each bot's hand as words on its name plate — the total (or `BUST`) beside the
+  name, `STAND`/`HIT` or the bet beneath — instead of a fan of 27px cards nobody could read
 - **"Closest to 21" sweep pot** — seats that bust or lose to the dealer forfeit their bets to
   the best surviving hand; every settled hand names who took the pot, or says there was none.
   The pill above the dealer only ever quotes chips that have actually been forfeited — while
-  every seat is still in it reads `NO SWEEP POT`, with no figure and no call-out
+  every seat is still in, the pill stays off the felt altogether (its room is reserved, so the
+  dealer's cards do not move when it appears)
 - **Enforced table limits** — each table's posted `$min – $max` is a real rule: the betting tray
   only offers chips a table can legally take (no $1,000 chip at a $500 table), a chip that would
   push the bet past the maximum is refused, and DEAL stays locked until the bet reaches the minimum
@@ -362,7 +369,12 @@ how-to-play sheet, the out-of-chips sheet and the friends standings card — on
 five phone/tablet sizes at both text scales the app allows, and fails on any `RenderFlex`
 overflow. Half the scenarios use "loaded account" data (a 35-character Google display name,
 seven-figure bankrolls, a full hand history) because every row in the design was drawn around
-"Guest" and "$1,150". `test/table_layout_test.dart` does the same for the felt's round phases.
+"Guest" and "$1,150". `test/table_layout_test.dart` does the same for the felt's round phases
+across seventeen device sizes (including the 384x832 phone the game is tuned on), and checks
+that the bot seats carry their hand as text, that the empty pot pill stays hidden, and that the
+hero's cards draw at full size on that phone. `test/felt_metrics_test.dart` checks the felt's
+vertical budget as plain arithmetic — the scale each phase gets on the target phone, and that
+seat slots are the same height in every phase.
 
 These sweeps only mean anything because `test/support/real_fonts.dart` loads the app's own three
 faces from `assets/fonts`. Without it every glyph is a full em wide in `flutter test`, roughly
@@ -400,6 +412,43 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-05 (7)
+- feat: **The table is drawn for players over sixty.** Everything on the screen is a size up
+  and it is the default, not a setting: header title 24px and a shorter stake line
+  (`$100–$1,000 · 3:2`) that no longer gets shrunk to fit; the phase banner at 18px; the bet
+  figure at 28px with `ALL IN` a real pill; 64px chips (the tray closes its gaps before it
+  scrolls, so five chips still fit a 375-wide phone); CLEAR/DEAL at 20px, HIT/STAND at 24px,
+  DOUBLE/SPLIT at 20px; the insurance, waiting and result panels to match. On the felt: 66x96
+  cards for the dealer and the hero, 46–52px avatars, the dealer total at 24px, the balance at
+  24px, the running total at 32px, bet and total circles at 78px.
+- fix: **The hand no longer shrinks while it is being played.** The felt scales itself to fit
+  the height it is given, and mid-round it asked for 615 units against ~400 available on a
+  384x832 phone — every card and figure was drawn at two-thirds size for the whole hand, and
+  a bigger font would only have shrunk it further. Three things bought the room: the hero's
+  bet circle, total circle and name plate share one row instead of stacking; the bot seats'
+  card fans are gone (a 27px card was unreadable, and ~18px once scaled), replaced by the
+  hand's total, `BUST`, `STAND`/`HIT` and the bet written on the plate, which also means one
+  seat height in every phase so plates never jump; and the felt's monospaced figures take a
+  1.15 line height (Space Mono's natural line box is 1.48x, which alone made a two-line plate
+  outgrow its slot). The budget is now 314 units for betting and 512 mid-round, so that phone
+  draws betting at 1.0 and the hand at 0.93–0.97 instead of 0.65; `referenceWidth` is 384.
+- fix: the result card's showdown line ("YOU 14 · DEALER 19") has the full width of the card
+  instead of sharing the message's column beside the net figure, where a phone cut it to
+  "YOU 14 · DEALE…" — the dealer's half of the comparison the card exists to make. The net
+  figure itself keeps its natural size up to 55% of its row and scales down past that rather
+  than overflowing a 320-wide screen at 130% text. The result card may take 68% of the
+  screen (other panels stay at 62%), so its headline is not scrolled off the top on the phone;
+  during settlement the felt is a recap the card repeats, so it is the felt that gives way.
+- refactor: the empty `NO SWEEP POT` pill stays off the felt until a seat forfeits a bet; its
+  30-unit slot is reserved so the dealer's cards do not move when it appears. The bot seats'
+  `+$45` points figure is gone from the plate (it mirrored the rank strip removed in (6), and
+  beside a `STAND` badge it forced the stack to half size). `ActionPillButton` gained a
+  `horizontalPadding`. `FeltMetrics` exposes `cardHeight` and `seatBandGap`.
+- test: `test/felt_metrics_test.dart` (the budget as arithmetic); the layout sweep gains the
+  384x832 phone and assertions that seats draw no cards, that `BUST`/`STAND`/`19` appear on
+  the plates, that the empty pill is hidden mid-round and `NO SWEEP` still shows at settlement,
+  and that the hero's cards draw at ≥ 90% size on that phone.
 
 ### 2026-09-05 (6)
 - refactor: **The app got simpler.** Removed outright: the Shop (chip packs, card backs, the

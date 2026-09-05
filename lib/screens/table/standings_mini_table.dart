@@ -61,7 +61,7 @@ class StandingsMiniTable extends StatelessWidget {
                     width: 24,
                     child: Text(
                       '#${e.rank}',
-                      style: AppText.mono(11, weight: FontWeight.w700, color: AppColors.textFaint),
+                      style: AppText.mono(13, weight: FontWeight.w700, color: AppColors.textFaint),
                     ),
                   ),
                   Expanded(

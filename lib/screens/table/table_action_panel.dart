@@ -97,7 +97,7 @@ class TableActionPanel extends ConsumerWidget {
         state: state,
         notifier: notifier,
         text: 'Dealer is playing…',
-        fontSize: 19,
+        fontSize: 24,
       ),
       RoundPhase.settlement => const TableSettlementPanel(),
     };

@@ -16,6 +16,16 @@ import 'dealt_card.dart';
 import 'table_calc.dart';
 import 'table_layout.dart';
 
+/// Line height for the cluster's monospaced type. Space Mono's natural line
+/// box is 1.48x its size; at 1.15 the caption-plus-total column sits inside
+/// the 46px avatar instead of standing over it.
+const double _kMonoHeight = 1.15;
+
+/// Height reserved for the pot pill whether or not it is showing, so the
+/// dealer's cards stay put when a pot appears mid-hand. Matches
+/// [FeltMetrics] band budget.
+const double _kPotPillSlot = 30;
+
 /// Centered dealer cluster at the top of the felt: "D" badge + total, the
 /// sweep-pot pill (with a mid-round "YOU LEAD" badge and, once settled, a
 /// "TABLE SWEEP" banner), then the dealer's two cards — the second stays a
@@ -89,7 +99,7 @@ class _DealerAreaState extends State<DealerArea> {
     return Positioned(
       left: widget.inset,
       right: widget.inset,
-      top: 4,
+      top: 0,
       child: Column(
         children: [
           _dealerBadgeRow(),
@@ -132,8 +142,8 @@ class _DealerAreaState extends State<DealerArea> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: const LinearGradient(
@@ -144,7 +154,7 @@ class _DealerAreaState extends State<DealerArea> {
               border: Border.all(color: AppColors.gold.withValues(alpha: 0.4)),
             ),
             alignment: Alignment.center,
-            child: Text('D', style: AppText.serifItalic(21, color: AppColors.gold)),
+            child: Text('D', style: AppText.serifItalic(24, color: AppColors.gold)),
           ),
           const SizedBox(width: 9),
           Column(
@@ -153,7 +163,12 @@ class _DealerAreaState extends State<DealerArea> {
             children: [
               Text(
                 'DEALER',
-                style: AppText.mono(12, letterSpacing: 1.6, color: AppColors.gold.withValues(alpha: AppAlpha.scrim)),
+                style: AppText.mono(
+                  14,
+                  letterSpacing: 1.6,
+                  color: AppColors.gold.withValues(alpha: AppAlpha.scrim),
+                  height: _kMonoHeight,
+                ),
               ),
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -161,7 +176,7 @@ class _DealerAreaState extends State<DealerArea> {
                 children: [
                   Text(
                     TableCalc.dealerTotalLabel(widget.state),
-                    style: AppText.mono(21, weight: FontWeight.w700, color: AppColors.gold),
+                    style: AppText.mono(24, weight: FontWeight.w700, color: AppColors.gold, height: _kMonoHeight),
                   ),
                   // A revealed 23 is the single best thing that can happen to
                   // the player, and the felt used to state it as a bare
@@ -178,7 +193,13 @@ class _DealerAreaState extends State<DealerArea> {
                       ),
                       child: Text(
                         'BUST',
-                        style: AppText.mono(12, weight: FontWeight.w700, letterSpacing: 1, color: AppColors.loseLight),
+                        style: AppText.mono(
+                          14,
+                          weight: FontWeight.w700,
+                          letterSpacing: 1,
+                          color: AppColors.loseLight,
+                          height: _kMonoHeight,
+                        ),
                       ),
                     ),
                   ],
@@ -191,8 +212,13 @@ class _DealerAreaState extends State<DealerArea> {
     );
   }
 
+  /// Mid-round with nothing forfeited yet there is no pot to name, and a pill
+  /// reading "NO SWEEP POT" every hand was the felt's most repeated sentence
+  /// about nothing. The pill stays away until a seat forfeits a bet — but its
+  /// room is kept, so the dealer's cards do not shift when it appears.
   Widget _potPill() {
     final midPot = widget.midPot;
+    if (midPot.potValueLabel.isEmpty) return const SizedBox(height: _kPotPillSlot);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
       decoration: BoxDecoration(
@@ -211,18 +237,23 @@ class _DealerAreaState extends State<DealerArea> {
               midPot.potLabelText,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: AppText.mono(12, letterSpacing: 1.4, color: AppColors.gold.withValues(alpha: 0.7)),
+              style: AppText.mono(
+                14,
+                letterSpacing: 1.4,
+                color: AppColors.gold.withValues(alpha: 0.7),
+                height: _kMonoHeight,
+              ),
             ),
           ),
-          // Empty while no seat has forfeited: "NO SWEEP POT" stands alone
-          // rather than trailing a figure nobody can win.
-          if (midPot.potValueLabel.isNotEmpty) ...[
-            const SizedBox(width: 8),
-            Text(
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
               midPot.potValueLabel,
-              style: AppText.mono(16, weight: FontWeight.w700, color: AppColors.gold),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppText.mono(18, weight: FontWeight.w700, color: AppColors.gold, height: _kMonoHeight),
             ),
-          ],
+          ),
           if (midPot.heroLeads) ...[
             const SizedBox(width: 8),
             Container(
@@ -230,7 +261,13 @@ class _DealerAreaState extends State<DealerArea> {
               decoration: BoxDecoration(color: AppColors.gold, borderRadius: BorderRadius.circular(6)),
               child: Text(
                 'YOU LEAD',
-                style: AppText.mono(12, weight: FontWeight.w700, letterSpacing: 1, color: AppColors.goldInk),
+                style: AppText.mono(
+                  14,
+                  weight: FontWeight.w700,
+                  letterSpacing: 1,
+                  color: AppColors.goldInk,
+                  height: _kMonoHeight,
+                ),
               ),
             ),
           ],
@@ -246,11 +283,14 @@ class _DealerAreaState extends State<DealerArea> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('TABLE SWEEP', style: AppText.mono(12, letterSpacing: 1.4, color: AppColors.goldInk)),
+          Text(
+            'TABLE SWEEP',
+            style: AppText.mono(14, letterSpacing: 1.4, color: AppColors.goldInk, height: _kMonoHeight),
+          ),
           const SizedBox(width: 9),
           Text(
             '+\$${formatChips(widget.state.sweepAmount)}',
-            style: AppText.mono(19, weight: FontWeight.w700, color: AppColors.goldInk),
+            style: AppText.mono(24, weight: FontWeight.w700, color: AppColors.goldInk, height: _kMonoHeight),
           ),
         ],
       ),
@@ -266,13 +306,16 @@ class _DealerAreaState extends State<DealerArea> {
   Widget _dealerCardsRow(BuildContext context) {
     final state = widget.state;
     final count = state.dealerHand.length;
-    if (count == 0) return const SizedBox(height: 86);
+    const rowHeight = FeltMetrics.cardHeight + 2;
+    const w = FeltMetrics.cardWidth;
+    const h = FeltMetrics.cardHeight;
+    if (count == 0) return const SizedBox(height: rowHeight);
 
     final step = FeltMetrics.dealerCardStep(count, widget.contentWidth);
-    final rowWidth = FeltMetrics.cardWidth + (count - 1) * step;
+    final rowWidth = w + (count - 1) * step;
 
     return SizedBox(
-      height: 86,
+      height: rowHeight,
       child: Center(
         child: SizedBox(
           width: rowWidth,
@@ -293,17 +336,17 @@ class _DealerAreaState extends State<DealerArea> {
                       // is the same end state the flip arrives at.
                       ? (AppMotion.reduceMotion(context)
                             ? (state.holeRevealed
-                                  ? PlayingCardFace(card: state.dealerHand[i], width: 58, height: 84)
-                                  : PlayingCardBack(width: 58, height: 84, skin: widget.cardBack))
+                                  ? PlayingCardFace(card: state.dealerHand[i], width: w, height: h)
+                                  : PlayingCardBack(width: w, height: h, skin: widget.cardBack))
                             : FlipRevealCard(
                                 key: const ValueKey('dealer-hole'),
                                 revealed: state.holeRevealed,
-                                back: PlayingCardBack(width: 58, height: 84, skin: widget.cardBack),
-                                face: PlayingCardFace(card: state.dealerHand[i], width: 58, height: 84),
+                                back: PlayingCardBack(width: w, height: h, skin: widget.cardBack),
+                                face: PlayingCardFace(card: state.dealerHand[i], width: w, height: h),
                               ))
                       : DealtCard(
                           key: ValueKey('dealer-card-$i'),
-                          child: PlayingCardFace(card: state.dealerHand[i], width: 58, height: 84),
+                          child: PlayingCardFace(card: state.dealerHand[i], width: w, height: h),
                         ),
                 ),
             ],

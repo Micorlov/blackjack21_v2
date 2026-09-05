@@ -11,7 +11,7 @@ class TableWaitingIndicator extends StatefulWidget {
   final String text;
   final double fontSize;
 
-  const TableWaitingIndicator({super.key, required this.text, this.fontSize = 17});
+  const TableWaitingIndicator({super.key, required this.text, this.fontSize = 20});
 
   @override
   State<TableWaitingIndicator> createState() => _TableWaitingIndicatorState();

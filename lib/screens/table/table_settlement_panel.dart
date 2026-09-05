@@ -16,6 +16,9 @@ import 'table_calc.dart';
 /// Gap between the settlement card strip and the showdown label.
 const double _showdownGap = 7;
 
+/// The most of the top row the net figure may take before it scales down.
+const double _netMaxShare = 0.55;
+
 /// Settlement-phase result card: outcome message + played-out cards +
 /// showdown label, a bet/net/sweep/balance stat breakdown, an optional
 /// sweep-pot detail card, and the "READY FOR NEXT HAND" CTA.
@@ -57,85 +60,97 @@ class TableSettlementPanel extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(state.message, style: AppText.serifItalic(24, color: messageColor, height: 1.15)),
-                    const SizedBox(height: 5),
-                    // The showdown line is the whole point of this row, so it
-                    // is laid out first at its natural width and the card
-                    // strip shrinks into whatever is left. Splitting the row
-                    // by flex instead (1:4, or an even 2-Flexible split) hands
-                    // the label a fixed share whether or not the few small
-                    // cards beside it need theirs — which still clipped the
-                    // dealer's total ("YOU 20 · DEALER …").
-                    LayoutBuilder(
-                      builder: (context, constraints) => Row(
-                        children: [
-                          Flexible(
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              alignment: Alignment.centerLeft,
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  for (var i = 0; i < settleCards.length; i++)
-                                    Transform.translate(
-                                      offset: Offset(i == 0 ? 0 : -2.0, 0),
-                                      child: PlayingCardFace(card: settleCards[i], width: 24, height: 33),
-                                    ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: _showdownGap),
-                          // Unflexed children are measured against unbounded
-                          // width, so this cap is what lets the label fall
-                          // back to an ellipsis instead of overflowing the
-                          // panel when even the full row cannot hold it.
-                          ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxWidth: (constraints.maxWidth - _showdownGap).clamp(0.0, double.infinity),
-                            ),
-                            child: Text(
-                              showdownLabel,
-                              style: AppText.mono(
-                                12,
-                                letterSpacing: 0.06,
-                                color: AppColors.textPrimary.withValues(alpha: AppAlpha.strong),
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+          // The net figure is the widest single thing on the card, and at 40px
+          // type under a 130% font setting it can outgrow a 320-wide screen's
+          // share of the row. It keeps its natural size up to [_netMaxShare]
+          // of the row and shrinks past that, rather than pushing the message
+          // off the card — the message and the figure are the two things this
+          // card exists to say.
+          LayoutBuilder(
+            builder: (context, rowConstraints) => Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(state.message, style: AppText.serifItalic(28, color: messageColor, height: 1.15)),
                 ),
-              ),
-              const SizedBox(width: 12),
-              // The figure the player actually came for. It counts, with a
-              // haptic tick as the digits move, instead of simply appearing.
-              CountUpText(
-                value: state.roundNet,
-                prefix: '\$',
-                signed: true,
-                haptic: true,
-                style: AppText.mono(34, weight: FontWeight.w700, color: roundNetColor, height: 1),
-              ),
-            ],
+                const SizedBox(width: 12),
+                // The figure the player actually came for. It counts, with a
+                // haptic tick as the digits move, instead of simply appearing.
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: (rowConstraints.maxWidth * _netMaxShare).clamp(0.0, double.infinity),
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.topRight,
+                    child: CountUpText(
+                      value: state.roundNet,
+                      prefix: '\$',
+                      signed: true,
+                      haptic: true,
+                      style: AppText.mono(40, weight: FontWeight.w700, color: roundNetColor, height: 1),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 5),
+          // The showdown line used to share the message's column, beside the
+          // net figure, and on a phone it read "YOU 14 · DEALE…" — the
+          // comparison the card exists to make, with the dealer's half cut
+          // off. It has the full width of the card now. It is still laid out
+          // first at its natural width, with the card strip shrinking into
+          // whatever is left, because a fixed flex split clipped it too.
+          LayoutBuilder(
+            builder: (context, constraints) => Row(
+              children: [
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (var i = 0; i < settleCards.length; i++)
+                          Transform.translate(
+                            offset: Offset(i == 0 ? 0 : -2.0, 0),
+                            child: PlayingCardFace(card: settleCards[i], width: 24, height: 33),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: _showdownGap),
+                // Unflexed children are measured against unbounded width, so
+                // this cap is what lets the label fall back to an ellipsis
+                // instead of overflowing the panel when even the full row
+                // cannot hold it.
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: (constraints.maxWidth - _showdownGap).clamp(0.0, double.infinity),
+                  ),
+                  child: Text(
+                    showdownLabel,
+                    style: AppText.mono(
+                      14,
+                      letterSpacing: 0.06,
+                      color: AppColors.textPrimary.withValues(alpha: AppAlpha.strong),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 7),
           Container(
             padding: const EdgeInsets.only(top: 7),
             decoration: BoxDecoration(
-              border: Border(top: BorderSide(color: Colors.white.withValues(alpha: AppAlpha.hairline))),
+              border: Border(
+                top: BorderSide(color: Colors.white.withValues(alpha: AppAlpha.hairline)),
+              ),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -165,7 +180,7 @@ class TableSettlementPanel extends ConsumerWidget {
           // there was nothing to take).
           const SizedBox(height: 8),
           _potDetailCard(state, potWinner),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           GoldButton(label: 'READY FOR NEXT HAND', onPressed: notifier.nextHand),
         ],
       ),
@@ -181,7 +196,7 @@ class TableSettlementPanel extends ConsumerWidget {
           Flexible(
             child: Text(
               label,
-              style: AppText.mono(14, color: labelColor ?? AppColors.textPrimary.withValues(alpha: 0.66)),
+              style: AppText.mono(16, color: labelColor ?? AppColors.textPrimary.withValues(alpha: 0.66)),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -191,7 +206,7 @@ class TableSettlementPanel extends ConsumerWidget {
           // that gets clipped.
           Text(
             value,
-            style: AppText.mono(14, weight: FontWeight.w700, color: valueColor),
+            style: AppText.mono(18, weight: FontWeight.w700, color: valueColor),
             maxLines: 1,
           ),
         ],
@@ -207,7 +222,9 @@ class TableSettlementPanel extends ConsumerWidget {
       decoration: BoxDecoration(
         color: sweep != null ? AppColors.gold.withValues(alpha: 0.06) : Colors.white.withValues(alpha: 0.03),
         border: Border.all(
-          color: sweep != null ? AppColors.gold.withValues(alpha: 0.3) : Colors.white.withValues(alpha: AppAlpha.hairline),
+          color: sweep != null
+              ? AppColors.gold.withValues(alpha: 0.3)
+              : Colors.white.withValues(alpha: AppAlpha.hairline),
         ),
         borderRadius: BorderRadius.circular(AppRadius.md),
       ),
@@ -225,13 +242,13 @@ class TableSettlementPanel extends ConsumerWidget {
             child: Row(
               children: [
                 Container(
-                  width: 30,
-                  height: 30,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(shape: BoxShape.circle, color: potWinner.avatarBg),
                   alignment: Alignment.center,
                   child: Text(
                     potWinner.initial,
-                    style: AppText.sora(15, weight: FontWeight.w800, color: AppColors.goldInk),
+                    style: AppText.sora(18, weight: FontWeight.w800, color: AppColors.goldInk),
                   ),
                 ),
                 const SizedBox(width: 9),
@@ -245,14 +262,14 @@ class TableSettlementPanel extends ConsumerWidget {
                       // truncated to "You win the sweep p…" on a stock phone.
                       Text(
                         potWinner.headline,
-                        style: AppText.sora(15, weight: FontWeight.w800, color: potWinner.color),
+                        style: AppText.sora(17, weight: FontWeight.w800, color: potWinner.color),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                       Text(
                         potWinner.sub,
                         style: AppText.mono(
-                          11,
+                          13,
                           letterSpacing: 0.06,
                           color: AppColors.textPrimary.withValues(alpha: 0.55),
                         ),
@@ -264,7 +281,7 @@ class TableSettlementPanel extends ConsumerWidget {
                 ),
                 Text(
                   sweep != null ? '\$${formatChips(sweep.totalWin)}' : '—',
-                  style: AppText.mono(20, weight: FontWeight.w700, color: potWinner.color),
+                  style: AppText.mono(22, weight: FontWeight.w700, color: potWinner.color),
                 ),
               ],
             ),
@@ -287,11 +304,11 @@ class TableSettlementPanel extends ConsumerWidget {
                         children: [
                           TextSpan(
                             text: '${c.name} ${c.reason} ',
-                            style: AppText.mono(12, color: AppColors.textPrimary.withValues(alpha: AppAlpha.strong)),
+                            style: AppText.mono(14, color: AppColors.textPrimary.withValues(alpha: AppAlpha.strong)),
                           ),
                           TextSpan(
                             text: '−\$${formatChips(c.amount)}',
-                            style: AppText.mono(12, weight: FontWeight.w700, color: AppColors.loseLight),
+                            style: AppText.mono(14, weight: FontWeight.w700, color: AppColors.loseLight),
                           ),
                         ],
                       ),

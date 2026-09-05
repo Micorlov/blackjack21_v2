@@ -28,7 +28,7 @@ class TableWaitingPanel extends StatelessWidget {
     required this.state,
     required this.notifier,
     required this.text,
-    this.fontSize = 17,
+    this.fontSize = 20,
   });
 
   @override

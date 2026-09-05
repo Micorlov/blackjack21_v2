@@ -56,16 +56,16 @@ class TableBettingPanel extends ConsumerWidget {
                   children: [
                     TextSpan(
                       text: 'Bet ',
-                      style: AppText.mono(12, letterSpacing: 1.2, color: AppColors.textPrimary.withValues(alpha: 0.82)),
+                      style: AppText.mono(15, letterSpacing: 1.2, color: AppColors.textPrimary.withValues(alpha: 0.82)),
                     ),
                     TextSpan(
                       text: '\$${state.bet}',
-                      style: AppText.mono(20, weight: FontWeight.w700, color: AppColors.gold),
+                      style: AppText.mono(28, weight: FontWeight.w700, color: AppColors.gold),
                     ),
                     if (belowTableMin)
                       TextSpan(
                         text: '  ·  min \$${formatChips(tableMin)}',
-                        style: AppText.mono(12, letterSpacing: 0.8, color: AppColors.textMuted),
+                        style: AppText.mono(15, letterSpacing: 0.8, color: AppColors.textMuted),
                       ),
                   ],
                 ),
@@ -85,13 +85,14 @@ class TableBettingPanel extends ConsumerWidget {
                 backgroundColor: AppColors.gold.withValues(alpha: AppAlpha.hairline),
                 textColor: AppColors.gold,
                 onPressed: notifier.betAllIn,
-                verticalPadding: 6,
-                fontSize: 12,
+                verticalPadding: 8,
+                horizontalPadding: 12,
+                fontSize: 15,
               ),
             ],
           ],
         ),
-        // The tray is 60px of chip either side of these gaps, so it reads as
+        // The tray is 64px of chip either side of these gaps, so it reads as
         // its own band without needing a full step of space around it.
         const SizedBox(height: AppSpacing.xs),
         _ChipTray(state: state, notifier: notifier, denoms: denoms, tableMax: tableMax),
@@ -105,8 +106,8 @@ class TableBettingPanel extends ConsumerWidget {
                 backgroundColor: AppColors.lose.withValues(alpha: 0.2),
                 textColor: AppColors.loseLight,
                 onPressed: notifier.clearBet,
-                verticalPadding: 12,
-                fontSize: 16,
+                verticalPadding: 16,
+                fontSize: 20,
               ),
             ),
             const SizedBox(width: 8),
@@ -117,15 +118,15 @@ class TableBettingPanel extends ConsumerWidget {
                       label: 'DEAL \$${formatChips(state.lastBet)} AGAIN',
                       semanticLabel: 'Bet ${formatChips(state.lastBet)} again and deal',
                       onPressed: notifier.rebetAndDeal,
-                      verticalPadding: 12,
-                      fontSize: 17,
+                      verticalPadding: 16,
+                      fontSize: 20,
                     )
                   : GoldButton(
                       label: 'DEAL',
                       onPressed: dealDisabled ? null : notifier.dealRound,
                       disabledReason: belowTableMin ? 'Bet at least \$${formatChips(tableMin)} to deal' : null,
-                      verticalPadding: 12,
-                      fontSize: 17,
+                      verticalPadding: 16,
+                      fontSize: 20,
                     ),
             ),
           ],
@@ -144,8 +145,8 @@ class TableBettingPanel extends ConsumerWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             spacing: AppSpacing.sm,
             children: [
-              Text('Playing with practice bots', style: AppText.sora(13, color: AppColors.textMuted)),
-              TextLinkButton(label: 'Invite friends', onPressed: notifier.shareInviteWhatsApp, fontSize: 14),
+              Text('Playing with practice bots', style: AppText.sora(15, color: AppColors.textMuted)),
+              TextLinkButton(label: 'Invite friends', onPressed: notifier.shareInviteWhatsApp, fontSize: 16),
             ],
           ),
         ],
@@ -170,8 +171,8 @@ class TableBettingPanel extends ConsumerWidget {
                 child: GoldButton(
                   label: ready ? 'Rebuy 1,000 chips' : 'Ways to get chips',
                   onPressed: ready ? notifier.rebuy : () => showOutOfChipsSheet(context),
-                  verticalPadding: 12,
-                  fontSize: 16,
+                  verticalPadding: 14,
+                  fontSize: 18,
                 ),
               );
             },
@@ -180,7 +181,7 @@ class TableBettingPanel extends ConsumerWidget {
           TextLinkButton(
             label: 'See every way to get chips',
             onPressed: () => showOutOfChipsSheet(context),
-            fontSize: 13,
+            fontSize: 15,
           ),
         ],
       ],
@@ -208,34 +209,42 @@ class _ChipTray extends StatelessWidget {
 
   /// [ChipButton]'s painted diameter. Asserted against the platform minimum so
   /// this stays honest if either number ever moves.
-  static const double _chipSize = 60;
-  static const double _gap = 9;
+  static const double _chipSize = 64;
+
+  /// The gap closes from [_maxGap] toward [_minGap] before the tray gives up
+  /// and scrolls: five 64px chips need 352 with the widest gap, which a
+  /// 375-wide phone's 347 cannot hold, but 344 with the tightest gap fits.
+  static const double _maxGap = 8;
+  static const double _minGap = 4;
 
   @override
   Widget build(BuildContext context) {
     assert(_chipSize >= AppTouch.minTarget, 'chips must clear the minimum touch target');
 
-    final row = Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var i = 0; i < denoms.length; i++) ...[
-          if (i > 0) const SizedBox(width: _gap),
-          ChipButton(
-            amount: denoms[i],
-            color: AppColors.chipColors[denoms[i]]!,
-            disabled:
-                (state.bet + denoms[i]) > state.chips || (tableMax != null && (state.bet + denoms[i]) > tableMax!),
-            onPressed: () => notifier.placeBet(denoms[i]),
-          ),
-        ],
-      ],
-    );
-
     return SizedBox(
       height: _chipSize,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final needed = denoms.length * _chipSize + (denoms.length - 1) * _gap;
+          final gaps = denoms.length - 1;
+          final spare = constraints.maxWidth - denoms.length * _chipSize;
+          final gap = gaps > 0 ? (spare / gaps).clamp(_minGap, _maxGap) : 0.0;
+          final row = Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var i = 0; i < denoms.length; i++) ...[
+                if (i > 0) SizedBox(width: gap),
+                ChipButton(
+                  amount: denoms[i],
+                  color: AppColors.chipColors[denoms[i]]!,
+                  disabled:
+                      (state.bet + denoms[i]) > state.chips ||
+                      (tableMax != null && (state.bet + denoms[i]) > tableMax!),
+                  onPressed: () => notifier.placeBet(denoms[i]),
+                ),
+              ],
+            ],
+          );
+          final needed = denoms.length * _chipSize + gaps * gap;
           if (needed <= constraints.maxWidth) {
             return Center(child: row);
           }

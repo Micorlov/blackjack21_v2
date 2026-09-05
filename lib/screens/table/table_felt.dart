@@ -23,10 +23,10 @@ import 'table_layout.dart';
 ///
 /// Layout is constraint-driven: [FeltMetrics.forState] turns the box we were
 /// actually handed into a canvas, a capped content scale, and fractional seat
-/// slots. Nothing here is pinned to the source design's 393px width any more —
-/// that number survives only as the *reference* the scale is chosen against,
-/// because the parts inside (a 58x84 card, a 40px avatar) do have intrinsic
-/// sizes.
+/// slots. Nothing here is pinned to a fixed design width — the
+/// [FeltMetrics.referenceWidth] survives only as the *reference* the scale is
+/// chosen against, because the parts inside (a 66x96 card, a 46px avatar) do
+/// have intrinsic sizes.
 ///
 /// The canvas is exactly `available / scale`, so no content is ever laid out
 /// in a box smaller than it asks for: the [ClipRect] below exists for the
@@ -162,7 +162,6 @@ class TableFelt extends ConsumerWidget {
         avatarBg: AppColors.seatColors[i % AppColors.seatColors.length],
         takesPot: takesPot,
         sweepTotalWin: state.sweepInfo?.totalWin ?? 0,
-        hourly: true,
       );
       // Seats alternate left, right, left, right — two columns of two.
       final rightSide = i.isOdd;
@@ -184,7 +183,7 @@ class TableFelt extends ConsumerWidget {
             alignment: alignment,
             child: SizedBox(
               width: m.seatWidth,
-              child: SeatPlate(data: data, compact: m.compact),
+              child: SeatPlate(data: data),
             ),
           ),
         ),
@@ -203,7 +202,8 @@ class TableFelt extends ConsumerWidget {
     return Positioned(
       left: m.inset - m.ovalBleed,
       right: m.inset - m.ovalBleed,
-      top: 52,
+      // Tucked under the dealer badge, whose 46px avatar now reaches 56.
+      top: 56,
       height: m.ovalHeight,
       child: Transform(
         alignment: Alignment.topCenter,

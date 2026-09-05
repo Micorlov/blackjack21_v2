@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/game_data.dart';
+import '../models/enums.dart';
 import '../models/game_state.dart';
 import '../state/game_notifier.dart';
 import 'table/table_action_panel.dart';
@@ -64,7 +65,20 @@ class TableScreen extends ConsumerWidget {
     // (settlement recap, chat open) would otherwise eat the whole
     // screen on short devices. Cap it and let it scroll instead, so
     // the felt always keeps a usable share of the height.
-    final panelMaxHeight = available.height * 0.62;
+    //
+    // The result card gets a larger share. It is drawn for large type and
+    // scrolls from the bottom so the CTA is always in reach, which at 0.62
+    // left "Dealer wins" — the one line the card exists to say — scrolled
+    // off the top on a 384x832 phone. During settlement the felt is a recap
+    // the card repeats, so it is the felt that gives way.
+    //
+    // 0.72 is measured, not guessed: the tallest result card (a dealer sweep
+    // with four losing seats, a wrapped pot headline) stands 573px on that
+    // phone at the 130% text the app allows, against 566 at 0.68. The phone
+    // this game is played on runs a 115% system font, so this is the case
+    // the player actually sees, not a corner of the sweep.
+    final panelShare = state.phase == RoundPhase.settlement ? 0.72 : 0.62;
+    final panelMaxHeight = available.height * panelShare;
 
     return Column(
       children: [

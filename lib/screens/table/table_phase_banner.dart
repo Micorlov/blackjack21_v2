@@ -108,7 +108,7 @@ class TablePhaseBanner extends StatelessWidget {
     return AnimatedContainer(
       duration: AppMotion.durationOf(context, AppMotion.base),
       curve: AppMotion.emphasized,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs + AppSpacing.xxs),
       decoration: BoxDecoration(
         color: isHeroTurn ? AppColors.gold : Colors.black.withValues(alpha: 0.42),
         border: Border.all(color: isHeroTurn ? Colors.transparent : AppColors.gold.withValues(alpha: 0.3)),
@@ -122,7 +122,7 @@ class TablePhaseBanner extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
         textAlign: TextAlign.center,
         style: AppText.sora(
-          15,
+          18,
           weight: FontWeight.w800,
           letterSpacing: 0.4,
           color: isHeroTurn ? AppColors.goldInk : AppColors.textPrimary,
@@ -143,7 +143,7 @@ class _StepTrack extends StatelessWidget {
 
   const _StepTrack({required this.currentIndex, required this.stepName});
 
-  static const double _height = 4;
+  static const double _height = 6;
 
   @override
   Widget build(BuildContext context) {
