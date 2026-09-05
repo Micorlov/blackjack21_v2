@@ -50,7 +50,7 @@ class TableSettlementPanel extends ConsumerWidget {
     final potWinner = TableCalc.potWinnerInfo(state);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
+      padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.black.withValues(alpha: AppAlpha.heavy),
         border: Border.all(color: roundNetColor, width: 2),
@@ -95,7 +95,7 @@ class TableSettlementPanel extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 4),
           // The showdown line used to share the message's column, beside the
           // net figure, and on a phone it read "YOU 14 · DEALE…" — the
           // comparison the card exists to make, with the dealer's half cut
@@ -144,9 +144,9 @@ class TableSettlementPanel extends ConsumerWidget {
               ],
             ),
           ),
-          const SizedBox(height: 7),
+          const SizedBox(height: 6),
           Container(
-            padding: const EdgeInsets.only(top: 7),
+            padding: const EdgeInsets.only(top: 6),
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(color: Colors.white.withValues(alpha: AppAlpha.hairline)),
@@ -178,9 +178,9 @@ class TableSettlementPanel extends ConsumerWidget {
           // Always resolved, never hidden: the felt advertises a pot every
           // hand, so every hand has to end by naming who took it (or saying
           // there was nothing to take).
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           _potDetailCard(state, potWinner),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
           GoldButton(label: 'READY FOR NEXT HAND', onPressed: notifier.nextHand),
         ],
       ),
@@ -189,7 +189,7 @@ class TableSettlementPanel extends ConsumerWidget {
 
   Widget _statRow(String label, String value, Color valueColor, {Color? labelColor}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 1.5),
+      padding: const EdgeInsets.symmetric(vertical: 1),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -218,7 +218,7 @@ class TableSettlementPanel extends ConsumerWidget {
     final sweep = state.sweepInfo;
     final contributors = sweep?.contributors ?? const [];
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
         color: sweep != null ? AppColors.gold.withValues(alpha: 0.06) : Colors.white.withValues(alpha: 0.03),
         border: Border.all(
@@ -233,7 +233,7 @@ class TableSettlementPanel extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
             decoration: BoxDecoration(
               color: potWinner.rowBg,
               border: Border.all(color: potWinner.rowBorder),
@@ -289,8 +289,8 @@ class TableSettlementPanel extends ConsumerWidget {
           if (contributors.isNotEmpty) ...[
             const SizedBox(height: 5),
             Wrap(
-              spacing: 5,
-              runSpacing: 5,
+              spacing: 4,
+              runSpacing: 4,
               children: [
                 for (final c in contributors)
                   Container(
