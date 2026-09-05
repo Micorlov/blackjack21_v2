@@ -16,7 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 const double _maxTailRatio = 0.10;
 
 /// Voice lines need enough room for a whole word; the shortest intact one
-/// (`big_win.wav`, "Big win") runs 0.513s.
+/// (`player_push.wav`, "Push") runs 0.419s.
 const double _minVoiceSeconds = 0.25;
 
 const Duration _tailWindow = Duration(milliseconds: 10);
@@ -27,7 +27,8 @@ const _voiceClips = {
   'player_win.wav',
   'player_lose.wav',
   'player_push.wav',
-  'big_win.wav',
+  'player_blackjack.wav',
+  'player_blackjack_pot.wav',
   'player_pot.wav',
 };
 

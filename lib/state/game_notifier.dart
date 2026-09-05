@@ -1039,21 +1039,33 @@ class GameNotifier extends StateNotifier<GameState> {
   void _startNpcTurns() {
     final order = List.generate(state.npcSeats.length, (i) => i);
     if (order.isEmpty) {
-      state = state.copyWith(phase: RoundPhase.playing, actingSeat: null);
-      _notifyPlayerTurn();
+      _handOverAfterSeats();
       return;
     }
     state = state.copyWith(phase: RoundPhase.npcs);
     _stepNpc(order, 0);
   }
 
+  /// Action passes to the hero once every seat has played — unless they have
+  /// nothing left to decide, in which case the dealer takes over directly.
+  ///
+  /// That is the natural: 21 off the deal is not a hand anyone plays, but the
+  /// dealer still has to finish so the seats settle against a real total and
+  /// the sweep pot they forfeited into can be awarded.
+  void _handOverAfterSeats() {
+    state = state.copyWith(actingSeat: null);
+    if (state.hands.every((h) => h.status != HandStatus.active)) {
+      _playDealer();
+      return;
+    }
+    state = state.copyWith(phase: RoundPhase.playing);
+    _notifyPlayerTurn();
+  }
+
   void _stepNpc(List<int> order, int k) {
     if (state.screen != AppScreen.table) return;
     if (k >= order.length) {
-      _npcTimer = Timer(const Duration(milliseconds: 380), () {
-        state = state.copyWith(actingSeat: null, phase: RoundPhase.playing);
-        _notifyPlayerTurn();
-      });
+      _npcTimer = Timer(const Duration(milliseconds: 380), _handOverAfterSeats);
       return;
     }
     state = state.copyWith(actingSeat: order[k]);
@@ -1323,8 +1335,11 @@ class GameNotifier extends StateNotifier<GameState> {
       return;
     }
 
+    // A dealer natural is the one hand that ends before anybody acts: there is
+    // no decision left to make and no bet can be forfeited to a sweep pot, so
+    // the seats are never dealt in.
     final dealerBJ = BlackjackRules.handValue(dealerCards) == 21;
-    if (playerBJ || dealerBJ) {
+    if (dealerBJ) {
       state = state.copyWith(
         chips: newChips,
         dealerHand: dealerCards,
@@ -1338,12 +1353,18 @@ class GameNotifier extends StateNotifier<GameState> {
       return;
     }
 
+    // A *player* natural used to end it the same way — the seats were dealt
+    // cards that were thrown away, none of them played, and the round settled
+    // before a single bet could be forfeited. The best hand in the game was
+    // the one hand that could never win the sweep pot, which is the thing this
+    // table is played for. It now runs like any other round; the hero simply
+    // has nothing to decide, standing on 21 (see [_handOverAfterSeats]).
     state = state.copyWith(
       chips: newChips,
       dealerHand: dealerCards,
       holeRevealed: false,
       npcSeats: npcSeats,
-      hands: [Hand(cards: playerCards, bet: bet, status: HandStatus.active)],
+      hands: [Hand(cards: playerCards, bet: bet, status: playerBJ ? HandStatus.blackjack : HandStatus.active)],
       activeHandIndex: 0,
       phase: RoundPhase.npcs,
       message: '',
@@ -1359,17 +1380,23 @@ class GameNotifier extends StateNotifier<GameState> {
 
   void _resolveInsuranceThenContinue() {
     final dealerBJ = BlackjackRules.handValue(state.dealerHand) == 21;
-    final playerBJ = BlackjackRules.handValue(state.hands[0].cards) == 21;
-    if (dealerBJ || playerBJ) {
-      final newHands = state.hands
-          .map((h) => h.copyWith(status: (playerBJ && !dealerBJ) ? HandStatus.blackjack : h.status))
-          .toList();
-      state = state.copyWith(hands: newHands, holeRevealed: true, phase: RoundPhase.dealer);
+    if (dealerBJ) {
+      state = state.copyWith(holeRevealed: true, phase: RoundPhase.dealer);
       _announceDealerTotal();
       _settle(holeCardJustRevealed: true);
-    } else {
-      _startNpcTurns();
+      return;
     }
+
+    // The hero's own natural no longer settles here either — it is marked as
+    // what it is and the table plays on, so the seats can forfeit bets into a
+    // sweep pot the 21 then takes. See the same rule in [deal].
+    final playerBJ = BlackjackRules.handValue(state.hands[0].cards) == 21;
+    if (playerBJ) {
+      state = state.copyWith(
+        hands: state.hands.map((h) => h.copyWith(status: HandStatus.blackjack)).toList(),
+      );
+    }
+    _startNpcTurns();
   }
 
   void takeInsurance() {
@@ -1719,21 +1746,40 @@ class GameNotifier extends StateNotifier<GameState> {
     final tablePot = seatResults.where((r) => r.lost).fold(0, (sum, r) => sum + r.bet);
 
     var sweep = 0;
+    final heroBlackjack = outcomes.contains('blackjack');
     final heroTakesPot = heroWon && tablePot > 0 && heroBest >= rivalBest;
     if (heroTakesPot) {
       sweep = tablePot;
       chipsDelta += sweep;
       sessionNetDelta += sweep;
-      message = 'Closest to 21 — you sweep the table';
+      // A natural keeps its name here. The sweep line used to overwrite it
+      // wholesale, so the best hand in the game was announced as arithmetic —
+      // the player was told they were closest to 21 without being told they
+      // had been dealt it.
+      // Kept short on purpose. Every other result line is a handful of words
+      // ("Dealer wins", "Blackjack! You win"), and the card is laid out around
+      // that: the headline shares its row with the round's net figure. At
+      // thirty-five characters the sweep line wrapped to three lines on a
+      // phone at 115% system text and four at 130%, which grew the card past
+      // the panel and cut the headline off the top. What the sweep paid, and
+      // who paid it, is spelled out in the pot card directly below.
+      message = heroBlackjack ? 'Blackjack — you sweep' : 'You sweep the table';
       messageType = MessageType.win;
     }
 
     // Tone first, then a spoken result — every outcome gets one, a push
     // included: "Push" is the answer to what happened to the bet, and silence
     // is not.
-    if (outcomes.contains('blackjack')) {
+    if (heroBlackjack) {
       _playOutcomeTone(GameSfx.blackjack, afterFlip: holeCardJustRevealed);
-      _playVoice(GameVoice.bigWin);
+      // "Blackjack! You win" — the hand is called by name, the way the
+      // dealer's natural always was. It used to be the generic "Big win",
+      // which said nothing about what had just been turned over.
+      _playVoice(
+        heroTakesPot ? GameVoice.playerBlackjackPot : GameVoice.playerBlackjack,
+        celebrate: heroTakesPot,
+      );
+      if (heroTakesPot) _celebrateSweep();
       _hapticCelebrate();
     } else if (messageType == MessageType.win) {
       _playOutcomeTone(GameSfx.win, afterFlip: holeCardJustRevealed);

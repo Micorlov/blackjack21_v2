@@ -152,7 +152,8 @@ void main() {
       'sfx/player_win.wav',
       'sfx/player_lose.wav',
       'sfx/player_push.wav',
-      'sfx/big_win.wav',
+      'sfx/player_blackjack.wav',
+      'sfx/player_blackjack_pot.wav',
       'sfx/player_pot.wav',
     };
 

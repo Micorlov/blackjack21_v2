@@ -124,8 +124,16 @@ void main() {
         expect(sound.dealerLines.last, ['dealer_bust'],
             reason: 'the dealer busting was read out as the number $total');
       } else {
-        expect(sound.dealerLines.last, ['dealer_has', ...spokenAmountWords(total)],
-            reason: 'a dealer that stands is called by its total');
+        // "Dealer has" is said once, on the reveal — every card after it is
+        // just the running total. Asserting the opening phrase on the last
+        // line failed whenever the dealer drew to a standing hand rather than
+        // going over, which is a third of the deals this loop makes.
+        final drew = notifier.state.dealerHand.length > 2;
+        expect(
+          sound.dealerLines.last,
+          drew ? spokenAmountWords(total) : ['dealer_has', ...spokenAmountWords(total)],
+          reason: 'a dealer that stands is called by its total',
+        );
       }
       notifier.dispose();
     }

@@ -64,7 +64,8 @@ ESPEAK_DATA = "/opt/homebrew/share/espeak-ng-data"
 VOICE_LINES: dict[str, str] = {
     "player_win.wav": "You win, versus the dealer",
     "player_lose.wav": "Player lost",
-    "big_win.wav": "Big win",
+    "player_blackjack.wav": "Blackjack! You win, versus the dealer",
+    "player_blackjack_pot.wav": "Blackjack! You win, and take the sweep pot",
     "player_pot.wav": "You win, versus the dealer, and take the sweep pot",
     "player_push.wav": "Push",
     "npc_stand.wav": "Stand",

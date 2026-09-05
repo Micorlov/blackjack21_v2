@@ -22,6 +22,12 @@ A Flutter blackjack game with a multi-seat table and a friends race. Four tabs, 
   The pill above the dealer only ever quotes chips that have actually been forfeited — while
   every seat is still in, the pill stays off the felt altogether (its room is reserved, so the
   dealer's cards do not move when it appears)
+- **A natural plays for the pot too** — being dealt 21 no longer ends the round on the spot.
+  The seats play their hands and the dealer finishes its own, so bets can be forfeited and the
+  blackjack takes the sweep pot as well as its 3:2. There is nothing to decide with 21, so the
+  hero is never asked to act; the hand is marked `Blackjack!` from the deal and the table plays
+  on around it. A *dealer* natural still ends everything before anyone acts — no bet can be
+  forfeited to a pot when no seat has played
 - **Enforced table limits** — each table's posted `$min – $max` is a real rule: the betting tray
   only offers chips a table can legally take (no $1,000 chip at a $500 table), a chip that would
   push the bet past the maximum is refused, and DEAL stays locked until the bet reaches the minimum
@@ -99,9 +105,11 @@ A Flutter blackjack game with a multi-seat table and a friends race. Four tabs, 
 - **Sound effects** — deal, chip, turn, win, lose, push, and blackjack cues, plus spoken
   "Stand"/"Bust" voice lines when an NPC seat finishes its turn
 - **Spoken results** — every settled hand plays its outcome tone and then says the result:
-  "Big win" on a blackjack, "You win, versus the dealer, and take the sweep pot" when you sweep
-  the table, "Push" when the bet comes back, otherwise "You win, versus the dealer" or
-  "Player lost". Taking the pot is followed by a drum flourish
+  "Blackjack! You win, versus the dealer" on a natural — "Blackjack! You win, and take the sweep
+  pot" when that natural sweeps — "You win, versus the dealer, and take the sweep pot" when any
+  other hand sweeps the table, "Push" when the bet comes back, otherwise "You win, versus the
+  dealer" or "Player lost". Taking the pot is followed by a drum flourish. A blackjack used to
+  settle under a generic "Big win" that named neither the hand nor the pot
 - **Spoken pot** — once every opponent seat has played and the figure has stopped moving, the
   dealer pill is read aloud: "Sweep pot, three hundred seventy five dollars", a second ahead of
   your own hand total. When no seat has forfeited a bet there is nothing to sweep, and the voice
@@ -311,7 +319,7 @@ under `flutter: assets:` in `pubspec.yaml` — a new file in the folder needs no
 |---|---|---|
 | Tones | `deal.wav`, `chip.wav`, `turn.wav`, `win.wav`, `lose.wav`, `push.wav`, `blackjack.wav` | Dealing, betting, your turn, and hand outcomes |
 | NPC voice | `npc_stand.wav`, `npc_bust.wav` | An opponent seat standing or busting |
-| Result voice | `player_win.wav`, `player_lose.wav`, `player_push.wav`, `big_win.wav`, `player_pot.wav` | Your settled hand, 700ms after its tone — or later, if something is still speaking |
+| Result voice | `player_win.wav`, `player_lose.wav`, `player_push.wav`, `player_blackjack.wav`, `player_blackjack_pot.wav`, `player_pot.wav` | Your settled hand, 700ms after its tone — or later, if something is still speaking |
 | Celebration | `pot_celebration.wav` | After the pot call-out — a synthesized drum roll, downbeat and major triad |
 | Number words | `num/*.wav` — 0-19, the tens, `hundred`, `thousand`, `dollars`, `sweep_pot`, `no_sweep_pot`, `you_have`, `dealer_has`, `blackjack`, `player_bust`, `dealer_bust` | Stitched into the spoken pot call-out, your hand total, and the dealer's |
 
@@ -414,6 +422,36 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-05 (9)
+- fix: **the result card no longer has its headline cut off.** The two sweep lines were the
+  longest copy in the game at thirty and thirty-five characters, while every other outcome
+  ("Dealer wins", "Blackjack! You win") is a handful of words. The card is laid out around the
+  short ones — the headline shares its row with the round's net figure, so it gets about half
+  the card's width — and at 115% system text the long line wrapped to three lines, at 130% to
+  four. That grew the card past the panel's height cap, and because the panel scrolls from the
+  bottom so the CTA stays in reach, what fell off the top was the headline itself. The sweep
+  lines are now "You sweep the table" and "Blackjack — you sweep"; what the sweep paid and who
+  paid it is still spelled out in the pot card below. The card's own padding and gaps were
+  trimmed a few pixels each as well, so it now clears the panel at 100%, 115% and 130% text
+  with room to spare rather than overflowing by 93px at the top end.
+
+### 2026-09-05 (9)
+- feat: **A blackjack plays for the sweep pot.** Being dealt 21 used to end the round in the
+  same beat: the opponent seats were dealt cards that were thrown away, none of them played,
+  the dealer never finished its hand, and no bet could be forfeited — so the best hand in the
+  game was the one hand that could never win the pot this table is played for. It now runs the
+  table like any other round, the hero simply having nothing to decide, and the 21 takes the
+  pot on top of its 3:2. A dealer natural still ends the round before anyone acts.
+- feat: **The natural is called by name.** "Blackjack! You win, versus the dealer", or
+  "Blackjack! You win, and take the sweep pot" when it sweeps — replacing the generic "Big win"
+  line, which named neither the hand nor the pot. The result card says "Blackjack — you sweep"
+  where the sweep line used to overwrite the blackjack entirely (and the plain sweep headline is
+  now "You sweep the table", short enough not to wrap off the card at 130% system text).
+- fix: `test/outcome_call_out_test.dart` no longer fails a third of its runs. It asserted the
+  dealer's *last* spoken line opened with "Dealer has", which is only ever said on the reveal —
+  every card after it is the bare running total, so any deal where the dealer drew to a standing
+  hand rather than busting failed.
 
 ### 2026-09-05 (8)
 - chore: **Released to Google Play as 1.4.0 (version code 5), at 100% rollout.** The store

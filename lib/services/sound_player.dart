@@ -21,7 +21,16 @@ enum GameSfx {
 /// Kept apart from [GameSfx] because words, unlike tones, must not be spoken
 /// over one another — they play on the queued voice channel instead. See
 /// [SoundPlayer].
-enum GameVoice { playerWin, playerLose, push, bigWin, playerPot, npcStand, npcBust }
+enum GameVoice {
+  playerWin,
+  playerLose,
+  push,
+  playerBlackjack,
+  playerBlackjackPot,
+  playerPot,
+  npcStand,
+  npcBust,
+}
 
 const Map<GameSfx, String> _sfxAssets = {
   GameSfx.chip: 'sfx/chip.wav',
@@ -38,8 +47,12 @@ const Map<GameSfx, String> _sfxAssets = {
 const Map<GameVoice, String> _voiceAssets = {
   GameVoice.playerWin: 'sfx/player_win.wav',
   GameVoice.playerLose: 'sfx/player_lose.wav',
-  GameVoice.bigWin: 'sfx/big_win.wav',
   GameVoice.push: 'sfx/player_push.wav',
+  // A natural is called by name. It used to settle under the same "Big win"
+  // line any large pot got, which never told the player what they were holding
+  // — the one hand in the game that pays 3:2 went unnamed.
+  GameVoice.playerBlackjack: 'sfx/player_blackjack.wav',
+  GameVoice.playerBlackjackPot: 'sfx/player_blackjack_pot.wav',
   GameVoice.playerPot: 'sfx/player_pot.wav',
   // An NPC seat's outcome. Spoken words, so they queue with the rest rather
   // than firing on the tone channel over whatever is mid-sentence.
