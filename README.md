@@ -423,6 +423,12 @@ emulator testing.
 
 ## Changelog
 
+### 2026-09-06
+- chore: **Released to Google Play as 1.5.0 (version code 6), at 100% rollout.** Carries the
+  natural-plays-for-the-pot change and the result-card headline fix below. The store
+  screenshots were left as they are: the phone was disconnected when the release was cut, so
+  the result-card shot may still show the old sweep wording until it is retaken.
+
 ### 2026-09-05 (9)
 - fix: **the result card no longer has its headline cut off.** The two sweep lines were the
   longest copy in the game at thirty and thirty-five characters, while every other outcome
