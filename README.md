@@ -208,6 +208,7 @@ lib/
 tool/
 ├── play_upload.py            # uploads a signed .aab to a Play track (Android Publisher API v3)
 ├── make_store_shots.py       # composes captioned store screenshots from raw device captures
+├── play_images.py            # uploads the listing's images (screenshots, feature graphic, icon)
 ├── make_promo.py             # cuts the 30s vertical promo from a screenrecord of a real session
 └── release_notes_en-US.txt   # en-US release notes passed to --notes-file
 
@@ -241,8 +242,18 @@ Tablet captures come from the same emulator with `adb shell wm size 1200x1920` (
 `1600x2560`) plus a matching `wm density`; reset both with `wm size reset` / `wm density reset`
 afterwards. The feature graphic is rendered from its HTML with headless Chrome at 1024×500.
 
-Store *text* goes through the Play Developer API and needs no browser. Images, the developer
-name and the category still have to be set in the Play Console UI.
+Store *text* and *images* both go through the Play Developer API and need no browser:
+
+```bash
+python3 tool/play_images.py --language en-US    # feature graphic, icon, phone + tablet shots
+```
+
+Play rejects a screenshot whose long side is more than twice its short side, which is why the
+phone set is composed at 1344x2688 rather than at the device's own 1344x2992.
+
+Only three things still need the Console UI: the developer name, the app category and tags, and
+the listing video (which must be a public YouTube link, so the MP4 is uploaded to YouTube first
+and the watch URL is then set through the API).
 
 ### Publishing to Google Play
 
@@ -459,6 +470,16 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-08 (3)
+- chore: **released 1.6.0 (7) to Google Play production at 100%**, and rebuilt the listing around
+  it: all 14 images uploaded through the Play Developer API (feature graphic, icon, eight phone
+  screenshots, two 7-inch and two 10-inch tablet shots), the promo published to YouTube and
+  attached as the listing video, the developer name changed to Orlov Games, and the category moved
+  from Card to Casino with Blackjack and Card tags. `tool/play_images.py` is new and does the
+  image half of that without a browser
+- fix: **store screenshots are composed at 1344x2688, not 1344x2992.** Play rejects any screenshot
+  taller than twice its width, so the first set would have been refused on upload
 
 ### 2026-09-08 (2)
 - chore: **new Play Store listing, in eleven languages.** Title, short and full description

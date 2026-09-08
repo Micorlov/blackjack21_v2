@@ -16,9 +16,11 @@ ROOT = Path(__file__).resolve().parent.parent
 RAW = ROOT / 'play-assets' / 'raw'
 OUT = ROOT / 'play-assets'
 
-# Play's phone screenshots: 16:9-ish portrait, max 3840px on the long edge.
-W, H = 1344, 2992
-BAND = 430           # caption band height
+# Play rejects a screenshot whose long side is more than twice its short side,
+# and a raw 1344x2992 capture is 1:2.23 — so the canvas is exactly 2:1 and the
+# capture is scaled to sit inside it under the caption band.
+W, H = 1344, 2688
+BAND = 380           # caption band height
 GAP = 26
 GOLD = (232, 182, 76)
 WHITE = (255, 255, 255)
