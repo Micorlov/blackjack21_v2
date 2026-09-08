@@ -55,3 +55,7 @@ app.*.map.json
 
 # Play publishing credentials — service account key, never commit
 /android/play-service-account.json
+
+# Raw device captures the store screenshots are composed from — regenerate
+# with adb rather than versioning ~30MB of PNGs.
+play-assets/raw/
