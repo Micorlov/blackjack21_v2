@@ -108,7 +108,7 @@ class OnboardingScreen extends ConsumerWidget {
                                 ),
                               ),
                               Text(
-                                '21 Sweet Pot',
+                                'Blackjack 21',
                                 textAlign: TextAlign.center,
                                 style: AppText.serifItalic(48, height: 1.05),
                               ),

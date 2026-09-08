@@ -7,7 +7,7 @@ void main() {
   testWidgets('shows the onboarding screen on launch', (WidgetTester tester) async {
     await tester.pumpWidget(const ProviderScope(child: BlackjackApp()));
 
-    expect(find.text('21 Sweet Pot'), findsOneWidget);
+    expect(find.text('Blackjack 21'), findsOneWidget);
     expect(find.text('Play as Guest'), findsOneWidget);
   });
 

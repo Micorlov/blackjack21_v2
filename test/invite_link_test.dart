@@ -68,7 +68,7 @@ void main() {
 
   group('joinCodeFromText', () {
     test('finds a code inside a link surrounded by other text', () {
-      const text = '🃏 Play 21 Sweet Pot with me — tap to join my table:\n'
+      const text = '🃏 Play Blackjack 21 with me — tap to join my table:\n'
           'https://blackjack21-v2.web.app/join/ABC234';
       expect(joinCodeFromText(text), 'ABC234');
     });

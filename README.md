@@ -138,12 +138,18 @@ A Flutter blackjack game with a multi-seat table and a friends race. Four tabs, 
   "Sound effects", so muting sound mutes the voice too and the Settings row dims while it is off
 - **Haptics** — selection/light/medium/heavy impact and vibrate feedback, toggleable in settings,
   including a tap for each NPC seat's stand/bust
+- **One rating ask, on a hand worth asking about** — after ten hands, the first time the player
+  sweeps the pot, is dealt a natural, or wins a third hand in a row, Google Play's own review
+  sheet slides up a second and a half behind the settlement card. Once per player, ever: the
+  flag is set when the ask is made (not when it is answered) and persisted, so backgrounding the
+  game mid-request or relaunching can never produce a second one. The decision itself
+  (`utils/review_prompt.dart`) is pure and tested; nothing asks on a loss, a push, or a plain win
 - **Web version** — runs in the browser at https://blackjack21-v2.web.app, auto-deployed by
   GitHub Actions on every push to `main`. Google sign-in is required on web (guest mode has no
   Firebase account behind it, so it's mobile/desktop only there)
 - **Branded link preview** — sharing the web URL (WhatsApp, iMessage, Facebook, etc.) shows a
   custom casino-themed card: an Ace of Spades and King of Hearts fanned on a felt table, the
-  "21 Sweet Pot" title, and a real description, instead of the generic Flutter placeholder
+  "Blackjack 21: Sweep the Pot" title, and a real description, instead of the generic Flutter placeholder
 - **Multi-language UI (in progress)** — Settings has a Language picker (Settings → Language),
   built on Flutter's standard `flutter_localizations`/ARB pipeline (`lib/l10n/`). The Settings
   screen itself ships translated into all 10 target languages — English, Spanish, French,
@@ -182,7 +188,8 @@ lib/
 │                  #   dealt_card, …)
 ├── services/      # sound_player, spoken_amount, social_service (Firestore), local_notifier,
 │                  #   notification_support (web-safe "can we notify here?" check),
-│                  #   daily_bonus_store (persists the last claim time + streak day)
+│                  #   daily_bonus_store (persists the last claim time + streak day),
+│                  #   review_prompter (opens Play's in-app review sheet)
 ├── state/         # game_notifier (Riverpod)
 ├── theme/         # design tokens — app_colors (raw values incl. the light set),
 │                  #   app_palette (semantic roles per brightness, a ThemeExtension),
@@ -192,7 +199,8 @@ lib/
 ├── utils/         # formatters, leaderboard, points (hourly/daily buckets), comeback,
 │                  #   daily_bonus (pure cooldown + 7-day streak logic),
 │                  #   tutorial (pure "which coaching card, if any, right now?"),
-│                  #   table_seats (pads real friends to 4 table seats with practice bots)
+│                  #   table_seats (pads real friends to 4 table seats with practice bots),
+│                  #   review_prompt (pure "is this the hand to ask for a rating on?")
 └── widgets/       # shared UI (buttons, overlays, cards, nav bar,
                    #   tutorial_coach_card, how_to_play_sheet, daily_bonus_dialog,
                    #   web_viewport_scaler)
@@ -280,6 +288,7 @@ on a Play-distributed one. One-time manual steps to fix that:
 | `timezone` | Builds the `TZDateTime` the daily-bonus and streak reminders are scheduled against |
 | `flutter_localizations` | Wires the Material/Widgets/Cupertino locale delegates the app-wide UI translation uses |
 | `intl` | Backs `flutter gen-l10n`'s generated `AppLocalizations` class and ICU plural/placeholder syntax |
+| `in_app_review` | Google Play's own rating sheet, asked for once per player after a well-won hand (`review_prompter`) |
 
 Dev: `flutter_test`, `flutter_lints`, `integration_test`.
 
@@ -422,6 +431,20 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-08
+- feat: **the game is now Blackjack 21: Sweep the Pot.** "21 Sweet Pot" led with an invented
+  brand in front of the word people actually search for, and the icon, feature graphic and
+  onboarding screen all still said "Blackjack 21" — so the store title, the app and the art
+  disagreed with each other. The in-app brand is "Blackjack 21" (launcher label, onboarding,
+  legal copy, web title and link-preview card); the store listing carries the full
+  "Blackjack 21: Sweep the Pot". Package id, Firebase project and the `blackjack21-v2.web.app`
+  host are untouched, so no sign-in, deep link or saved game moves
+- feat: **one in-app rating ask, on a hand worth asking about** — Play's own review sheet, after
+  ten hands, on a sweep, a natural, or a third straight win. Once per player, persisted, never on
+  a loss
+- fix: **Settings → About shows the version you are running.** It was hardcoded at 1.2.0 (3)
+  while the app shipped 1.5.0 (6), which made every bug report point at the wrong build
 
 ### 2026-09-06
 - chore: **Released to Google Play as 1.5.0 (version code 6), at 100% rollout.** Carries the

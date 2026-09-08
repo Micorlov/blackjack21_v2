@@ -184,6 +184,14 @@ class GameState {
   /// them.
   final bool analyticsOn;
 
+  /// Whether the Play in-app review sheet has already been asked for.
+  ///
+  /// One ask per player, ever. Google itself caps how often the sheet is
+  /// actually shown, and a game that nags for stars after every good hand
+  /// earns worse ones — so the flag is set the moment we ask, whether or not
+  /// the sheet appeared, and never cleared.
+  final bool reviewPromptShown;
+
   const GameState({
     this.screen = AppScreen.onboarding,
     this.signedIn = false,
@@ -251,6 +259,7 @@ class GameState {
     this.lastPlayDayKey = '',
     this.lastRebuyAt,
     this.analyticsOn = true,
+    this.reviewPromptShown = false,
   });
 
   GameState copyWith({
@@ -318,6 +327,7 @@ class GameState {
     String? lastPlayDayKey,
     Object? lastRebuyAt = _unset,
     bool? analyticsOn,
+    bool? reviewPromptShown,
   }) {
     return GameState(
       screen: screen ?? this.screen,
@@ -386,6 +396,7 @@ class GameState {
       lastPlayDayKey: lastPlayDayKey ?? this.lastPlayDayKey,
       lastRebuyAt: identical(lastRebuyAt, _unset) ? this.lastRebuyAt : lastRebuyAt as DateTime?,
       analyticsOn: analyticsOn ?? this.analyticsOn,
+      reviewPromptShown: reviewPromptShown ?? this.reviewPromptShown,
     );
   }
 }

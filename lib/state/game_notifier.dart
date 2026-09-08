@@ -27,6 +27,7 @@ import '../services/analytics.dart';
 import '../services/daily_bonus_store.dart';
 import '../services/game_store.dart';
 import '../services/local_notifier.dart';
+import '../services/review_prompter.dart';
 import '../services/social_service.dart';
 import '../services/sound_player.dart';
 import '../services/spoken_amount.dart';
@@ -38,6 +39,7 @@ import '../utils/play_streak.dart';
 import '../utils/points.dart';
 import '../utils/rebuy.dart';
 import '../utils/referrals.dart';
+import '../utils/review_prompt.dart';
 import '../utils/table_seats.dart';
 
 class _SeatResult {
@@ -62,9 +64,14 @@ class _SeatResult {
 class GameNotifier extends StateNotifier<GameState> {
   /// [sound] is a seam for tests, which need to see which channel a call-out
   /// was handed to — the app always builds its own.
-  GameNotifier({@visibleForTesting SoundPlayer? sound, @visibleForTesting Analytics? analytics})
+  GameNotifier({
+    @visibleForTesting SoundPlayer? sound,
+    @visibleForTesting Analytics? analytics,
+    @visibleForTesting ReviewPrompter? reviewPrompter,
+  })
     : _sound = sound ?? SoundPlayer(),
       _analytics = analytics ?? _defaultAnalytics(),
+      _reviewPrompter = reviewPrompter ?? ReviewPrompter(),
       super(const GameState(friends: kInitialFriends)) {
     _shoe = BlackjackRules.buildShoe(kDeckCount, _rng);
     // `authenticate()` throws UnimplementedError on web — Google Identity
@@ -96,11 +103,16 @@ class GameNotifier extends StateNotifier<GameState> {
   final Random _rng = Random();
   final SoundPlayer _sound;
   final Analytics _analytics;
+  final ReviewPrompter _reviewPrompter;
   final SocialService _social = SocialService();
   final LocalNotifier _notifs = LocalNotifier();
   final DailyBonusStore _bonusStore = DailyBonusStore();
   final GameStore _store = GameStore();
   Timer? _saveTimer;
+
+  /// Holds the review sheet back until the settlement card has landed; see
+  /// [_maybeAskForReview].
+  Timer? _reviewTimer;
   StreamSubscription<GoogleSignInAuthenticationEvent>? _authEventsSub;
   StreamSubscription<List<Friend>>? _groupSub;
   Timer? _heartbeatTimer;
@@ -131,6 +143,9 @@ class GameNotifier extends StateNotifier<GameState> {
   /// force-quit right after a hand still finds the result on disk.
   static const Duration _kSaveDebounce = Duration(milliseconds: 600);
 
+  /// How long the review sheet waits behind the settlement card.
+  static const Duration _kReviewPromptDelay = Duration(milliseconds: 1500);
+
   @override
   void dispose() {
     // A save still waiting out its debounce would be lost with the timer, so
@@ -149,6 +164,7 @@ class GameNotifier extends StateNotifier<GameState> {
     _celebrationTimer?.cancel();
     _handTotalTimer?.cancel();
     _dealerTotalTimer?.cancel();
+    _reviewTimer?.cancel();
     _heartbeatTimer?.cancel();
     unawaited(_authEventsSub?.cancel());
     unawaited(_groupSub?.cancel());
@@ -495,6 +511,7 @@ class GameNotifier extends StateNotifier<GameState> {
       lastPlayDayKey: saved.lastPlayDayKey,
       lastRebuyAt: saved.lastRebuyAtMs == 0 ? null : DateTime.fromMillisecondsSinceEpoch(saved.lastRebuyAtMs),
       analyticsOn: saved.analyticsOn,
+      reviewPromptShown: saved.reviewPromptShown,
     );
   }
 
@@ -524,6 +541,7 @@ class GameNotifier extends StateNotifier<GameState> {
     lastPlayDayKey: state.lastPlayDayKey,
     lastRebuyAtMs: state.lastRebuyAt?.millisecondsSinceEpoch ?? 0,
     analyticsOn: state.analyticsOn,
+    reviewPromptShown: state.reviewPromptShown,
   );
 
   /// Coalesces the writes a fast player generates — settling a hand and
@@ -1885,6 +1903,48 @@ class GameNotifier extends StateNotifier<GameState> {
         'blackjack': bjDelta > 0 ? 1 : 0,
       }),
     );
+
+    _maybeAskForReview(sweptPot: heroTakesPot, blackjack: heroBlackjack, winStreak: newStreak);
+  }
+
+  /// Asks for a Play Store rating, at most once ever, on a hand the player has
+  /// just been told they won well — see [shouldPromptForReview].
+  ///
+  /// The wait lets the settlement card land first: Google's sheet slides over
+  /// whatever is on screen, and arriving on top of the cards still being dealt
+  /// out reads as an interruption rather than as a question about a hand the
+  /// player just enjoyed.
+  void _maybeAskForReview({required bool sweptPot, required bool blackjack, required int winStreak}) {
+    if (!shouldPromptForReview(
+      alreadyAsked: state.reviewPromptShown,
+      handsPlayed: state.stats.handsPlayed,
+      sweptPot: sweptPot,
+      blackjack: blackjack,
+      winStreak: winStreak,
+    )) {
+      return;
+    }
+
+    // Set before the sheet is asked for, not after: a player who backgrounds
+    // the game mid-request must not come back to a second ask.
+    state = state.copyWith(reviewPromptShown: true);
+    _scheduleSave();
+    unawaited(
+      _analytics.logEvent(AnalyticsEvent.reviewPrompted, {
+        'hands': state.stats.handsPlayed,
+        'trigger': sweptPot
+            ? 'sweep'
+            : blackjack
+            ? 'blackjack'
+            : 'streak',
+      }),
+    );
+
+    _reviewTimer?.cancel();
+    _reviewTimer = Timer(_kReviewPromptDelay, () {
+      if (!mounted) return;
+      unawaited(_reviewPrompter.request());
+    });
   }
 
   // ---------------------------------------------------------------------

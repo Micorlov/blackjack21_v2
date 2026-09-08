@@ -1,6 +1,6 @@
 {
   "@@locale": "he",
-  "appTitle": "21 Sweet Pot",
+  "appTitle": "Blackjack 21",
   "settingsTitle": "הגדרות",
   "settingsSectionAccount": "חשבון",
   "settingsSectionAvatarColor": "צבע האווטאר",
@@ -55,7 +55,7 @@
   "rebuyButtonLabel": "קנייה מחדש: {chips} צ'יפים",
   "rebuyReadyInLabel": "קנייה מחדש בעוד {time}",
   "rebuyHint": "או קבלו את הבונוס היומי בלובי",
-  "inviteMessage": "🃏 בואו לשחק איתי 21 Sweet Pot — לחצו כדי להצטרף לשולחן שלי:\n{url}",
+  "inviteMessage": "🃏 בואו לשחק איתי Blackjack 21 — לחצו כדי להצטרף לשולחן שלי:\n{url}",
   "inviteSubtitle": "שלחו לחברים את הקישור שלכם — כל מי שלוחץ עליו מגיע ישר לטבלת השיאים החיה שלכם.",
   "inviteButtonWhatsApp": "הזמינו בוואטסאפ",
   "inviteButtonShare": "שתפו קישור",

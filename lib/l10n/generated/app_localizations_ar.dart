@@ -9,7 +9,7 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
-  String get appTitle => '21 Sweet Pot';
+  String get appTitle => 'Blackjack 21';
 
   @override
   String get settingsTitle => 'الإعدادات';
@@ -191,7 +191,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String inviteMessage(String url) {
-    return '🃏 Play 21 Sweet Pot with me — tap to join my table:\n$url';
+    return '🃏 Play Blackjack 21 with me — tap to join my table:\n$url';
   }
 
   @override

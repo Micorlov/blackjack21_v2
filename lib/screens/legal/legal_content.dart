@@ -33,9 +33,9 @@ class LegalDoc {
 
 /// Keep in step with `version:` in `pubspec.yaml` — this is what the Settings
 /// "About" row shows, and a stale number here makes a bug report unactionable.
-const String kAppVersionLabel = '1.2.0 (3)';
+const String kAppVersionLabel = '1.6.0 (7)';
 
-const String kAppName = '21 Sweet Pot';
+const String kAppName = 'Blackjack 21';
 
 /// How to reach the developer. Deliberately not an email address: the Play
 /// listing is the contact channel that is guaranteed to exist for this app.

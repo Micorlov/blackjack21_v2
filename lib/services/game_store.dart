@@ -78,6 +78,11 @@ class SavedGame {
   /// Whether anonymous usage and crash reporting is on.
   final bool analyticsOn;
 
+  /// Whether the Play review sheet has already been asked for — see
+  /// [GameState.reviewPromptShown]. One ask per player, so it has to survive
+  /// a relaunch.
+  final bool reviewPromptShown;
+
   const SavedGame({
     required this.chips,
     required this.stats,
@@ -102,6 +107,7 @@ class SavedGame {
     this.lastPlayDayKey = '',
     this.lastRebuyAtMs = 0,
     this.analyticsOn = true,
+    this.reviewPromptShown = false,
   });
 
   Map<String, Object?> toJson() => {
@@ -141,6 +147,7 @@ class SavedGame {
     'lastPlayDayKey': lastPlayDayKey,
     'lastRebuyAtMs': lastRebuyAtMs,
     'analyticsOn': analyticsOn,
+    'reviewPromptShown': reviewPromptShown,
   };
 
   /// Every field falls back to the [GameState] default it mirrors, so a blob
@@ -192,6 +199,10 @@ class SavedGame {
       lastPlayDayKey: _str(json['lastPlayDayKey'], ''),
       lastRebuyAtMs: _int(json['lastRebuyAtMs'], 0),
       analyticsOn: _bool(json['analyticsOn'], defaults.analyticsOn),
+      // A blob written before the review prompt existed has never been asked,
+      // so `false` is the honest default — the player simply becomes eligible
+      // at their next good hand.
+      reviewPromptShown: _bool(json['reviewPromptShown'], defaults.reviewPromptShown),
     );
   }
 

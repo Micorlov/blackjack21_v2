@@ -1,6 +1,6 @@
 {
   "@@locale": "fr",
-  "appTitle": "21 Sweet Pot",
+  "appTitle": "Blackjack 21",
   "settingsTitle": "Paramètres",
   "settingsSectionAccount": "Compte",
   "settingsSectionAvatarColor": "Couleur de l'avatar",
@@ -55,7 +55,7 @@
   "rebuyButtonLabel": "Rebuy {chips} chips",
   "rebuyReadyInLabel": "Rebuy in {time}",
   "rebuyHint": "Or claim your daily bonus in the lobby",
-  "inviteMessage": "🃏 Play 21 Sweet Pot with me — tap to join my table:\n{url}",
+  "inviteMessage": "🃏 Play Blackjack 21 with me — tap to join my table:\n{url}",
   "inviteSubtitle": "Send friends your link — anyone who taps it lands on your live leaderboard.",
   "inviteButtonWhatsApp": "Invite via WhatsApp",
   "inviteButtonShare": "Share link",

@@ -90,4 +90,8 @@ class AnalyticsEvent {
   static const String rebuy = 'rebuy';
   static const String inviteShared = 'invite_shared';
   static const String outOfChips = 'out_of_chips';
+
+  /// The Play review sheet was asked for — see
+  /// utils/review_prompt.dart. Fires at most once per player.
+  static const String reviewPrompted = 'review_prompted';
 }

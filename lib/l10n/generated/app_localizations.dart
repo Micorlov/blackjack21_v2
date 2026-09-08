@@ -117,7 +117,7 @@ abstract class AppLocalizations {
   /// The app's title, used for the OS task switcher / window title.
   ///
   /// In en, this message translates to:
-  /// **'21 Sweet Pot'**
+  /// **'Blackjack 21'**
   String get appTitle;
 
   /// No description provided for @settingsTitle.
@@ -447,7 +447,7 @@ abstract class AppLocalizations {
   /// No description provided for @inviteMessage.
   ///
   /// In en, this message translates to:
-  /// **'🃏 Play 21 Sweet Pot with me — tap to join my table:\n{url}'**
+  /// **'🃏 Play Blackjack 21 with me — tap to join my table:\n{url}'**
   String inviteMessage(String url);
 
   /// No description provided for @inviteSubtitle.

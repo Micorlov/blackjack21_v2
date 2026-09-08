@@ -1,6 +1,5 @@
-What's new in 1.3.0
+What's new in 1.6.0
 
-- The dealer talks you through its turn: what it turns over, its running total, and "Dealer busts" when it goes over.
-- Your own hand is called too - your total when the turn reaches you, and a bust or a push as it happens.
-- A redesigned table: clearer felt, readable colours at every text size, and layouts that fit landscape and tablets.
-- The back button returns to the lobby instead of quitting the game.
+- New name: the game is now Blackjack 21: Sweep the Pot. Same table, same chips, same friends - it just says what it is.
+- You can rate the game from the table. After a hand you win well, Blackjack 21 asks once, and never again.
+- The About row finally shows the version you are actually running.

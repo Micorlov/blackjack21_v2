@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appTitle": "21 Sweet Pot",
+  "appTitle": "Blackjack 21",
   "@appTitle": {
     "description": "The app's title, used for the OS task switcher / window title."
   },
@@ -96,7 +96,7 @@
     }
   },
   "rebuyHint": "Or claim your daily bonus in the lobby",
-  "inviteMessage": "🃏 Play 21 Sweet Pot with me — tap to join my table:\n{url}",
+  "inviteMessage": "🃏 Play Blackjack 21 with me — tap to join my table:\n{url}",
   "@inviteMessage": {
     "placeholders": {
       "url": {

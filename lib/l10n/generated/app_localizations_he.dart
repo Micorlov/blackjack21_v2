@@ -9,7 +9,7 @@ class AppLocalizationsHe extends AppLocalizations {
   AppLocalizationsHe([String locale = 'he']) : super(locale);
 
   @override
-  String get appTitle => '21 Sweet Pot';
+  String get appTitle => 'Blackjack 21';
 
   @override
   String get settingsTitle => 'הגדרות';
@@ -192,7 +192,7 @@ class AppLocalizationsHe extends AppLocalizations {
 
   @override
   String inviteMessage(String url) {
-    return '🃏 בואו לשחק איתי 21 Sweet Pot — לחצו כדי להצטרף לשולחן שלי:\n$url';
+    return '🃏 בואו לשחק איתי Blackjack 21 — לחצו כדי להצטרף לשולחן שלי:\n$url';
   }
 
   @override

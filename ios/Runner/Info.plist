@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>21 Sweet Pot</string>
+	<string>Blackjack 21</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
