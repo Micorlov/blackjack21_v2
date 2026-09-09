@@ -158,6 +158,11 @@ A Flutter blackjack game with a multi-seat table and a friends race. Four tabs, 
   translated. The rest of the app's screens and data files are still English-only. The dealer's
   spoken call-outs are meant to follow the same language once the voice pipeline (currently
   English-only pre-recorded clips) gains per-language asset sets — not wired up yet
+- **"More games: Video Poker" link** — Settings → About has a row (card icon, "Free video poker,
+  no ads", translated into all 10 languages) that opens the developer's Video Poker game on
+  Google Play in the Play app, tagged `utm_source=blackjack21` so those installs can be traced
+  back here. If nothing on the device can open the link, a SnackBar says so instead of the tap
+  silently doing nothing
 
 ## Getting Started
 
@@ -470,6 +475,12 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-09
+- feat: **'More games: Video Poker' link in Settings** — a new row under Settings → About opens
+  the developer's Video Poker game on Google Play (via `url_launcher`, external app, with a
+  SnackBar fallback when the link cannot be opened). Its label and subtitle are localized in all
+  ten ARB files; `_LinkRowData` gained an optional `leading` icon for it
 
 ### 2026-09-08 (3)
 - chore: **released 1.6.0 (7) to Google Play production at 100%**, and rebuilt the listing around

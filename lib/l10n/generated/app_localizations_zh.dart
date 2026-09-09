@@ -133,6 +133,15 @@ class AppLocalizationsZh extends AppLocalizations {
   String get privacyPolicySublabel => '哪些信息保留在本设备上，哪些不会';
 
   @override
+  String get moreGamesVideoPokerLabel => '更多游戏：视频扑克';
+
+  @override
+  String get moreGamesVideoPokerSublabel => '免费视频扑克，无广告';
+
+  @override
+  String get moreGamesOpenFailed => '无法打开 Google Play';
+
+  @override
   String get versionLabel => '版本';
 
   @override

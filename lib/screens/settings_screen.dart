@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../data/tutorial_data.dart';
 import '../l10n/generated/app_localizations.dart';
@@ -17,6 +19,11 @@ import 'legal/legal_screen.dart';
 import 'shared/async_action.dart';
 import 'shared/avatar_initial.dart';
 import 'shared/confirm_dialog.dart';
+
+/// Play Store page of the developer's other game, tagged so its installs can
+/// be traced back to this cross-promotion row.
+const String kVideoPokerStoreUrl =
+    'https://play.google.com/store/apps/details?id=com.micorlov.videopoker&referrer=utm_source%3Dblackjack21';
 
 /// Settings screen — account, avatar color, language, sound/haptics,
 /// notifications, help, the legal documents and build version, and
@@ -153,12 +160,35 @@ class SettingsScreen extends ConsumerWidget {
                 sublabel: t.privacyPolicySublabel,
                 onTap: () => showPrivacy(context),
               ),
+              // Cross-promotion for the developer's other game: a plain link
+              // row like the two above it, with a card icon so it reads as a
+              // game rather than another legal document.
+              _LinkRowData(
+                label: t.moreGamesVideoPokerLabel,
+                sublabel: t.moreGamesVideoPokerSublabel,
+                leading: Icons.style,
+                onTap: () => _openVideoPoker(context),
+              ),
             ],
             trailing: _InfoRow(label: t.versionLabel, value: kAppVersionLabel),
           ),
         ],
       ),
     );
+  }
+
+  /// Opens the Video Poker store page in the Play app (or browser). A device
+  /// with no handler for the link gets a SnackBar instead of a silent tap.
+  Future<void> _openVideoPoker(BuildContext context) async {
+    final t = AppLocalizations.of(context);
+    var opened = false;
+    try {
+      opened = await launchUrl(Uri.parse(kVideoPokerStoreUrl), mode: LaunchMode.externalApplication);
+    } on PlatformException {
+      opened = false;
+    }
+    if (opened || !context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.moreGamesOpenFailed)));
   }
 }
 
@@ -497,7 +527,11 @@ class _LinkRowData {
   final String sublabel;
   final VoidCallback onTap;
 
-  const _LinkRowData({required this.label, required this.sublabel, required this.onTap});
+  /// Optional icon drawn before the label, for rows that point somewhere
+  /// other than a document.
+  final IconData? leading;
+
+  const _LinkRowData({required this.label, required this.sublabel, required this.onTap, this.leading});
 }
 
 /// Panel of tappable label + sublabel rows with a chevron, separated by
@@ -532,6 +566,10 @@ class _LinkPanel extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
+                    if (rows[i].leading case final icon?) ...[
+                      ExcludeSemantics(child: Icon(icon, color: AppColors.gold)),
+                      const SizedBox(width: AppSpacing.md),
+                    ],
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,

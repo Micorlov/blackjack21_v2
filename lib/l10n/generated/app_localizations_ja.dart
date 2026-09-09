@@ -133,6 +133,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get privacyPolicySublabel => 'この端末に残るものと残らないもの';
 
   @override
+  String get moreGamesVideoPokerLabel => '他のゲーム：ビデオポーカー';
+
+  @override
+  String get moreGamesVideoPokerSublabel => '無料のビデオポーカー、広告なし';
+
+  @override
+  String get moreGamesOpenFailed => 'Google Play を開けませんでした';
+
+  @override
   String get versionLabel => 'バージョン';
 
   @override

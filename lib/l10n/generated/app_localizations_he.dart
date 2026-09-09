@@ -138,6 +138,15 @@ class AppLocalizationsHe extends AppLocalizations {
   String get privacyPolicySublabel => 'מה נשאר במכשיר הזה, ומה לא';
 
   @override
+  String get moreGamesVideoPokerLabel => 'משחקים נוספים: וידאו פוקר';
+
+  @override
+  String get moreGamesVideoPokerSublabel => 'וידאו פוקר חינם, בלי פרסומות';
+
+  @override
+  String get moreGamesOpenFailed => 'לא ניתן לפתוח את Google Play';
+
+  @override
   String get versionLabel => 'גרסה';
 
   @override

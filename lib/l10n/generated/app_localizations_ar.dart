@@ -138,6 +138,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get privacyPolicySublabel => 'ما يبقى على هذا الجهاز وما لا يبقى';
 
   @override
+  String get moreGamesVideoPokerLabel => 'ألعاب أخرى: فيديو بوكر';
+
+  @override
+  String get moreGamesVideoPokerSublabel => 'فيديو بوكر مجاني، بدون إعلانات';
+
+  @override
+  String get moreGamesOpenFailed => 'تعذّر فتح Google Play';
+
+  @override
   String get versionLabel => 'الإصدار';
 
   @override

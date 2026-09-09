@@ -139,6 +139,15 @@ class AppLocalizationsPt extends AppLocalizations {
       'O que fica neste dispositivo e o que não fica';
 
   @override
+  String get moreGamesVideoPokerLabel => 'Mais jogos: Vídeo Pôquer';
+
+  @override
+  String get moreGamesVideoPokerSublabel => 'Vídeo pôquer grátis, sem anúncios';
+
+  @override
+  String get moreGamesOpenFailed => 'Não foi possível abrir o Google Play';
+
+  @override
   String get versionLabel => 'Versão';
 
   @override

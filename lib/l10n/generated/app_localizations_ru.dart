@@ -139,6 +139,16 @@ class AppLocalizationsRu extends AppLocalizations {
       'Что остаётся на этом устройстве, а что нет';
 
   @override
+  String get moreGamesVideoPokerLabel => 'Другие игры: Видеопокер';
+
+  @override
+  String get moreGamesVideoPokerSublabel =>
+      'Бесплатный видеопокер, без рекламы';
+
+  @override
+  String get moreGamesOpenFailed => 'Не удалось открыть Google Play';
+
+  @override
   String get versionLabel => 'Версия';
 
   @override

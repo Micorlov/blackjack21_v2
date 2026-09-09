@@ -348,6 +348,24 @@ abstract class AppLocalizations {
   /// **'What stays on this device, and what does not'**
   String get privacyPolicySublabel;
 
+  /// No description provided for @moreGamesVideoPokerLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'More games: Video Poker'**
+  String get moreGamesVideoPokerLabel;
+
+  /// No description provided for @moreGamesVideoPokerSublabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Free video poker, no ads'**
+  String get moreGamesVideoPokerSublabel;
+
+  /// No description provided for @moreGamesOpenFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not open Google Play'**
+  String get moreGamesOpenFailed;
+
   /// No description provided for @versionLabel.
   ///
   /// In en, this message translates to:

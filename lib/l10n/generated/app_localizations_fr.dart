@@ -139,6 +139,16 @@ class AppLocalizationsFr extends AppLocalizations {
       'Ce qui reste sur cet appareil, et ce qui n\'y reste pas';
 
   @override
+  String get moreGamesVideoPokerLabel => 'Plus de jeux : Vidéo Poker';
+
+  @override
+  String get moreGamesVideoPokerSublabel =>
+      'Vidéo poker gratuit, sans publicité';
+
+  @override
+  String get moreGamesOpenFailed => 'Impossible d\'ouvrir Google Play';
+
+  @override
   String get versionLabel => 'Version';
 
   @override
