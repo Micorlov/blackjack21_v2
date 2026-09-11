@@ -489,11 +489,11 @@ emulator testing.
 ## Changelog
 
 ### 2026-09-11 (2)
-- fix: **admin pages bypass Flutter service worker** — moved `admin.html` and `push-admin.html`
-  into `web/` so Flutter's build copies them into `build/web/` and adds them to the service
-  worker's asset manifest. Previously the service worker intercepted navigation to `/admin.html`
-  and returned the cached `index.html` (showing the game instead of the admin panel). Removed the
-  manual `cp` step from `firebase-hosting-merge.yml`; `flutter build web` now handles inclusion.
+- chore: **Admin Center deployed to GitHub Pages** — `deploy-admin.yml` publishes `admin.html`
+  (as `index.html`) and `push-admin.html` to the `gh-pages` branch under `/admin/` on every push
+  to `main` that touches either file. Admin pages are kept entirely separate from the Flutter web
+  app and its service worker. URLs: `https://micorlov.github.io/blackjack21_v2/admin/` and
+  `.../admin/push-admin.html`.
 
 ### 2026-09-11
 - docs: **admin.html** — new web-only admin panel (dark theme, green accent) with Google Sign-In

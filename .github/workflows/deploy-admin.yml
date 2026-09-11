@@ -1,0 +1,28 @@
+name: Deploy Admin Center to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - admin.html
+      - push-admin.html
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Collect admin pages
+        run: |
+          mkdir -p _admin_site
+          cp admin.html _admin_site/index.html
+          cp push-admin.html _admin_site/push-admin.html
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_admin_site
+          destination_dir: admin
