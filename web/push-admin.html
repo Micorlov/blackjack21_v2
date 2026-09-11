@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack 21 — Push Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #0a0f1a; color: #e2e8f0; min-height: 100vh; }
+
+        .auth-gate { display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; gap: 20px; }
+        .auth-gate h1 { color: #22c55e; font-size: 1.8em; }
+        .auth-gate .denied { color: #f87171; font-size: 16px; display: none; }
+        .auth-gate button { background: #fff; color: #333; border: none; border-radius: 40px; padding: 14px 32px; font-size: 16px; font-weight: 600; cursor: pointer; }
+
+        .app { display: none; }
+        .app.visible { display: block; }
+
+        .topbar { background: #111827; border-bottom: 1px solid #1e293b; padding: 14px 30px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; flex-wrap: wrap; gap: 10px; }
+        .topbar h1 { font-size: 18px; color: #22c55e; font-weight: 700; }
+        .topbar-right { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+        .topbar-right span { font-size: 13px; color: #94a3b8; }
+        .topbar-right a, .topbar-right button { color: #94a3b8; text-decoration: none; font-size: 12px; border: 1px solid #334155; background: none; padding: 5px 12px; border-radius: 6px; cursor: pointer; }
+        .topbar-right a:hover, .topbar-right button:hover { border-color: #22c55e; color: #22c55e; }
+
+        .content { max-width: 1000px; margin: 0 auto; padding: 24px; }
+
+        .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: #111827; border-radius: 10px; padding: 4px; border: 1px solid #1e293b; flex-wrap: wrap; }
+        .tab { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; color: #64748b; border: none; background: none; }
+        .tab:hover { color: #cbd5e1; }
+        .tab.active { background: #1e293b; color: #22c55e; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .panel { background: #111827; border: 1px solid #1e293b; border-radius: 12px; margin-bottom: 20px; overflow: hidden; }
+        .panel-header { padding: 14px 20px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+        .panel-header h2 { font-size: 15px; font-weight: 600; }
+        .panel-body { padding: 20px; }
+
+        .alert-banner { display: flex; align-items: flex-start; gap: 16px; padding: 18px 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid; }
+        .alert-warn { background: rgba(251,191,36,0.06); border-color: rgba(251,191,36,0.25); }
+        .alert-info { background: rgba(96,165,250,0.06); border-color: rgba(96,165,250,0.2); }
+        .alert-banner .ico { font-size: 22px; flex-shrink: 0; margin-top: 1px; }
+        .alert-banner .body { flex: 1; }
+        .alert-banner .body h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; }
+        .alert-warn .body h3 { color: #fbbf24; }
+        .alert-info .body h3 { color: #60a5fa; }
+        .alert-banner .body p { font-size: 13px; color: #94a3b8; line-height: 1.6; }
+
+        .checklist { display: flex; flex-direction: column; gap: 12px; }
+        .check-item { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border-radius: 10px; border: 1px solid #1e293b; }
+        .check-item .si { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+        .check-item.ok   { border-color: rgba(34,197,94,0.2);  background: rgba(34,197,94,0.04);  }
+        .check-item.fail { border-color: rgba(248,113,113,0.2); background: rgba(248,113,113,0.04); }
+        .check-item .info { flex: 1; }
+        .check-item .info .title { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+        .check-item.ok   .info .title { color: #4ade80; }
+        .check-item.fail .info .title { color: #f87171; }
+        .check-item .info .desc { font-size: 12px; color: #64748b; line-height: 1.5; }
+        .check-item .info code { font-size: 11px; background: #0f172a; padding: 1px 6px; border-radius: 4px; color: #94a3b8; }
+
+        .notif-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+        .notif-card { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 16px; }
+        .notif-card .nh { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .notif-card .ni { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+        .notif-card .nn { font-size: 14px; font-weight: 600; color: #e2e8f0; }
+        .notif-card .nid { font-size: 11px; color: #475569; margin-top: 2px; }
+        .notif-card .nd { font-size: 13px; color: #94a3b8; line-height: 1.5; margin-bottom: 12px; }
+        .notif-card .nm { display: flex; gap: 8px; flex-wrap: wrap; }
+        .ntag { font-size: 11px; padding: 3px 9px; border-radius: 20px; border: 1px solid currentColor; }
+        .tl { color: #60a5fa; }
+        .ts { color: #a78bfa; }
+        .ta { color: #4ade80; }
+
+        .steps { display: flex; flex-direction: column; }
+        .step { display: flex; gap: 16px; }
+        .step-l { display: flex; flex-direction: column; align-items: center; }
+        .step-num { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #22c55e; color: #22c55e; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; background: rgba(34,197,94,0.08); }
+        .step-line { width: 2px; flex: 1; background: #1e293b; margin: 6px 0; min-height: 24px; }
+        .step:last-child .step-line { display: none; }
+        .step-b { flex: 1; padding-bottom: 22px; }
+        .step-b h3 { font-size: 14px; font-weight: 600; color: #e2e8f0; margin-bottom: 6px; margin-top: 4px; }
+        .step-b p { font-size: 13px; color: #94a3b8; line-height: 1.6; }
+        .step-b code { display: inline-block; font-size: 12px; background: #0f172a; color: #4ade80; padding: 2px 8px; border-radius: 5px; }
+        .step-b pre { background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 12px 14px; font-size: 12px; color: #94a3b8; line-height: 1.6; overflow-x: auto; margin-top: 8px; }
+
+        .locked-wrap { position: relative; }
+        .lock-cover { position: absolute; inset: 0; background: rgba(10,15,26,0.72); backdrop-filter: blur(3px); border-radius: 12px; display: flex; align-items: center; justify-content: center; z-index: 10; flex-direction: column; gap: 10px; }
+        .lock-cover .li { font-size: 28px; }
+        .lock-cover p { font-size: 14px; color: #94a3b8; text-align: center; max-width: 280px; line-height: 1.5; }
+
+        .field { margin-bottom: 14px; }
+        .field label { display: block; font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .field input, .field textarea, .field select { width: 100%; padding: 9px 11px; background: #0f172a; border: 1px solid #1e293b; border-radius: 6px; color: #e2e8f0; font-size: 13px; font-family: inherit; }
+        .field textarea { resize: vertical; min-height: 68px; }
+
+        @media (max-width: 700px) { .content { padding: 14px; } .topbar { padding: 12px 16px; } }
+    </style>
+</head>
+<body>
+
+<div class="auth-gate" id="auth-gate">
+    <h1>🔔 Push Center</h1>
+    <button onclick="doSignIn()">Sign in with Google</button>
+    <div class="denied" id="denied-msg">Access denied — admin only.</div>
+</div>
+
+<div class="app" id="app">
+    <div class="topbar">
+        <h1>🔔 Blackjack 21 — Push Center</h1>
+        <div class="topbar-right">
+            <span id="who">—</span>
+            <a href="admin.html">Admin Panel</a>
+            <button onclick="firebase.auth().signOut()">Sign out</button>
+        </div>
+    </div>
+
+    <div class="content">
+
+        <div class="alert-banner alert-warn">
+            <div class="ico">⚠️</div>
+            <div class="body">
+                <h3>Remote push notifications are not yet configured</h3>
+                <p>The app currently uses <strong>local (on-device) notifications only</strong>. FCM / <code>firebase_messaging</code> is not installed.
+                   See the <em>Setup Guide</em> tab to enable remote push. Android can be done without a paid Apple account.</p>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="status"  onclick="switchTab('status')">Status</button>
+            <button class="tab"        data-tab="local"   onclick="switchTab('local')">Local Notifications</button>
+            <button class="tab"        data-tab="setup"   onclick="switchTab('setup')">Setup Guide</button>
+            <button class="tab"        data-tab="compose" onclick="switchTab('compose')">Compose (Preview)</button>
+        </div>
+
+        <!-- STATUS -->
+        <div class="tab-content active" id="tab-status">
+            <div class="panel">
+                <div class="panel-header"><h2>Infrastructure Checklist</h2></div>
+                <div class="panel-body">
+                    <div class="checklist">
+                        <div class="check-item ok">
+                            <div class="si">✅</div>
+                            <div class="info">
+                                <div class="title">Firebase project configured</div>
+                                <div class="desc">Project <code>blackjack21-v2</code> has Firebase Core, Auth, Firestore, Analytics, and Crashlytics. Both <code>google-services.json</code> and <code>GoogleService-Info.plist</code> are present.</div>
+                            </div>
+                        </div>
+                        <div class="check-item ok">
+                            <div class="si">✅</div>
+                            <div class="info">
+                                <div class="title">Android POST_NOTIFICATIONS permission declared</div>
+                                <div class="desc"><code>android.permission.POST_NOTIFICATIONS</code> is in <code>AndroidManifest.xml</code>. The runtime permission prompt is wired for local notifications and can be reused for remote FCM.</div>
+                            </div>
+                        </div>
+                        <div class="check-item ok">
+                            <div class="si">✅</div>
+                            <div class="info">
+                                <div class="title">Local notifications working</div>
+                                <div class="desc">Daily bonus reminder (ID 210) and play-day streak reminder (ID 211) fire via <code>flutter_local_notifications</code>. These work on Android and iOS without a server.</div>
+                            </div>
+                        </div>
+                        <div class="check-item fail">
+                            <div class="si">❌</div>
+                            <div class="info">
+                                <div class="title">firebase_messaging not installed</div>
+                                <div class="desc"><code>firebase_messaging</code> is absent from <code>pubspec.yaml</code>. Without it the app cannot receive FCM tokens or handle remote push payloads.</div>
+                            </div>
+                        </div>
+                        <div class="check-item fail">
+                            <div class="si">❌</div>
+                            <div class="info">
+                                <div class="title">APNs entitlement not set up (iOS remote push)</div>
+                                <div class="desc">Push Notifications is not enabled in the iOS entitlements. A paid Apple Developer account + APNs auth key uploaded to Firebase are required for iOS remote push. Local iOS notifications still work without it.</div>
+                            </div>
+                        </div>
+                        <div class="check-item fail">
+                            <div class="si">❌</div>
+                            <div class="info">
+                                <div class="title">No FCM service worker (web push)</div>
+                                <div class="desc"><code>firebase-messaging-sw.js</code> is absent from <code>web/</code>. Web push is explicitly disabled in <code>notification_support_web.dart</code>.</div>
+                            </div>
+                        </div>
+                        <div class="check-item fail">
+                            <div class="si">❌</div>
+                            <div class="info">
+                                <div class="title">No server-side push sender</div>
+                                <div class="desc">No GitHub Actions workflow or Cloud Function exists to deliver campaigns. A push-poll script (reading <code>pushCampaigns</code> from Firestore, sending via Firebase Admin SDK) is needed once FCM tokens are collected.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="alert-banner alert-info">
+                <div class="ico">💡</div>
+                <div class="body">
+                    <h3>Android remote push works without a paid Apple account</h3>
+                    <p>You can ship FCM push to Android users now. Add <code>firebase_messaging</code>, collect FCM tokens only on Android, build the push-poll GitHub Actions workflow. iOS remote push can be added later when you upgrade the Apple Developer account.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- LOCAL NOTIFICATIONS -->
+        <div class="tab-content" id="tab-local">
+            <div class="alert-banner alert-info">
+                <div class="ico">ℹ️</div>
+                <div class="body">
+                    <h3>These notifications fire on-device — no server required</h3>
+                    <p>Scheduled via <code>flutter_local_notifications</code> + <code>timezone</code>. The player must grant the <code>POST_NOTIFICATIONS</code> permission and open the app at least once to set the schedule.</p>
+                </div>
+            </div>
+            <div class="notif-cards">
+                <div class="notif-card">
+                    <div class="nh">
+                        <div class="ni" style="background:rgba(251,191,36,0.15);">🪙</div>
+                        <div><div class="nn">Daily Bonus Ready</div><div class="nid">Notification ID 210</div></div>
+                    </div>
+                    <div class="nd">Fires when the player's daily chip bonus is available to claim. Scheduled daily based on when they last claimed. Respects the <strong>notifDaily</strong> settings toggle — cancelled when turned off in Settings.</div>
+                    <div class="nm">
+                        <span class="ntag tl">on-device</span>
+                        <span class="ntag ts">scheduled daily</span>
+                        <span class="ntag ta">Android ✓</span>
+                        <span class="ntag" style="color:#f87171;">iOS ✓</span>
+                    </div>
+                </div>
+                <div class="notif-card">
+                    <div class="nh">
+                        <div class="ni" style="background:rgba(96,165,250,0.15);">🔥</div>
+                        <div><div class="nn">Streak Reminder</div><div class="nid">Notification ID 211</div></div>
+                    </div>
+                    <div class="nd">Fires in the late afternoon when the player hasn't played today and risks losing their play-day streak. Respects the <strong>notifLeaderboard</strong> toggle — cancelled when turned off in Settings.</div>
+                    <div class="nm">
+                        <span class="ntag tl">on-device</span>
+                        <span class="ntag ts">scheduled daily</span>
+                        <span class="ntag ta">Android ✓</span>
+                        <span class="ntag" style="color:#f87171;">iOS ✓</span>
+                    </div>
+                </div>
+            </div>
+            <div class="panel" style="margin-top:20px;">
+                <div class="panel-header"><h2>Player Notification Settings</h2></div>
+                <div class="panel-body" style="font-size:13px;color:#64748b;line-height:1.7;">
+                    Notification preferences (<code>notifDaily</code>, <code>notifLeaderboard</code>, <code>notifSocial</code>) are stored in <strong>SharedPreferences on-device</strong>, not in Firestore. There is no server-side view of which players have notifications enabled.
+                    <br><br>
+                    Once FCM is added, FCM tokens will be stored in Firestore (<code>fcmTokens/{uid}</code>), enabling server-side audience targeting and the compose tab.
+                </div>
+            </div>
+        </div>
+
+        <!-- SETUP GUIDE -->
+        <div class="tab-content" id="tab-setup">
+            <div class="panel">
+                <div class="panel-header"><h2>How to Enable Remote Push (Android first)</h2></div>
+                <div class="panel-body">
+                    <div class="steps">
+                        <div class="step">
+                            <div class="step-l"><div class="step-num">1</div><div class="step-line"></div></div>
+                            <div class="step-b">
+                                <h3>Add firebase_messaging to pubspec.yaml</h3>
+                                <p>Open <code>pubspec.yaml</code> and add under dependencies:</p>
+                                <pre>  firebase_messaging: ^15.0.0   # check pub.dev for latest</pre>
+                                <p>Then run <code>flutter pub get</code>. The plugin auto-registers the FCM background message handler on Android.</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-l"><div class="step-num">2</div><div class="step-line"></div></div>
+                            <div class="step-b">
+                                <h3>Request permission and save the FCM token to Firestore</h3>
+                                <p>In <code>lib/services/local_notifier.dart</code> (or a new <code>push_service.dart</code>), after existing notification setup:</p>
+                                <pre>final messaging = FirebaseMessaging.instance;
+await messaging.requestPermission();
+final token = await messaging.getToken();
+if (token != null) {
+  await FirebaseFirestore.instance
+    .collection('fcmTokens')
+    .doc(FirebaseAuth.instance.currentUser!.uid)
+    .set({
+      'token': token,
+      'platform': Platform.isAndroid ? 'android' : 'ios',
+      'updatedAt': FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+}</pre>
+                                <p>The <code>fcmTokens/{uid}</code> collection becomes the push audience list.</p>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-l"><div class="step-num">3</div><div class="step-line"></div></div>
+                            <div class="step-b">
+                                <h3>Add a Firestore security rule for fcmTokens</h3>
+                                <p>In <code>firestore.rules</code>:</p>
+                                <pre>match /fcmTokens/{uid} {
+  allow read:  if false;              // server-only reads
+  allow write: if request.auth.uid == uid;
+}</pre>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-l"><div class="step-num">4</div><div class="step-line"></div></div>
+                            <div class="step-b">
+                                <h3>Create the push-poll GitHub Actions workflow</h3>
+                                <p>Mirror the video-poker-game pattern: a Node.js script reads queued campaigns from <code>pushCampaigns</code> in Firestore, fans out to FCM via the Firebase Admin SDK using a service-account key stored as a GitHub Actions secret, then marks campaigns as delivered.</p>
+                                <p>File: <code>.github/workflows/push-poll.yml</code> — runs every 5 minutes:</p>
+                                <pre>on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:</pre>
+                            </div>
+                        </div>
+                        <div class="step">
+                            <div class="step-l"><div class="step-num">5</div><div class="step-line"></div></div>
+                            <div class="step-b">
+                                <h3>(Later) iOS — APNs entitlement</h3>
+                                <p>Requires a paid Apple Developer account.<br>
+                                   ① Enable Push Notifications in Xcode → Signing &amp; Capabilities.<br>
+                                   ② Create an APNs Auth Key in the Apple Developer portal.<br>
+                                   ③ Upload it to Firebase Console → Project Settings → Cloud Messaging → iOS app.<br>
+                                   ④ The same <code>firebase_messaging</code> plugin handles iOS automatically.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- COMPOSE PREVIEW (LOCKED) -->
+        <div class="tab-content" id="tab-compose">
+            <div class="locked-wrap">
+                <div class="lock-cover">
+                    <div class="li">🔒</div>
+                    <p>Remote push is not configured yet.<br>Complete the Setup Guide, then this tab will activate.</p>
+                </div>
+                <div style="opacity:0.3; pointer-events:none;">
+                    <div class="panel">
+                        <div class="panel-header"><h2>Message</h2></div>
+                        <div class="panel-body">
+                            <div class="field"><label>Title</label><input type="text" placeholder="Your streak is on the line! 🔥" disabled></div>
+                            <div class="field"><label>Body</label><textarea placeholder="You're one hand away from keeping your 7-day streak. Play now →" disabled></textarea></div>
+                        </div>
+                    </div>
+                    <div class="panel">
+                        <div class="panel-header"><h2>Audience</h2></div>
+                        <div class="panel-body">
+                            <div class="field"><label>Target</label>
+                                <select disabled>
+                                    <option>Everyone</option>
+                                    <option>Android only</option>
+                                    <option>Inactive 7+ days</option>
+                                    <option>Low balance (&lt; 1,000 chips)</option>
+                                    <option>One player</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel">
+                        <div class="panel-header"><h2>Schedule</h2></div>
+                        <div class="panel-body">
+                            <div class="field"><label>When</label>
+                                <select disabled><option>Send now</option><option>At a specific time…</option></select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    var firebaseConfig = {
+        apiKey: 'AIzaSyCAGCUA2CZ5-iNihZZc8VMuZ4cL-rURzN8',
+        authDomain: 'blackjack21-v2.firebaseapp.com',
+        projectId: 'blackjack21-v2',
+        storageBucket: 'blackjack21-v2.firebasestorage.app',
+        messagingSenderId: '445894203200',
+        appId: '1:445894203200:web:ed564fe74a5f26e02d0ca5'
+    };
+    firebase.initializeApp(firebaseConfig);
+    var auth = firebase.auth();
+    var ADMIN_EMAIL = 'micorlov@gmail.com';
+
+    function doSignIn() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+
+    auth.onAuthStateChanged(function(user) {
+        if (!user) {
+            document.getElementById('auth-gate').style.display = 'flex';
+            document.getElementById('app').classList.remove('visible');
+            return;
+        }
+        if (user.email !== ADMIN_EMAIL) {
+            document.getElementById('denied-msg').style.display = 'block';
+            auth.signOut();
+            return;
+        }
+        document.getElementById('auth-gate').style.display = 'none';
+        document.getElementById('app').classList.add('visible');
+        document.getElementById('who').textContent = user.displayName || user.email;
+    });
+
+    function switchTab(name) {
+        document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.remove('active'); });
+        document.querySelectorAll('.tab').forEach(function(el) { el.classList.remove('active'); });
+        document.getElementById('tab-' + name).classList.add('active');
+        document.querySelector('[data-tab="' + name + '"]').classList.add('active');
+    }
+</script>
+</body>
+</html>

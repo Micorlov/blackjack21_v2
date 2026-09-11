@@ -489,11 +489,11 @@ emulator testing.
 ## Changelog
 
 ### 2026-09-11 (2)
-- chore: **CI deploys admin pages to Firebase Hosting** — `firebase-hosting-merge.yml` now copies
-  `admin.html` and `push-admin.html` into `build/web/` after `flutter build web`, so they are
-  served alongside the app at `https://blackjack21-v2.web.app/admin.html` and `.../push-admin.html`.
-  Firebase Hosting static-file serving takes priority over the SPA rewrite, so no routing config
-  change was needed.
+- fix: **admin pages bypass Flutter service worker** — moved `admin.html` and `push-admin.html`
+  into `web/` so Flutter's build copies them into `build/web/` and adds them to the service
+  worker's asset manifest. Previously the service worker intercepted navigation to `/admin.html`
+  and returned the cached `index.html` (showing the game instead of the admin panel). Removed the
+  manual `cp` step from `firebase-hosting-merge.yml`; `flutter build web` now handles inclusion.
 
 ### 2026-09-11
 - docs: **admin.html** — new web-only admin panel (dark theme, green accent) with Google Sign-In

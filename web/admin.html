@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack 21 — Admin Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #0a0f1a; color: #e2e8f0; min-height: 100vh; }
+
+        .auth-gate { display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column; gap: 20px; }
+        .auth-gate h1 { color: #22c55e; font-size: 1.8em; }
+        .auth-gate .denied { color: #f87171; font-size: 16px; display: none; }
+        .auth-gate button { background: #fff; color: #333; border: none; border-radius: 40px; padding: 14px 32px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+
+        .app { display: none; }
+        .app.visible { display: block; }
+
+        .topbar { background: #111827; border-bottom: 1px solid #1e293b; padding: 14px 30px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+        .topbar h1 { font-size: 18px; color: #22c55e; font-weight: 700; }
+        .topbar-right { display: flex; align-items: center; gap: 14px; }
+        .topbar-right img { width: 28px; height: 28px; border-radius: 50%; }
+        .topbar-right span { font-size: 13px; color: #94a3b8; }
+        .topbar-right button { background: none; border: 1px solid #334155; color: #94a3b8; padding: 5px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+        .topbar-right button:hover { border-color: #22c55e; color: #22c55e; }
+        .topbar-right a { color: #94a3b8; text-decoration: none; font-size: 12px; border: 1px solid #334155; padding: 5px 12px; border-radius: 6px; }
+        .topbar-right a:hover { border-color: #22c55e; color: #22c55e; }
+
+        .content { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+        .tabs { display: flex; gap: 4px; margin-bottom: 24px; background: #111827; border-radius: 10px; padding: 4px; border: 1px solid #1e293b; flex-wrap: wrap; }
+        .tab { padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; color: #64748b; transition: all 0.2s; border: none; background: none; }
+        .tab:hover { color: #cbd5e1; }
+        .tab.active { background: #1e293b; color: #22c55e; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+        .stat-card { background: #111827; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; }
+        .stat-card .label { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .stat-card .value { font-size: 28px; font-weight: 700; color: #22c55e; }
+        .stat-card .sub { font-size: 12px; color: #475569; margin-top: 4px; }
+
+        .panel { background: #111827; border: 1px solid #1e293b; border-radius: 12px; overflow: hidden; margin-bottom: 24px; }
+        .panel-header { padding: 16px 20px; border-bottom: 1px solid #1e293b; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+        .panel-header h2 { font-size: 15px; font-weight: 600; color: #e2e8f0; }
+        .panel-header .badge { background: #1e293b; color: #94a3b8; padding: 3px 10px; border-radius: 20px; font-size: 12px; }
+        .panel-header button { background: #1e293b; border: none; color: #94a3b8; padding: 6px 14px; border-radius: 6px; font-size: 12px; cursor: pointer; }
+        .panel-header button:hover { color: #22c55e; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th { text-align: left; padding: 10px 16px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: #475569; background: #0f172a; border-bottom: 1px solid #1e293b; cursor: pointer; user-select: none; }
+        th:hover { color: #94a3b8; }
+        td { padding: 10px 16px; border-bottom: 1px solid rgba(30,41,59,0.5); font-size: 13px; color: #cbd5e1; }
+        tr:hover td { background: rgba(34,197,94,0.03); }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .search-bar { background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 8px 14px; color: #e2e8f0; font-size: 13px; width: 260px; }
+        .search-bar:focus { outline: none; border-color: #22c55e; }
+
+        .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; display: inline-block; margin-right: 6px; animation: blink 1.5s infinite; }
+        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .empty-state { text-align: center; padding: 40px; color: #475569; font-size: 14px; }
+
+        .period-select { background: #1e293b; border: 1px solid #334155; color: #94a3b8; padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; }
+        .period-select:focus { outline: none; border-color: #22c55e; color: #22c55e; }
+
+        .chips-badge { background: rgba(34,197,94,0.12); color: #4ade80; padding: 2px 8px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .rank-badge { width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; background: #1e293b; color: #64748b; }
+        .rank-1 { background: rgba(251,191,36,0.2); color: #fbbf24; }
+        .rank-2 { background: rgba(148,163,184,0.2); color: #94a3b8; }
+        .rank-3 { background: rgba(180,83,9,0.2); color: #b45309; }
+
+        .group-code { font-family: monospace; font-size: 15px; font-weight: 700; letter-spacing: 2px; color: #22c55e; background: rgba(34,197,94,0.08); padding: 3px 10px; border-radius: 6px; }
+
+        .input-row { display: flex; gap: 10px; align-items: center; padding: 20px; flex-wrap: wrap; }
+        .group-input { background: #0f172a; border: 1px solid #1e293b; border-radius: 8px; padding: 10px 14px; color: #e2e8f0; font-size: 14px; font-family: monospace; letter-spacing: 2px; text-transform: uppercase; width: 160px; }
+        .group-input:focus { outline: none; border-color: #22c55e; }
+        .btn-load { background: #16a34a; border: none; border-radius: 8px; color: #fff; padding: 10px 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .btn-load:hover { background: #15803d; }
+        .btn-view { background: none; border: 1px solid #334155; color: #94a3b8; padding: 4px 10px; border-radius: 5px; font-size: 11px; cursor: pointer; }
+        .btn-view:hover { border-color: #22c55e; color: #22c55e; }
+
+        .time-ago { color: #475569; font-size: 12px; }
+        .positive { color: #4ade80; }
+
+        @media (max-width: 700px) {
+            .content { padding: 14px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .topbar { padding: 12px 16px; }
+            th, td { padding: 8px 10px; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="auth-gate" id="auth-gate">
+    <h1>🃏 Admin Panel</h1>
+    <button onclick="doSignIn()">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.27-4.74 3.27-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A9.82 9.82 0 0 0 1.18 12c0 1.6.38 3.11 1 4.47l3.66-2.38z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.31c.87-2.6 3.3-4 6.16-4z"/></svg>
+        Sign in with Google
+    </button>
+    <div class="denied" id="denied-msg">Access denied — admin only.</div>
+</div>
+
+<div class="app" id="app">
+    <div class="topbar">
+        <h1>🃏 Blackjack 21 — Admin</h1>
+        <div class="topbar-right">
+            <img id="topbar-photo" src="" alt="">
+            <span id="topbar-name"></span>
+            <a href="push-admin.html">Push Center</a>
+            <button onclick="firebase.auth().signOut()">Sign Out</button>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('overview')">Overview</button>
+            <button class="tab" onclick="switchTab('players')">Players</button>
+            <button class="tab" onclick="switchTab('groups')">Groups</button>
+            <button class="tab" onclick="switchTab('livegroup')">Live Group</button>
+        </div>
+
+        <!-- OVERVIEW -->
+        <div class="tab-content active" id="tab-overview">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="label">Total Players</div>
+                    <div class="value" id="s-total">—</div>
+                    <div class="sub">on leaderboard</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Active This Hour</div>
+                    <div class="value" id="s-hour">—</div>
+                    <div class="sub"><span class="live-dot"></span>Live</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Active Today</div>
+                    <div class="value" id="s-today">—</div>
+                    <div class="sub" id="s-today-key">—</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Total Groups</div>
+                    <div class="value" id="s-groups">—</div>
+                    <div class="sub">friend tables</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Highest Chips</div>
+                    <div class="value" id="s-max-chips">—</div>
+                    <div class="sub" id="s-max-chips-name">—</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Highest Hourly</div>
+                    <div class="value" id="s-max-hourly">—</div>
+                    <div class="sub" id="s-max-hourly-name">—</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h2 style="display:flex;align-items:center;gap:8px;">
+                        <span class="live-dot"></span>
+                        <span id="board-title">Live — Current Hour</span>
+                    </h2>
+                    <div style="display:flex;gap:10px;align-items:center;">
+                        <select class="period-select" id="period-select" onchange="loadLeaderboard()">
+                            <option value="hourly">Hourly Scores</option>
+                            <option value="daily">Daily Scores</option>
+                            <option value="all">All Players (by chips)</option>
+                        </select>
+                        <button onclick="loadAll()">↻ Refresh</button>
+                    </div>
+                </div>
+                <table>
+                    <thead><tr><th>#</th><th>Player</th><th>Score</th><th>Chips</th><th>Last Seen</th></tr></thead>
+                    <tbody id="board-body"><tr><td colspan="5" class="empty-state">Loading…</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PLAYERS -->
+        <div class="tab-content" id="tab-players">
+            <div style="margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+                <input class="search-bar" type="text" placeholder="Search by name…" id="player-search" oninput="filterPlayers()">
+                <span style="font-size:13px;color:#475569;" id="player-count-label">Loading…</span>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>All Players</h2>
+                    <span class="badge" id="players-badge">0</span>
+                </div>
+                <table>
+                    <thead><tr>
+                        <th onclick="sortPlayers('name')">Name ↕</th>
+                        <th onclick="sortPlayers('chips')">Chips ↕</th>
+                        <th onclick="sortPlayers('hourly')">Hourly ↕</th>
+                        <th onclick="sortPlayers('daily')">Daily ↕</th>
+                        <th onclick="sortPlayers('updatedAt')">Last Active ↕</th>
+                        <th>Hour Key</th>
+                        <th>Day Key</th>
+                    </tr></thead>
+                    <tbody id="players-body"><tr><td colspan="7" class="empty-state">Loading…</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- GROUPS -->
+        <div class="tab-content" id="tab-groups">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>All Groups</h2>
+                    <span class="badge" id="groups-badge">0</span>
+                </div>
+                <table>
+                    <thead><tr>
+                        <th>Code</th>
+                        <th>Created By (uid)</th>
+                        <th>Created</th>
+                        <th>Members</th>
+                        <th>Action</th>
+                    </tr></thead>
+                    <tbody id="groups-body"><tr><td colspan="5" class="empty-state">Loading…</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- LIVE GROUP -->
+        <div class="tab-content" id="tab-livegroup">
+            <div class="panel">
+                <div class="panel-header"><h2>Live Group Viewer</h2></div>
+                <div class="input-row">
+                    <input class="group-input" type="text" id="group-code-input" maxlength="6" placeholder="ABCDE" oninput="this.value=this.value.toUpperCase()">
+                    <button class="btn-load" onclick="loadGroup()">Load Group</button>
+                    <span id="group-status" style="font-size:13px;color:#64748b;"></span>
+                </div>
+                <div style="overflow-x:auto;">
+                    <table id="group-table" style="display:none;">
+                        <thead><tr>
+                            <th>#</th><th>Player</th><th>Chips</th>
+                            <th>Hourly</th><th>Daily</th><th>At Table</th><th>Last Seen</th>
+                        </tr></thead>
+                        <tbody id="group-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var firebaseConfig = {
+        apiKey: 'AIzaSyCAGCUA2CZ5-iNihZZc8VMuZ4cL-rURzN8',
+        authDomain: 'blackjack21-v2.firebaseapp.com',
+        projectId: 'blackjack21-v2',
+        storageBucket: 'blackjack21-v2.firebasestorage.app',
+        messagingSenderId: '445894203200',
+        appId: '1:445894203200:web:ed564fe74a5f26e02d0ca5'
+    };
+    firebase.initializeApp(firebaseConfig);
+    var auth = firebase.auth();
+    var db = firebase.firestore();
+    var ADMIN_EMAIL = 'micorlov@gmail.com';
+
+    var allPlayers = [];
+    var playersSortField = 'chips';
+    var playersSortDir = -1;
+    var allGroups = [];
+    var groupUnsub = null;
+
+    function hourKeyOf(d) { return d.toISOString().slice(0, 13); }
+    function dayKeyOf(d)  { return d.toISOString().slice(0, 10); }
+    function fmtN(n)      { return (typeof n === 'number') ? n.toLocaleString() : '—'; }
+
+    function timeAgo(ts) {
+        if (!ts) return '—';
+        var d = ts.toDate ? ts.toDate() : new Date(ts);
+        var s = Math.round((Date.now() - d.getTime()) / 1000);
+        if (s < 60)    return s + 's ago';
+        if (s < 3600)  return Math.round(s / 60) + 'm ago';
+        if (s < 86400) return Math.round(s / 3600) + 'h ago';
+        return Math.round(s / 86400) + 'd ago';
+    }
+
+    // ---------- auth ----------
+
+    function doSignIn() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+
+    auth.onAuthStateChanged(function(user) {
+        if (!user) {
+            document.getElementById('auth-gate').style.display = 'flex';
+            document.getElementById('app').classList.remove('visible');
+            return;
+        }
+        if (user.email !== ADMIN_EMAIL) {
+            document.getElementById('denied-msg').style.display = 'block';
+            auth.signOut();
+            return;
+        }
+        document.getElementById('auth-gate').style.display = 'none';
+        document.getElementById('app').classList.add('visible');
+        document.getElementById('topbar-photo').src = user.photoURL || '';
+        document.getElementById('topbar-name').textContent = user.displayName || user.email;
+        loadAll();
+    });
+
+    // ---------- tab switching ----------
+
+    var TAB_NAMES = ['overview', 'players', 'groups', 'livegroup'];
+
+    function switchTab(name) {
+        document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.remove('active'); });
+        document.querySelectorAll('.tab').forEach(function(el) { el.classList.remove('active'); });
+        document.getElementById('tab-' + name).classList.add('active');
+        var tabs = document.querySelectorAll('.tab');
+        var idx = TAB_NAMES.indexOf(name);
+        if (idx >= 0) tabs[idx].classList.add('active');
+    }
+
+    function loadAll() { loadLeaderboard(); loadGroups(); }
+
+    // ---------- leaderboard / overview ----------
+
+    function loadLeaderboard() {
+        var now = new Date();
+        var hk = hourKeyOf(now);
+        var dk = dayKeyOf(now);
+        var mode = document.getElementById('period-select').value;
+
+        document.getElementById('board-body').innerHTML = '<tr><td colspan="5" class="empty-state">Loading…</td></tr>';
+
+        var titles = { hourly: 'Live — Current Hour (' + hk + ')', daily: 'Today — ' + dk, all: 'All Players (by chips)' };
+        document.getElementById('board-title').textContent = titles[mode];
+
+        db.collection('leaderboard').orderBy('updatedAt', 'desc').limit(500).get()
+            .then(function(snap) {
+                var docs = snap.docs.map(function(d) { return Object.assign({ _uid: d.id }, d.data()); });
+                allPlayers = docs;
+                renderPlayers();
+
+                var hourlyActive = docs.filter(function(d) { return d.hourKey === hk; });
+                var dailyActive  = docs.filter(function(d) { return d.dayKey  === dk; });
+
+                document.getElementById('s-total').textContent = docs.length;
+                document.getElementById('s-hour').textContent  = hourlyActive.length;
+                document.getElementById('s-today').textContent = dailyActive.length;
+                document.getElementById('s-today-key').textContent = dk;
+
+                var maxChips  = docs.reduce(function(m, d) { return (d.chips||0) > (m.chips||0) ? d : m; }, {});
+                var maxHourly = hourlyActive.reduce(function(m, d) { return (d.hourly||0) > (m.hourly||0) ? d : m; }, {});
+                document.getElementById('s-max-chips').textContent  = fmtN(maxChips.chips);
+                document.getElementById('s-max-chips-name').textContent = maxChips.name || '—';
+                document.getElementById('s-max-hourly').textContent  = fmtN(maxHourly.hourly);
+                document.getElementById('s-max-hourly-name').textContent = maxHourly.name || '—';
+
+                var filtered, scoreField;
+                if (mode === 'hourly') {
+                    filtered = hourlyActive.slice().sort(function(a,b){ return (b.hourly||0)-(a.hourly||0); });
+                    scoreField = 'hourly';
+                } else if (mode === 'daily') {
+                    filtered = dailyActive.slice().sort(function(a,b){ return (b.daily||0)-(a.daily||0); });
+                    scoreField = 'daily';
+                } else {
+                    filtered = docs.slice().sort(function(a,b){ return (b.chips||0)-(a.chips||0); });
+                    scoreField = 'chips';
+                }
+
+                if (filtered.length === 0) {
+                    document.getElementById('board-body').innerHTML = '<tr><td colspan="5" class="empty-state">No data for this period.</td></tr>';
+                    return;
+                }
+                document.getElementById('board-body').innerHTML = filtered.map(function(d, i) {
+                    var rc = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+                    return '<tr>' +
+                        '<td><span class="rank-badge ' + rc + '">' + (i+1) + '</span></td>' +
+                        '<td>' + esc(d.name || '?') + '</td>' +
+                        '<td class="positive">' + fmtN(d[scoreField]) + '</td>' +
+                        '<td><span class="chips-badge">' + fmtN(d.chips) + '</span></td>' +
+                        '<td class="time-ago">' + timeAgo(d.updatedAt) + '</td>' +
+                    '</tr>';
+                }).join('');
+            })
+            .catch(function(e) {
+                document.getElementById('board-body').innerHTML = '<tr><td colspan="5" class="empty-state">Error: ' + esc(e.message) + '</td></tr>';
+            });
+    }
+
+    // ---------- players tab ----------
+
+    function renderPlayers() {
+        var q = document.getElementById('player-search').value.toLowerCase().trim();
+        var data = allPlayers.filter(function(d) { return !q || (d.name||'').toLowerCase().includes(q); });
+        data = data.slice().sort(function(a, b) {
+            var av = a[playersSortField], bv = b[playersSortField];
+            if (av && av.toDate) av = av.toDate().getTime();
+            if (bv && bv.toDate) bv = bv.toDate().getTime();
+            if (av == null) return 1; if (bv == null) return -1;
+            return playersSortDir * (av > bv ? 1 : av < bv ? -1 : 0);
+        });
+        document.getElementById('players-badge').textContent = data.length;
+        document.getElementById('player-count-label').textContent = data.length + ' player' + (data.length !== 1 ? 's' : '');
+        if (data.length === 0) {
+            document.getElementById('players-body').innerHTML = '<tr><td colspan="7" class="empty-state">No players found.</td></tr>';
+            return;
+        }
+        document.getElementById('players-body').innerHTML = data.map(function(d) {
+            return '<tr>' +
+                '<td>' + esc(d.name || '?') + '</td>' +
+                '<td><span class="chips-badge">' + fmtN(d.chips) + '</span></td>' +
+                '<td class="positive">' + fmtN(d.hourly) + '</td>' +
+                '<td>' + fmtN(d.daily) + '</td>' +
+                '<td class="time-ago">' + timeAgo(d.updatedAt) + '</td>' +
+                '<td style="font-size:11px;color:#475569;">' + esc(d.hourKey||'—') + '</td>' +
+                '<td style="font-size:11px;color:#475569;">' + esc(d.dayKey||'—') + '</td>' +
+            '</tr>';
+        }).join('');
+    }
+
+    function filterPlayers() { renderPlayers(); }
+
+    function sortPlayers(field) {
+        if (playersSortField === field) { playersSortDir *= -1; } else { playersSortField = field; playersSortDir = -1; }
+        renderPlayers();
+    }
+
+    // ---------- groups ----------
+
+    function loadGroups() {
+        document.getElementById('groups-body').innerHTML = '<tr><td colspan="5" class="empty-state">Loading…</td></tr>';
+        db.collection('groups').orderBy('createdAt', 'desc').limit(200).get()
+            .then(function(snap) {
+                allGroups = snap.docs.map(function(d) { return Object.assign({ _code: d.id }, d.data()); });
+                document.getElementById('s-groups').textContent   = allGroups.length;
+                document.getElementById('groups-badge').textContent = allGroups.length;
+                if (allGroups.length === 0) {
+                    document.getElementById('groups-body').innerHTML = '<tr><td colspan="5" class="empty-state">No groups yet.</td></tr>';
+                    return;
+                }
+                renderGroups();
+                allGroups.forEach(function(g, idx) {
+                    db.collection('groups').doc(g._code).collection('players').get()
+                        .then(function(s) {
+                            g._memberCount = s.size;
+                            var el = document.getElementById('grp-count-' + idx);
+                            if (el) el.textContent = s.size;
+                        });
+                });
+            })
+            .catch(function(e) {
+                document.getElementById('groups-body').innerHTML = '<tr><td colspan="5" class="empty-state">Error: ' + esc(e.message) + '</td></tr>';
+            });
+    }
+
+    function renderGroups() {
+        document.getElementById('groups-body').innerHTML = allGroups.map(function(g, idx) {
+            var uid = (g.createdBy || '—');
+            var shortUid = uid.length > 14 ? uid.slice(0, 12) + '…' : uid;
+            return '<tr>' +
+                '<td><span class="group-code">' + esc(g._code) + '</span></td>' +
+                '<td style="font-size:12px;color:#94a3b8;" title="' + esc(uid) + '">' + esc(shortUid) + '</td>' +
+                '<td class="time-ago">' + timeAgo(g.createdAt) + '</td>' +
+                '<td id="grp-count-' + idx + '" style="color:#22c55e;">…</td>' +
+                '<td><button class="btn-view" onclick="openGroup(\'' + esc(g._code) + '\')">View →</button></td>' +
+            '</tr>';
+        }).join('');
+    }
+
+    function openGroup(code) {
+        switchTab('livegroup');
+        document.getElementById('group-code-input').value = code;
+        loadGroup();
+    }
+
+    // ---------- live group ----------
+
+    function loadGroup() {
+        var code = document.getElementById('group-code-input').value.trim().toUpperCase();
+        if (!code) { document.getElementById('group-status').textContent = 'Enter a group code.'; return; }
+        document.getElementById('group-status').textContent = 'Loading…';
+        document.getElementById('group-table').style.display = 'none';
+        if (groupUnsub) { groupUnsub(); groupUnsub = null; }
+
+        groupUnsub = db.collection('groups').doc(code).collection('players')
+            .orderBy('chips', 'desc')
+            .onSnapshot(function(snap) {
+                var count = snap.size;
+                document.getElementById('group-status').textContent = count + ' member' + (count !== 1 ? 's' : '') + ' — live';
+                if (snap.empty) {
+                    document.getElementById('group-table').style.display = 'none';
+                    document.getElementById('group-status').textContent = 'Group not found or empty.';
+                    return;
+                }
+                document.getElementById('group-table').style.display = '';
+                var now = new Date();
+                var hk = hourKeyOf(now);
+                var dk = dayKeyOf(now);
+                document.getElementById('group-body').innerHTML = snap.docs.map(function(d, i) {
+                    var r  = d.data();
+                    var rc = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+                    var atTable = r.tableKey && r.tableKey !== '';
+                    return '<tr>' +
+                        '<td><span class="rank-badge ' + rc + '">' + (i+1) + '</span></td>' +
+                        '<td>' + esc(r.name || '?') + '</td>' +
+                        '<td><span class="chips-badge">' + fmtN(r.chips) + '</span></td>' +
+                        '<td class="positive">' + fmtN(r.hourKey === hk ? r.hourly : 0) + '</td>' +
+                        '<td>' + fmtN(r.dayKey === dk ? r.daily : 0) + '</td>' +
+                        '<td>' + (atTable ? '<span style="color:#4ade80;">🃏 playing</span>' : '<span style="color:#475569;">—</span>') + '</td>' +
+                        '<td class="time-ago">' + timeAgo(r.updatedAt) + '</td>' +
+                    '</tr>';
+                }).join('');
+            }, function(e) {
+                document.getElementById('group-status').textContent = 'Error: ' + esc(e.message);
+            });
+    }
+
+    // ---------- helpers ----------
+
+    function esc(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+</script>
+</body>
+</html>
