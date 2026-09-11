@@ -488,6 +488,18 @@ emulator testing.
 
 ## Changelog
 
+### 2026-09-11
+- docs: **admin.html** — new web-only admin panel (dark theme, green accent) with Google Sign-In
+  gate (`micorlov@gmail.com`). Four tabs: Overview (live leaderboard stats), Players (full
+  `leaderboard` collection, sortable/searchable), Groups (`groups` collection with member counts),
+  Live Group (real-time `onSnapshot` listener for any group code). Read-only; backed by Firebase
+  Firestore project `blackjack21-v2`.
+- docs: **push-admin.html** — web-only Push Center page. Documents the current push notification
+  state: local notifications (ID 210 daily bonus, ID 211 streak reminder) work via
+  `flutter_local_notifications`; remote FCM is not configured (`firebase_messaging` absent).
+  Includes an infrastructure checklist, local notification cards, a 5-step FCM setup guide, and a
+  locked Compose preview. No APK rebuild required — static HTML files only.
+
 ### 2026-09-10
 - feat: **new app icon.** A fully composed mark — the dealer holding the ace of spades and king
   of hearts, a gold "21" and ring on green felt, chip stacks in the corners — replaces the old
