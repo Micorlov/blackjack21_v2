@@ -488,6 +488,13 @@ emulator testing.
 
 ## Changelog
 
+### 2026-09-11 (2)
+- chore: **CI deploys admin pages to Firebase Hosting** — `firebase-hosting-merge.yml` now copies
+  `admin.html` and `push-admin.html` into `build/web/` after `flutter build web`, so they are
+  served alongside the app at `https://blackjack21-v2.web.app/admin.html` and `.../push-admin.html`.
+  Firebase Hosting static-file serving takes priority over the SPA rewrite, so no routing config
+  change was needed.
+
 ### 2026-09-11
 - docs: **admin.html** — new web-only admin panel (dark theme, green accent) with Google Sign-In
   gate (`micorlov@gmail.com`). Four tabs: Overview (live leaderboard stats), Players (full
