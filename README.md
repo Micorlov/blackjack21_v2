@@ -488,6 +488,11 @@ emulator testing.
 
 ## Changelog
 
+### 2026-09-11 (3)
+- feat: **admin Players tab — Last active date filter** — dropdown lets admin filter players by
+  last-active window: 7 days, 30 days, 3 months (default), or All time. Leaderboard fetch limit
+  raised from 500 → 2000 so older players are included in the result set.
+
 ### 2026-09-11 (2)
 - chore: **Admin Center deployed to GitHub Pages** — `deploy-admin.yml` publishes `admin.html`
   (as `index.html`) and `push-admin.html` to the `gh-pages` branch under `/admin/` on every push

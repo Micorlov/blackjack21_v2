@@ -189,6 +189,12 @@
         <div class="tab-content" id="tab-players">
             <div style="margin-bottom:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
                 <input class="search-bar" type="text" placeholder="Search by name…" id="player-search" oninput="filterPlayers()">
+                <select class="period-select" id="player-date-filter" onchange="filterPlayers()">
+                    <option value="7">Last 7 days</option>
+                    <option value="30">Last 30 days</option>
+                    <option value="90" selected>Last 3 months</option>
+                    <option value="0">All time</option>
+                </select>
                 <span style="font-size:13px;color:#475569;" id="player-count-label">Loading…</span>
             </div>
             <div class="panel">
@@ -338,7 +344,7 @@
         var titles = { hourly: 'Live — Current Hour (' + hk + ')', daily: 'Today — ' + dk, all: 'All Players (by chips)' };
         document.getElementById('board-title').textContent = titles[mode];
 
-        db.collection('leaderboard').orderBy('updatedAt', 'desc').limit(500).get()
+        db.collection('leaderboard').orderBy('updatedAt', 'desc').limit(2000).get()
             .then(function(snap) {
                 var docs = snap.docs.map(function(d) { return Object.assign({ _uid: d.id }, d.data()); });
                 allPlayers = docs;
@@ -395,7 +401,16 @@
 
     function renderPlayers() {
         var q = document.getElementById('player-search').value.toLowerCase().trim();
-        var data = allPlayers.filter(function(d) { return !q || (d.name||'').toLowerCase().includes(q); });
+        var days = parseInt(document.getElementById('player-date-filter').value, 10);
+        var cutoff = days > 0 ? Date.now() - days * 86400000 : 0;
+        var data = allPlayers.filter(function(d) {
+            if (q && !(d.name||'').toLowerCase().includes(q)) return false;
+            if (cutoff && d.updatedAt) {
+                var ts = d.updatedAt.toDate ? d.updatedAt.toDate().getTime() : new Date(d.updatedAt).getTime();
+                if (ts < cutoff) return false;
+            }
+            return true;
+        });
         data = data.slice().sort(function(a, b) {
             var av = a[playersSortField], bv = b[playersSortField];
             if (av && av.toDate) av = av.toDate().getTime();
