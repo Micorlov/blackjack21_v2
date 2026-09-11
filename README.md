@@ -488,6 +488,11 @@ emulator testing.
 
 ## Changelog
 
+### 2026-09-12
+- feat: **admin Players tab — Group Code + UID columns** — Players table now also fetches the
+  `players` collection and joins it so each row shows the player's active group code and Firebase
+  UID alongside the existing chips/hourly/daily/last-active/period-key columns.
+
 ### 2026-09-11 (3)
 - feat: **admin Players tab — Last active date filter** — dropdown lets admin filter players by
   last-active window: 7 days, 30 days, 3 months (default), or All time. Leaderboard fetch limit
