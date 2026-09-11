@@ -209,10 +209,12 @@
                         <th onclick="sortPlayers('hourly')">Hourly ↕</th>
                         <th onclick="sortPlayers('daily')">Daily ↕</th>
                         <th onclick="sortPlayers('updatedAt')">Last Active ↕</th>
+                        <th>Group</th>
                         <th>Hour Key</th>
                         <th>Day Key</th>
+                        <th>UID</th>
                     </tr></thead>
-                    <tbody id="players-body"><tr><td colspan="7" class="empty-state">Loading…</td></tr></tbody>
+                    <tbody id="players-body"><tr><td colspan="9" class="empty-state">Loading…</td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -344,9 +346,16 @@
         var titles = { hourly: 'Live — Current Hour (' + hk + ')', daily: 'Today — ' + dk, all: 'All Players (by chips)' };
         document.getElementById('board-title').textContent = titles[mode];
 
-        db.collection('leaderboard').orderBy('updatedAt', 'desc').limit(2000).get()
-            .then(function(snap) {
-                var docs = snap.docs.map(function(d) { return Object.assign({ _uid: d.id }, d.data()); });
+        Promise.all([
+            db.collection('leaderboard').orderBy('updatedAt', 'desc').limit(2000).get(),
+            db.collection('players').limit(2000).get()
+        ]).then(function(results) {
+                var playersSnap = results[1];
+                var groupMap = {};
+                playersSnap.docs.forEach(function(d) { groupMap[d.id] = d.data().groupCode || ''; });
+                var docs = results[0].docs.map(function(d) {
+                    return Object.assign({ _uid: d.id, _groupCode: groupMap[d.id] || '' }, d.data());
+                });
                 allPlayers = docs;
                 renderPlayers();
 
@@ -421,7 +430,7 @@
         document.getElementById('players-badge').textContent = data.length;
         document.getElementById('player-count-label').textContent = data.length + ' player' + (data.length !== 1 ? 's' : '');
         if (data.length === 0) {
-            document.getElementById('players-body').innerHTML = '<tr><td colspan="7" class="empty-state">No players found.</td></tr>';
+            document.getElementById('players-body').innerHTML = '<tr><td colspan="9" class="empty-state">No players found.</td></tr>';
             return;
         }
         document.getElementById('players-body').innerHTML = data.map(function(d) {
@@ -431,8 +440,10 @@
                 '<td class="positive">' + fmtN(d.hourly) + '</td>' +
                 '<td>' + fmtN(d.daily) + '</td>' +
                 '<td class="time-ago">' + timeAgo(d.updatedAt) + '</td>' +
+                '<td style="font-size:11px;color:#94a3b8;font-weight:600;">' + esc(d._groupCode||'—') + '</td>' +
                 '<td style="font-size:11px;color:#475569;">' + esc(d.hourKey||'—') + '</td>' +
                 '<td style="font-size:11px;color:#475569;">' + esc(d.dayKey||'—') + '</td>' +
+                '<td style="font-size:10px;color:#334155;font-family:monospace;">' + esc(d._uid||'') + '</td>' +
             '</tr>';
         }).join('');
     }
