@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/enums.dart';
 import '../../state/game_notifier.dart';
+import '../../l10n/gameplay.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_motion.dart';
 import '../../theme/app_palette.dart';
@@ -53,6 +54,7 @@ class _TablePlayingPanelState extends ConsumerState<TablePlayingPanel> {
   Widget build(BuildContext context) {
     final state = ref.watch(gameProvider);
     final notifier = ref.read(gameProvider.notifier);
+    final l = gameplayStrings(context);
     final palette = AppPalette.of(context);
 
     final isPlaying = state.phase == RoundPhase.playing;
@@ -74,7 +76,7 @@ class _TablePlayingPanelState extends ConsumerState<TablePlayingPanel> {
             Expanded(
               flex: 3,
               child: ActionPillButton(
-                label: 'DOUBLE',
+                label: l.gameDouble,
                 borderColor: AppColors.gold.withValues(alpha: AppAlpha.muted),
                 backgroundColor: AppColors.gold.withValues(alpha: 0.08),
                 textColor: AppColors.gold,
@@ -87,7 +89,7 @@ class _TablePlayingPanelState extends ConsumerState<TablePlayingPanel> {
             Expanded(
               flex: 3,
               child: ActionPillButton(
-                label: 'SPLIT',
+                label: l.gameSplit,
                 borderColor: AppColors.gold.withValues(alpha: AppAlpha.muted),
                 backgroundColor: AppColors.gold.withValues(alpha: 0.08),
                 textColor: AppColors.gold,
@@ -107,7 +109,8 @@ class _TablePlayingPanelState extends ConsumerState<TablePlayingPanel> {
             Expanded(
               flex: 2,
               child: ActionPillButton(
-                label: 'SURRENDER',
+                label: l.gameSurrender,
+                horizontalPadding: 8,
                 borderColor: palette.lose,
                 backgroundColor: Colors.transparent,
                 textColor: palette.loseOnFelt,
@@ -128,7 +131,7 @@ class _TablePlayingPanelState extends ConsumerState<TablePlayingPanel> {
           children: [
             Expanded(
               child: ActionPillButton(
-                label: 'STAND',
+                label: l.gameStand,
                 borderColor: AppColors.win.withValues(alpha: AppAlpha.strong),
                 backgroundColor: AppColors.win.withValues(alpha: 0.2),
                 textColor: AppColors.winLight,
@@ -140,7 +143,7 @@ class _TablePlayingPanelState extends ConsumerState<TablePlayingPanel> {
             const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: GoldButton(
-                label: 'HIT',
+                label: l.gameHit,
                 onPressed: _debounced(notifier.playerHit),
                 verticalPadding: 22,
                 fontSize: 24,

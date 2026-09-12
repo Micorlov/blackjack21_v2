@@ -9,6 +9,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart' show WidgetsBinding, AppLifecycleState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:share_plus/share_plus.dart';
@@ -68,11 +69,10 @@ class GameNotifier extends StateNotifier<GameState> {
     @visibleForTesting SoundPlayer? sound,
     @visibleForTesting Analytics? analytics,
     @visibleForTesting ReviewPrompter? reviewPrompter,
-  })
-    : _sound = sound ?? SoundPlayer(),
-      _analytics = analytics ?? _defaultAnalytics(),
-      _reviewPrompter = reviewPrompter ?? ReviewPrompter(),
-      super(const GameState(friends: kInitialFriends)) {
+  }) : _sound = sound ?? SoundPlayer(),
+       _analytics = analytics ?? _defaultAnalytics(),
+       _reviewPrompter = reviewPrompter ?? ReviewPrompter(),
+       super(const GameState(friends: kInitialFriends)) {
     _shoe = BlackjackRules.buildShoe(kDeckCount, _rng);
     // `authenticate()` throws UnimplementedError on web — Google Identity
     // Services requires its own rendered button there (see
@@ -113,6 +113,7 @@ class GameNotifier extends StateNotifier<GameState> {
   /// Holds the review sheet back until the settlement card has landed; see
   /// [_maybeAskForReview].
   Timer? _reviewTimer;
+  bool _reviewPending = false;
   StreamSubscription<GoogleSignInAuthenticationEvent>? _authEventsSub;
   StreamSubscription<List<Friend>>? _groupSub;
   Timer? _heartbeatTimer;
@@ -512,7 +513,18 @@ class GameNotifier extends StateNotifier<GameState> {
       lastRebuyAt: saved.lastRebuyAtMs == 0 ? null : DateTime.fromMillisecondsSinceEpoch(saved.lastRebuyAtMs),
       analyticsOn: saved.analyticsOn,
       reviewPromptShown: saved.reviewPromptShown,
+      reviewLastAttemptAtMs: saved.reviewLastAttemptAtMs == 0 && saved.reviewPromptShown
+          ? now.millisecondsSinceEpoch
+          : saved.reviewLastAttemptAtMs,
+      reviewRequestCount: saved.reviewLastAttemptAtMs == 0 && saved.reviewPromptShown ? 1 : saved.reviewRequestCount,
+      reviewLastRequestSucceeded:
+          saved.reviewLastRequestSucceeded || (saved.reviewLastAttemptAtMs == 0 && saved.reviewPromptShown),
+      tutorialCompletionLogged: saved.tutorialCompletionLogged,
     );
+    // Persist legacy migration now so relaunching cannot restart its cooldown.
+    if (saved.reviewPromptShown && saved.reviewLastAttemptAtMs == 0) {
+      await _store.save(_snapshot());
+    }
   }
 
   SavedGame _snapshot() => SavedGame(
@@ -542,6 +554,10 @@ class GameNotifier extends StateNotifier<GameState> {
     lastRebuyAtMs: state.lastRebuyAt?.millisecondsSinceEpoch ?? 0,
     analyticsOn: state.analyticsOn,
     reviewPromptShown: state.reviewPromptShown,
+    reviewLastAttemptAtMs: state.reviewLastAttemptAtMs,
+    reviewRequestCount: state.reviewRequestCount,
+    reviewLastRequestSucceeded: state.reviewLastRequestSucceeded,
+    tutorialCompletionLogged: state.tutorialCompletionLogged,
   );
 
   /// Coalesces the writes a fast player generates — settling a hand and
@@ -916,6 +932,9 @@ class GameNotifier extends StateNotifier<GameState> {
   /// Mobile/desktop only — web's `authenticate()` throws `UnimplementedError`
   /// and instead delivers its result through [_handleAuthEvent].
   Future<void> signInGoogle() async {
+    if (state.screen == AppScreen.onboarding) {
+      unawaited(_analytics.logEvent(AnalyticsEvent.entrySelected, {'method': 'google'}));
+    }
     final GoogleSignInAccount account;
     try {
       account = await GoogleSignIn.instance.authenticate();
@@ -965,6 +984,7 @@ class GameNotifier extends StateNotifier<GameState> {
         await _rebindSocialIdentity();
       }
       final user = userCredential.user;
+      final completingOnboarding = state.screen == AppScreen.onboarding;
       state = state.copyWith(
         signedIn: true,
         displayName: user?.displayName ?? account.displayName ?? 'Player',
@@ -972,6 +992,10 @@ class GameNotifier extends StateNotifier<GameState> {
         screen: AppScreen.lobby,
         heroUid: _social.uid,
       );
+      if (completingOnboarding) {
+        unawaited(_analytics.logEvent(AnalyticsEvent.onboardingComplete, {'method': 'google'}));
+      }
+      _scheduleSave();
       _reportScore();
     } on FirebaseAuthException {
       _showToast('Google sign-in failed. Please try again.');
@@ -1000,6 +1024,16 @@ class GameNotifier extends StateNotifier<GameState> {
 
   void playGuest() =>
       state = state.copyWith(signedIn: false, displayName: 'Guest', photoUrl: null, screen: AppScreen.lobby);
+
+  /// Starts a coached hand at the lowest-stakes table, without signing in.
+  /// Choosing chips and dealing remain explicit player actions.
+  void playNow() {
+    unawaited(_analytics.logEvent(AnalyticsEvent.entrySelected, {'method': 'guest'}));
+    playGuest();
+    enterTable(kTables.first);
+    _scheduleSave();
+    unawaited(_analytics.logEvent(AnalyticsEvent.onboardingComplete, {'method': 'guest'}));
+  }
 
   Future<void> signOutUser() async {
     await Future.wait([GoogleSignIn.instance.signOut(), FirebaseAuth.instance.signOut()]);
@@ -1410,9 +1444,7 @@ class GameNotifier extends StateNotifier<GameState> {
     // sweep pot the 21 then takes. See the same rule in [deal].
     final playerBJ = BlackjackRules.handValue(state.hands[0].cards) == 21;
     if (playerBJ) {
-      state = state.copyWith(
-        hands: state.hands.map((h) => h.copyWith(status: HandStatus.blackjack)).toList(),
-      );
+      state = state.copyWith(hands: state.hands.map((h) => h.copyWith(status: HandStatus.blackjack)).toList());
     }
     _startNpcTurns();
   }
@@ -1793,10 +1825,7 @@ class GameNotifier extends StateNotifier<GameState> {
       // "Blackjack! You win" — the hand is called by name, the way the
       // dealer's natural always was. It used to be the generic "Big win",
       // which said nothing about what had just been turned over.
-      _playVoice(
-        heroTakesPot ? GameVoice.playerBlackjackPot : GameVoice.playerBlackjack,
-        celebrate: heroTakesPot,
-      );
+      _playVoice(heroTakesPot ? GameVoice.playerBlackjackPot : GameVoice.playerBlackjack, celebrate: heroTakesPot);
       if (heroTakesPot) _celebrateSweep();
       _hapticCelebrate();
     } else if (messageType == MessageType.win) {
@@ -1904,46 +1933,64 @@ class GameNotifier extends StateNotifier<GameState> {
       }),
     );
 
-    _maybeAskForReview(sweptPot: heroTakesPot, blackjack: heroBlackjack, winStreak: newStreak);
+    final previousHands = state.stats.handsPlayed - hands.length;
+    for (final milestone in [1, 10]) {
+      if (previousHands < milestone && state.stats.handsPlayed >= milestone) {
+        unawaited(_analytics.logEvent(milestone == 1 ? AnalyticsEvent.firstHand : AnalyticsEvent.tenHands));
+      }
+    }
+    if (!state.tutorialDismissed &&
+        state.tutorialRoundsSeen == kTutorialRounds - 1 &&
+        !state.tutorialCompletionLogged) {
+      state = state.copyWith(tutorialCompletionLogged: true);
+      _scheduleSave();
+      unawaited(_analytics.logEvent(AnalyticsEvent.tutorialComplete));
+    }
+    _maybeAskForReview();
   }
 
-  /// Asks for a Play Store rating, at most once ever, on a hand the player has
-  /// just been told they won well — see [shouldPromptForReview].
-  ///
-  /// The wait lets the settlement card land first: Google's sheet slides over
-  /// whatever is on screen, and arriving on top of the cards still being dealt
-  /// out reads as an interruption rather than as a question about a hand the
-  /// player just enjoyed.
-  void _maybeAskForReview({required bool sweptPot, required bool blackjack, required int winStreak}) {
-    if (!shouldPromptForReview(
-      alreadyAsked: state.reviewPromptShown,
-      handsPlayed: state.stats.handsPlayed,
-      sweptPot: sweptPot,
-      blackjack: blackjack,
-      winStreak: winStreak,
-    )) {
+  /// Ask at a quiet settlement after enough play, regardless of win or loss.
+  /// Only an actual service attempt starts the cooldown; canceled timers do not.
+  void _maybeAskForReview() {
+    if (_reviewPending ||
+        !shouldPromptForReview(
+          handsPlayed: state.stats.handsPlayed,
+          now: DateTime.now(),
+          lastAttemptAtMs: state.reviewLastAttemptAtMs,
+          completedRequests: state.reviewRequestCount,
+          lastRequestSucceeded: state.reviewLastRequestSucceeded,
+        )) {
       return;
     }
-
-    // Set before the sheet is asked for, not after: a player who backgrounds
-    // the game mid-request must not come back to a second ask.
-    state = state.copyWith(reviewPromptShown: true);
-    _scheduleSave();
-    unawaited(
-      _analytics.logEvent(AnalyticsEvent.reviewPrompted, {
-        'hands': state.stats.handsPlayed,
-        'trigger': sweptPot
-            ? 'sweep'
-            : blackjack
-            ? 'blackjack'
-            : 'streak',
-      }),
-    );
-
-    _reviewTimer?.cancel();
-    _reviewTimer = Timer(_kReviewPromptDelay, () {
-      if (!mounted) return;
-      unawaited(_reviewPrompter.request());
+    _reviewPending = true;
+    _reviewTimer = Timer(_kReviewPromptDelay, () async {
+      try {
+        if (!mounted || state.screen != AppScreen.table || state.phase != RoundPhase.settlement) return;
+        final lifecycle = WidgetsBinding.instance.lifecycleState;
+        if (lifecycle != null && lifecycle != AppLifecycleState.resumed) return;
+        state = state.copyWith(
+          reviewLastAttemptAtMs: DateTime.now().millisecondsSinceEpoch,
+          reviewLastRequestSucceeded: false,
+        );
+        await _store.save(_snapshot());
+        if (!mounted || state.screen != AppScreen.table || state.phase != RoundPhase.settlement) return;
+        unawaited(_analytics.logEvent(AnalyticsEvent.reviewPrompted, {'hands': state.stats.handsPlayed}));
+        final completed = await _reviewPrompter.request();
+        if (!mounted) return;
+        state = state.copyWith(
+          reviewPromptShown: state.reviewPromptShown || completed,
+          reviewLastRequestSucceeded: completed,
+          reviewRequestCount: state.reviewRequestCount + (completed ? 1 : 0),
+        );
+        _scheduleSave();
+        unawaited(
+          _analytics.logEvent(AnalyticsEvent.reviewRequestResult, {
+            'outcome': completed ? 'request_completed' : 'unavailable_or_failed',
+          }),
+        );
+      } finally {
+        _reviewPending = false;
+      }
     });
   }
 
@@ -2021,6 +2068,7 @@ class GameNotifier extends StateNotifier<GameState> {
   /// the player replays the tutorial from Settings.
   void skipTutorial() {
     if (state.tutorialDismissed) return;
+    unawaited(_analytics.logEvent(AnalyticsEvent.tutorialSkipped, {'lesson': state.tutorialRoundsSeen + 1}));
     state = state.copyWith(tutorialDismissed: true);
     _scheduleSave();
     _hapticSelection();

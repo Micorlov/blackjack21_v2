@@ -32,7 +32,9 @@ double _systemBarTop(WidgetTester tester) =>
 /// Walks a fresh install through guest entry, which is where
 /// `widget_test.dart` also starts a lobby-side journey.
 Future<void> _enterLobbyAsGuest(WidgetTester tester) async {
-  await tester.tap(find.text('Play as Guest'));
+  await tester.tap(find.text('Play now'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.bySemanticsLabel('Leave the table'));
   await tester.pumpAndSettle();
 }
 

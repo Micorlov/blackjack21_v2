@@ -5,21 +5,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:blackjack21_v2/screens/onboarding_screen.dart';
 
 void main() {
-  Widget wrap({required bool isWeb}) =>
-      ProviderScope(child: MaterialApp(home: OnboardingScreen(isWeb: isWeb)));
+  Widget wrap({required bool isWeb}) => ProviderScope(
+    child: MaterialApp(home: OnboardingScreen(isWeb: isWeb)),
+  );
 
-  testWidgets('shows "Play as Guest" on non-web platforms', (tester) async {
+  testWidgets('shows "Play now" on non-web platforms', (tester) async {
     await tester.pumpWidget(wrap(isWeb: false));
 
     expect(find.text('Continue with Google'), findsOneWidget);
-    expect(find.text('Play as Guest'), findsOneWidget);
+    expect(find.text('Play now'), findsOneWidget);
   });
 
-  testWidgets('hides "Play as Guest" on web, since guest mode has no Firebase account', (tester) async {
+  testWidgets('hides "Play now" on web, since guest mode has no Firebase account', (tester) async {
     await tester.pumpWidget(wrap(isWeb: true));
 
     expect(find.text('Continue with Google'), findsOneWidget);
-    expect(find.text('Play as Guest'), findsNothing);
+    expect(find.text('Play now'), findsNothing);
   });
 
   testWidgets('offers the voice toggle, on by default, before the player is in', (tester) async {

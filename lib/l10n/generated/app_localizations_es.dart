@@ -234,4 +234,293 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get webInstallButton => 'Get it on Google Play';
+
+  @override
+  String get playNow => 'Jugar ahora';
+
+  @override
+  String get welcomeBenefit =>
+      'Cartas grandes y legibles. Aprende jugando, mano a mano.';
+
+  @override
+  String get continueGoogle => 'Continuar con Google';
+
+  @override
+  String get gameHit => 'PEDIR';
+
+  @override
+  String get gameStand => 'PLANTARSE';
+
+  @override
+  String get gameDouble => 'DOBLAR';
+
+  @override
+  String get gameSplit => 'DIVIDIR';
+
+  @override
+  String get gameSurrender => 'RENDIRSE';
+
+  @override
+  String get gameDeal => 'REPARTIR';
+
+  @override
+  String get gameClear => 'BORRAR';
+
+  @override
+  String get gameAllIn => 'TODO';
+
+  @override
+  String get gameBet => 'Apuesta';
+
+  @override
+  String gameMinimum(String amount) {
+    return 'mín. $amount';
+  }
+
+  @override
+  String gameRebet(String amount) {
+    return 'REPETIR $amount';
+  }
+
+  @override
+  String gameMinimumHint(String amount) {
+    return 'Apuesta al menos $amount para repartir';
+  }
+
+  @override
+  String get gamePracticeBots => 'Jugando con bots de práctica';
+
+  @override
+  String get gameInvite => 'Invitar amigos';
+
+  @override
+  String get gameNextHand => 'SIGUIENTE MANO';
+
+  @override
+  String get gameInsure => 'ASEGURAR';
+
+  @override
+  String get gameNoThanks => 'NO, GRACIAS';
+
+  @override
+  String gameInsuranceOffer(String amount) {
+    return 'El crupier muestra un as. ¿Seguro por $amount? Paga 2:1.';
+  }
+
+  @override
+  String get gameYouBet => 'Tu apuesta';
+
+  @override
+  String get gameAgainstDealer => 'Mano contra crupier';
+
+  @override
+  String get gameSweepPot => 'Bote de barrido';
+
+  @override
+  String get gameBalance => 'Saldo';
+
+  @override
+  String get gameWin => '¡Ganaste!';
+
+  @override
+  String get gameLose => 'Gana el crupier';
+
+  @override
+  String get gamePush => 'Empate';
+
+  @override
+  String get gameDealerBlackjack => 'El crupier tiene blackjack';
+
+  @override
+  String get gameBlackjackWin => '¡Blackjack! Ganaste';
+
+  @override
+  String get gameSweepWin => 'Te llevas el bote';
+
+  @override
+  String get gameBlackjackSweep => 'Blackjack: barres la mesa';
+
+  @override
+  String gameShowdown(String you, String dealer) {
+    return 'TÚ $you · CRUPIER $dealer';
+  }
+
+  @override
+  String get gameNoPot => 'Sin bote de barrido';
+
+  @override
+  String get gameDealerPot => 'El crupier conserva el bote';
+
+  @override
+  String get gameYourPot => 'El bote es tuyo';
+
+  @override
+  String gameOtherPot(String name) {
+    return 'Bote: $name';
+  }
+
+  @override
+  String gamePotBreakdown(String bet, String pot) {
+    return 'APUESTA $bet + BOTE $pot';
+  }
+
+  @override
+  String get gameNoForfeit => 'Nadie perdió su apuesta';
+
+  @override
+  String get gameNobodyBeat => 'Nadie venció al crupier';
+
+  @override
+  String coachStep(String hand) {
+    return 'GUÍA · MANO $hand DE 3';
+  }
+
+  @override
+  String get coachRules => 'Reglas';
+
+  @override
+  String get coachSkip => 'Omitir';
+
+  @override
+  String get gameChipOptions => 'Cómo conseguir fichas';
+
+  @override
+  String get shotBigCards => 'Cartas grandes y legibles';
+
+  @override
+  String get shotLearn => 'Aprende jugando';
+
+  @override
+  String get shotSweep => 'Barre la mesa';
+
+  @override
+  String coachBetBody(String min) {
+    return 'Toca una ficha y luego REPARTIR. La apuesta mínima aquí es $min por mano.';
+  }
+
+  @override
+  String get coachNpcBody =>
+      'Los bots juegan primero. Tu turno comienza cuando PEDIR y PLANTARSE están disponibles.';
+
+  @override
+  String get coachPlayBody =>
+      'Acércate más a 21 que el crupier sin pasarte. PEDIR añade una carta; PLANTARSE termina tu turno. Pasarte de 21 pierde.';
+
+  @override
+  String get coachSettleBody =>
+      'El resultado separa tu apuesta, el retorno de la mano y el bote. Continúa cuando quieras.';
+
+  @override
+  String get coachDealerBody =>
+      'El crupier pide con menos de 17 y se planta en cualquier 17. Mira su carta visible antes de decidir.';
+
+  @override
+  String get coachPushBody =>
+      'El mismo total es empate y devuelve tu apuesta. Pasarte de 21 pierde aunque el crupier también se pase.';
+
+  @override
+  String get coachPotBody =>
+      'Las apuestas perdidas de otros asientos forman el bote. Vence al crupier con el mejor total restante, incluidos empates con otro asiento, para llevártelo.';
+
+  @override
+  String get coachMovesBody =>
+      'DOBLAR añade una apuesta igual y una carta. DIVIDIR separa una pareja con otra apuesta. RENDIRSE devuelve la mitad de la apuesta inicial.';
+
+  @override
+  String get coachDoneBody =>
+      'Terminaste las tres manos guiadas. Puedes abrir las reglas o repetir el tutorial desde Ajustes.';
+
+  @override
+  String get coachInsuranceBody =>
+      'El seguro cuesta la mitad de tu apuesta y paga 2:1 solo si el crupier tiene blackjack. Puedes rechazarlo.';
+
+  @override
+  String get guideCardsBody =>
+      'Las cartas numéricas conservan su valor. J, Q y K valen 10. El as vale 1 u 11, manteniendo la mano en 21 o menos.';
+
+  @override
+  String get guidePayoutsBody =>
+      'Una victoria paga 1:1 y blackjack natural 3:2. El empate devuelve la apuesta; rendirse devuelve la mitad. El blackjack del crupier vence a un 21 no natural.';
+
+  @override
+  String get guideChipsBody =>
+      'Los límites aparecen en el vestíbulo. Las recargas y bonos diarios tienen tiempos de espera; consulta las opciones de fichas si te quedan pocas.';
+
+  @override
+  String get gameDealer => 'CRUPIER';
+
+  @override
+  String get gameBusted => 'Pasado';
+
+  @override
+  String get gameWaiting => 'Esperando';
+
+  @override
+  String get gameBlackjack => '¡Blackjack!';
+
+  @override
+  String get gameSurrendered => 'Rendido';
+
+  @override
+  String get gameSoft => 'Suave';
+
+  @override
+  String get gameHard => 'Dura';
+
+  @override
+  String get gameYouLead => 'VAS PRIMERO';
+
+  @override
+  String get gameTableSweep => 'BARRIDO';
+
+  @override
+  String get gameNoSweep => 'SIN BARRIDO';
+
+  @override
+  String get gameYouTake => 'TE LO LLEVAS';
+
+  @override
+  String get gameDealerTakes => 'GANA EL CRUPIER';
+
+  @override
+  String gameOtherTakes(String name) {
+    return 'GANA $name';
+  }
+
+  @override
+  String get gamePlaceBet => 'Haz tu apuesta';
+
+  @override
+  String get gameInsuranceOffered => 'Seguro disponible';
+
+  @override
+  String gameSeatPlaying(String name) {
+    return '$name está jugando';
+  }
+
+  @override
+  String get gameYourTurn => 'Tu turno';
+
+  @override
+  String gameSplitTurn(String hand, String total) {
+    return 'Tu turno · mano $hand de $total';
+  }
+
+  @override
+  String get gameDealerPlaying => 'Juega el crupier';
+
+  @override
+  String get gameRoundResult => 'Resultado';
+
+  @override
+  String get gameBronzeTable => 'Mesa de bronce';
+
+  @override
+  String get gameSilverTable => 'Mesa de plata';
+
+  @override
+  String get gameVipTable => 'Mesa VIP';
+
+  @override
+  String get gameLost => 'perdió';
 }

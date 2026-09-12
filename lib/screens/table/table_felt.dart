@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import '../../l10n/gameplay.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/game_data.dart';
@@ -44,7 +45,7 @@ class TableFelt extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(gameProvider);
-    final midPot = TableCalc.midRoundPot(state);
+    final midPot = TableCalc.midRoundPot(state, strings: gameplayStrings(context));
     const cardBack = kCardBack;
     const felt = kFelt;
 

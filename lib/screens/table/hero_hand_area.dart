@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import '../../l10n/gameplay.dart';
 
 import '../../models/enums.dart';
 import '../../models/game_state.dart';
@@ -113,7 +114,7 @@ class _HeroHandBlock extends StatelessWidget {
             _betCircle(betAmount),
             if (n > 0) ...[const SizedBox(width: 8), _handTotalCircle()],
             const SizedBox(width: 8),
-            _plate(betAmount),
+            _plate(context, betAmount),
           ],
         ),
       ],
@@ -166,7 +167,12 @@ class _HeroHandBlock extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: AppColors.gold.withValues(alpha: 0.45), width: 2),
-        gradient: RadialGradient(colors: [AppColors.gold.withValues(alpha: AppAlpha.hairline), Colors.black.withValues(alpha: 0.28)]),
+        gradient: RadialGradient(
+          colors: [
+            AppColors.gold.withValues(alpha: AppAlpha.hairline),
+            Colors.black.withValues(alpha: 0.28),
+          ],
+        ),
       ),
       alignment: Alignment.center,
       // The circle is a fixed disc, but the figure inside it is live text
@@ -243,7 +249,12 @@ class _HeroHandBlock extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         border: Border.all(color: ringColor, width: 2),
-        gradient: RadialGradient(colors: [AppColors.gold.withValues(alpha: AppAlpha.hairline), Colors.black.withValues(alpha: 0.28)]),
+        gradient: RadialGradient(
+          colors: [
+            AppColors.gold.withValues(alpha: AppAlpha.hairline),
+            Colors.black.withValues(alpha: 0.28),
+          ],
+        ),
       ),
       alignment: Alignment.center,
       child: FittedBox(
@@ -256,7 +267,7 @@ class _HeroHandBlock extends StatelessWidget {
     );
   }
 
-  Widget _plate(int betAmount) {
+  Widget _plate(BuildContext context, int betAmount) {
     return Container(
       padding: const EdgeInsets.fromLTRB(4, 4, 16, 4),
       decoration: BoxDecoration(
@@ -285,7 +296,7 @@ class _HeroHandBlock extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                TableCalc.handLabelFor(hand),
+                TableCalc.handLabelFor(hand, strings: gameplayStrings(context)),
                 style: AppText.sora(18, color: active ? AppColors.gold : AppColors.textPrimary.withValues(alpha: 0.9)),
               ),
               // Rolls rather than snapping: this is the number the whole game

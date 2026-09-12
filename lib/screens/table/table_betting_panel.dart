@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/game_data.dart';
 import '../../models/game_state.dart';
 import '../../state/game_notifier.dart';
+import '../../l10n/gameplay.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
@@ -21,6 +22,7 @@ class TableBettingPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(gameProvider);
     final notifier = ref.read(gameProvider.notifier);
+    final l = gameplayStrings(context);
     final stake = state.stake;
     final denoms = chipDenomsFor(stake);
     final tableMin = stake?.min ?? 0;
@@ -55,7 +57,7 @@ class TableBettingPanel extends ConsumerWidget {
                 TextSpan(
                   children: [
                     TextSpan(
-                      text: 'Bet ',
+                      text: '${l.gameBet} ',
                       style: AppText.mono(15, letterSpacing: 1.2, color: AppColors.textPrimary.withValues(alpha: 0.82)),
                     ),
                     TextSpan(
@@ -64,7 +66,7 @@ class TableBettingPanel extends ConsumerWidget {
                     ),
                     if (belowTableMin)
                       TextSpan(
-                        text: '  ·  min \$${formatChips(tableMin)}',
+                        text: '  ·  ${l.gameMinimum("\$${formatChips(tableMin)}")}',
                         style: AppText.mono(15, letterSpacing: 0.8, color: AppColors.textMuted),
                       ),
                   ],
@@ -79,8 +81,8 @@ class TableBettingPanel extends ConsumerWidget {
             if (canGoAllIn) ...[
               const SizedBox(width: AppSpacing.sm),
               ActionPillButton(
-                label: 'ALL IN',
-                semanticLabel: 'Bet everything',
+                label: l.gameAllIn,
+                semanticLabel: l.gameAllIn,
                 borderColor: AppColors.gold.withValues(alpha: 0.45),
                 backgroundColor: AppColors.gold.withValues(alpha: AppAlpha.hairline),
                 textColor: AppColors.gold,
@@ -101,7 +103,7 @@ class TableBettingPanel extends ConsumerWidget {
           children: [
             Expanded(
               child: ActionPillButton(
-                label: 'CLEAR',
+                label: l.gameClear,
                 borderColor: AppColors.lose.withValues(alpha: AppAlpha.strong),
                 backgroundColor: AppColors.lose.withValues(alpha: 0.2),
                 textColor: AppColors.loseLight,
@@ -115,16 +117,16 @@ class TableBettingPanel extends ConsumerWidget {
               flex: 2,
               child: canRebet
                   ? GoldButton(
-                      label: 'DEAL \$${formatChips(state.lastBet)} AGAIN',
-                      semanticLabel: 'Bet ${formatChips(state.lastBet)} again and deal',
+                      label: l.gameRebet('\$${formatChips(state.lastBet)}'),
+                      semanticLabel: l.gameRebet(formatChips(state.lastBet)),
                       onPressed: notifier.rebetAndDeal,
                       verticalPadding: 16,
                       fontSize: 20,
                     )
                   : GoldButton(
-                      label: 'DEAL',
+                      label: l.gameDeal,
                       onPressed: dealDisabled ? null : notifier.dealRound,
-                      disabledReason: belowTableMin ? 'Bet at least \$${formatChips(tableMin)} to deal' : null,
+                      disabledReason: belowTableMin ? l.gameMinimumHint('\$${formatChips(tableMin)}') : null,
                       verticalPadding: 16,
                       fontSize: 20,
                     ),
@@ -145,8 +147,8 @@ class TableBettingPanel extends ConsumerWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             spacing: AppSpacing.sm,
             children: [
-              Text('Playing with practice bots', style: AppText.sora(15, color: AppColors.textMuted)),
-              TextLinkButton(label: 'Invite friends', onPressed: notifier.shareInviteWhatsApp, fontSize: 16),
+              Text(l.gamePracticeBots, style: AppText.sora(15, color: AppColors.textMuted)),
+              TextLinkButton(label: l.gameInvite, onPressed: notifier.shareInviteWhatsApp, fontSize: 16),
             ],
           ),
         ],
@@ -169,7 +171,7 @@ class TableBettingPanel extends ConsumerWidget {
               return SizedBox(
                 width: double.infinity,
                 child: GoldButton(
-                  label: ready ? 'Rebuy 1,000 chips' : 'Ways to get chips',
+                  label: ready ? l.rebuyButtonLabel(1000) : l.gameChipOptions,
                   onPressed: ready ? notifier.rebuy : () => showOutOfChipsSheet(context),
                   verticalPadding: 14,
                   fontSize: 18,
@@ -178,11 +180,7 @@ class TableBettingPanel extends ConsumerWidget {
             },
           ),
           const SizedBox(height: AppSpacing.xs),
-          TextLinkButton(
-            label: 'See every way to get chips',
-            onPressed: () => showOutOfChipsSheet(context),
-            fontSize: 15,
-          ),
+          TextLinkButton(label: l.gameChipOptions, onPressed: () => showOutOfChipsSheet(context), fontSize: 15),
         ],
       ],
     );

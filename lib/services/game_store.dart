@@ -78,10 +78,12 @@ class SavedGame {
   /// Whether anonymous usage and crash reporting is on.
   final bool analyticsOn;
 
-  /// Whether the Play review sheet has already been asked for — see
-  /// [GameState.reviewPromptShown]. One ask per player, so it has to survive
-  /// a relaunch.
+  /// Legacy save marker; a completed API request does not prove a review appeared.
   final bool reviewPromptShown;
+  final int reviewLastAttemptAtMs;
+  final int reviewRequestCount;
+  final bool reviewLastRequestSucceeded;
+  final bool tutorialCompletionLogged;
 
   const SavedGame({
     required this.chips,
@@ -108,6 +110,10 @@ class SavedGame {
     this.lastRebuyAtMs = 0,
     this.analyticsOn = true,
     this.reviewPromptShown = false,
+    this.reviewLastAttemptAtMs = 0,
+    this.reviewRequestCount = 0,
+    this.reviewLastRequestSucceeded = false,
+    this.tutorialCompletionLogged = false,
   });
 
   Map<String, Object?> toJson() => {
@@ -148,6 +154,10 @@ class SavedGame {
     'lastRebuyAtMs': lastRebuyAtMs,
     'analyticsOn': analyticsOn,
     'reviewPromptShown': reviewPromptShown,
+    'reviewLastAttemptAtMs': reviewLastAttemptAtMs,
+    'reviewRequestCount': reviewRequestCount,
+    'reviewLastRequestSucceeded': reviewLastRequestSucceeded,
+    'tutorialCompletionLogged': tutorialCompletionLogged,
   };
 
   /// Every field falls back to the [GameState] default it mirrors, so a blob
@@ -201,8 +211,15 @@ class SavedGame {
       analyticsOn: _bool(json['analyticsOn'], defaults.analyticsOn),
       // A blob written before the review prompt existed has never been asked,
       // so `false` is the honest default — the player simply becomes eligible
-      // at their next good hand.
+      // at their next eligible settled hand.
       reviewPromptShown: _bool(json['reviewPromptShown'], defaults.reviewPromptShown),
+      reviewLastAttemptAtMs: _int(json['reviewLastAttemptAtMs'], 0),
+      reviewRequestCount: _int(json['reviewRequestCount'], 0),
+      reviewLastRequestSucceeded: _bool(json['reviewLastRequestSucceeded'], false),
+      tutorialCompletionLogged: _bool(
+        json['tutorialCompletionLogged'],
+        _int(json['tutorialRoundsSeen'], handsPlayed.clamp(0, kTutorialRounds)) >= kTutorialRounds,
+      ),
     );
   }
 

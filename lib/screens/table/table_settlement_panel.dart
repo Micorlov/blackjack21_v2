@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/enums.dart';
 import '../../models/game_state.dart';
 import '../../state/game_notifier.dart';
+import '../../l10n/gameplay.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
@@ -29,6 +30,7 @@ class TableSettlementPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(gameProvider);
     final notifier = ref.read(gameProvider.notifier);
+    final l = gameplayStrings(context);
 
     final roundNetColor = state.roundNet > 0
         ? AppColors.winLight
@@ -40,14 +42,14 @@ class TableSettlementPanel extends ConsumerWidget {
       MessageType.none => AppColors.textPrimary,
     };
     final midPot = TableCalc.midRoundPot(state);
-    final showdownLabel = TableCalc.showdownLabel(state, midPot.heroLiveTotal);
+    final showdownLabel = TableCalc.showdownLabel(state, midPot.heroLiveTotal, strings: l);
     final settleCards = state.hands.expand((h) => h.cards).toList();
     final roundHandColor = state.roundHandNet > 0
         ? AppColors.winLight
         : (state.roundHandNet < 0 ? AppColors.loseLight : AppColors.push);
     final roundHandLabel = '${state.roundHandNet >= 0 ? '+' : '−'}\$${formatChips(state.roundHandNet.abs())}';
     final roundHasSweep = state.sweepAmount > 0;
-    final potWinner = TableCalc.potWinnerInfo(state);
+    final potWinner = TableCalc.potWinnerInfo(state, strings: l);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
@@ -71,7 +73,10 @@ class TableSettlementPanel extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  child: Text(state.message, style: AppText.serifItalic(28, color: messageColor, height: 1.15)),
+                  child: Text(
+                    localizedResult(state.message, l),
+                    style: AppText.serifItalic(28, color: messageColor, height: 1.15),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 // The figure the player actually came for. It counts, with a
@@ -156,11 +161,11 @@ class TableSettlementPanel extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               mainAxisSize: MainAxisSize.min,
               children: [
-                _statRow('You bet', '\$${formatChips(state.roundStake)}', AppColors.textPrimary),
-                _statRow('Hand vs dealer', roundHandLabel, roundHandColor),
+                _statRow(l.gameYouBet, '\$${formatChips(state.roundStake)}', AppColors.textPrimary),
+                _statRow(l.gameAgainstDealer, roundHandLabel, roundHandColor),
                 if (roundHasSweep)
                   _statRow(
-                    'Sweep pot',
+                    l.gameSweepPot,
                     '+\$${formatChips(state.sweepAmount)}',
                     AppColors.gold,
                     labelColor: AppColors.gold,
@@ -170,7 +175,7 @@ class TableSettlementPanel extends ConsumerWidget {
                   decoration: BoxDecoration(
                     border: Border(top: BorderSide(color: Colors.white.withValues(alpha: 0.08))),
                   ),
-                  child: _statRow('Balance', formatChips(state.chips), AppColors.textPrimary),
+                  child: _statRow(l.gameBalance, formatChips(state.chips), AppColors.textPrimary),
                 ),
               ],
             ),
@@ -179,9 +184,9 @@ class TableSettlementPanel extends ConsumerWidget {
           // hand, so every hand has to end by naming who took it (or saying
           // there was nothing to take).
           const SizedBox(height: 6),
-          _potDetailCard(state, potWinner),
+          _potDetailCard(context, state, potWinner),
           const SizedBox(height: 6),
-          GoldButton(label: 'READY FOR NEXT HAND', onPressed: notifier.nextHand),
+          GoldButton(label: l.gameNextHand, onPressed: notifier.nextHand),
         ],
       ),
     );
@@ -214,7 +219,7 @@ class TableSettlementPanel extends ConsumerWidget {
     );
   }
 
-  Widget _potDetailCard(GameState state, PotWinnerInfo potWinner) {
+  Widget _potDetailCard(BuildContext context, GameState state, PotWinnerInfo potWinner) {
     final sweep = state.sweepInfo;
     final contributors = sweep?.contributors ?? const [];
     return Container(
@@ -303,7 +308,8 @@ class TableSettlementPanel extends ConsumerWidget {
                       TextSpan(
                         children: [
                           TextSpan(
-                            text: '${c.name} ${c.reason} ',
+                            text:
+                                '${c.name} ${c.reason == "bust" ? gameplayStrings(context).gameBusted : gameplayStrings(context).gameLost} ',
                             style: AppText.mono(14, color: AppColors.textPrimary.withValues(alpha: AppAlpha.strong)),
                           ),
                           TextSpan(

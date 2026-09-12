@@ -1,4 +1,6 @@
 import '../data/game_data.dart';
+import '../l10n/gameplay.dart';
+import '../l10n/generated/app_localizations.dart';
 import '../data/tutorial_data.dart';
 import '../models/enums.dart';
 import '../models/game_state.dart';
@@ -25,7 +27,7 @@ class ActiveTutorialTip {
 ///
 /// Pure: everything it needs is on [state], so the coach card and its tests
 /// read the same source of truth the table does.
-ActiveTutorialTip? tutorialTipFor(GameState state) {
+ActiveTutorialTip? tutorialTipFor(GameState state, {AppLocalizations? strings}) {
   if (state.tutorialDismissed) return null;
   if (state.screen != AppScreen.table) return null;
 
@@ -34,8 +36,9 @@ ActiveTutorialTip? tutorialTipFor(GameState state) {
 
   // Insurance is offered at random rather than on a scripted hand, so every
   // lesson falls back to the same explanation of it.
-  final tip =
-      kTutorialLessons[lesson].tips[state.phase] ?? (state.phase == RoundPhase.insurance ? kInsuranceTip : null);
+  final tip = strings != null
+      ? localizedCoach(state, strings, '\$${formatChips(state.stake?.min ?? kChipDenoms.first)}')
+      : kTutorialLessons[lesson].tips[state.phase] ?? (state.phase == RoundPhase.insurance ? kInsuranceTip : null);
   if (tip == null) return null;
 
   return ActiveTutorialTip(lesson: lesson, title: tip.title, body: _fillPlaceholders(tip.body, state));

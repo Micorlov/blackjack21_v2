@@ -81,6 +81,13 @@ class Analytics {
 class AnalyticsEvent {
   AnalyticsEvent._();
 
+  static const String entrySelected = 'onboarding_entry_selected';
+  static const String onboardingComplete = 'onboarding_complete';
+  static const String firstHand = 'first_hand_completed';
+  static const String tenHands = 'ten_hands_completed';
+  static const String tutorialComplete = 'tutorial_completed';
+  static const String tutorialSkipped = 'tutorial_skipped';
+  static const String reviewRequestResult = 'review_request_result';
   static const String handPlayed = 'hand_played';
   static const String dailyBonusClaimed = 'daily_bonus_claimed';
   static const String missionClaimed = 'mission_claimed';
@@ -92,6 +99,6 @@ class AnalyticsEvent {
   static const String outOfChips = 'out_of_chips';
 
   /// The Play review sheet was asked for — see
-  /// utils/review_prompt.dart. Fires at most once per player.
+  /// utils/review_prompt.dart. An attempt, not proof of display or rating.
   static const String reviewPrompted = 'review_prompted';
 }

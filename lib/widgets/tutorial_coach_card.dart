@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/tutorial_data.dart';
+import '../l10n/gameplay.dart';
 import '../state/game_notifier.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -19,7 +20,8 @@ class TutorialCoachCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tip = tutorialTipFor(ref.watch(gameProvider));
+    final l = gameplayStrings(context);
+    final tip = tutorialTipFor(ref.watch(gameProvider), strings: l);
     if (tip == null) return const SizedBox.shrink();
 
     final notifier = ref.read(gameProvider.notifier);
@@ -49,7 +51,7 @@ class TutorialCoachCard extends ConsumerWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        tip.stepLabel,
+                        l.coachStep('${tip.lesson + 1}'),
                         style: AppText.mono(12, weight: FontWeight.w700, letterSpacing: 1.2, color: AppColors.gold),
                         maxLines: 1,
                       ),
@@ -72,18 +74,15 @@ class TutorialCoachCard extends ConsumerWidget {
                   ),
                 ),
               ),
-              _CardLink(label: 'Full rules', onTap: () => showHowToPlaySheet(context)),
+              _CardLink(label: l.coachRules, onTap: () => showHowToPlaySheet(context)),
               const SizedBox(width: 12),
-              _CardLink(label: 'Skip', onTap: notifier.skipTutorial, color: AppColors.textMuted),
+              _CardLink(label: l.coachSkip, onTap: notifier.skipTutorial, color: AppColors.textMuted),
             ],
           ),
           const SizedBox(height: 2),
           Text(tip.title, style: AppText.sora(15, weight: FontWeight.w800)),
           const SizedBox(height: 3),
-          Text(
-            tip.body,
-            style: AppText.sora(13, color: AppColors.textBody, height: 1.42),
-          ),
+          Text(tip.body, style: AppText.sora(13, color: AppColors.textBody, height: 1.42)),
         ],
       ),
     );
@@ -107,7 +106,10 @@ class _CardLink extends StatelessWidget {
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Text(label, style: AppText.sora(12, weight: FontWeight.w700, color: color)),
+        child: Text(
+          label,
+          style: AppText.sora(12, weight: FontWeight.w700, color: color),
+        ),
       ),
     );
   }

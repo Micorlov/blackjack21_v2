@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../../l10n/gameplay.dart';
 
 import '../../data/game_data.dart';
 import '../../models/game_state.dart';
@@ -162,7 +163,7 @@ class _DealerAreaState extends State<DealerArea> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'DEALER',
+                gameplayStrings(context).gameDealer,
                 style: AppText.mono(
                   14,
                   letterSpacing: 1.6,
@@ -192,7 +193,7 @@ class _DealerAreaState extends State<DealerArea> {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        'BUST',
+                        gameplayStrings(context).gameBusted,
                         style: AppText.mono(
                           14,
                           weight: FontWeight.w700,
@@ -260,7 +261,7 @@ class _DealerAreaState extends State<DealerArea> {
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(color: AppColors.gold, borderRadius: BorderRadius.circular(6)),
               child: Text(
-                'YOU LEAD',
+                gameplayStrings(context).gameYouLead,
                 style: AppText.mono(
                   14,
                   weight: FontWeight.w700,
@@ -284,7 +285,7 @@ class _DealerAreaState extends State<DealerArea> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'TABLE SWEEP',
+            gameplayStrings(context).gameTableSweep,
             style: AppText.mono(14, letterSpacing: 1.4, color: AppColors.goldInk, height: _kMonoHeight),
           ),
           const SizedBox(width: 9),

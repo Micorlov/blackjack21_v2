@@ -521,6 +521,510 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Get it on Google Play'**
   String get webInstallButton;
+
+  /// No description provided for @playNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Play now'**
+  String get playNow;
+
+  /// No description provided for @welcomeBenefit.
+  ///
+  /// In en, this message translates to:
+  /// **'Big, readable cards. Learn as you play, one hand at a time.'**
+  String get welcomeBenefit;
+
+  /// No description provided for @continueGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get continueGoogle;
+
+  /// No description provided for @gameHit.
+  ///
+  /// In en, this message translates to:
+  /// **'HIT'**
+  String get gameHit;
+
+  /// No description provided for @gameStand.
+  ///
+  /// In en, this message translates to:
+  /// **'STAND'**
+  String get gameStand;
+
+  /// No description provided for @gameDouble.
+  ///
+  /// In en, this message translates to:
+  /// **'DOUBLE'**
+  String get gameDouble;
+
+  /// No description provided for @gameSplit.
+  ///
+  /// In en, this message translates to:
+  /// **'SPLIT'**
+  String get gameSplit;
+
+  /// No description provided for @gameSurrender.
+  ///
+  /// In en, this message translates to:
+  /// **'SURRENDER'**
+  String get gameSurrender;
+
+  /// No description provided for @gameDeal.
+  ///
+  /// In en, this message translates to:
+  /// **'DEAL'**
+  String get gameDeal;
+
+  /// No description provided for @gameClear.
+  ///
+  /// In en, this message translates to:
+  /// **'CLEAR'**
+  String get gameClear;
+
+  /// No description provided for @gameAllIn.
+  ///
+  /// In en, this message translates to:
+  /// **'ALL IN'**
+  String get gameAllIn;
+
+  /// No description provided for @gameBet.
+  ///
+  /// In en, this message translates to:
+  /// **'Bet'**
+  String get gameBet;
+
+  /// No description provided for @gameMinimum.
+  ///
+  /// In en, this message translates to:
+  /// **'min {amount}'**
+  String gameMinimum(String amount);
+
+  /// No description provided for @gameRebet.
+  ///
+  /// In en, this message translates to:
+  /// **'DEAL {amount} AGAIN'**
+  String gameRebet(String amount);
+
+  /// No description provided for @gameMinimumHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Bet at least {amount} to deal'**
+  String gameMinimumHint(String amount);
+
+  /// No description provided for @gamePracticeBots.
+  ///
+  /// In en, this message translates to:
+  /// **'Playing with practice bots'**
+  String get gamePracticeBots;
+
+  /// No description provided for @gameInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite friends'**
+  String get gameInvite;
+
+  /// No description provided for @gameNextHand.
+  ///
+  /// In en, this message translates to:
+  /// **'READY FOR NEXT HAND'**
+  String get gameNextHand;
+
+  /// No description provided for @gameInsure.
+  ///
+  /// In en, this message translates to:
+  /// **'INSURE'**
+  String get gameInsure;
+
+  /// No description provided for @gameNoThanks.
+  ///
+  /// In en, this message translates to:
+  /// **'NO THANKS'**
+  String get gameNoThanks;
+
+  /// No description provided for @gameInsuranceOffer.
+  ///
+  /// In en, this message translates to:
+  /// **'Dealer shows an Ace. Insure for {amount}? Pays 2:1.'**
+  String gameInsuranceOffer(String amount);
+
+  /// No description provided for @gameYouBet.
+  ///
+  /// In en, this message translates to:
+  /// **'You bet'**
+  String get gameYouBet;
+
+  /// No description provided for @gameAgainstDealer.
+  ///
+  /// In en, this message translates to:
+  /// **'Hand vs dealer'**
+  String get gameAgainstDealer;
+
+  /// No description provided for @gameSweepPot.
+  ///
+  /// In en, this message translates to:
+  /// **'Sweep pot'**
+  String get gameSweepPot;
+
+  /// No description provided for @gameBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance'**
+  String get gameBalance;
+
+  /// No description provided for @gameWin.
+  ///
+  /// In en, this message translates to:
+  /// **'You win!'**
+  String get gameWin;
+
+  /// No description provided for @gameLose.
+  ///
+  /// In en, this message translates to:
+  /// **'Dealer wins'**
+  String get gameLose;
+
+  /// No description provided for @gamePush.
+  ///
+  /// In en, this message translates to:
+  /// **'Push'**
+  String get gamePush;
+
+  /// No description provided for @gameDealerBlackjack.
+  ///
+  /// In en, this message translates to:
+  /// **'Dealer has blackjack'**
+  String get gameDealerBlackjack;
+
+  /// No description provided for @gameBlackjackWin.
+  ///
+  /// In en, this message translates to:
+  /// **'Blackjack! You win'**
+  String get gameBlackjackWin;
+
+  /// No description provided for @gameSweepWin.
+  ///
+  /// In en, this message translates to:
+  /// **'You sweep the table'**
+  String get gameSweepWin;
+
+  /// No description provided for @gameBlackjackSweep.
+  ///
+  /// In en, this message translates to:
+  /// **'Blackjack — you sweep'**
+  String get gameBlackjackSweep;
+
+  /// No description provided for @gameShowdown.
+  ///
+  /// In en, this message translates to:
+  /// **'YOU {you} · DEALER {dealer}'**
+  String gameShowdown(String you, String dealer);
+
+  /// No description provided for @gameNoPot.
+  ///
+  /// In en, this message translates to:
+  /// **'No sweep pot'**
+  String get gameNoPot;
+
+  /// No description provided for @gameDealerPot.
+  ///
+  /// In en, this message translates to:
+  /// **'Dealer keeps the pot'**
+  String get gameDealerPot;
+
+  /// No description provided for @gameYourPot.
+  ///
+  /// In en, this message translates to:
+  /// **'Sweep pot: yours'**
+  String get gameYourPot;
+
+  /// No description provided for @gameOtherPot.
+  ///
+  /// In en, this message translates to:
+  /// **'Sweep pot: {name}'**
+  String gameOtherPot(String name);
+
+  /// No description provided for @gamePotBreakdown.
+  ///
+  /// In en, this message translates to:
+  /// **'BET {bet} + POT {pot}'**
+  String gamePotBreakdown(String bet, String pot);
+
+  /// No description provided for @gameNoForfeit.
+  ///
+  /// In en, this message translates to:
+  /// **'No seat forfeited a bet'**
+  String get gameNoForfeit;
+
+  /// No description provided for @gameNobodyBeat.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody beat the dealer'**
+  String get gameNobodyBeat;
+
+  /// No description provided for @coachStep.
+  ///
+  /// In en, this message translates to:
+  /// **'COACH · HAND {hand} OF 3'**
+  String coachStep(String hand);
+
+  /// No description provided for @coachRules.
+  ///
+  /// In en, this message translates to:
+  /// **'Full rules'**
+  String get coachRules;
+
+  /// No description provided for @coachSkip.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip'**
+  String get coachSkip;
+
+  /// No description provided for @gameChipOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Ways to get chips'**
+  String get gameChipOptions;
+
+  /// No description provided for @shotBigCards.
+  ///
+  /// In en, this message translates to:
+  /// **'Big, readable cards'**
+  String get shotBigCards;
+
+  /// No description provided for @shotLearn.
+  ///
+  /// In en, this message translates to:
+  /// **'Learn as you play'**
+  String get shotLearn;
+
+  /// No description provided for @shotSweep.
+  ///
+  /// In en, this message translates to:
+  /// **'Sweep the table'**
+  String get shotSweep;
+
+  /// No description provided for @coachBetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a chip, then DEAL. This table starts at {min} per hand.'**
+  String coachBetBody(String min);
+
+  /// No description provided for @coachNpcBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice bots play first. Your turn begins when HIT and STAND become available.'**
+  String get coachNpcBody;
+
+  /// No description provided for @coachPlayBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Get closer to 21 than the dealer without going over. HIT adds a card; STAND ends your turn. Over 21 loses.'**
+  String get coachPlayBody;
+
+  /// No description provided for @coachSettleBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your result shows your bet, hand return and any sweep pot separately. Continue when ready.'**
+  String get coachSettleBody;
+
+  /// No description provided for @coachDealerBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The dealer draws below 17 and stands on all 17s. Look at the visible dealer card before choosing your move.'**
+  String get coachDealerBody;
+
+  /// No description provided for @coachPushBody.
+  ///
+  /// In en, this message translates to:
+  /// **'An equal total is a push: your bet returns. Going over 21 loses, even if the dealer also busts.'**
+  String get coachPushBody;
+
+  /// No description provided for @coachPotBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Losing bets from other seats form the sweep pot. Beat the dealer with the best remaining total (ties count) to take it.'**
+  String get coachPotBody;
+
+  /// No description provided for @coachMovesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'DOUBLE adds an equal bet and one card. SPLIT separates a pair with another bet. SURRENDER returns half your opening bet.'**
+  String get coachMovesBody;
+
+  /// No description provided for @coachDoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You have finished the three coached hands. Reopen the rules or replay the tutorial from Settings anytime.'**
+  String get coachDoneBody;
+
+  /// No description provided for @coachInsuranceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Insurance costs half your bet and pays 2:1 only if the dealer has blackjack. You can decline.'**
+  String get coachInsuranceBody;
+
+  /// No description provided for @guideCardsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Number cards keep their value. J, Q and K count 10. An Ace counts 1 or 11, whichever keeps the hand at 21 or below.'**
+  String get guideCardsBody;
+
+  /// No description provided for @guidePayoutsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A win pays 1:1, natural blackjack pays 3:2, a push returns your bet, and surrender returns half. A dealer blackjack beats any non-natural 21.'**
+  String get guidePayoutsBody;
+
+  /// No description provided for @guideChipsBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Table limits appear in the lobby. Rebuy and daily bonuses have cooldowns; check the chip options when your balance is low.'**
+  String get guideChipsBody;
+
+  /// No description provided for @gameDealer.
+  ///
+  /// In en, this message translates to:
+  /// **'DEALER'**
+  String get gameDealer;
+
+  /// No description provided for @gameBusted.
+  ///
+  /// In en, this message translates to:
+  /// **'Busted'**
+  String get gameBusted;
+
+  /// No description provided for @gameWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get gameWaiting;
+
+  /// No description provided for @gameBlackjack.
+  ///
+  /// In en, this message translates to:
+  /// **'Blackjack!'**
+  String get gameBlackjack;
+
+  /// No description provided for @gameSurrendered.
+  ///
+  /// In en, this message translates to:
+  /// **'Surrendered'**
+  String get gameSurrendered;
+
+  /// No description provided for @gameSoft.
+  ///
+  /// In en, this message translates to:
+  /// **'Soft'**
+  String get gameSoft;
+
+  /// No description provided for @gameHard.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get gameHard;
+
+  /// No description provided for @gameYouLead.
+  ///
+  /// In en, this message translates to:
+  /// **'YOU LEAD'**
+  String get gameYouLead;
+
+  /// No description provided for @gameTableSweep.
+  ///
+  /// In en, this message translates to:
+  /// **'TABLE SWEEP'**
+  String get gameTableSweep;
+
+  /// No description provided for @gameNoSweep.
+  ///
+  /// In en, this message translates to:
+  /// **'NO SWEEP'**
+  String get gameNoSweep;
+
+  /// No description provided for @gameYouTake.
+  ///
+  /// In en, this message translates to:
+  /// **'YOU TAKE'**
+  String get gameYouTake;
+
+  /// No description provided for @gameDealerTakes.
+  ///
+  /// In en, this message translates to:
+  /// **'DEALER TAKES'**
+  String get gameDealerTakes;
+
+  /// No description provided for @gameOtherTakes.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} TAKES'**
+  String gameOtherTakes(String name);
+
+  /// No description provided for @gamePlaceBet.
+  ///
+  /// In en, this message translates to:
+  /// **'Place your bet'**
+  String get gamePlaceBet;
+
+  /// No description provided for @gameInsuranceOffered.
+  ///
+  /// In en, this message translates to:
+  /// **'Insurance offered'**
+  String get gameInsuranceOffered;
+
+  /// No description provided for @gameSeatPlaying.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is playing'**
+  String gameSeatPlaying(String name);
+
+  /// No description provided for @gameYourTurn.
+  ///
+  /// In en, this message translates to:
+  /// **'Your turn'**
+  String get gameYourTurn;
+
+  /// No description provided for @gameSplitTurn.
+  ///
+  /// In en, this message translates to:
+  /// **'Your turn · hand {hand} of {total}'**
+  String gameSplitTurn(String hand, String total);
+
+  /// No description provided for @gameDealerPlaying.
+  ///
+  /// In en, this message translates to:
+  /// **'Dealer is playing'**
+  String get gameDealerPlaying;
+
+  /// No description provided for @gameRoundResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Round result'**
+  String get gameRoundResult;
+
+  /// No description provided for @gameBronzeTable.
+  ///
+  /// In en, this message translates to:
+  /// **'Bronze Table'**
+  String get gameBronzeTable;
+
+  /// No description provided for @gameSilverTable.
+  ///
+  /// In en, this message translates to:
+  /// **'Silver Table'**
+  String get gameSilverTable;
+
+  /// No description provided for @gameVipTable.
+  ///
+  /// In en, this message translates to:
+  /// **'VIP Table'**
+  String get gameVipTable;
+
+  /// No description provided for @gameLost.
+  ///
+  /// In en, this message translates to:
+  /// **'lost'**
+  String get gameLost;
 }
 
 class _AppLocalizationsDelegate

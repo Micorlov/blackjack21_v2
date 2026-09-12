@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/enums.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../models/game_state.dart';
 import '../../models/hand.dart';
 import '../../models/playing_card.dart';
@@ -33,19 +34,19 @@ class TableCalc {
     return BlackjackRules.handValue(s.dealerHand) > 21;
   }
 
-  static String handLabelFor(Hand h) {
-    if (h.cards.isEmpty) return 'Waiting';
-    if (h.status == HandStatus.blackjack) return 'Blackjack!';
-    if (h.status == HandStatus.busted) return 'Busted';
-    if (h.status == HandStatus.surrendered) return 'Surrendered';
-    final soft = BlackjackRules.isSoft(h.cards) ? 'Soft' : 'Hard';
+  static String handLabelFor(Hand h, {AppLocalizations? strings}) {
+    if (h.cards.isEmpty) return strings?.gameWaiting ?? 'Waiting';
+    if (h.status == HandStatus.blackjack) return strings?.gameBlackjack ?? 'Blackjack!';
+    if (h.status == HandStatus.busted) return strings?.gameBusted ?? 'Busted';
+    if (h.status == HandStatus.surrendered) return strings?.gameSurrendered ?? 'Surrendered';
+    final soft = BlackjackRules.isSoft(h.cards) ? (strings?.gameSoft ?? 'Soft') : (strings?.gameHard ?? 'Hard');
     return '$soft ${BlackjackRules.handValue(h.cards)}';
   }
 
   /// The "closest to 21" table-sweep indicator shown above the dealer while a
   /// round is live: every bet already forfeited by a seat that busted or lost
   /// to the revealed dealer hand.
-  static MidRoundPot midRoundPot(GameState s) {
+  static MidRoundPot midRoundPot(GameState s, {AppLocalizations? strings}) {
     final liveSeats = s.npcSeats.where((n) => n.cards.isNotEmpty).toList();
     final dealerShown = s.holeRevealed ? BlackjackRules.handValue(s.dealerHand) : null;
 
@@ -77,7 +78,9 @@ class TableCalc {
     // that nobody was ever announced as winning.
     final atSettlement = s.phase == RoundPhase.settlement;
     final sweep = s.sweepInfo;
-    final potLabelText = atSettlement ? _settledPotLabel(sweep) : (hasSweepPot ? 'SWEEP POT' : 'NO SWEEP POT');
+    final potLabelText = atSettlement
+        ? _settledPotLabel(sweep, strings)
+        : (hasSweepPot ? (strings?.gameSweepPot ?? 'SWEEP POT') : (strings?.gameNoPot ?? 'NO SWEEP POT'));
 
     // Mid-round with nothing forfeited there is no figure to quote: the chips
     // still sitting in front of the players are not a pot anyone can win, and
@@ -98,15 +101,16 @@ class TableCalc {
   /// Settlement-phase pot pill label. `null` sweep info means no seat forfeited
   /// a bet, so there was no sweep pot to win — say that rather than implying an
   /// unclaimed pot.
-  static String _settledPotLabel(SweepInfo? sweep) {
-    if (sweep == null) return 'NO SWEEP';
-    if (sweep.heroTook) return 'YOU TAKE';
-    if (sweep.winner == 'Nobody') return 'DEALER TAKES';
-    return '${sweep.winner.toUpperCase()} TAKES';
+  static String _settledPotLabel(SweepInfo? sweep, AppLocalizations? strings) {
+    if (sweep == null) return strings?.gameNoSweep ?? 'NO SWEEP';
+    if (sweep.heroTook) return strings?.gameYouTake ?? 'YOU TAKE';
+    if (sweep.winner == 'Nobody') return strings?.gameDealerTakes ?? 'DEALER TAKES';
+    return strings?.gameOtherTakes(sweep.winner) ?? '${sweep.winner.toUpperCase()} TAKES';
   }
 
-  static String showdownLabel(GameState s, int heroLiveTotal) {
+  static String showdownLabel(GameState s, int heroLiveTotal, {AppLocalizations? strings}) {
     final dealerShown = s.holeRevealed ? BlackjackRules.handValue(s.dealerHand) : null;
+    if (strings != null) return strings.gameShowdown('$heroLiveTotal', '${dealerShown ?? "?"}');
     return 'YOU $heroLiveTotal  ·  DEALER ${dealerShown ?? '?'}';
   }
 
@@ -114,7 +118,7 @@ class TableCalc {
   /// present them with. A `null` [GameState.sweepInfo] is a real outcome too —
   /// no seat forfeited a bet, so there was no pot to sweep — and gets its own
   /// neutral row instead of a blank card.
-  static PotWinnerInfo potWinnerInfo(GameState s) {
+  static PotWinnerInfo potWinnerInfo(GameState s, {AppLocalizations? strings}) {
     final info = s.sweepInfo;
     if (info == null) {
       return PotWinnerInfo(
@@ -123,8 +127,8 @@ class TableCalc {
         color: AppColors.textPrimary,
         rowBg: Colors.white.withValues(alpha: AppAlpha.ghost),
         rowBorder: Colors.white.withValues(alpha: 0.14),
-        headline: 'No sweep pot',
-        sub: 'NO SEAT FORFEITED A BET',
+        headline: strings?.gameNoPot ?? 'No sweep pot',
+        sub: strings?.gameNoForfeit ?? 'NO SEAT FORFEITED A BET',
       );
     }
     if (info.winner == 'Nobody') {
@@ -134,8 +138,8 @@ class TableCalc {
         color: AppColors.loseLight,
         rowBg: AppColors.lose.withValues(alpha: AppAlpha.subtle),
         rowBorder: AppColors.lose.withValues(alpha: 0.35),
-        headline: 'Dealer keeps the pot',
-        sub: 'NOBODY BEAT THE DEALER',
+        headline: strings?.gameDealerPot ?? 'Dealer keeps the pot',
+        sub: strings?.gameNobodyBeat ?? 'NOBODY BEAT THE DEALER',
       );
     }
     if (info.heroTook) {
@@ -146,8 +150,10 @@ class TableCalc {
         color: AppColors.gold,
         rowBg: AppColors.gold.withValues(alpha: 0.14),
         rowBorder: AppColors.gold.withValues(alpha: AppAlpha.half),
-        headline: 'Sweep pot: yours',
-        sub: 'BET \$${formatChips(info.winnerBet)} + POT \$${formatChips(info.pot)}',
+        headline: strings?.gameYourPot ?? 'Sweep pot: yours',
+        sub:
+            strings?.gamePotBreakdown('\$${formatChips(info.winnerBet)}', '\$${formatChips(info.pot)}') ??
+            'BET \$${formatChips(info.winnerBet)} + POT \$${formatChips(info.pot)}',
       );
     }
     final idx = tableSeats(s).indexWhere((f) => f.firstName == info.winner);
@@ -157,8 +163,10 @@ class TableCalc {
       color: AppColors.textPrimary,
       rowBg: Colors.white.withValues(alpha: AppAlpha.ghost),
       rowBorder: Colors.white.withValues(alpha: 0.14),
-      headline: 'Sweep pot: ${info.winner}',
-      sub: 'BET \$${formatChips(info.winnerBet)} + POT \$${formatChips(info.pot)}',
+      headline: strings?.gameOtherPot(info.winner) ?? 'Sweep pot: ${info.winner}',
+      sub:
+          strings?.gamePotBreakdown('\$${formatChips(info.winnerBet)}', '\$${formatChips(info.pot)}') ??
+          'BET \$${formatChips(info.winnerBet)} + POT \$${formatChips(info.pot)}',
     );
   }
 }

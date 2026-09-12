@@ -25,6 +25,18 @@ Future<void> loadRealTestFonts() async {
     'Instrument Serif': ['InstrumentSerif-Italic.ttf'],
   };
 
+  // The test engine lives under artifacts/engine/<platform>. Material icons
+  // are shipped alongside it; without loading them, captures show tofu boxes.
+  final iconFile = File(
+    '${File(Platform.resolvedExecutable).parent.parent.parent.path}/material_fonts/MaterialIcons-Regular.otf',
+  );
+  if (iconFile.existsSync()) {
+    final loader = FontLoader('MaterialIcons');
+    final bytes = await iconFile.readAsBytes();
+    loader.addFont(Future.value(ByteData.sublistView(bytes)));
+    await loader.load();
+  }
+
   for (final entry in fonts.entries) {
     final loader = FontLoader(entry.key);
     for (final file in entry.value) {

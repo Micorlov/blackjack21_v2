@@ -7,6 +7,11 @@ A Flutter blackjack game with a multi-seat table and a friends race. Four tabs, 
 
 ## Features
 
+- **Play now** — native guest entry opens the coached Bronze table directly, with no bet placed.
+  Google sign-in stays available, and web sign-in behavior is unchanged.
+- **Activation measurement** — first-hand, ten-hand and tutorial milestones, entry-choice events,
+  plus an export-based funnel and day-one retention report. See [growth measurement](docs/growth/README.md).
+
 - **Blackjack table** — multi-seat felt with dealer area, hero hand, betting, insurance,
   splits/doubles, and settlement panels
 - **Drawn for large type** — the game is for players in their sixties and up, so the table is
@@ -138,26 +143,20 @@ A Flutter blackjack game with a multi-seat table and a friends race. Four tabs, 
   "Sound effects", so muting sound mutes the voice too and the Settings row dims while it is off
 - **Haptics** — selection/light/medium/heavy impact and vibrate feedback, toggleable in settings,
   including a tap for each NPC seat's stand/bust
-- **One rating ask, on a hand worth asking about** — after ten hands, the first time the player
-  sweeps the pot, is dealt a natural, or wins a third hand in a row, Google Play's own review
-  sheet slides up a second and a half behind the settlement card. Once per player, ever: the
-  flag is set when the ask is made (not when it is answered) and persisted, so backgrounding the
-  game mid-request or relaunching can never produce a second one. The decision itself
-  (`utils/review_prompt.dart`) is pure and tested; nothing asks on a loss, a push, or a plain win
+- **Respectful review requests** — after ten hands, a quiet settlement can request the Play review
+  sheet. Failed/unavailable requests wait seven days; completed calls wait 90 days, with a
+  three-request cap. Attempts, outcomes and cooldowns survive relaunch. Legacy one-shot saves
+  migrate safely. A completed API call is not proof that a sheet appeared or a rating was left.
 - **Web version** — runs in the browser at https://blackjack21-v2.web.app, auto-deployed by
   GitHub Actions on every push to `main`. Google sign-in is required on web (guest mode has no
   Firebase account behind it, so it's mobile/desktop only there)
 - **Branded link preview** — sharing the web URL (WhatsApp, iMessage, Facebook, etc.) shows a
   custom casino-themed card: an Ace of Spades and King of Hearts fanned on a felt table, the
   "Blackjack 21: Sweep the Pot" title, and a real description, instead of the generic Flutter placeholder
-- **Multi-language UI (in progress)** — Settings has a Language picker (Settings → Language),
-  built on Flutter's standard `flutter_localizations`/ARB pipeline (`lib/l10n/`). The Settings
-  screen itself ships translated into all 10 target languages — English, Spanish, French,
-  German, Portuguese, Russian, Chinese, Japanese, Hebrew and Arabic; the picker lists every
-  locale that has an `app_<lang>.arb` file, so it grows automatically as more screens are
-  translated. The rest of the app's screens and data files are still English-only. The dealer's
-  spoken call-outs are meant to follow the same language once the voice pipeline (currently
-  English-only pre-recorded clips) gains per-language asset sets — not wired up yet
+- **Multi-language gameplay** — Settings, core table controls and labels, results, the three-hand
+  coaching and reference rules support English, Spanish, French, German, Portuguese, Russian,
+  Chinese, Japanese, Hebrew and Arabic through ARB. Native onboarding benefits and entry buttons
+  are translated too. Lobby, social, legal documents and some accessibility copy remain English.
 - **"More games: Video Poker" link** — Settings → About has a row (card icon, "Free video poker,
   no ads", translated into all 10 languages) that opens the developer's Video Poker game on
   Google Play in the Play app, tagged `utm_source=blackjack21` so those installs can be traced
@@ -178,6 +177,10 @@ flutter run -d chrome
 ```
 
 ## Project Structure
+
+Growth additions: `lib/l10n/gameplay.dart` supplies localized coaching/results;
+`tool/growth_funnel.py` aggregates event exports; `docs/growth/README.md` documents measurement;
+`test/store_screenshot_capture_test.dart` renders the staged screenshot set.
 
 ```
 lib/
@@ -335,7 +338,7 @@ on a Play-distributed one. One-time manual steps to fix that:
 | `timezone` | Builds the `TZDateTime` the daily-bonus and streak reminders are scheduled against |
 | `flutter_localizations` | Wires the Material/Widgets/Cupertino locale delegates the app-wide UI translation uses |
 | `intl` | Backs `flutter gen-l10n`'s generated `AppLocalizations` class and ICU plural/placeholder syntax |
-| `in_app_review` | Google Play's own rating sheet, asked for once per player after a well-won hand (`review_prompter`) |
+| `in_app_review` | Google Play review requests with persisted cooldowns and a cap (`review_prompter`) |
 
 Dev: `flutter_test`, `flutter_lints`, `integration_test`.
 
@@ -344,6 +347,10 @@ under `assets/fonts` (see **Assets**), replacing `google_fonts`, which fetched a
 network on first launch.
 
 ## Assets
+
+`play-assets/big-cards/en-US/01.png` through `03.png` are staged 1080×1920 screenshots rendered
+from actual Flutter table widgets. They are not uploaded; existing store artwork is retained.
+See [capture instructions](play-assets/big-cards/README.md).
 
 `assets/fonts/` holds the three typefaces the design is drawn in, declared under `flutter: fonts:`
 in `pubspec.yaml`:
@@ -487,6 +494,15 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-12 — Big Cards activation follow-up
+- feat: Make native Play now enter the coached beginner table without sign-in or spending chips.
+- feat: Translate core table controls, outcomes and coaching/rules across all ten existing locales.
+- fix: Replace permanent review lockout with persisted attempt/outcome cooldowns and a request cap.
+- feat: Track activation milestones and provide a tested export-based funnel and day-one report.
+- chore: Stage three English 1080×1920 screenshots separately from the live naming change.
+- test: Cover review migration/retry/cancellation, first-session entry and multilingual small-screen layouts.
+- chore: Use a null-aware membership-map entry to satisfy the current analyzer without changing behavior.
 
 ### 2026-09-12
 - feat: **admin Players tab — Group Code + UID columns** — Players table now also fetches the

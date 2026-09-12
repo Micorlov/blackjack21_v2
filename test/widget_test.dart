@@ -8,16 +8,16 @@ void main() {
     await tester.pumpWidget(const ProviderScope(child: BlackjackApp()));
 
     expect(find.text('Blackjack 21'), findsOneWidget);
-    expect(find.text('Play as Guest'), findsOneWidget);
+    expect(find.text('Play now'), findsOneWidget);
   });
 
-  testWidgets('playing as guest lands straight in the lobby', (WidgetTester tester) async {
+  testWidgets('Play now lands straight at the beginner table', (WidgetTester tester) async {
     await tester.pumpWidget(const ProviderScope(child: BlackjackApp()));
 
-    await tester.tap(find.text('Play as Guest'));
+    await tester.tap(find.text('Play now'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Daily bonus'), findsOneWidget);
+    expect(find.text('Place your bet'), findsOneWidget);
     expect(find.text('Bronze Table'), findsOneWidget);
   });
 
@@ -28,7 +28,10 @@ void main() {
   // in an unvisited tab again.
   testWidgets('every bottom nav destination renders without throwing', (WidgetTester tester) async {
     await tester.pumpWidget(const ProviderScope(child: BlackjackApp()));
-    await tester.tap(find.text('Play as Guest'));
+    await tester.tap(find.text('Play now'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.bySemanticsLabel('Leave the table'));
     await tester.pumpAndSettle();
 
     for (final label in ['Stats', 'Friends', 'Settings', 'Home']) {

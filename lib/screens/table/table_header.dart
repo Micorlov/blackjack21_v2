@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/game_notifier.dart';
+import '../../l10n/gameplay.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
@@ -26,17 +27,18 @@ class TableHeader extends ConsumerWidget {
       padding: EdgeInsets.fromLTRB(gutter, AppSpacing.xxs, gutter, AppSpacing.xs),
       child: Row(
         children: [
-          CircleIconButton(
-            icon: Icons.chevron_left,
-            semanticLabel: 'Leave the table',
-            onPressed: notifier.exitTable,
-          ),
+          CircleIconButton(icon: Icons.chevron_left, semanticLabel: 'Leave the table', onPressed: notifier.exitTable),
           Expanded(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  stake?.name ?? '',
+                  switch (stake?.key) {
+                    'bronze' => gameplayStrings(context).gameBronzeTable,
+                    'silver' => gameplayStrings(context).gameSilverTable,
+                    'vip' => gameplayStrings(context).gameVipTable,
+                    _ => stake?.name ?? '',
+                  },
                   style: AppText.sora(24, weight: FontWeight.w700),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,

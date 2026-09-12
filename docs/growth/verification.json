@@ -1,0 +1,29 @@
+{
+  "verifiedAt": "2026-09-12T20:58:46.675292+00:00",
+  "analyzer": "No issues found",
+  "flutterTests": {
+    "passed": 2036,
+    "skipped": 1,
+    "skippedReason": "Screenshot capture is opt-in and passed separately"
+  },
+  "pythonReportTests": {
+    "passed": 3
+  },
+  "screenshotCapture": "Passed; all three 1080x1920 images visually inspected",
+  "apk": {
+    "path": "/Users/michael/blackjack21_v2/build/app/outputs/flutter-apk/app-release.apk",
+    "version": "1.6.1+8",
+    "builtAt": "2026-09-12T20:58:19.638346+00:00",
+    "sha256": "091c65494696cf1f75460d5b3cdf6b0b4b469ef8da64fa13dd42a9490c2c8327"
+  },
+  "phoneInstall": {
+    "device": "R5GYB2NHR5D",
+    "status": "blocked",
+    "error": "adb: device not found"
+  },
+  "publication": {
+    "appBuild": "not submitted",
+    "screenshots": "not uploaded"
+  },
+  "analyticsReport": "Tool and tests ready; live event export not available in this task"
+}

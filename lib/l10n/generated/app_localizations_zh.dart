@@ -227,4 +227,282 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get webInstallButton => 'Get it on Google Play';
+
+  @override
+  String get playNow => '立即开始';
+
+  @override
+  String get welcomeBenefit => '大号清晰纸牌。边玩边学，逐手掌握。';
+
+  @override
+  String get continueGoogle => '使用 Google 继续';
+
+  @override
+  String get gameHit => '要牌';
+
+  @override
+  String get gameStand => '停牌';
+
+  @override
+  String get gameDouble => '加倍';
+
+  @override
+  String get gameSplit => '分牌';
+
+  @override
+  String get gameSurrender => '投降';
+
+  @override
+  String get gameDeal => '发牌';
+
+  @override
+  String get gameClear => '清除';
+
+  @override
+  String get gameAllIn => '全押';
+
+  @override
+  String get gameBet => '下注';
+
+  @override
+  String gameMinimum(String amount) {
+    return '最低 $amount';
+  }
+
+  @override
+  String gameRebet(String amount) {
+    return '再次下注 $amount';
+  }
+
+  @override
+  String gameMinimumHint(String amount) {
+    return '至少下注 $amount 才能发牌';
+  }
+
+  @override
+  String get gamePracticeBots => '正在与练习机器人对局';
+
+  @override
+  String get gameInvite => '邀请好友';
+
+  @override
+  String get gameNextHand => '下一手';
+
+  @override
+  String get gameInsure => '保险';
+
+  @override
+  String get gameNoThanks => '不用了';
+
+  @override
+  String gameInsuranceOffer(String amount) {
+    return '庄家明牌为 A。花 $amount 买保险？赔率为 2:1。';
+  }
+
+  @override
+  String get gameYouBet => '你的下注';
+
+  @override
+  String get gameAgainstDealer => '对庄家净收益';
+
+  @override
+  String get gameSweepPot => '横扫底池';
+
+  @override
+  String get gameBalance => '余额';
+
+  @override
+  String get gameWin => '你赢了！';
+
+  @override
+  String get gameLose => '庄家获胜';
+
+  @override
+  String get gamePush => '平局';
+
+  @override
+  String get gameDealerBlackjack => '庄家有黑杰克';
+
+  @override
+  String get gameBlackjackWin => '黑杰克！你赢了';
+
+  @override
+  String get gameSweepWin => '你横扫了全桌';
+
+  @override
+  String get gameBlackjackSweep => '黑杰克 — 底池归你';
+
+  @override
+  String gameShowdown(String you, String dealer) {
+    return '你 $you · 庄家 $dealer';
+  }
+
+  @override
+  String get gameNoPot => '没有横扫底池';
+
+  @override
+  String get gameDealerPot => '庄家保留底池';
+
+  @override
+  String get gameYourPot => '底池归你';
+
+  @override
+  String gameOtherPot(String name) {
+    return '底池：$name';
+  }
+
+  @override
+  String gamePotBreakdown(String bet, String pot) {
+    return '下注 $bet + 底池 $pot';
+  }
+
+  @override
+  String get gameNoForfeit => '没有座位输掉下注';
+
+  @override
+  String get gameNobodyBeat => '无人击败庄家';
+
+  @override
+  String coachStep(String hand) {
+    return '教学 · 第 $hand 手，共 3 手';
+  }
+
+  @override
+  String get coachRules => '规则';
+
+  @override
+  String get coachSkip => '跳过';
+
+  @override
+  String get gameChipOptions => '获取筹码的方法';
+
+  @override
+  String get shotBigCards => '大号清晰纸牌';
+
+  @override
+  String get shotLearn => '边玩边学';
+
+  @override
+  String get shotSweep => '横扫全桌';
+
+  @override
+  String coachBetBody(String min) {
+    return '点击筹码，再点发牌。本桌每手最低下注 $min。';
+  }
+
+  @override
+  String get coachNpcBody => '练习机器人先行动。要牌和停牌按钮可用时，就轮到你了。';
+
+  @override
+  String get coachPlayBody => '比庄家更接近 21 点，但不要超过。要牌增加一张牌，停牌结束回合。超过 21 点即输。';
+
+  @override
+  String get coachSettleBody => '结果分别显示下注、对庄家收益和横扫底池。准备好后继续。';
+
+  @override
+  String get coachDealerBody => '庄家低于 17 点必须要牌，达到任意 17 点则停牌。行动前先看庄家的明牌。';
+
+  @override
+  String get coachPushBody => '点数相同为平局，退还下注。超过 21 点即输，即使庄家也爆牌。';
+
+  @override
+  String get coachPotBody => '其他座位输掉的下注组成底池。击败庄家且点数不低于其他未输座位，即可拿走底池。';
+
+  @override
+  String get coachMovesBody => '加倍需追加相同下注，只再发一张牌。分牌需追加下注，将一对拆成两手。投降退还开局下注的一半。';
+
+  @override
+  String get coachDoneBody => '三手教学已完成。随时可在设置中查看规则或重新开始教学。';
+
+  @override
+  String get coachInsuranceBody => '保险需支付下注的一半，仅当庄家有黑杰克时按 2:1 支付。你可以拒绝。';
+
+  @override
+  String get guideCardsBody =>
+      '数字牌按牌面计点，J、Q、K 为 10 点。A 可算 1 或 11 点，以使手牌不超过 21 点。';
+
+  @override
+  String get guidePayoutsBody =>
+      '获胜按 1:1 支付，天然黑杰克按 3:2 支付。平局退回下注，投降退回一半。庄家黑杰克胜过非天然的 21 点。';
+
+  @override
+  String get guideChipsBody => '大厅列出各桌下注限额。补充筹码和每日奖励有冷却时间；余额不足时查看筹码获取选项。';
+
+  @override
+  String get gameDealer => '庄家';
+
+  @override
+  String get gameBusted => '爆牌';
+
+  @override
+  String get gameWaiting => '等待中';
+
+  @override
+  String get gameBlackjack => '黑杰克！';
+
+  @override
+  String get gameSurrendered => '已投降';
+
+  @override
+  String get gameSoft => '软';
+
+  @override
+  String get gameHard => '硬';
+
+  @override
+  String get gameYouLead => '你领先';
+
+  @override
+  String get gameTableSweep => '横扫全桌';
+
+  @override
+  String get gameNoSweep => '无横扫';
+
+  @override
+  String get gameYouTake => '归你';
+
+  @override
+  String get gameDealerTakes => '庄家拿走';
+
+  @override
+  String gameOtherTakes(String name) {
+    return '$name 拿走';
+  }
+
+  @override
+  String get gamePlaceBet => '请下注';
+
+  @override
+  String get gameInsuranceOffered => '可购买保险';
+
+  @override
+  String gameSeatPlaying(String name) {
+    return '$name 正在行动';
+  }
+
+  @override
+  String get gameYourTurn => '轮到你了';
+
+  @override
+  String gameSplitTurn(String hand, String total) {
+    return '轮到你了 · 第 $hand/$total 手';
+  }
+
+  @override
+  String get gameDealerPlaying => '庄家行动中';
+
+  @override
+  String get gameRoundResult => '本轮结果';
+
+  @override
+  String get gameBronzeTable => '青铜桌';
+
+  @override
+  String get gameSilverTable => '白银桌';
+
+  @override
+  String get gameVipTable => 'VIP 桌';
+
+  @override
+  String get gameLost => '输掉';
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../state/game_notifier.dart';
+import '../../l10n/gameplay.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_text_styles.dart';
@@ -16,22 +17,14 @@ class TableInsurancePanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(gameProvider);
     final notifier = ref.read(gameProvider.notifier);
+    final l = gameplayStrings(context);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text.rich(
-          TextSpan(
-            style: AppText.sora(20, color: AppColors.textPrimary.withValues(alpha: AppAlpha.scrim), height: 1.4),
-            children: [
-              const TextSpan(text: 'Dealer shows an Ace. Insure for '),
-              TextSpan(
-                text: '\$${formatChips(state.insuranceBet)}',
-                style: AppText.mono(20, weight: FontWeight.w700, color: AppColors.gold),
-              ),
-              const TextSpan(text: '? Pays 2:1.'),
-            ],
-          ),
+        Text(
+          l.gameInsuranceOffer('\$${formatChips(state.insuranceBet)}'),
+          style: AppText.sora(20, color: AppColors.textPrimary.withValues(alpha: AppAlpha.scrim), height: 1.4),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 12),
@@ -44,7 +37,7 @@ class TableInsurancePanel extends ConsumerWidget {
           children: [
             Expanded(
               child: ActionPillButton(
-                label: 'INSURE',
+                label: l.gameInsure,
                 borderColor: AppColors.gold.withValues(alpha: AppAlpha.muted),
                 backgroundColor: AppColors.gold.withValues(alpha: 0.08),
                 textColor: AppColors.gold,
@@ -57,7 +50,7 @@ class TableInsurancePanel extends ConsumerWidget {
             Expanded(
               flex: 2,
               child: GoldButton(
-                label: 'NO THANKS',
+                label: l.gameNoThanks,
                 onPressed: notifier.declineInsurance,
                 verticalPadding: 22,
                 fontSize: 24,

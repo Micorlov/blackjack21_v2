@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/game_data.dart';
+import '../l10n/gameplay.dart';
 import '../models/enums.dart';
 import '../models/game_state.dart';
 import '../state/game_notifier.dart';
@@ -50,7 +51,7 @@ class TableScreen extends ConsumerWidget {
 
           return Stack(
             children: [
-              landscape ? _landscape(state, available) : _portrait(state, available),
+              landscape ? _landscape(context, state, available) : _portrait(context, state, available),
               if (state.tableMenuOpen) const TableMenuDropdown(),
               if (state.tableChatOpen) const TableChatSheet(),
             ],
@@ -60,7 +61,7 @@ class TableScreen extends ConsumerWidget {
     );
   }
 
-  Widget _portrait(GameState state, Size available) {
+  Widget _portrait(BuildContext context, GameState state, Size available) {
     // The bottom panel is content-sized, but its tallest variants
     // (settlement recap, chat open) would otherwise eat the whole
     // screen on short devices. Cap it and let it scroll instead, so
@@ -83,7 +84,7 @@ class TableScreen extends ConsumerWidget {
     return Column(
       children: [
         const TableHeader(),
-        TablePhaseBanner.fromState(state),
+        TablePhaseBanner.fromState(state, strings: gameplayStrings(context)),
         const Expanded(child: TableFelt()),
         ConstrainedBox(
           constraints: BoxConstraints(maxHeight: panelMaxHeight),
@@ -98,7 +99,7 @@ class TableScreen extends ConsumerWidget {
   /// The rail scrolls on its own because the settlement recap is much taller
   /// than a landscape phone, and it carries a bottom [SafeArea] of its own so
   /// the last button clears the system navigation bar.
-  Widget _landscape(GameState state, Size available) {
+  Widget _landscape(BuildContext context, GameState state, Size available) {
     final rail = TableLayout.railWidthOf(available.width);
     final gutter = TableLayout.gutterOf(available.width);
 
@@ -112,7 +113,7 @@ class TableScreen extends ConsumerWidget {
               Expanded(
                 child: Column(
                   children: [
-                    TablePhaseBanner.fromState(state),
+                    TablePhaseBanner.fromState(state, strings: gameplayStrings(context)),
                     const Expanded(child: TableFelt()),
                   ],
                 ),

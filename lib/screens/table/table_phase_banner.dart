@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../models/enums.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../models/game_state.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_motion.dart';
@@ -52,17 +53,29 @@ class TablePhaseBanner extends StatelessWidget {
 
   /// Builds the banner's copy from the round state, so the felt, the action
   /// panel and this line can never disagree about whose turn it is.
-  factory TablePhaseBanner.fromState(GameState state) {
+  factory TablePhaseBanner.fromState(GameState state, {AppLocalizations? strings}) {
     final split = state.hands.length > 1;
-    final label = switch (state.phase) {
-      RoundPhase.betting => 'Place your bet',
-      RoundPhase.insurance => 'Insurance offered',
-      RoundPhase.npcs => '${_actingName(state)} is playing',
-      RoundPhase.playing =>
-        split ? 'Your turn · hand ${state.activeHandIndex + 1} of ${state.hands.length}' : 'Your turn',
-      RoundPhase.dealer => 'Dealer is playing',
-      RoundPhase.settlement => 'Round result',
-    };
+    final label = strings != null
+        ? switch (state.phase) {
+            RoundPhase.betting => strings.gamePlaceBet,
+            RoundPhase.insurance => strings.gameInsuranceOffered,
+            RoundPhase.npcs => strings.gameSeatPlaying(_actingName(state)),
+            RoundPhase.playing =>
+              split
+                  ? strings.gameSplitTurn('${state.activeHandIndex + 1}', '${state.hands.length}')
+                  : strings.gameYourTurn,
+            RoundPhase.dealer => strings.gameDealerPlaying,
+            RoundPhase.settlement => strings.gameRoundResult,
+          }
+        : switch (state.phase) {
+            RoundPhase.betting => 'Place your bet',
+            RoundPhase.insurance => 'Insurance offered',
+            RoundPhase.npcs => '${_actingName(state)} is playing',
+            RoundPhase.playing =>
+              split ? 'Your turn · hand ${state.activeHandIndex + 1} of ${state.hands.length}' : 'Your turn',
+            RoundPhase.dealer => 'Dealer is playing',
+            RoundPhase.settlement => 'Round result',
+          };
     return TablePhaseBanner(
       phase: state.phase,
       turnLabel: label,

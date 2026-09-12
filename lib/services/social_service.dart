@@ -159,7 +159,7 @@ class SocialService {
       'name': displayName,
       'updatedAt': FieldValue.serverTimestamp(),
       'tableKey': '',
-      if (invitedBy != null) 'invitedBy': invitedBy,
+      'invitedBy': ?invitedBy,
     }, SetOptions(merge: true));
   }
 

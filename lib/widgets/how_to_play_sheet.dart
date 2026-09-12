@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/tutorial_data.dart';
+import '../l10n/gameplay.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
@@ -23,6 +24,8 @@ class _HowToPlaySheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = gameplayStrings(context);
+    final sections = localizedGuide(l);
     return DraggableScrollableSheet(
       initialChildSize: 0.82,
       minChildSize: 0.5,
@@ -41,9 +44,7 @@ class _HowToPlaySheet extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 2, 8, 6),
               child: Row(
                 children: [
-                  Expanded(
-                    child: Text('How to play', style: AppText.serifItalic(32, height: 1.1)),
-                  ),
+                  Expanded(child: Text(l.howToPlayLabel, style: AppText.serifItalic(32, height: 1.1))),
                   IconButton(
                     onPressed: () => Navigator.of(context).maybePop(),
                     icon: const Icon(Icons.close, color: AppColors.textPrimary, size: 22),
@@ -55,9 +56,9 @@ class _HowToPlaySheet extends StatelessWidget {
               child: ListView.separated(
                 controller: scrollController,
                 padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
-                itemCount: kGuideSections.length,
+                itemCount: sections.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 18),
-                itemBuilder: (context, i) => _GuideSectionBlock(section: kGuideSections[i]),
+                itemBuilder: (context, i) => _GuideSectionBlock(section: sections[i]),
               ),
             ),
           ],
@@ -130,9 +131,7 @@ class _GuideLine extends StatelessWidget {
         children: [
           Text('·', style: style.copyWith(color: AppColors.gold)),
           const SizedBox(width: 8),
-          Expanded(
-            child: Text(line.substring(_bulletPrefix.length), style: style),
-          ),
+          Expanded(child: Text(line.substring(_bulletPrefix.length), style: style)),
         ],
       ),
     );

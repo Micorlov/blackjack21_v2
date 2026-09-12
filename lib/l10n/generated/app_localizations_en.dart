@@ -234,4 +234,293 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get webInstallButton => 'Get it on Google Play';
+
+  @override
+  String get playNow => 'Play now';
+
+  @override
+  String get welcomeBenefit =>
+      'Big, readable cards. Learn as you play, one hand at a time.';
+
+  @override
+  String get continueGoogle => 'Continue with Google';
+
+  @override
+  String get gameHit => 'HIT';
+
+  @override
+  String get gameStand => 'STAND';
+
+  @override
+  String get gameDouble => 'DOUBLE';
+
+  @override
+  String get gameSplit => 'SPLIT';
+
+  @override
+  String get gameSurrender => 'SURRENDER';
+
+  @override
+  String get gameDeal => 'DEAL';
+
+  @override
+  String get gameClear => 'CLEAR';
+
+  @override
+  String get gameAllIn => 'ALL IN';
+
+  @override
+  String get gameBet => 'Bet';
+
+  @override
+  String gameMinimum(String amount) {
+    return 'min $amount';
+  }
+
+  @override
+  String gameRebet(String amount) {
+    return 'DEAL $amount AGAIN';
+  }
+
+  @override
+  String gameMinimumHint(String amount) {
+    return 'Bet at least $amount to deal';
+  }
+
+  @override
+  String get gamePracticeBots => 'Playing with practice bots';
+
+  @override
+  String get gameInvite => 'Invite friends';
+
+  @override
+  String get gameNextHand => 'READY FOR NEXT HAND';
+
+  @override
+  String get gameInsure => 'INSURE';
+
+  @override
+  String get gameNoThanks => 'NO THANKS';
+
+  @override
+  String gameInsuranceOffer(String amount) {
+    return 'Dealer shows an Ace. Insure for $amount? Pays 2:1.';
+  }
+
+  @override
+  String get gameYouBet => 'You bet';
+
+  @override
+  String get gameAgainstDealer => 'Hand vs dealer';
+
+  @override
+  String get gameSweepPot => 'Sweep pot';
+
+  @override
+  String get gameBalance => 'Balance';
+
+  @override
+  String get gameWin => 'You win!';
+
+  @override
+  String get gameLose => 'Dealer wins';
+
+  @override
+  String get gamePush => 'Push';
+
+  @override
+  String get gameDealerBlackjack => 'Dealer has blackjack';
+
+  @override
+  String get gameBlackjackWin => 'Blackjack! You win';
+
+  @override
+  String get gameSweepWin => 'You sweep the table';
+
+  @override
+  String get gameBlackjackSweep => 'Blackjack — you sweep';
+
+  @override
+  String gameShowdown(String you, String dealer) {
+    return 'YOU $you · DEALER $dealer';
+  }
+
+  @override
+  String get gameNoPot => 'No sweep pot';
+
+  @override
+  String get gameDealerPot => 'Dealer keeps the pot';
+
+  @override
+  String get gameYourPot => 'Sweep pot: yours';
+
+  @override
+  String gameOtherPot(String name) {
+    return 'Sweep pot: $name';
+  }
+
+  @override
+  String gamePotBreakdown(String bet, String pot) {
+    return 'BET $bet + POT $pot';
+  }
+
+  @override
+  String get gameNoForfeit => 'No seat forfeited a bet';
+
+  @override
+  String get gameNobodyBeat => 'Nobody beat the dealer';
+
+  @override
+  String coachStep(String hand) {
+    return 'COACH · HAND $hand OF 3';
+  }
+
+  @override
+  String get coachRules => 'Full rules';
+
+  @override
+  String get coachSkip => 'Skip';
+
+  @override
+  String get gameChipOptions => 'Ways to get chips';
+
+  @override
+  String get shotBigCards => 'Big, readable cards';
+
+  @override
+  String get shotLearn => 'Learn as you play';
+
+  @override
+  String get shotSweep => 'Sweep the table';
+
+  @override
+  String coachBetBody(String min) {
+    return 'Tap a chip, then DEAL. This table starts at $min per hand.';
+  }
+
+  @override
+  String get coachNpcBody =>
+      'Practice bots play first. Your turn begins when HIT and STAND become available.';
+
+  @override
+  String get coachPlayBody =>
+      'Get closer to 21 than the dealer without going over. HIT adds a card; STAND ends your turn. Over 21 loses.';
+
+  @override
+  String get coachSettleBody =>
+      'Your result shows your bet, hand return and any sweep pot separately. Continue when ready.';
+
+  @override
+  String get coachDealerBody =>
+      'The dealer draws below 17 and stands on all 17s. Look at the visible dealer card before choosing your move.';
+
+  @override
+  String get coachPushBody =>
+      'An equal total is a push: your bet returns. Going over 21 loses, even if the dealer also busts.';
+
+  @override
+  String get coachPotBody =>
+      'Losing bets from other seats form the sweep pot. Beat the dealer with the best remaining total (ties count) to take it.';
+
+  @override
+  String get coachMovesBody =>
+      'DOUBLE adds an equal bet and one card. SPLIT separates a pair with another bet. SURRENDER returns half your opening bet.';
+
+  @override
+  String get coachDoneBody =>
+      'You have finished the three coached hands. Reopen the rules or replay the tutorial from Settings anytime.';
+
+  @override
+  String get coachInsuranceBody =>
+      'Insurance costs half your bet and pays 2:1 only if the dealer has blackjack. You can decline.';
+
+  @override
+  String get guideCardsBody =>
+      'Number cards keep their value. J, Q and K count 10. An Ace counts 1 or 11, whichever keeps the hand at 21 or below.';
+
+  @override
+  String get guidePayoutsBody =>
+      'A win pays 1:1, natural blackjack pays 3:2, a push returns your bet, and surrender returns half. A dealer blackjack beats any non-natural 21.';
+
+  @override
+  String get guideChipsBody =>
+      'Table limits appear in the lobby. Rebuy and daily bonuses have cooldowns; check the chip options when your balance is low.';
+
+  @override
+  String get gameDealer => 'DEALER';
+
+  @override
+  String get gameBusted => 'Busted';
+
+  @override
+  String get gameWaiting => 'Waiting';
+
+  @override
+  String get gameBlackjack => 'Blackjack!';
+
+  @override
+  String get gameSurrendered => 'Surrendered';
+
+  @override
+  String get gameSoft => 'Soft';
+
+  @override
+  String get gameHard => 'Hard';
+
+  @override
+  String get gameYouLead => 'YOU LEAD';
+
+  @override
+  String get gameTableSweep => 'TABLE SWEEP';
+
+  @override
+  String get gameNoSweep => 'NO SWEEP';
+
+  @override
+  String get gameYouTake => 'YOU TAKE';
+
+  @override
+  String get gameDealerTakes => 'DEALER TAKES';
+
+  @override
+  String gameOtherTakes(String name) {
+    return '$name TAKES';
+  }
+
+  @override
+  String get gamePlaceBet => 'Place your bet';
+
+  @override
+  String get gameInsuranceOffered => 'Insurance offered';
+
+  @override
+  String gameSeatPlaying(String name) {
+    return '$name is playing';
+  }
+
+  @override
+  String get gameYourTurn => 'Your turn';
+
+  @override
+  String gameSplitTurn(String hand, String total) {
+    return 'Your turn · hand $hand of $total';
+  }
+
+  @override
+  String get gameDealerPlaying => 'Dealer is playing';
+
+  @override
+  String get gameRoundResult => 'Round result';
+
+  @override
+  String get gameBronzeTable => 'Bronze Table';
+
+  @override
+  String get gameSilverTable => 'Silver Table';
+
+  @override
+  String get gameVipTable => 'VIP Table';
+
+  @override
+  String get gameLost => 'lost';
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../state/game_notifier.dart';
+import '../l10n/gameplay.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
@@ -116,7 +117,7 @@ class OnboardingScreen extends ConsumerWidget {
                               ConstrainedBox(
                                 constraints: const BoxConstraints(maxWidth: 280),
                                 child: Text(
-                                  'Beat the dealer, climb the leaderboard, and challenge your friends at the table.',
+                                  gameplayStrings(context).welcomeBenefit,
                                   textAlign: TextAlign.center,
                                   style: AppText.sora(
                                     18,
@@ -126,6 +127,19 @@ class OnboardingScreen extends ConsumerWidget {
                                 ),
                               ),
                               const SizedBox(height: 40),
+                              if (!isWeb) ...[
+                                ConstrainedBox(
+                                  constraints: const BoxConstraints(maxWidth: 300),
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    child: GoldButton(
+                                      label: gameplayStrings(context).playNow,
+                                      onPressed: notifier.playNow,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                              ],
                               ConstrainedBox(
                                 constraints: const BoxConstraints(maxWidth: 300),
                                 child: SizedBox(
@@ -133,18 +147,6 @@ class OnboardingScreen extends ConsumerWidget {
                                   child: GoogleSignInButton(child: _GoogleSignInCta(onSignIn: notifier.signInGoogle)),
                                 ),
                               ),
-                              // Guest mode is local-only (no Firebase account), so it's
-                              // hidden on web where sign-in is required.
-                              if (!isWeb) ...[
-                                const SizedBox(height: 12),
-                                TextLinkButton(
-                                  label: 'Play as Guest',
-                                  onPressed: () => notifier.playGuest(),
-                                  color: const Color(0xFFC7C3B7),
-                                  fontSize: 16,
-                                  underline: true,
-                                ),
-                              ],
                               // Offered up front because the table talks from
                               // the very first hand — a player who wants it
                               // silent shouldn't have to hear it once and then
@@ -193,7 +195,7 @@ class _GoogleSignInCta extends StatelessWidget {
         enabled: !busy,
         // Spoken while the round trip runs, so a screen-reader user gets the
         // same "something is happening" the spinner gives everyone else.
-        hint: busy ? 'Signing in, please wait' : null,
+        hint: busy ? gameplayStrings(context).signingIn : null,
         child: Material(
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
@@ -228,7 +230,7 @@ class _GoogleSignInCta extends StatelessWidget {
                   const SizedBox(width: 10),
                   Flexible(
                     child: Text(
-                      busy ? 'Signing in…' : 'Continue with Google',
+                      busy ? gameplayStrings(context).signingIn : gameplayStrings(context).continueGoogle,
                       textAlign: TextAlign.center,
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
@@ -327,7 +329,7 @@ class _VoiceToggle extends StatelessWidget {
                 // large text scale wrap the label rather than overflow.
                 Expanded(
                   child: Text(
-                    'Voice call-outs',
+                    gameplayStrings(context).voiceCalloutsLabel,
                     style: AppText.sora(
                       15,
                       weight: FontWeight.w700,

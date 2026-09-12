@@ -184,13 +184,12 @@ class GameState {
   /// them.
   final bool analyticsOn;
 
-  /// Whether the Play in-app review sheet has already been asked for.
-  ///
-  /// One ask per player, ever. Google itself caps how often the sheet is
-  /// actually shown, and a game that nags for stars after every good hand
-  /// earns worse ones — so the flag is set the moment we ask, whether or not
-  /// the sheet appeared, and never cleared.
+  /// Legacy save marker; a completed API request does not prove a review appeared.
   final bool reviewPromptShown;
+  final int reviewLastAttemptAtMs;
+  final int reviewRequestCount;
+  final bool reviewLastRequestSucceeded;
+  final bool tutorialCompletionLogged;
 
   const GameState({
     this.screen = AppScreen.onboarding,
@@ -260,6 +259,10 @@ class GameState {
     this.lastRebuyAt,
     this.analyticsOn = true,
     this.reviewPromptShown = false,
+    this.reviewLastAttemptAtMs = 0,
+    this.reviewRequestCount = 0,
+    this.reviewLastRequestSucceeded = false,
+    this.tutorialCompletionLogged = false,
   });
 
   GameState copyWith({
@@ -328,6 +331,10 @@ class GameState {
     Object? lastRebuyAt = _unset,
     bool? analyticsOn,
     bool? reviewPromptShown,
+    int? reviewLastAttemptAtMs,
+    int? reviewRequestCount,
+    bool? reviewLastRequestSucceeded,
+    bool? tutorialCompletionLogged,
   }) {
     return GameState(
       screen: screen ?? this.screen,
@@ -397,6 +404,10 @@ class GameState {
       lastRebuyAt: identical(lastRebuyAt, _unset) ? this.lastRebuyAt : lastRebuyAt as DateTime?,
       analyticsOn: analyticsOn ?? this.analyticsOn,
       reviewPromptShown: reviewPromptShown ?? this.reviewPromptShown,
+      reviewLastAttemptAtMs: reviewLastAttemptAtMs ?? this.reviewLastAttemptAtMs,
+      reviewRequestCount: reviewRequestCount ?? this.reviewRequestCount,
+      reviewLastRequestSucceeded: reviewLastRequestSucceeded ?? this.reviewLastRequestSucceeded,
+      tutorialCompletionLogged: tutorialCompletionLogged ?? this.tutorialCompletionLogged,
     );
   }
 }

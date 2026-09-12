@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/enums.dart';
+import '../../l10n/gameplay.dart';
 import '../../models/game_state.dart';
 import '../../state/game_notifier.dart';
 import '../../theme/app_motion.dart';
@@ -70,7 +71,10 @@ class TableActionPanel extends ConsumerWidget {
               // fades out from where it stood instead of jumping to centre.
               layoutBuilder: (current, previous) =>
                   Stack(alignment: Alignment.bottomCenter, children: [...previous, ?current]),
-              child: KeyedSubtree(key: ValueKey(state.phase), child: _panelFor(state, ref.read(gameProvider.notifier))),
+              child: KeyedSubtree(
+                key: ValueKey(state.phase),
+                child: _panelFor(context, state, ref.read(gameProvider.notifier)),
+              ),
             ),
           ),
         ],
@@ -83,7 +87,7 @@ class TableActionPanel extends ConsumerWidget {
     return inSideRail ? content : SafeArea(top: false, child: content);
   }
 
-  Widget _panelFor(GameState state, GameNotifier notifier) {
+  Widget _panelFor(BuildContext context, GameState state, GameNotifier notifier) {
     return switch (state.phase) {
       RoundPhase.betting => const TableBettingPanel(),
       RoundPhase.insurance => const TableInsurancePanel(),
@@ -91,12 +95,12 @@ class TableActionPanel extends ConsumerWidget {
       RoundPhase.npcs => TableWaitingPanel(
         state: state,
         notifier: notifier,
-        text: '${_actingName(state)} is playing…',
+        text: gameplayStrings(context).gameSeatPlaying(_actingName(state)),
       ),
       RoundPhase.dealer => TableWaitingPanel(
         state: state,
         notifier: notifier,
-        text: 'Dealer is playing…',
+        text: gameplayStrings(context).gameDealerPlaying,
         fontSize: 24,
       ),
       RoundPhase.settlement => const TableSettlementPanel(),

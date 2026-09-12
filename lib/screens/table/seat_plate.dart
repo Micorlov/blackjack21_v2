@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import '../../l10n/gameplay.dart';
 
 import '../../models/playing_card.dart';
 import '../../models/social_models.dart';
@@ -153,7 +154,7 @@ class SeatPlate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(label: _semanticLabel, excludeSemantics: true, child: _plateBox());
+    return Semantics(label: _semanticLabel, excludeSemantics: true, child: _plateBox(context));
   }
 
   /// One sentence per seat, instead of the loose numbers and card names a
@@ -173,7 +174,7 @@ class SeatPlate extends StatelessWidget {
     return parts.join(', ');
   }
 
-  Widget _plateBox() {
+  Widget _plateBox(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(5, 5, 10, 5),
       decoration: BoxDecoration(
@@ -227,7 +228,7 @@ class SeatPlate extends StatelessWidget {
                       maxLines: 1,
                     ),
                   ),
-                  trailing: _secondLineBadge(),
+                  trailing: _secondLineBadge(context),
                 ),
               ],
             ),
@@ -287,12 +288,12 @@ class SeatPlate extends StatelessWidget {
   }
 
   /// Pot won, else what the seat did with its hand, else its bet.
-  Widget? _secondLineBadge() {
+  Widget? _secondLineBadge(BuildContext context) {
     final Widget? badge;
     if (data.takesPot) {
       badge = _potBadge();
     } else if (data.hasAction) {
-      badge = _actionBadge();
+      badge = _actionBadge(context);
     } else if (data.showBet) {
       badge = _betDot();
     } else {
@@ -301,7 +302,9 @@ class SeatPlate extends StatelessWidget {
     if (badge == null) return null;
     // Beside a seven-figure stack, or at 130% text, the badge is wider than
     // the room left for it; it scales rather than pushing off the plate.
-    return Flexible(child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerRight, child: badge));
+    return Flexible(
+      child: FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerRight, child: badge),
+    );
   }
 
   Widget _potBadge() {
@@ -321,7 +324,7 @@ class SeatPlate extends StatelessWidget {
     );
   }
 
-  Widget _actionBadge() {
+  Widget _actionBadge(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
@@ -330,7 +333,11 @@ class SeatPlate extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.sm),
       ),
       child: Text(
-        data.actionLabel,
+        switch (data.actionLabel) {
+          'BUST' => gameplayStrings(context).gameBusted,
+          'STAND' => gameplayStrings(context).gameStand,
+          _ => data.actionLabel,
+        },
         style: AppText.mono(
           13,
           weight: FontWeight.w700,
