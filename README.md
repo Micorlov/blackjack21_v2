@@ -257,7 +257,14 @@ Store *text* and *images* both go through the Play Developer API and need no bro
 
 ```bash
 python3 tool/play_images.py --language en-US    # feature graphic, icon, phone + tablet shots
+python3 tool/play_images.py --all-languages --only icon,featureGraphic
 ```
+
+The icon and the feature graphic are stored **per locale**, not once per app. A locale with no
+screenshots of its own falls back to the default listing, but a locale that already has an icon
+keeps showing that icon forever. So an upload naming only `--language en-US` leaves the Hebrew,
+Russian, Arabic and every other listing on the previous artwork — use `--all-languages` whenever
+the icon or the feature graphic changes.
 
 Play rejects a screenshot whose long side is more than twice its short side, which is why the
 phone set is composed at 1344x2688 rather than at the device's own 1344x2992.
@@ -493,6 +500,13 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-29
+- fix: **the Play Store showed the old app icon in every language except English.** Play stores
+  the listing icon and feature graphic per locale, and the September 18 upload named only
+  `en-US`, so the Hebrew listing (and the eight other locales) kept serving the previous
+  artwork in Play search. `tool/play_images.py` gained `--all-languages`, and the current icon
+  and feature graphic were pushed to all ten locales.
 
 ### 2026-09-18
 - feat: **new app icon — blonde dealer with A♦ K♠ in a casino hall.** The photoreal artwork was

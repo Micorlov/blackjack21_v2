@@ -7,9 +7,15 @@ API route with the same service account the bundle upload uses, so a refreshed
 screenshot set never depends on clicking through a browser.
 
     python3 tool/play_images.py --language en-US
+    python3 tool/play_images.py --all-languages --only icon,featureGraphic
 
 Each image type is cleared before it is re-uploaded: Play appends otherwise,
 and the old four screenshots would sit behind the new eight.
+
+The icon and the feature graphic are stored *per locale*, so an upload that
+names only en-US leaves every other listing (iw-IL, ru-RU, ...) showing the
+previous artwork in Play search. Use --all-languages whenever the icon or the
+feature graphic changes.
 """
 
 from __future__ import annotations
@@ -43,6 +49,11 @@ IMAGE_SETS = {
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--language", default="en-US", help="listing locale to attach images to")
+    parser.add_argument(
+        "--all-languages",
+        action="store_true",
+        help="attach the images to every locale the listing has, not just --language",
+    )
     parser.add_argument("--package", default=DEFAULT_PACKAGE)
     parser.add_argument("--key", default=DEFAULT_KEY)
     parser.add_argument(
@@ -68,11 +79,6 @@ def run(args: argparse.Namespace) -> int:
         print(f"error: missing asset(s): {', '.join(missing)}", file=sys.stderr)
         return 1
 
-    if args.dry_run:
-        for kind, files in wanted.items():
-            print(f"{kind}: {', '.join(files)}")
-        return 0
-
     key = Path(args.key)
     if not key.is_file():
         print(f"error: no service account key at {key}", file=sys.stderr)
@@ -85,23 +91,39 @@ def run(args: argparse.Namespace) -> int:
     edit_id = edits.insert(body={}, packageName=args.package).execute()["id"]
     print(f"opened edit {edit_id}")
 
-    for kind, files in wanted.items():
-        edits.images().deleteall(
-            packageName=args.package, editId=edit_id, language=args.language, imageType=kind
-        ).execute()
-        for name in files:
-            media = MediaFileUpload(str(ASSETS / name), mimetype="image/png", resumable=False)
-            edits.images().upload(
-                packageName=args.package,
-                editId=edit_id,
-                language=args.language,
-                imageType=kind,
-                media_body=media,
+    if args.all_languages:
+        listings = edits.listings().list(
+            packageName=args.package, editId=edit_id
+        ).execute().get("listings", [])
+        languages = [listing["language"] for listing in listings]
+    else:
+        languages = [args.language]
+
+    if args.dry_run:
+        edits.delete(packageName=args.package, editId=edit_id).execute()
+        for language in languages:
+            for kind, files in wanted.items():
+                print(f"{language}: {kind}: {', '.join(files)}")
+        return 0
+
+    for language in languages:
+        for kind, files in wanted.items():
+            edits.images().deleteall(
+                packageName=args.package, editId=edit_id, language=language, imageType=kind
             ).execute()
-            print(f"  uploaded {name} -> {kind}")
+            for name in files:
+                media = MediaFileUpload(str(ASSETS / name), mimetype="image/png", resumable=False)
+                edits.images().upload(
+                    packageName=args.package,
+                    editId=edit_id,
+                    language=language,
+                    imageType=kind,
+                    media_body=media,
+                ).execute()
+                print(f"  uploaded {name} -> {language}/{kind}")
 
     edits.commit(packageName=args.package, editId=edit_id).execute()
-    print(f"committed: {args.language} listing images updated")
+    print(f"committed: listing images updated for {', '.join(languages)}")
     return 0
 
 
