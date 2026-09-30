@@ -64,6 +64,7 @@ dependencies:
   # Google Play's own review sheet. Asked for at most once per player, after a
   # hand they just won well — see utils/review_prompt.dart.
   in_app_review: ^2.0.10
+  package_info_plus: ^10.2.1
 
 dev_dependencies:
   flutter_test:

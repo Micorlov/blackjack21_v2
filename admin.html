@@ -90,6 +90,34 @@
         .time-ago { color: #475569; font-size: 12px; }
         .positive { color: #4ade80; }
 
+        .feature-list { padding: 6px 20px; }
+        .feature-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 0; border-bottom: 1px solid rgba(30,41,59,0.5);
+        }
+        .feature-row:last-child { border-bottom: none; }
+        .feature-row-label { font-size: 14px; color: #e2e8f0; font-weight: 500; }
+        .feature-row-sub { font-size: 12px; color: #64748b; margin-top: 2px; }
+        .feature-switch { position: relative; display: inline-block; width: 42px; height: 24px; flex-shrink: 0; }
+        .feature-switch input { opacity: 0; width: 0; height: 0; }
+        .feature-switch-track {
+            position: absolute; cursor: pointer; inset: 0; background: #334155;
+            border-radius: 24px; transition: 0.2s;
+        }
+        .feature-switch-track::before {
+            content: ""; position: absolute; width: 18px; height: 18px; left: 3px; bottom: 3px;
+            background: #e2e8f0; border-radius: 50%; transition: 0.2s;
+        }
+        .feature-switch input:checked + .feature-switch-track { background: #16a34a; }
+        .feature-switch input:checked + .feature-switch-track::before { transform: translateX(18px); }
+
+        .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .bar-label { width: 130px; font-size: 13px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .bar-track { flex: 1; background: #1e293b; border-radius: 4px; height: 18px; overflow: hidden; }
+        .bar-fill { height: 100%; border-radius: 4px; transition: width .4s; }
+        .bar-value { width: 44px; text-align: right; font-size: 13px; color: #e2e8f0; }
+        .chart-empty { color: #64748b; font-size: 13px; padding: 4px 0; }
+
         @media (max-width: 700px) {
             .content { padding: 14px; }
             .stats-grid { grid-template-columns: repeat(2, 1fr); }
@@ -126,6 +154,9 @@
             <button class="tab" onclick="switchTab('players')">Players</button>
             <button class="tab" onclick="switchTab('groups')">Groups</button>
             <button class="tab" onclick="switchTab('livegroup')">Live Group</button>
+            <button class="tab" onclick="switchTab('analytics')">Analytics</button>
+            <button class="tab" onclick="switchTab('health')">Health</button>
+            <button class="tab" onclick="switchTab('features')">Feature Toggles</button>
         </div>
 
         <!-- OVERVIEW -->
@@ -259,6 +290,87 @@
                 </div>
             </div>
         </div>
+
+        <!-- ANALYTICS -->
+        <div class="tab-content" id="tab-analytics">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="label">New This Week</div>
+                    <div class="value" id="a-new-week">—</div>
+                    <div class="sub">by first leaderboard write</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">New This Month</div>
+                    <div class="value" id="a-new-month">—</div>
+                    <div class="sub">rolling 30 days</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">On Latest Version</div>
+                    <div class="value" id="a-latest-pct">—</div>
+                    <div class="sub" id="a-latest-version">—</div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><h2>📈 New Players per Week</h2><button onclick="loadAnalytics()">↻ Refresh</button></div>
+                <div style="padding:20px;" id="chart-signups"></div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><h2>📦 App Version × Platform</h2></div>
+                <div style="padding:20px;" id="chart-versions"></div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><h2>🌍 Country Breakdown</h2></div>
+                <div style="padding:20px;" id="chart-countries"></div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><h2>💰 Chip Balance Histogram</h2></div>
+                <div style="padding:20px;" id="chart-balances"></div>
+            </div>
+        </div>
+
+        <!-- HEALTH -->
+        <div class="tab-content" id="tab-health">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="label">Errors (7d)</div>
+                    <div class="value" id="h-errors">—</div>
+                    <div class="sub" id="h-errors-sub">—</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Installs (28d)</div>
+                    <div class="value" id="h-installs">—</div>
+                    <div class="sub">cold app starts, by version</div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>🐞 Errors by message × version (7d)</h2>
+                    <button onclick="loadHealth()">↻ Refresh</button>
+                </div>
+                <table>
+                    <thead><tr><th>Message</th><th>Version</th><th>Platform</th><th>Hits</th><th>Last Seen</th></tr></thead>
+                    <tbody id="health-errors-body"><tr><td colspan="5" class="empty-state">Loading…</td></tr></tbody>
+                </table>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><h2>📲 Installs by version × platform (28d)</h2></div>
+                <table>
+                    <thead><tr><th>Version</th><th>Platform</th><th>Installs</th></tr></thead>
+                    <tbody id="health-installs-body"><tr><td colspan="3" class="empty-state">Loading…</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- FEATURE TOGGLES -->
+        <div class="tab-content" id="tab-features">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>🚩 Feature Toggles</h2>
+                    <span class="badge" id="features-status">Loading…</span>
+                </div>
+                <div class="feature-list" id="feature-toggle-list"></div>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -320,7 +432,7 @@
 
     // ---------- tab switching ----------
 
-    var TAB_NAMES = ['overview', 'players', 'groups', 'livegroup'];
+    var TAB_NAMES = ['overview', 'players', 'groups', 'livegroup', 'analytics', 'health', 'features'];
 
     function switchTab(name) {
         document.querySelectorAll('.tab-content').forEach(function(el) { el.classList.remove('active'); });
@@ -329,6 +441,9 @@
         var tabs = document.querySelectorAll('.tab');
         var idx = TAB_NAMES.indexOf(name);
         if (idx >= 0) tabs[idx].classList.add('active');
+        if (name === 'analytics') loadAnalytics();
+        if (name === 'health') loadHealth();
+        if (name === 'features') loadFeatures();
     }
 
     function loadAll() { loadLeaderboard(); loadGroups(); }
@@ -543,6 +658,246 @@
             }, function(e) {
                 document.getElementById('group-status').textContent = 'Error: ' + esc(e.message);
             });
+    }
+
+    // ---------- analytics ----------
+
+    function barHtml(label, value, max, color) {
+        var pct = max ? Math.round(value / max * 100) : 0;
+        return '<div class="bar-row">' +
+            '<div class="bar-label">' + esc(label) + '</div>' +
+            '<div class="bar-track"><div class="bar-fill" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+            '<div class="bar-value">' + value + '</div>' +
+        '</div>';
+    }
+
+    function loadAnalytics() {
+        ['chart-signups', 'chart-versions', 'chart-countries', 'chart-balances'].forEach(function(id) {
+            document.getElementById(id).innerHTML = '<p class="chart-empty">Loading…</p>';
+        });
+        db.collection('leaderboard').limit(5000).get().then(function(snap) {
+            var docs = snap.docs.map(function(d) { return d.data(); });
+            renderSignupTrend(docs);
+            renderAppVersions(docs);
+            renderCountryChart(docs);
+            renderBalanceHistogram(docs);
+        }).catch(function(e) {
+            ['chart-signups', 'chart-versions', 'chart-countries', 'chart-balances'].forEach(function(id) {
+                document.getElementById(id).innerHTML = '<p class="chart-empty">Error: ' + esc(e.message) + '</p>';
+            });
+        });
+    }
+
+    // Sign-ups bucketed by calendar week (Monday-start), pre-seeded so a week
+    // with none shows as an empty bar rather than silently collapsing.
+    function renderSignupTrend(docs) {
+        var WEEKS = 8;
+        var weekKeys = [], weeks = {};
+
+        function weekStart(d) {
+            var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+            return x;
+        }
+        function weekKey(d) { var w = weekStart(d); return w.getFullYear() + '-' + w.getMonth() + '-' + w.getDate(); }
+
+        var thisWeek = weekStart(new Date());
+        for (var i = WEEKS - 1; i >= 0; i--) {
+            var w = new Date(thisWeek.getFullYear(), thisWeek.getMonth(), thisWeek.getDate() - i * 7);
+            var k = weekKey(w);
+            weekKeys.push(k);
+            weeks[k] = { label: w.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), count: 0 };
+        }
+
+        var now = Date.now(), newWeek = 0, newMonth = 0;
+        docs.forEach(function(d) {
+            if (!d.createdAt || !d.createdAt.toDate) return;
+            var t = d.createdAt.toDate();
+            var k = weekKey(t);
+            if (weeks[k]) weeks[k].count++;
+            var age = now - t.getTime();
+            if (age <= 7 * 86400000) newWeek++;
+            if (age <= 30 * 86400000) newMonth++;
+        });
+        document.getElementById('a-new-week').textContent = newWeek;
+        document.getElementById('a-new-month').textContent = newMonth;
+
+        var max = Math.max.apply(null, weekKeys.map(function(k) { return weeks[k].count; }).concat([1]));
+        document.getElementById('chart-signups').innerHTML = weekKeys.map(function(k) {
+            return barHtml(weeks[k].label, weeks[k].count, max, '#4ade80');
+        }).join('');
+    }
+
+    // Builds decrease lexically ("1.10" < "1.6"), so "latest" is picked by
+    // the numeric build number after `+` — Flutter's own versioning already
+    // guarantees that increases on every release.
+    function buildNumberOf(version) {
+        var i = (version || '').indexOf('+');
+        return i === -1 ? 0 : parseInt(version.slice(i + 1), 10) || 0;
+    }
+
+    function renderAppVersions(docs) {
+        var latestVersion = '';
+        docs.forEach(function(d) {
+            if (d.appVersion && buildNumberOf(d.appVersion) > buildNumberOf(latestVersion)) latestVersion = d.appVersion;
+        });
+        var counts = {}, onLatest = 0;
+        docs.forEach(function(d) {
+            var label = (d.platform || 'unknown') + ' ' + (d.appVersion || '(pre-instrumentation)');
+            counts[label] = (counts[label] || 0) + 1;
+            if (latestVersion && d.appVersion === latestVersion) onLatest++;
+        });
+        var sorted = Object.keys(counts).sort(function(a, b) { return counts[b] - counts[a]; });
+        var max = sorted.length ? counts[sorted[0]] : 1;
+        document.getElementById('chart-versions').innerHTML = sorted.length
+            ? sorted.map(function(label) {
+                var current = latestVersion && label.indexOf(latestVersion) !== -1;
+                return barHtml(label, counts[label], max, current ? '#4ade80' : '#fbbf24');
+            }).join('')
+            : '<p class="chart-empty">No version data yet — appears after the next release</p>';
+        document.getElementById('a-latest-pct').textContent = docs.length ? Math.round(onLatest / docs.length * 100) + '%' : '—';
+        document.getElementById('a-latest-version').textContent = latestVersion || '—';
+    }
+
+    function renderCountryChart(docs) {
+        var counts = {};
+        docs.forEach(function(d) { var c = d.country || 'Unknown'; counts[c] = (counts[c] || 0) + 1; });
+        var sorted = Object.keys(counts).sort(function(a, b) { return counts[b] - counts[a]; }).slice(0, 15);
+        var max = sorted.length ? counts[sorted[0]] : 1;
+        document.getElementById('chart-countries').innerHTML = sorted.length
+            ? sorted.map(function(c) { return barHtml(c, counts[c], max, '#3b82f6'); }).join('')
+            : '<p class="chart-empty">No country data yet</p>';
+    }
+
+    function renderBalanceHistogram(docs) {
+        var buckets = [
+            { label: '0–1K', min: 0, max: 1000 },
+            { label: '1K–5K', min: 1000, max: 5000 },
+            { label: '5K–10K', min: 5000, max: 10000 },
+            { label: '10K–50K', min: 10000, max: 50000 },
+            { label: '50K–100K', min: 50000, max: 100000 },
+            { label: '100K+', min: 100000, max: Infinity },
+        ];
+        buckets.forEach(function(b) { b.count = 0; });
+        docs.forEach(function(d) {
+            var chips = d.chips || 0;
+            for (var i = 0; i < buckets.length; i++) {
+                if (chips >= buckets[i].min && chips < buckets[i].max) { buckets[i].count++; break; }
+            }
+        });
+        var max = Math.max.apply(null, buckets.map(function(b) { return b.count; }).concat([1]));
+        document.getElementById('chart-balances').innerHTML = buckets.map(function(b) {
+            return barHtml(b.label, b.count, max, '#a78bfa');
+        }).join('');
+    }
+
+    // ---------- health ----------
+
+    var HEALTH_ERROR_DAYS = 7;
+    var HEALTH_INSTALL_DAYS = 28;
+
+    function loadHealth() {
+        document.getElementById('health-errors-body').innerHTML = '<tr><td colspan="5" class="empty-state">Loading…</td></tr>';
+        document.getElementById('health-installs-body').innerHTML = '<tr><td colspan="3" class="empty-state">Loading…</td></tr>';
+        var errorsSince = firebase.firestore.Timestamp.fromMillis(Date.now() - HEALTH_ERROR_DAYS * 86400000);
+        var installsSince = firebase.firestore.Timestamp.fromMillis(Date.now() - HEALTH_INSTALL_DAYS * 86400000);
+        db.collection('errors').where('at', '>=', errorsSince).orderBy('at', 'desc').limit(1000).get()
+            .then(function(snap) { renderHealthErrors(snap.docs.map(function(d) { return d.data(); })); })
+            .catch(function(e) { showHealthError('health-errors-body', 5, e); });
+        db.collection('installs').where('at', '>=', installsSince).orderBy('at', 'desc').limit(2000).get()
+            .then(function(snap) { renderHealthInstalls(snap.docs.map(function(d) { return d.data(); })); })
+            .catch(function(e) { showHealthError('health-installs-body', 3, e); });
+    }
+
+    function showHealthError(bodyId, cols, e) {
+        document.getElementById(bodyId).innerHTML = '<tr><td colspan="' + cols + '" class="empty-state">Error: ' + esc(e.message) + '</td></tr>';
+    }
+
+    function renderHealthErrors(reports) {
+        var groups = {};
+        reports.forEach(function(r) {
+            var key = (r.message || '') + '|' + (r.appVersion || '');
+            var g = groups[key] || (groups[key] = {
+                message: r.message || '(no message)', appVersion: r.appVersion || '—', platform: r.platform || '—', hits: 0, lastAt: 0,
+            });
+            g.hits++;
+            g.lastAt = Math.max(g.lastAt, r.at && r.at.toDate ? r.at.toDate().getTime() : 0);
+        });
+        var list = Object.keys(groups).map(function(k) { return groups[k]; }).sort(function(a, b) { return b.hits - a.hits; });
+        document.getElementById('h-errors').textContent = reports.length;
+        document.getElementById('h-errors-sub').textContent = list.length + ' distinct';
+        document.getElementById('health-errors-body').innerHTML = list.length
+            ? list.slice(0, 100).map(function(g) {
+                return '<tr>' +
+                    '<td style="max-width:420px;white-space:normal;word-break:break-word">' + esc(g.message) + '</td>' +
+                    '<td>' + esc(g.appVersion) + '</td>' +
+                    '<td>' + esc(g.platform) + '</td>' +
+                    '<td>' + g.hits + '</td>' +
+                    '<td class="time-ago">' + (g.lastAt ? timeAgo(new Date(g.lastAt)) : '—') + '</td>' +
+                '</tr>';
+            }).join('')
+            : '<tr><td colspan="5" class="empty-state">No error reports in ' + HEALTH_ERROR_DAYS + ' days</td></tr>';
+    }
+
+    function renderHealthInstalls(docs) {
+        document.getElementById('h-installs').textContent = docs.length;
+        var groups = {};
+        docs.forEach(function(d) {
+            var key = (d.appVersion || '—') + '|' + (d.platform || '—');
+            var g = groups[key] || (groups[key] = { appVersion: d.appVersion || '—', platform: d.platform || '—', count: 0 });
+            g.count++;
+        });
+        var list = Object.keys(groups).map(function(k) { return groups[k]; }).sort(function(a, b) { return b.count - a.count; });
+        document.getElementById('health-installs-body').innerHTML = list.length
+            ? list.map(function(g) { return '<tr><td>' + esc(g.appVersion) + '</td><td>' + esc(g.platform) + '</td><td>' + g.count + '</td></tr>'; }).join('')
+            : '<tr><td colspan="3" class="empty-state">No installs reported in ' + HEALTH_INSTALL_DAYS + ' days</td></tr>';
+    }
+
+    // ---------- feature toggles ----------
+
+    var FEATURE_TOGGLES = [
+        { key: 'reviewPromptEnabled', label: 'Google Play review prompt', sub: 'Asks for a Play Store rating after a strong hand' },
+        { key: 'referralRewardsEnabled', label: 'Referral rewards', sub: 'Credits +100 chips when an invited friend joins a group' },
+    ];
+    var currentFeatures = {};
+
+    function loadFeatures() {
+        document.getElementById('features-status').textContent = 'Loading…';
+        db.collection('config').doc('features').get().then(function(doc) {
+            currentFeatures = doc.exists ? doc.data() : {};
+            document.getElementById('features-status').textContent = doc.exists ? 'Configured' : 'Using defaults (all on)';
+            renderFeatureToggles();
+        }).catch(function(err) {
+            document.getElementById('features-status').textContent = 'Error loading';
+            document.getElementById('feature-toggle-list').innerHTML = '<p class="chart-empty">Error: ' + esc(err.message) + '</p>';
+        });
+    }
+
+    function renderFeatureToggles() {
+        var list = document.getElementById('feature-toggle-list');
+        list.innerHTML = '';
+        FEATURE_TOGGLES.forEach(function(f) {
+            var row = document.createElement('div');
+            row.className = 'feature-row';
+            var checked = currentFeatures[f.key] !== false;
+            row.innerHTML =
+                '<div><div class="feature-row-label">' + esc(f.label) + '</div><div class="feature-row-sub">' + esc(f.sub) + '</div></div>' +
+                '<label class="feature-switch">' +
+                '<input type="checkbox" ' + (checked ? 'checked' : '') + ' onchange="toggleFeature(\'' + f.key + '\', this.checked)">' +
+                '<span class="feature-switch-track"></span>' +
+                '</label>';
+            list.appendChild(row);
+        });
+    }
+
+    function toggleFeature(key, value) {
+        currentFeatures[key] = value;
+        db.collection('config').doc('features').set(currentFeatures, { merge: true }).then(function() {
+            document.getElementById('features-status').textContent = 'Configured';
+        }).catch(function(err) {
+            alert('Failed to save: ' + err.message);
+            loadFeatures();
+        });
     }
 
     // ---------- helpers ----------

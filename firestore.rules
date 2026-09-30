@@ -79,5 +79,29 @@ service cloud.firestore {
         allow delete: if false;
       }
     }
+
+    // Remote feature toggles — the app reads this at startup to decide
+    // whether a feature is on; only the admin panel may change it.
+    match /config/features {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // Fatal-error mirror for the admin panel's Health tab (Crashlytics itself
+    // has no client-readable API). Write-only from the app, append-only
+    // overall — a report is evidence and is never edited after the fact.
+    match /errors/{id} {
+      allow create: if request.auth != null;
+      allow get, list: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // One ping per cold start, so the admin panel can chart installs/opens by
+    // app version and platform.
+    match /installs/{id} {
+      allow create: if request.auth != null;
+      allow get, list: if isAdmin();
+      allow update, delete: if false;
+    }
   }
 }

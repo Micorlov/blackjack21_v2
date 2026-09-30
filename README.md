@@ -346,6 +346,7 @@ on a Play-distributed one. One-time manual steps to fix that:
 | `flutter_localizations` | Wires the Material/Widgets/Cupertino locale delegates the app-wide UI translation uses |
 | `intl` | Backs `flutter gen-l10n`'s generated `AppLocalizations` class and ICU plural/placeholder syntax |
 | `in_app_review` | Google Play review requests with persisted cooldowns and a cap (`review_prompter`) |
+| `package_info_plus` | Reads the running build's version+build number, stamped onto `leaderboard` rows and error/install reports for the admin panel's Analytics/Health tabs |
 
 Dev: `flutter_test`, `flutter_lints`, `integration_test`.
 
@@ -500,6 +501,26 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-09-30
+- feat: **admin panel — Analytics, Health, and Feature Toggles tabs.** `admin.html` gains three
+  tabs matching the layout of the `video-poker-game` admin: new-players-per-week/month, app
+  version × platform, country and chip-balance histograms (Analytics); fatal-error and
+  cold-start-install breakdowns by version and platform (Health); remote on/off switches for the
+  Play review prompt and referral chip rewards (Feature Toggles). Backed by three new Firestore
+  surfaces the app now writes: `leaderboard/{uid}` gains `appVersion`/`platform`/`country` (every
+  score report) and a one-time `createdAt` stamp (`SocialService.ensureCreatedAtStamped`, called
+  once per cold start); `errors/{id}` and `installs/{id}` mirror fatal crashes and cold-start
+  pings (`lib/services/error_reporter.dart`, wired into `main.dart`'s existing
+  `FlutterError.onError`/`PlatformDispatcher.onError` handlers — Crashlytics has no
+  client-readable API, so this is the admin panel's only view into what's breaking in the field);
+  `config/features` holds the toggles themselves (`lib/services/feature_flags.dart`, read once at
+  boot after the anonymous sign-in completes — the rules require a signed-in reader — and fails
+  open so a missing doc or offline read never silently disables a feature). The install ping
+  likewise waits for the first signed-in auth state; web and emulator runs on 2026-10-01 caught
+  both racing sign-in and getting `permission-denied` before this ordering was added. New
+  Firestore rules restrict `config/features` writes and `errors`/`installs` reads to the admin
+  account, while any signed-in client may write the latter two (append-only, no update/delete).
 
 ### 2026-09-29
 - fix: **the Play Store showed the old app icon in every language except English.** Play stores

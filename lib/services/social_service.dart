@@ -175,6 +175,9 @@ class SocialService {
     required String hourKey,
     required String dayKey,
     required String tableKey,
+    String appVersion = '',
+    String platform = '',
+    String country = '',
   }) async {
     final u = uid;
     if (u == null) return;
@@ -186,6 +189,9 @@ class SocialService {
       'hourKey': hourKey,
       'dayKey': dayKey,
       'updatedAt': FieldValue.serverTimestamp(),
+      'appVersion': appVersion,
+      'platform': platform,
+      'country': country,
     };
     try {
       await _db.collection('leaderboard').doc(u).set(row, SetOptions(merge: true));
@@ -199,6 +205,28 @@ class SocialService {
       }
     } on FirebaseException catch (e) {
       debugPrint('SocialService.reportScore failed: ${e.code}');
+    }
+  }
+
+  /// Stamps `leaderboard/{uid}.createdAt` the first time it is missing, so
+  /// the admin panel can chart new players by week and month.
+  ///
+  /// A dedicated read-then-write rather than folding into [reportScore]: that
+  /// method is called after nearly every action (see `_reportScore` in
+  /// `GameNotifier`) and a `FieldValue.serverTimestamp()` written on every
+  /// merge would turn "first seen" into "last write" instead. Called once per
+  /// cold start from `_initSocial`, this extra read is cheap; a no-op once
+  /// the field exists.
+  Future<void> ensureCreatedAtStamped() async {
+    final u = uid;
+    if (u == null) return;
+    try {
+      final ref = _db.collection('leaderboard').doc(u);
+      final doc = await ref.get();
+      if (doc.data()?['createdAt'] != null) return;
+      await ref.set({'createdAt': FieldValue.serverTimestamp()}, SetOptions(merge: true));
+    } on FirebaseException catch (e) {
+      debugPrint('SocialService.ensureCreatedAtStamped failed: ${e.code}');
     }
   }
 

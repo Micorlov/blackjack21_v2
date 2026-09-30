@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'dart:ui' show PlatformDispatcher;
@@ -8,6 +12,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'firebase_options.dart';
 import 'l10n/generated/app_localizations.dart';
@@ -19,9 +24,11 @@ import 'screens/onboarding_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/stats_screen.dart';
 import 'screens/table_screen.dart';
+import 'services/error_reporter.dart';
 import 'state/game_notifier.dart';
 import 'theme/app_colors.dart';
 import 'theme/app_theme.dart';
+import 'utils/device_info.dart';
 import 'widgets/app_lifecycle_bridge.dart';
 import 'widgets/bottom_nav_bar.dart';
 import 'widgets/overlays.dart';
@@ -52,13 +59,51 @@ Future<void> _initServices() async {
     return;
   }
 
-  _installErrorHandlers();
+  final errorReporter = await _buildErrorReporter();
+  _installErrorHandlers(errorReporter);
+  // Firestore (unlike Crashlytics) works on web too, so this runs regardless
+  // of platform — the admin panel's Health tab charts installs by platform,
+  // web included.
+  unawaited(_reportInstallOnceSignedIn(errorReporter));
 
   try {
     await GoogleSignIn.instance.initialize().timeout(_startupInitTimeout);
   } catch (error) {
     debugPrint('Google sign-in init did not complete, guest play still works: $error');
   }
+}
+
+/// Firestore's rules only accept an install ping from a signed-in user, and
+/// the app signs in anonymously a moment after launch (see
+/// `SocialService.ensureSignedIn`). Sending at once would be denied on every
+/// fresh install — exactly the launches worth counting — so the ping waits for
+/// the first signed-in auth state. A launch that never signs in (offline) just
+/// sends none.
+Future<void> _reportInstallOnceSignedIn(ErrorReporter reporter) async {
+  try {
+    await FirebaseAuth.instance
+        .authStateChanges()
+        .firstWhere((user) => user != null)
+        .timeout(_startupInitTimeout * 4);
+  } catch (error) {
+    debugPrint('Install ping skipped, never signed in: $error');
+    return;
+  }
+  await reporter.reportInstall();
+}
+
+/// A blank [ErrorReporter.appVersion] (PackageInfo unavailable, e.g. in a
+/// test harness) just leaves that field blank on the reports it writes,
+/// rather than blocking startup on it.
+Future<ErrorReporter> _buildErrorReporter() async {
+  var version = '';
+  try {
+    final info = await PackageInfo.fromPlatform();
+    version = '${info.version}+${info.buildNumber}';
+  } catch (error) {
+    debugPrint('PackageInfo unavailable: $error');
+  }
+  return ErrorReporter(firestore: FirebaseFirestore.instance, appVersion: version, platform: currentPlatformName());
 }
 
 /// Routes framework and platform errors to Crashlytics.
@@ -70,7 +115,7 @@ Future<void> _initServices() async {
 ///
 /// Only installed on platforms Crashlytics supports — it has no web
 /// implementation, and calling into it there throws on first use.
-void _installErrorHandlers() {
+void _installErrorHandlers(ErrorReporter errorReporter) {
   if (kIsWeb) return;
   try {
     final crashlytics = FirebaseCrashlytics.instance;
@@ -78,9 +123,11 @@ void _installErrorHandlers() {
     FlutterError.onError = (details) {
       priorOnError?.call(details);
       crashlytics.recordFlutterFatalError(details);
+      unawaited(errorReporter.reportFatal(details.exception, details.stack));
     };
     PlatformDispatcher.instance.onError = (error, stack) {
       crashlytics.recordError(error, stack, fatal: true);
+      unawaited(errorReporter.reportFatal(error, stack));
       return true;
     };
   } catch (error) {

@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'dart:ui' show Locale, PlatformDispatcher;
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' show WidgetsBinding, AppLifecycleState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -26,6 +28,7 @@ import '../models/social_models.dart';
 import '../models/table_pot.dart';
 import '../services/analytics.dart';
 import '../services/daily_bonus_store.dart';
+import '../services/feature_flags.dart';
 import '../services/game_store.dart';
 import '../services/local_notifier.dart';
 import '../services/review_prompter.dart';
@@ -34,6 +37,7 @@ import '../services/sound_player.dart';
 import '../services/spoken_amount.dart';
 import '../utils/comeback.dart';
 import '../utils/daily_bonus.dart';
+import '../utils/device_info.dart';
 import '../utils/formatters.dart';
 import '../utils/invite_link.dart';
 import '../utils/play_streak.dart';
@@ -69,9 +73,11 @@ class GameNotifier extends StateNotifier<GameState> {
     @visibleForTesting SoundPlayer? sound,
     @visibleForTesting Analytics? analytics,
     @visibleForTesting ReviewPrompter? reviewPrompter,
+    @visibleForTesting FeatureFlags? featureFlags,
   }) : _sound = sound ?? SoundPlayer(),
        _analytics = analytics ?? _defaultAnalytics(),
        _reviewPrompter = reviewPrompter ?? ReviewPrompter(),
+       _featureFlags = featureFlags ?? FeatureFlags(firestore: _defaultFirestore()),
        super(const GameState(friends: kInitialFriends)) {
     _shoe = BlackjackRules.buildShoe(kDeckCount, _rng);
     // `authenticate()` throws UnimplementedError on web — Google Identity
@@ -100,14 +106,30 @@ class GameNotifier extends StateNotifier<GameState> {
     }
   }
 
+  /// Unlike [_defaultAnalytics], Firestore has a web implementation, so this
+  /// only needs to guard against no Firebase app at all (offline, tests).
+  static FirebaseFirestore? _defaultFirestore() {
+    if (Firebase.apps.isEmpty) return null;
+    try {
+      return FirebaseFirestore.instance;
+    } on Object catch (e) {
+      debugPrint('Firestore unavailable: $e');
+      return null;
+    }
+  }
+
   final Random _rng = Random();
   final SoundPlayer _sound;
   final Analytics _analytics;
   final ReviewPrompter _reviewPrompter;
+  final FeatureFlags _featureFlags;
   final SocialService _social = SocialService();
   final LocalNotifier _notifs = LocalNotifier();
   final DailyBonusStore _bonusStore = DailyBonusStore();
   final GameStore _store = GameStore();
+  final String _platformName = currentPlatformName();
+  final String _countryCode = PlatformDispatcher.instance.locale.countryCode ?? '';
+  String _appVersion = '';
   Timer? _saveTimer;
 
   /// Holds the review sheet back until the settlement card has landed; see
@@ -473,7 +495,20 @@ class GameNotifier extends StateNotifier<GameState> {
   Future<void> _boot() async {
     await _hydrate();
     if (!mounted) return;
+    await _loadAppVersion();
+    if (!mounted) return;
     await _initSocial();
+  }
+
+  /// Best-effort: an empty [_appVersion] just leaves that field blank on the
+  /// player's `leaderboard` row rather than blocking startup on it.
+  Future<void> _loadAppVersion() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      _appVersion = '${info.version}+${info.buildNumber}';
+    } on Object catch (e) {
+      debugPrint('PackageInfo unavailable: $e');
+    }
   }
 
   Future<void> _hydrate() async {
@@ -572,11 +607,18 @@ class GameNotifier extends StateNotifier<GameState> {
     // existed here; notifications and the daily-bonus restore then run
     // alongside it rather than blocking on it, so both still work offline.
     final signInFuture = _social.ensureSignedIn();
+    // The rules only let a signed-in user read `config/features`, so the read
+    // follows sign-in instead of racing it — a fresh install has no session
+    // yet and would get `permission-denied`, leaving every flag at its default.
+    final flagsFuture = signInFuture.then((ok) async {
+      if (ok) await _featureFlags.load();
+    });
     await _notifs.init();
     if (!mounted) return;
     await _restoreDailyBonus();
     if (!mounted) return;
     final ok = await signInFuture;
+    await flagsFuture;
     if (!mounted || !ok) return;
     final user = FirebaseAuth.instance.currentUser;
     if (user != null && !user.isAnonymous && !state.signedIn) {
@@ -587,6 +629,7 @@ class GameNotifier extends StateNotifier<GameState> {
     // Publish immediately so this player exists in the group from the first
     // launch, not only after the first settled hand.
     _reportScore();
+    unawaited(_social.ensureCreatedAtStamped());
     final code = await _social.fetchMyGroupCode();
     if (!mounted) return;
     if (code != null) {
@@ -660,6 +703,7 @@ class GameNotifier extends StateNotifier<GameState> {
   /// (not just a fresh join) so a friend who joined while this device was
   /// offline still gets credited the moment the stream reconnects.
   void _payOutstandingReferrals(List<Friend> members, {required bool wasWatchingBefore}) {
+    if (!_featureFlags.isEnabled(FeatureFlag.referralRewards)) return;
     final me = _social.uid;
     if (me == null) return;
     final unpaid = unrewardedReferrals(members, me, state.rewardedReferralIds);
@@ -751,6 +795,9 @@ class GameNotifier extends StateNotifier<GameState> {
         hourKey: state.heroHourKey,
         dayKey: state.heroDayKey,
         tableKey: state.screen == AppScreen.table ? (state.stake?.key ?? '') : '',
+        appVersion: _appVersion,
+        platform: _platformName,
+        country: _countryCode,
       ),
     );
   }
@@ -1793,7 +1840,7 @@ class GameNotifier extends StateNotifier<GameState> {
     final heroBest = heroBestCandidates.reduce(max);
     final rivalBestCandidates = [0, ...seatResults.where((r) => !r.lost).map((r) => r.total)];
     final rivalBest = rivalBestCandidates.reduce(max);
-    final tablePot = seatResults.where((r) => r.lost).fold(0, (sum, r) => sum + r.bet);
+    final tablePot = seatResults.where((r) => r.lost).fold(0, (total, r) => total + r.bet);
 
     var sweep = 0;
     final heroBlackjack = outcomes.contains('blackjack');
@@ -1953,6 +2000,7 @@ class GameNotifier extends StateNotifier<GameState> {
   /// Only an actual service attempt starts the cooldown; canceled timers do not.
   void _maybeAskForReview() {
     if (_reviewPending ||
+        !_featureFlags.isEnabled(FeatureFlag.reviewPrompt) ||
         !shouldPromptForReview(
           handsPlayed: state.stats.handsPlayed,
           now: DateTime.now(),
