@@ -162,6 +162,9 @@ A Flutter blackjack game with a multi-seat table and a friends race. Four tabs, 
   Google Play in the Play app, tagged `utm_source=blackjack21` so those installs can be traced
   back here. If nothing on the device can open the link, a SnackBar says so instead of the tap
   silently doing nothing
+- **Admin panel: time played per player** — `admin.html` shows each player's total time in the
+  game (Overview leaderboard, and a sortable column on the Players tab), from foreground time the
+  app reports to `leaderboard/{uid}.playSeconds`
 
 ## Getting Started
 
@@ -208,7 +211,8 @@ lib/
 │                  #   daily_bonus (pure cooldown + 7-day streak logic),
 │                  #   tutorial (pure "which coaching card, if any, right now?"),
 │                  #   table_seats (pads real friends to 4 table seats with practice bots),
-│                  #   review_prompt (pure "is this the hand to ask for a rating on?")
+│                  #   review_prompt (pure "is this the hand to ask for a rating on?"),
+│                  #   play_time (foreground-time counter behind the admin "Time Played")
 └── widgets/       # shared UI (buttons, overlays, cards, nav bar,
                    #   tutorial_coach_card, how_to_play_sheet, daily_bonus_dialog,
                    #   web_viewport_scaler)
@@ -501,6 +505,18 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-10-03
+- feat: **admin panel — Time Played column.** The Overview leaderboard and the Players tab
+  (sortable) now show how long each player has spent in the game, e.g. `4h 12m` or `3d 5h`. The
+  app counts foreground time with a monotonic clock (`lib/utils/play_time.dart`, so device clock
+  changes and screen-off sleep never count) and adds it to a new `leaderboard/{uid}.playSeconds`
+  total as a server-side increment: folded into the existing score report (every action plus the
+  60-second heartbeat, so no extra writes) and flushed on its own when the app is backgrounded —
+  `AppLifecycleBridge` now treats `hidden` like `paused`, since a backgrounded web tab or desktop
+  window never reaches `paused` and would otherwise keep counting.
+  Counting starts with this release, so players who have not opened the new build yet show `—`,
+  and a guest who reinstalls gets a new anonymous uid and starts again from zero.
 
 ### 2026-09-30
 - feat: **admin panel — Analytics, Health, and Feature Toggles tabs.** `admin.html` gains three

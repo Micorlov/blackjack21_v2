@@ -41,6 +41,7 @@ import '../utils/device_info.dart';
 import '../utils/formatters.dart';
 import '../utils/invite_link.dart';
 import '../utils/play_streak.dart';
+import '../utils/play_time.dart';
 import '../utils/points.dart';
 import '../utils/rebuy.dart';
 import '../utils/referrals.dart';
@@ -130,6 +131,7 @@ class GameNotifier extends StateNotifier<GameState> {
   final String _platformName = currentPlatformName();
   final String _countryCode = PlatformDispatcher.instance.locale.countryCode ?? '';
   String _appVersion = '';
+  final PlayTimeTracker _playTime = PlayTimeTracker();
   Timer? _saveTimer;
 
   /// Holds the review sheet back until the settlement card has landed; see
@@ -766,6 +768,7 @@ class GameNotifier extends StateNotifier<GameState> {
   /// to wait for the next 60s heartbeat tick to roll a stale point bucket or
   /// notice a day has turned over.
   void onAppResumed() {
+    _playTime.resume();
     if (!state.socialReady) return;
     _heartbeat();
     unawaited(_syncDailyBonusReminder());
@@ -775,12 +778,16 @@ class GameNotifier extends StateNotifier<GameState> {
 
   /// Called by [AppLifecycleBridge] when the app is backgrounded — flushes
   /// any save still waiting out its debounce, the same way [dispose] does,
-  /// so a swipe-away right after a hand never loses it.
+  /// so a swipe-away right after a hand never loses it. Play time is flushed
+  /// too, so the minute in progress survives the OS killing the app; while
+  /// the social layer is down it stays banked in [_playTime] instead.
   void onAppPaused() {
     if (_saveTimer?.isActive ?? false) {
       _saveTimer!.cancel();
       unawaited(_store.save(_snapshot()));
     }
+    _playTime.pause();
+    if (state.socialReady) unawaited(_social.addPlayTime(_playTime.takeSeconds()));
   }
 
   void _reportScore() {
@@ -798,6 +805,7 @@ class GameNotifier extends StateNotifier<GameState> {
         appVersion: _appVersion,
         platform: _platformName,
         country: _countryCode,
+        playSeconds: _playTime.takeSeconds(),
       ),
     );
   }

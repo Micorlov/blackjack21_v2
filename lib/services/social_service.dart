@@ -166,6 +166,9 @@ class SocialService {
   /// Publishes the player's current scoreboard row: always to the world
   /// `leaderboard`, and additionally to the friends group (with [tableKey]
   /// for real table presence) when [code] is set.
+  ///
+  /// [playSeconds] is foreground time played since the last report, added to
+  /// the `leaderboard` row's running `playSeconds` total (see [addPlayTime]).
   Future<void> reportScore({
     String? code,
     required String name,
@@ -178,6 +181,7 @@ class SocialService {
     String appVersion = '',
     String platform = '',
     String country = '',
+    int playSeconds = 0,
   }) async {
     final u = uid;
     if (u == null) return;
@@ -194,7 +198,10 @@ class SocialService {
       'country': country,
     };
     try {
-      await _db.collection('leaderboard').doc(u).set(row, SetOptions(merge: true));
+      await _db.collection('leaderboard').doc(u).set({
+        ...row,
+        if (playSeconds > 0) 'playSeconds': FieldValue.increment(playSeconds),
+      }, SetOptions(merge: true));
       if (code != null) {
         await _db
             .collection('groups')
@@ -205,6 +212,22 @@ class SocialService {
       }
     } on FirebaseException catch (e) {
       debugPrint('SocialService.reportScore failed: ${e.code}');
+    }
+  }
+
+  /// Adds [seconds] of foreground play to `leaderboard/{uid}.playSeconds`
+  /// without touching `updatedAt`, so flushing on background never keeps a
+  /// player looking online. A server-side increment, so the total sums
+  /// across every device signed in to the same account.
+  Future<void> addPlayTime(int seconds) async {
+    final u = uid;
+    if (u == null || seconds <= 0) return;
+    try {
+      await _db.collection('leaderboard').doc(u).set({
+        'playSeconds': FieldValue.increment(seconds),
+      }, SetOptions(merge: true));
+    } on FirebaseException catch (e) {
+      debugPrint('SocialService.addPlayTime failed: ${e.code}');
     }
   }
 

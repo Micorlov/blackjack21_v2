@@ -41,11 +41,15 @@ class _AppLifecycleBridgeState extends ConsumerState<AppLifecycleBridge> with Wi
     switch (state) {
       case AppLifecycleState.resumed:
         ref.read(gameProvider.notifier).onAppResumed();
+      // Web and desktop report a backgrounded tab/window as `hidden` and
+      // never reach `paused`, so both count as leaving — otherwise a tab left
+      // open overnight would keep adding play time. On Android/iOS `hidden`
+      // just precedes `paused`; [GameNotifier.onAppPaused] is idempotent.
       case AppLifecycleState.paused:
+      case AppLifecycleState.hidden:
         ref.read(gameProvider.notifier).onAppPaused();
       case AppLifecycleState.inactive:
       case AppLifecycleState.detached:
-      case AppLifecycleState.hidden:
         break;
     }
   }
