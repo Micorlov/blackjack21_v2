@@ -210,8 +210,8 @@
                     </div>
                 </div>
                 <table>
-                    <thead><tr><th>#</th><th>Player</th><th>Score</th><th>Chips</th><th>Last Seen</th></tr></thead>
-                    <tbody id="board-body"><tr><td colspan="5" class="empty-state">Loading…</td></tr></tbody>
+                    <thead><tr><th>#</th><th>Player</th><th>Score</th><th>Chips</th><th>Time Played</th><th>Last Seen</th></tr></thead>
+                    <tbody id="board-body"><tr><td colspan="6" class="empty-state">Loading…</td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -239,13 +239,14 @@
                         <th onclick="sortPlayers('chips')">Chips ↕</th>
                         <th onclick="sortPlayers('hourly')">Hourly ↕</th>
                         <th onclick="sortPlayers('daily')">Daily ↕</th>
+                        <th onclick="sortPlayers('playSeconds')">Time Played ↕</th>
                         <th onclick="sortPlayers('updatedAt')">Last Active ↕</th>
                         <th>Group</th>
                         <th>Hour Key</th>
                         <th>Day Key</th>
                         <th>UID</th>
                     </tr></thead>
-                    <tbody id="players-body"><tr><td colspan="9" class="empty-state">Loading…</td></tr></tbody>
+                    <tbody id="players-body"><tr><td colspan="10" class="empty-state">Loading…</td></tr></tbody>
                 </table>
             </div>
         </div>
@@ -408,6 +409,18 @@
         return Math.round(s / 86400) + 'd ago';
     }
 
+    // Total foreground time from `leaderboard/{uid}.playSeconds`. Rows written
+    // before the app started reporting it have no field and show "—".
+    function fmtDuration(seconds) {
+        if (typeof seconds !== 'number') return '—';
+        var m = Math.floor(seconds / 60);
+        if (m < 1)  return '<1m';
+        if (m < 60) return m + 'm';
+        var h = Math.floor(m / 60);
+        if (h < 24) return h + 'h ' + (m % 60) + 'm';
+        return Math.floor(h / 24) + 'd ' + (h % 24) + 'h';
+    }
+
     // ---------- auth ----------
 
     function doSignIn() { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
@@ -456,7 +469,7 @@
         var dk = dayKeyOf(now);
         var mode = document.getElementById('period-select').value;
 
-        document.getElementById('board-body').innerHTML = '<tr><td colspan="5" class="empty-state">Loading…</td></tr>';
+        document.getElementById('board-body').innerHTML = '<tr><td colspan="6" class="empty-state">Loading…</td></tr>';
 
         var titles = { hourly: 'Live — Current Hour (' + hk + ')', daily: 'Today — ' + dk, all: 'All Players (by chips)' };
         document.getElementById('board-title').textContent = titles[mode];
@@ -501,24 +514,29 @@
                     scoreField = 'chips';
                 }
 
-                if (filtered.length === 0) {
-                    document.getElementById('board-body').innerHTML = '<tr><td colspan="5" class="empty-state">No data for this period.</td></tr>';
-                    return;
-                }
-                document.getElementById('board-body').innerHTML = filtered.map(function(d, i) {
-                    var rc = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
-                    return '<tr>' +
-                        '<td><span class="rank-badge ' + rc + '">' + (i+1) + '</span></td>' +
-                        '<td>' + esc(d.name || '?') + '</td>' +
-                        '<td class="positive">' + fmtN(d[scoreField]) + '</td>' +
-                        '<td><span class="chips-badge">' + fmtN(d.chips) + '</span></td>' +
-                        '<td class="time-ago">' + timeAgo(d.updatedAt) + '</td>' +
-                    '</tr>';
-                }).join('');
+                renderBoard(filtered, scoreField);
             })
             .catch(function(e) {
-                document.getElementById('board-body').innerHTML = '<tr><td colspan="5" class="empty-state">Error: ' + esc(e.message) + '</td></tr>';
+                document.getElementById('board-body').innerHTML = '<tr><td colspan="6" class="empty-state">Error: ' + esc(e.message) + '</td></tr>';
             });
+    }
+
+    function renderBoard(rows, scoreField) {
+        if (rows.length === 0) {
+            document.getElementById('board-body').innerHTML = '<tr><td colspan="6" class="empty-state">No data for this period.</td></tr>';
+            return;
+        }
+        document.getElementById('board-body').innerHTML = rows.map(function(d, i) {
+            var rc = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+            return '<tr>' +
+                '<td><span class="rank-badge ' + rc + '">' + (i+1) + '</span></td>' +
+                '<td>' + esc(d.name || '?') + '</td>' +
+                '<td class="positive">' + fmtN(d[scoreField]) + '</td>' +
+                '<td><span class="chips-badge">' + fmtN(d.chips) + '</span></td>' +
+                '<td>' + fmtDuration(d.playSeconds) + '</td>' +
+                '<td class="time-ago">' + timeAgo(d.updatedAt) + '</td>' +
+            '</tr>';
+        }).join('');
     }
 
     // ---------- players tab ----------
@@ -539,13 +557,14 @@
             var av = a[playersSortField], bv = b[playersSortField];
             if (av && av.toDate) av = av.toDate().getTime();
             if (bv && bv.toDate) bv = bv.toDate().getTime();
+            if (av == null && bv == null) return 0;
             if (av == null) return 1; if (bv == null) return -1;
             return playersSortDir * (av > bv ? 1 : av < bv ? -1 : 0);
         });
         document.getElementById('players-badge').textContent = data.length;
         document.getElementById('player-count-label').textContent = data.length + ' player' + (data.length !== 1 ? 's' : '');
         if (data.length === 0) {
-            document.getElementById('players-body').innerHTML = '<tr><td colspan="9" class="empty-state">No players found.</td></tr>';
+            document.getElementById('players-body').innerHTML = '<tr><td colspan="10" class="empty-state">No players found.</td></tr>';
             return;
         }
         document.getElementById('players-body').innerHTML = data.map(function(d) {
@@ -554,6 +573,7 @@
                 '<td><span class="chips-badge">' + fmtN(d.chips) + '</span></td>' +
                 '<td class="positive">' + fmtN(d.hourly) + '</td>' +
                 '<td>' + fmtN(d.daily) + '</td>' +
+                '<td>' + fmtDuration(d.playSeconds) + '</td>' +
                 '<td class="time-ago">' + timeAgo(d.updatedAt) + '</td>' +
                 '<td style="font-size:11px;color:#94a3b8;font-weight:600;">' + esc(d._groupCode||'—') + '</td>' +
                 '<td style="font-size:11px;color:#475569;">' + esc(d.hourKey||'—') + '</td>' +
