@@ -27,36 +27,55 @@ namespace Blackjack.PlayTests
             public Camera Camera;
             public RenderTexture Target;
             public UiRoot Root;
+            public int Width;
+            public int Height;
         }
 
-        public static Stage Create()
+        public static Stage Create(int width = Width, int height = Height)
         {
             var camGo = new GameObject("ShotCamera");
             var cam = camGo.AddComponent<Camera>();
             cam.clearFlags = CameraClearFlags.SolidColor;
             cam.backgroundColor = Theme.Surface;
             cam.orthographic = true;
-            var target = new RenderTexture(Width, Height, 24, RenderTextureFormat.ARGB32);
+            var target = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
             cam.targetTexture = target;
-            cam.enabled = false; // rendered by hand in Capture
+            cam.enabled = false; // rendered by hand in Render
             // Screen.safeArea is the whole (virtual) screen in tests; pin a phone-like inset for realism.
-            var root = UiRoot.Create(cam, new Rect(0, 0, Width, Height), new Vector2(Width, Height));
-            return new Stage { Camera = cam, Target = target, Root = root };
+            var root = UiRoot.Create(cam, new Rect(0, 0, width, height), new Vector2(width, height));
+            return new Stage { Camera = cam, Target = target, Root = root, Width = width, Height = height };
         }
 
-        public static IEnumerator Capture(Stage stage, string name, int settleFrames = 4, float settleSeconds = 0.9f)
+        /// <summary>Lets layout, deal-in animations and count-ups finish before anything is measured or drawn.</summary>
+        public static IEnumerator Settle(int settleFrames = 4, float settleSeconds = 0.9f)
         {
             for (var i = 0; i < settleFrames; i++) yield return null;
             yield return new WaitForSecondsRealtime(settleSeconds);
             Canvas.ForceUpdateCanvases();
+        }
+
+        /// <summary>Draws the stage now and reads it back. The caller destroys the texture.</summary>
+        public static Texture2D Render(Stage stage)
+        {
+            Canvas.ForceUpdateCanvases();
             stage.Camera.Render();
             var previous = RenderTexture.active;
             RenderTexture.active = stage.Target;
-            var tex = new Texture2D(Width, Height, TextureFormat.RGB24, false);
-            tex.ReadPixels(new Rect(0, 0, Width, Height), 0, 0);
+            var tex = new Texture2D(stage.Width, stage.Height, TextureFormat.RGB24, false);
+            tex.ReadPixels(new Rect(0, 0, stage.Width, stage.Height), 0, 0);
             tex.Apply();
             RenderTexture.active = previous;
+            return tex;
+        }
+
+        public static void Save(Texture2D tex, string name) =>
             File.WriteAllBytes(Path.Combine(OutDir, name + ".png"), tex.EncodeToPNG());
+
+        public static IEnumerator Capture(Stage stage, string name, int settleFrames = 4, float settleSeconds = 0.9f)
+        {
+            yield return Settle(settleFrames, settleSeconds);
+            var tex = Render(stage);
+            Save(tex, name);
             Object.Destroy(tex);
         }
 

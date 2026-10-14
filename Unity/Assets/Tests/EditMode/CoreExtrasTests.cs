@@ -138,4 +138,55 @@ namespace Blackjack.Core.Tests
             Assert.Greater(m.Inset, 0f);
         }
     }
+
+    public class ContrastTests
+    {
+        private static readonly Rgba White = new Rgba(1, 1, 1);
+        private static readonly Rgba Black = new Rgba(0, 0, 0);
+
+        [Test]
+        public void Ratio_blackOnWhiteIs21AndEitherOrder() =>
+            Assert.AreEqual(21.0, Contrast.Ratio(Black, White), 0.01, "black on white");
+
+        [Test]
+        public void Ratio_ofAColourWithItselfIsOne() =>
+            Assert.AreEqual(1.0, Contrast.Ratio(Rgba.FromArgb(0xFF175943), Rgba.FromArgb(0xFF175943)), 1e-9);
+
+        [Test]
+        public void Ratio_matchesTheWcagReferenceGrey()
+        {
+            // #767676 is the lightest grey that passes 4.5:1 on white.
+            var grey = Rgba.FromArgb(0xFF767676);
+            Assert.AreEqual(4.54, Contrast.Ratio(grey, White), 0.01);
+            Assert.AreEqual(Contrast.Ratio(grey, White), Contrast.Ratio(White, grey), 1e-12);
+        }
+
+        [Test]
+        public void Ratio_flagsTheFeltTokensTheRulesReplace()
+        {
+            var felt = Rgba.FromArgb(0xFF175943);
+            Assert.Less(Contrast.Ratio(Rgba.FromArgb(0xFF9AA79E), felt), Contrast.TextMinimum, "TextFaint on Felt");
+            Assert.GreaterOrEqual(Contrast.Ratio(Rgba.FromArgb(0xFFCBD4CD), felt), Contrast.TextMinimum, "TextFaintOnFelt");
+            Assert.GreaterOrEqual(Contrast.Ratio(Rgba.FromArgb(0xFFFFB4A6), felt), Contrast.TextMinimum, "LoseOnFelt");
+        }
+
+        [Test]
+        public void Over_blendsByAlphaAndKeepsOpaqueColours()
+        {
+            var half = Contrast.Over(new Rgba(1, 1, 1, 0.5), Black);
+            Assert.AreEqual(0.5, half.R, 1e-9);
+            Assert.AreEqual(1.0, half.A, 1e-9);
+            Assert.AreEqual(0.2, Contrast.Over(new Rgba(0.2, 0.4, 0.6), White).R, 1e-9);
+        }
+
+        [Test]
+        public void RatioOver_fadedTextLosesContrast()
+        {
+            var solid = Contrast.RatioOver(new Rgba(1, 1, 1, 1), Black);
+            var faded = Contrast.RatioOver(new Rgba(1, 1, 1, 0.3), Black);
+            Assert.AreEqual(21.0, solid, 0.01);
+            Assert.Less(faded, solid);
+            Assert.AreEqual(1.0, Contrast.RatioOver(new Rgba(1, 1, 1, 0), Black), 1e-9);
+        }
+    }
 }

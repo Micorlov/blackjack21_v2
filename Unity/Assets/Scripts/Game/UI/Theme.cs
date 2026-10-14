@@ -61,6 +61,27 @@ namespace Blackjack.Game.UI
 
         public static readonly Color Scrim = Hex(0xFF040806);
 
+        // The Seat: the room around the table, the wooden edge, the padded leather rail and the brass fittings.
+        public static readonly Color Room = Hex(0xFF1C0F07);
+        public static readonly Color RoomDeep = Hex(0xFF0E0805);
+        public static readonly Color Wood = Hex(0xFF8A5530);
+        public static readonly Color WoodDark = Hex(0xFF4A2812);
+        public static readonly Color Leather = Hex(0xFF6A321A);
+        public static readonly Color LeatherDark = Hex(0xFF3A1609);
+        public static readonly Color Stitch = Hex(0xFFF0D2AA);
+        public static readonly Color Brass = Hex(0xFFCDA65A);
+        public static readonly Color BrassLight = Hex(0xFFF2DCA0);
+        public static readonly Color Ivory = Hex(0xFFF4EBD8);
+        public static readonly Color FeltPrint = Hex(0xEBE6C77A);
+        public static readonly Color PillInk = Hex(0xFF1A1206);
+
+        // Text that sits straight on the felt or on a leather/wood panel needs lighter tones than on the dark
+        // shell to keep 4.5:1 (TextFaint is 3.3:1 on Felt, Lose 1.8:1).
+        public static readonly Color TextFaintOnFelt = Hex(0xFFCBD4CD);
+        public static readonly Color TextFaintOnPanel = Hex(0xFFB9C6BD);
+        public static readonly Color LoseOnFelt = Hex(0xFFFFB4A6);
+        public static readonly Color LoseOnPanel = Hex(0xFFFF9C8C);
+
         public static Color ChipColor(int denomination) => denomination switch
         {
             25 => Win,
@@ -97,7 +118,7 @@ namespace Blackjack.Game.UI
         };
 
         // Spacing / radius
-        public const float Xxs = 2, Xs = 4, Sm = 8, Md = 12, Lg = 16, Xl = 20, Xxl = 24, Xxxl = 32;
+        public const float Xxs = 2, Xs = 4, Sm = 8, Md = 12, Lg = 16, Xl = 20, Xxl = 24, Xxxl = 32, Space48 = 48;
         public const float RadiusSm = 8, RadiusMd = 12, RadiusLg = 16, RadiusXl = 20, RadiusXxl = 24, RadiusPill = 999;
         public const float MinTarget = 48;
     }

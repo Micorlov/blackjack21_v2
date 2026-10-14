@@ -218,8 +218,12 @@ its `assets/` and `android/` output paths; point them at `Unity/Assets/Resources
 - `Unity/Assets/Scripts/Core/` — the rules engine as plain C# (`Blackjack.Core` assembly, no Unity
   references). Every step is a pure function from one immutable `RoundState` to the next; timing is left
   to the caller (`GameController`).
-- `Unity/Assets/Tests/EditMode/` — 147 NUnit tests (rules, betting, settlement, progression, controller,
-  RTL). `Unity/Assets/Tests/PlayMode/` renders each screen offscreen to PNGs for visual review.
+- `Unity/Assets/Tests/EditMode/` — 153 NUnit tests (rules, betting, settlement, progression, controller,
+  RTL, contrast). `Unity/Assets/Tests/PlayMode/` holds the scenario registry (`Scenarios.cs`), the
+  screenshot test (`ScenarioShots`) and the design-rules audit (`RulesAudit` + `rules-baseline.txt`).
+- `Unity/Assets/Scripts/Game/UI/Type.cs` — the type ramp (`Type.Display` … `Type.Caption`, `Type.Numeral`)
+  and `Type.Floor` (12); `TextFloor` keeps a label at the floor however its parents are scaled;
+  `Core/Contrast.cs` is the WCAG luminance/ratio maths the audit uses.
 
 Firebase (Auth, Firestore, Analytics, Crashlytics — SDK 13.17.0) is **not committed**: it is ~760 MB of
 native libraries. `Unity/tools/install_firebase.sh` downloads Google's official zip, verifies its SHA-256,
@@ -342,7 +346,9 @@ on a Play-distributed one. One-time manual steps to fix that:
 - `Unity/Assets/Resources/Sfx/` — sound effects and the spoken call-outs (`Sfx/num/` holds the spoken
   amounts, so adding a clip is just adding the file).
 - `Unity/Assets/Resources/Fonts/` — Sora (Regular/SemiBold/Bold static instances), Instrument Serif
-  Italic, Space Mono; OS fonts are added as fallbacks per language.
+  Italic, Space Mono, and Cinzel Bold (a static 700 instance cut from the OFL variable font in
+  `google/fonts`, used only for print on the felt; licence in `Unity/Assets/Licenses/Cinzel-OFL.txt`).
+  OS fonts are added as fallbacks per language.
 - `Unity/Assets/Icons/` — launcher (adaptive foreground/background, legacy) and notification icons.
 - `hosting/` — `privacy-policy.html` is the Privacy Policy URL the Play listing requires, served at
   `https://blackjack21-v2.web.app/privacy-policy.html`; `index.html` is the invite landing page;
@@ -358,19 +364,39 @@ EditMode (rules, betting, settlement, progression, controller, RTL — no graphi
   -projectPath Unity -runTests -testPlatform EditMode -testResults /tmp/unity-results.xml
 ```
 
-PlayMode screenshot tests render each screen offscreen (needs graphics, so no `-nographics`); set
-`BJ_SHOTS` to the output folder and review the PNGs:
+PlayMode tests render offscreen (needs graphics, so no `-nographics`); set `BJ_SHOTS` to the output
+folder:
 
 ```bash
 BJ_SHOTS=/tmp/shots /Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity -batchmode \
   -projectPath Unity -runTests -testPlatform PlayMode -testResults /tmp/play-results.xml
 ```
 
+- `ScenarioShots` writes one PNG per entry of `Tests/PlayMode/Scenarios.cs` — every screen, the ten
+  Seat table states, every dialog and sheet, and the Hebrew/Arabic views.
+- `RulesAudit` draws every scenario on four phone sizes (1080×2340, 720×1600, 1080×1920, 1600×2560) and
+  checks the design rules in `CLAUDE.md`: no character under 12 units on screen (the felt's scale
+  included), no tap target under 48×48, text at 4.5:1 and control outlines at 3:1 against the pixels
+  really behind them. Known violations are listed in `Tests/PlayMode/rules-baseline.txt`; a new one fails
+  the test, and so does a fixed one whose line is still there. `BJ_SHOTS/rules-report.txt` lists every
+  violation with its worst value. `BJ_RULES_BASELINE=write` rewrites the baseline from a full run;
+  `BJ_SCENARIO=seat_` narrows either test to matching scenario names.
+
 A Core change is not done until the EditMode suite passes. Check on a device or emulator
 (`adb -s <serial> logcat --pid=$(adb -s <serial> shell pidof com.micorlov.blackjack21_v2)`): the Firebase
 lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
+
+### 2026-10-14 (The Seat, phase 0: design rules)
+- test: `RulesAudit` checks every screen, table state and dialog on four phone sizes for the design rules
+  (12-unit text floor, 48×48 targets, 4.5:1 text and 3:1 outline contrast) against a shrinking
+  `rules-baseline.txt`; `ScenarioShots` replaces the separate table/screen screenshot tests with one
+  registry (`Scenarios.cs`) that adds the ten Seat states, the table menu, a toast and the sign-out dialog.
+- feat: Seat design tokens (room, wood, leather, stitch, brass, ivory, felt print) and felt/panel-safe
+  variants of the faint and loss colours; the type ramp (`Type.cs`) with `Ui.Text` overloads; Cinzel
+  Bold for felt print; `TextFloor` for scaled labels; `Core/Contrast.cs`.
+- fix: `Ui.Shrink` no longer shrinks a label below 12 units.
 
 ### 2026-10-14 (Flutter removed)
 - chore: delete the Flutter app (`lib/`, `test/`, `android/`, `ios/`, `web/`, `macos/`, `windows/`, `linux/`,

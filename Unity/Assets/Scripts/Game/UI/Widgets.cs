@@ -58,14 +58,14 @@ namespace Blackjack.Game.UI
         public static RectTransform SectionLabel(Transform parent, string text)
         {
             var box = Ui.VStack(parent, 0, Ui.Pad(2, 4, 2, 10));
-            Ui.Text(box, text, 13, Theme.TextFaint, FontKind.SoraSemiBold);
+            Ui.Text(box, text, Type.BodySm.WithFont(FontKind.SoraSemiBold), Theme.TextFaint);
             return box;
         }
 
         public static RectTransform ScreenTitle(Transform parent, string text)
         {
             var box = Ui.VStack(parent, 0, Ui.Pad(0, 0, 0, 16));
-            Ui.Text(box, text, 32, Theme.TextPrimary, FontKind.SerifItalic, TextAlignmentOptions.TopLeft, true, 0, -10);
+            Ui.Text(box, text, Type.H1, Theme.TextPrimary, TextAlignmentOptions.TopLeft, true, -10);
             return box;
         }
 
@@ -81,6 +81,8 @@ namespace Blackjack.Game.UI
                 shell = content;
                 // The pressable lives on the outer border node so the whole control is the hit area.
                 shell = (RectTransform)content.parent;
+                // The outline is what tells the control apart from its background, so it must reach 3:1.
+                shell.Ensure<ControlBorder>();
             }
             else
             {
@@ -316,6 +318,12 @@ namespace Blackjack.Game.UI
             return raw;
         }
     }
+
+    /// <summary>
+    /// Marks an outline that is a control's only visible boundary, so <c>RulesAudit</c> holds it to the WCAG
+    /// non-text contrast ratio (3:1) against what lies behind it. Disabled controls are exempt.
+    /// </summary>
+    public sealed class ControlBorder : MonoBehaviour { }
 
     /// <summary>A number that rolls to its new value instead of snapping — the balance, the round result.</summary>
     public sealed class CountUpText : MonoBehaviour

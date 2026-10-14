@@ -70,6 +70,27 @@ to the offline Null services, so a build that "loses" sign-in is usually a missi
 Never commit `Assets/Firebase/`, `Assets/ExternalDependencyManager/`, `Assets/GeneratedLocalRepo/` or
 the generated Gradle templates — `.gitignore` covers them.
 
+## Design rules (enforced by RulesAudit)
+
+The UI follows "The Seat" (`docs/design-concepts/the-seat/`). These rules are checked by
+`Unity/Assets/Tests/PlayMode/RulesAudit.cs` on every scenario in `Scenarios.cs` at four phone sizes; known
+violations sit in `rules-baseline.txt`, which may only shrink (fix a violation → delete its line; never
+add lines by hand to get a change through).
+
+| Rule | Value |
+|---|---|
+| Type ramp (`Type.cs`) | display 40 · h1 32 · h2 24 · title/button 17 · body 15 · bodySm 13 · caption 12 = **floor**, measured on screen (felt `Scale` and `Shrink` included) |
+| Tap targets | ≥ 48×48 (`Theme.MinTarget`), disabled controls included |
+| Contrast | text ≥ 4.5:1 · control outlines (`ControlBorder`) ≥ 3:1; disabled controls exempt |
+| Fonts | Sora (UI, card ranks) · Instrument Serif italic (titles) · Space Mono (numbers) · Cinzel only for felt print |
+| Tokens | spacing 2/4/8/12/16/20/24/32/48 · radius 8/12/16/20/24/pill — no other values |
+| Labels | sentence case as in `en.json`; button captions stay in caps as `en.json` has them |
+| Cards | dealer 66×96 · hero 88 wide (≤ 1.4×) · other seats ≥ 42×60 · rank text ≥ 12 |
+| Felt | `Theme.Felt #175943`; text on felt uses the `…OnFelt` tokens |
+
+New UI code uses `Type.*` styles and `Theme` tokens, never raw sizes or hex values. Labels on a scaled
+canvas (the felt) get `TextFloor.Apply`.
+
 ## Documentation Rule (MANDATORY)
 
 **Every future update to this project MUST update the Markdown docs in the same change.**

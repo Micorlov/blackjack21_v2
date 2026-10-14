@@ -5,7 +5,8 @@ using UnityEngine.TextCore.LowLevel;
 
 namespace Blackjack.Game.UI
 {
-    public enum FontKind { Sora, SoraSemiBold, SoraBold, SerifItalic, Mono, MonoBold }
+    /// <summary>The bundled faces. <see cref="Cinzel"/> is only for print on the felt, in Latin-script languages.</summary>
+    public enum FontKind { Sora, SoraSemiBold, SoraBold, SerifItalic, Mono, MonoBold, Cinzel }
 
     /// <summary>
     /// TextMeshPro font assets built at runtime from the bundled TTFs (Resources/Fonts), with the
@@ -24,6 +25,7 @@ namespace Blackjack.Game.UI
             { FontKind.SerifItalic, "Fonts/InstrumentSerif-Italic" },
             { FontKind.Mono, "Fonts/SpaceMono-Regular" },
             { FontKind.MonoBold, "Fonts/SpaceMono-Bold" },
+            { FontKind.Cinzel, "Fonts/Cinzel-Bold" },
         };
 
         // File-name fragments of the system fonts that cover each script we localise into. System fonts

@@ -13,6 +13,36 @@ namespace Blackjack.PlayTests
             return sb.ToString();
         }
 
+        /// <summary>
+        /// A stable address for a node under <paramref name="root"/>: names joined by '/', with the sibling index
+        /// added where siblings share a name (most labels are called "Text"). Used as the key in rules-baseline.txt.
+        /// </summary>
+        public static string PathOf(Transform node, Transform root)
+        {
+            var parts = new System.Collections.Generic.List<string>();
+            for (var t = node; t != null && t != root; t = t.parent)
+            {
+                var name = t.name;
+                var parent = t.parent;
+                if (parent != null)
+                {
+                    var same = 0;
+                    var index = 0;
+                    for (var i = 0; i < parent.childCount; i++)
+                    {
+                        var sibling = parent.GetChild(i);
+                        if (sibling.name != name) continue;
+                        if (sibling == t) index = same;
+                        same++;
+                    }
+                    if (same > 1) name += "[" + index + "]";
+                }
+                parts.Add(name);
+            }
+            parts.Reverse();
+            return string.Join("/", parts);
+        }
+
         private static void Walk(Transform t, int depth, int maxDepth, StringBuilder sb)
         {
             if (depth > maxDepth) return;

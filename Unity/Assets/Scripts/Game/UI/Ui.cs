@@ -305,6 +305,12 @@ namespace Blackjack.Game.UI
             return t;
         }
 
+        /// <summary>A label in a step of the type ramp (<see cref="Type"/>).</summary>
+        public static UiText Text(Transform parent, string text, TextStyle style, Color color,
+            TextAlignmentOptions align = TextAlignmentOptions.TopLeft, bool wrap = true, float lineSpacing = 0,
+            string name = "Text")
+            => Text(parent, text, style.Size, color, style.Font, align, wrap, style.Tracking, lineSpacing, name);
+
         private static TextAlignmentOptions ToMiddle(TextAlignmentOptions a)
         {
             switch (a)
@@ -321,12 +327,13 @@ namespace Blackjack.Game.UI
         /// <summary>
         /// Lets a one-line label shrink to fit the room it is given instead of overflowing — Flutter's
         /// FittedBox(scaleDown). Used instead of ellipsis, which TMP applies unreliably across fallback fonts.
+        /// It never shrinks below <see cref="Type.Floor"/>; a label that still does not fit overflows instead.
         /// </summary>
         public static T Shrink<T>(this T text, float minScale = 0.55f) where T : TMP_Text
         {
             text.enableAutoSizing = true;
             text.fontSizeMax = text.fontSize;
-            text.fontSizeMin = text.fontSize * minScale;
+            text.fontSizeMin = Mathf.Min(text.fontSize, Mathf.Max(Type.Floor, text.fontSize * minScale));
             return text;
         }
 
