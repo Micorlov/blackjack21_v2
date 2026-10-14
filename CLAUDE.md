@@ -53,6 +53,15 @@ Hebrew input is normal — it is never a request to switch reply language.
 
 Doc-only changes (no code touched) skip step 1 and say so.
 
+## Unity Port (in progress)
+
+The game is being ported from Flutter to Unity, side by side, in `Unity/` (Unity 6000.3.25f1). The
+Flutter app stays the shipping build and the phone-install target in the Delivery Rule above until
+the user says the Unity build has reached parity. Same package id, so `adb install -r` upgrades in
+place. Rules logic lives in `Unity/Assets/Scripts/Core` (no `UnityEngine` references) and is
+tested with `Unity -runTests` (command in the README); a Core change is not done until those tests
+pass. Port the Dart behaviour 1:1 and carry the matching Flutter test over.
+
 ## Documentation Rule (MANDATORY)
 
 **Every future update to this project MUST update the Markdown docs in the same change.**

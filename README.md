@@ -239,6 +239,29 @@ play-assets/                  # what the Play Store listing shows — the upload
 └── raw/                      # gitignored device captures the above are composed from
 ```
 
+### Unity port (`Unity/`)
+
+The game is being ported to Unity (6000.3.25f1, Android) in this folder; the Flutter app above stays
+the shipping build until the port reaches parity. The Unity app keeps the same package id
+(`com.micorlov.blackjack21_v2`) so an `adb install -r` upgrades in place (saved Flutter data does not
+carry over).
+
+- `Unity/Assets/Scripts/Core/` — the rules engine as plain C# (`Blackjack.Core` assembly, no Unity
+  references): cards and shoe, comeback dealing, betting limits, the round engine (deal, insurance,
+  hit/stand/double/split/surrender, opponent seats, dealer play) and the sweep-pot settlement. Every
+  step is a pure function from one immutable `RoundState` to the next; timing is left to the caller.
+- `Unity/Assets/Tests/EditMode/` — NUnit tests ported from the Flutter suite.
+
+Run the Unity tests from the repo root:
+
+```bash
+/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity -batchmode -nographics \
+  -projectPath Unity -runTests -testPlatform EditMode -testResults /tmp/unity-results.xml
+```
+
+Port status: **done** — rules engine and its tests. **Next** — table scene and UI, persistence, audio,
+the 10 locales, Firebase (auth, friends groups, leaderboards), notifications, then the Android build.
+
 ### Regenerating the store assets
 
 Screenshots and the promo come from a real session, never a mockup. Capture on a device or an
@@ -505,6 +528,11 @@ SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected —
 emulator testing.
 
 ## Changelog
+
+### 2026-10-14
+- feat: start the Unity port in `Unity/` — the blackjack rules engine (shoe, comeback dealing, betting
+  limits, insurance, split/double/surrender, opponent seats, dealer play, sweep-pot settlement) is now
+  plain C# with 49 passing EditMode tests. The Flutter app is unchanged and remains the shipping build.
 
 ### 2026-10-03
 - feat: **admin panel — Time Played column.** The Overview leaderboard and the Players tab
