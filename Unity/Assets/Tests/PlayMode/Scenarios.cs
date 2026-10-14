@@ -229,6 +229,11 @@ namespace Blackjack.PlayTests
 
         private static Scenario[] RightToLeft() => new[]
         {
+            // The table keeps casino order in every language (first base on the right); text and panels mirror.
+            new Scenario("rtl_he_seat_your_turn", () => Seat()[3].State(), null, "he"),
+            new Scenario("rtl_he_seat_result", () => Seat()[7].State(), null, "he"),
+            new Scenario("rtl_ar_seat_split", () => Seat()[5].State(), null, "ar"),
+            new Scenario("rtl_ar_seat_waiting", () => Seat()[8].State(), null, "ar"),
             new Scenario("rtl_he_lobby", () => new AppState { Screen = AppScreen.Lobby, DisplayName = "Michael", Round = History() }, null, "he"),
             new Scenario("rtl_he_table", () => Table(Betting()), null, "he"),
             new Scenario("rtl_ar_settings", () => new AppState { Screen = AppScreen.Settings, Round = History() }, null, "ar"),

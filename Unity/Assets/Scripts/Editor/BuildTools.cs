@@ -57,7 +57,13 @@ namespace Blackjack.EditorTools
             PlayerSettings.Android.bundleVersionCode = VersionCode;
 
             PlayerSettings.colorSpace = ColorSpace.Gamma;
+            // Portrait only: the Seat is drawn for a phone held upright. Landscape is switched off outright, so an
+            // auto-rotate default can never bring it back.
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
+            PlayerSettings.allowedAutorotateToPortrait = true;
+            PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
+            PlayerSettings.allowedAutorotateToLandscapeLeft = false;
+            PlayerSettings.allowedAutorotateToLandscapeRight = false;
             PlayerSettings.SplashScreen.show = false;
             PlayerSettings.SetScriptingBackend(android, ScriptingImplementation.IL2CPP);
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;

@@ -19,6 +19,10 @@ A Unity (Android) blackjack game with a multi-seat table and a friends race. Fou
   42x60 for the other seats), 64-unit chips, 20–24 unit action buttons, and no character anywhere
   smaller than 12 units on screen — the felt's scaling included, which `RulesAudit` checks on four
   phone sizes. A short phone squeezes the gaps on the felt before it shrinks a single card
+- **The Seat** — the whole app is drawn as a first-person seat at a casino table
+  (`docs/design-concepts/the-seat/`): a dark room with warm lamps, a wooden dealer's edge, green felt with
+  its print curved along the table, a stitched leather rail, the dealer's tray, shoe and discard holder, and
+  every screen in the same browns, brass gold and ivory. Portrait only
 - **Casino seat order** — the table plays the way a real one does: the two seats on your right (first
   base, Maya and Jordan) act before you, the two on your left (Sam and Priya) after you, then the
   dealer. A bust, surrender or natural on your side still lets the seats after you play, and their
@@ -209,6 +213,7 @@ Unity/
 │   ├── Plugins/Android/       # BlackjackExtras.androidlib: permissions + invite-link intent filter
 │   └── Tests/                 # EditMode (NUnit) and PlayMode (offscreen screenshots)
 ├── tools/                     # install_firebase.sh, unpack_unitypackage.py
+docs/design-concepts/the-seat/ # the design reference: ten table states, the overview and the PDF
 hosting/                       # Firebase Hosting: invite landing page, privacy policy, assetlinks.json
 play-assets/  tool/            # Google Play listing artwork and the store upload scripts
 firestore.rules  firestore.indexes.json  firebase.json  .firebaserc
@@ -402,13 +407,24 @@ BJ_SHOTS=/tmp/shots /Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Content
   really behind them. Known violations are listed in `Tests/PlayMode/rules-baseline.txt`; a new one fails
   the test, and so does a fixed one whose line is still there. `BJ_SHOTS/rules-report.txt` lists every
   violation with its worst value. `BJ_RULES_BASELINE=write` rewrites the baseline from a full run;
-  `BJ_SCENARIO=seat_` narrows either test to matching scenario names.
+  `BJ_SCENARIO=seat_` narrows either test to matching scenario names. The baseline is empty: any violation
+  fails the test. The registry includes Hebrew and Arabic Seat states (`rtl_*`).
 
 A Core change is not done until the EditMode suite passes. Check on a device or emulator
 (`adb -s <serial> logcat --pid=$(adb -s <serial> shell pidof com.micorlov.blackjack21_v2)`): the Firebase
 lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
+
+### 2026-10-14 (The Seat, phase 6: portrait, right-to-left, reference)
+- chore: portrait only — `BuildTools.Configure` switches every landscape and upside-down rotation off, so
+  the Seat (drawn for a phone held upright) can never be turned sideways.
+- test: Hebrew and Arabic Seat scenarios (your turn, a split, a seat playing, the result) join the
+  registry and pass the design rules: the table keeps casino order in every language (first base on the
+  right) while the text, panels, pills and turn order mirror.
+- docs: `docs/design-concepts/the-seat/` (the ten screens, the overview and the PDF) is tracked as the
+  design reference. The Play screenshots are not refreshed yet: the rule for them is a real session on a
+  device (see **Regenerating the store assets**), and they still show the previous look.
 
 ### 2026-10-14 (The Seat, phase 5: the rest of the app)
 - feat: the lobby, stats, friends, settings, onboarding, the navigation bar, dialogs and sheets move into
