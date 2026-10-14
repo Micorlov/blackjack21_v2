@@ -284,7 +284,9 @@ namespace Blackjack.Game.UI
         {
             var box = Ui.Card(parent, Color.black.WithAlpha(0.3f), Theme.RadiusMd, Theme.BorderStrong, 1.5f, Ui.Pad(14, 12), 0, true, "Input");
             var area = Ui.Node("TextArea", box).Fill();
-            area.Ensure<LayoutElement>().minHeight = fontSize * 1.6f;
+            var areaLayout = area.Ensure<LayoutElement>();
+            areaLayout.minHeight = fontSize * 1.6f;
+            areaLayout.flexibleWidth = 1;   // fills the field even when the field sits in a content-sized row
             area.gameObject.AddComponent<RectMask2D>();
             var hint = Ui.Text(area, placeholder, fontSize, Theme.TextFaint, FontKind.Mono, TextAlignmentOptions.Left, false);
             hint.rectTransform.Fill();

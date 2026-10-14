@@ -27,3 +27,4 @@
 *.unitypackage
 sysinfo.txt
 crashlytics-build.properties
+Builds/

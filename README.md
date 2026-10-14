@@ -530,6 +530,10 @@ emulator testing.
 ## Changelog
 
 ### 2026-10-14
+- feat: Unity port — Android build: `Blackjack.EditorTools.BuildTools.BuildAndroid` builds an IL2CPP ARM64 APK
+  (`com.micorlov.blackjack21_v2`, 1.7.0 / versionCode 9, signed with the debug key so it upgrades the Flutter app
+  in place) with the invite-link filter, vibration/notification permissions, notification icons and launcher
+  icons; verified installing and playing a hand on an emulator.
 - feat: Unity port — all screens built in code (onboarding, lobby, table with the tilted felt drawn by a shader,
   stats, friends, settings, legal pages, daily-bonus dialog, out-of-chips and how-to-play sheets, table chat,
   coach cards, confetti and chip flights) on a runtime UI toolkit; reviewed through offscreen PlayMode

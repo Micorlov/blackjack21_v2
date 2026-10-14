@@ -78,7 +78,7 @@ namespace Blackjack.Game.UI
 
         private void BuildChipTray()
         {
-            _tray = Ui.Node("ChipTray", _canvas);
+            _tray = Ui.VStack(_canvas, 0, null, TextAnchor.UpperLeft, false, "ChipTray");
             var box = Ui.Card(_tray, Theme.Hex(0xFF1D160F), Theme.RadiusSm, Theme.Gold.WithAlpha(0.2f), 1, Ui.Pad(8, 6), 0, false, "Tray");
             var row = Ui.HStack(box, 4, null, TextAnchor.MiddleCenter);
             for (var i = 0; i < 4; i++)

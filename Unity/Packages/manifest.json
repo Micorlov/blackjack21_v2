@@ -37,6 +37,7 @@
     "com.unity.modules.xr": "1.0.0",
     "com.unity.test-framework": "1.6.0",
     "com.unity.ugui": "2.0.0",
-    "com.unity.nuget.newtonsoft-json": "3.2.1"
+    "com.unity.nuget.newtonsoft-json": "3.2.1",
+    "com.unity.mobile.notifications": "2.4.1"
   }
 }

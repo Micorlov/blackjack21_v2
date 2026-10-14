@@ -119,7 +119,8 @@ namespace Blackjack.Game.UI
         {
             if (_shown.HasValue && _screens.TryGetValue(_shown.Value, out var view)) view.Tick();
             _toasts?.Tick();
-            if (Input.GetKeyDown(KeyCode.Escape)) _g.HandleBack();
+            // Android's back button arrives as Escape. At the lobby there is nothing left to close: leave the app.
+            if (Input.GetKeyDown(KeyCode.Escape) && !_g.HandleBack()) Application.Quit();
         }
 
         private void OnDestroy()

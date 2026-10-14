@@ -1,0 +1,7 @@
+<linker>
+  <!-- IL2CPP stripping must keep the JSON library (it reflects over our types) and our own assemblies. -->
+  <assembly fullname="Unity.Plastic.Newtonsoft.Json" preserve="all" />
+  <assembly fullname="Newtonsoft.Json" preserve="all" />
+  <assembly fullname="Blackjack.Core" preserve="all" />
+  <assembly fullname="Blackjack.Game" preserve="all" />
+</linker>

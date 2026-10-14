@@ -1,0 +1,2 @@
+/Users/micorlov/Documents/GitHub/blackjack21_v2/Unity/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/src/main/cpp/CMakeLists.txt
+/Users/micorlov/Documents/GitHub/blackjack21_v2/Unity/Library/Bee/Android/Prj/IL2CPP/Gradle/unityLibrary/src/main/cpp/FramePacing/CMakeLists.txt

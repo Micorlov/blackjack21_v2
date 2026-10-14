@@ -297,7 +297,7 @@ namespace Blackjack.Game.UI
         {
             var row = Ui.HStack(parent, 8, Ui.Pad(0, 1), TextAnchor.MiddleLeft, false);
             var l = Ui.Text(row, label, 16, labelColor ?? Theme.TextPrimary.WithAlpha(0.66f), FontKind.Mono, TextAlignmentOptions.Left, false);
-            l.overflowMode = TextOverflowModes.Ellipsis;
+            // No ellipsis here: TMP drops the whole line in the mono face when it tries to ellipsise.
             l.rectTransform.FlexW();
             Ui.Text(row, value, 18, valueColor, FontKind.MonoBold, TextAlignmentOptions.Right, false);
         }

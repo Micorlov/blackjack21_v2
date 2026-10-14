@@ -229,6 +229,12 @@ namespace Blackjack.Game.UI
             Color? border = null, float borderWidth = 1, RectOffset padding = null, float spacing = 0,
             bool stretch = true, string name = "Card")
         {
+            // In a horizontal row a card sizes to its content; rows give a card a share explicitly with FlexW.
+            if (parent.GetComponent<HorizontalLayoutGroup>() != null) stretch = false;
+
+            // The inner panel always fills its border. Whether the whole card may grow is stated on the outermost
+            // node's LayoutElement, because a layout group otherwise reports itself flexible whenever its child is.
+            RectTransform outermost = null;
             Transform host = parent;
             if (border.HasValue)
             {
@@ -237,16 +243,18 @@ namespace Blackjack.Game.UI
                 var g = outer.gameObject.AddComponent<VerticalLayoutGroup>();
                 g.padding = Pad(borderWidth);
                 g.childControlWidth = true; g.childControlHeight = true;
-                // Force-expand would make the group report itself as flexible and swallow free space.
-                g.childForceExpandWidth = stretch; g.childForceExpandHeight = false;
+                g.childForceExpandWidth = true; g.childForceExpandHeight = false;
                 host = outer.transform;
+                outermost = outer.rectTransform;
             }
             var inner = Box(host, fill, Mathf.Max(0, border.HasValue ? radius - borderWidth : radius), name);
+            if (!border.HasValue) outermost = inner.rectTransform;
             var ig = inner.gameObject.AddComponent<VerticalLayoutGroup>();
             ig.padding = padding ?? new RectOffset();
             ig.spacing = spacing;
             ig.childControlWidth = true; ig.childControlHeight = true;
             ig.childForceExpandWidth = stretch; ig.childForceExpandHeight = false;
+            if (!stretch) outermost.Ensure<LayoutElement>().flexibleWidth = 0;
             return inner.rectTransform;
         }
 
