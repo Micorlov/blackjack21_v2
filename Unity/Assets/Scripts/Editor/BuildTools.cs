@@ -29,8 +29,8 @@ namespace Blackjack.EditorTools
 
         public const string PackageId = "com.micorlov.blackjack21_v2";
         // Above the Flutter app's versionCode (8) so `adb install -r` upgrades it in place.
-        public const string VersionName = "1.8.0";
-        public const int VersionCode = 10;
+        public const string VersionName = "1.8.1";
+        public const int VersionCode = 11;
 
         public static void Configure()
         {

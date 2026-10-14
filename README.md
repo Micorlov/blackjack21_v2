@@ -336,10 +336,18 @@ dependency, so `Unity/Assets/Plugins/Android/LauncherManifest.xml` (enabled by `
 removes it with `tools:node="remove"`; a removal marker in a library manifest does not outrank it.
 Keep `tool/release_notes_en-US.txt` under **500 characters**; Play rejects anything longer.
 
-Auth is a Google Cloud service account, `play-publisher@blackjack21-v2.iam.gserviceaccount.com`,
-granted "Release apps to testing tracks" and "Manage testing tracks and edit tester lists" on this
-app in Play Console. Its JSON key lives at `android/play-service-account.json` (path used by `tool/play_upload.py`) and is
-gitignored — it never gets committed.
+Auth is a Google Cloud service account, `play-publisher@gen-lang-client-0324046629.iam.gserviceaccount.com`,
+added under **Users and permissions** on the *Orlov Games* developer account (id `6720418432540497347`). Its
+key is **not in the repo**: it lives at `~/.config/play/key.json`, so every run needs
+`--key ~/.config/play/key.json` — `tool/play_upload.py` still defaults to `android/play-service-account.json`,
+which no longer exists (the earlier `play-publisher@blackjack21-v2` key was deleted along with the Flutter
+`android/` folder on 2026-10-14).
+
+Its **account permissions** grant "Release apps to testing tracks" but **not** "Release to production,
+exclude devices, and use Play App Signing", so an internal/alpha/beta release works while a
+`--track production` run uploads the bundle, stages the release, and then fails the final commit with
+`HttpError 403 … The caller does not have permission`. Play discards the whole edit when that happens, so
+nothing lands and the version code stays free to retry. See below for the tick that fixes it.
 
 It can release to production as of 1.3.0 (4). Until then it could not: a `--track production` run
 uploaded the bundle and staged the release, then failed on the final commit with `HttpError 403 …
@@ -427,6 +435,14 @@ A Core change is not done until the EditMode suite passes. Check on a device or 
 lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
+
+### 2026-10-15 (1.8.1 release)
+- chore: bump to 1.8.1 (11) and build the signed bundle for a Google Play production release carrying the
+  sound, dealer-box and bot-push fixes. **Not yet on Play**: the commit step returns 403 until the service
+  account is granted the production-release permission (see **Publishing to Google Play**).
+- docs: correct the Play publishing credentials — the service account is now
+  `play-publisher@gen-lang-client-0324046629.iam.gserviceaccount.com` with its key at `~/.config/play/key.json`;
+  the old `play-publisher@blackjack21-v2` key went with the deleted Flutter `android/` folder.
 
 ### 2026-10-15 (bot push fix)
 - fix: a bot seat that ties the dealer is a push — its bet returns, its pill reads "$0", and it no longer
