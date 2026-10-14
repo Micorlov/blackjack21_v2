@@ -74,8 +74,8 @@ the generated Gradle templates — `.gitignore` covers them.
 
 The UI follows "The Seat" (`docs/design-concepts/the-seat/`). These rules are checked by
 `Unity/Assets/Tests/PlayMode/RulesAudit.cs` on every scenario in `Scenarios.cs` at four phone sizes; known
-violations sit in `rules-baseline.txt`, which may only shrink (fix a violation → delete its line; never
-add lines by hand to get a change through).
+violations sit in `rules-baseline.txt`, which is now **empty** and may only stay that way: a change that
+breaks a rule is fixed, never added to the baseline.
 
 | Rule | Value |
 |---|---|

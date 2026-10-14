@@ -101,7 +101,7 @@ namespace Blackjack.Game.UI
             var row = Ui.HStack(panel, 10, null, TextAnchor.MiddleLeft, false);
             var initial = s.DisplayName.Trim().Length == 0 ? "G" : s.DisplayName.Trim().Substring(0, 1).ToUpperInvariant();
             W.Avatar(row, initial, Theme.AvatarColorOf(s.AvatarColor), 44);
-            var name = Ui.Text(row, s.DisplayName, 16, Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.Left, false);
+            var name = Ui.Text(row, s.DisplayName, 17, Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.Left, false);
             name.Shrink();
             name.rectTransform.FlexW();
             // Signing out drops a signed-in player back to guest and leaves the live group: confirm first.
@@ -141,7 +141,7 @@ namespace Blackjack.Game.UI
                 var selected = s.LanguageOverride == code;
                 var row = Ui.HStack(panel, 8, Ui.Pad(0, 15), TextAnchor.MiddleLeft, false);
                 row.MinSize(null, Theme.MinTarget);
-                var t = Ui.Text(row, label, 16, Theme.TextPrimary, FontKind.SoraSemiBold, TextAlignmentOptions.Left, false);
+                var t = Ui.Text(row, label, 17, Theme.TextPrimary, FontKind.SoraSemiBold, TextAlignmentOptions.Left, false);
                 t.rectTransform.FlexW();
                 if (selected) W.Icon(row, "check", 24, Theme.Gold);
                 var pick = code;
@@ -160,9 +160,13 @@ namespace Blackjack.Game.UI
                 var row = Ui.HStack(panel, 12, Ui.Pad(0, 15), TextAnchor.MiddleLeft, false);
                 var col = Ui.VStack(row, 2, null, TextAnchor.MiddleLeft, true);
                 col.FlexW();
-                Ui.Text(col, r.label, 16, Theme.TextPrimary, FontKind.SoraSemiBold, TextAlignmentOptions.TopLeft, true);
+                Ui.Text(col, r.label, 17, Theme.TextPrimary, FontKind.SoraSemiBold, TextAlignmentOptions.TopLeft, true);
                 if (r.sub != null) Ui.Text(col, r.sub, 13, Theme.TextMuted, FontKind.Sora, TextAlignmentOptions.TopLeft, true, 0, 6);
-                W.Switch(row, r.on, r.toggle, r.enabled);
+                W.Switch(row, r.on, null, r.enabled);
+                // The whole row is the switch's target: a 52x30 knob alone is too small to hit.
+                row.MinSize(null, Theme.MinTarget);
+                row.Ensure<FlatImage>();
+                row.MakePressable(r.toggle).Interactable = r.enabled;
                 // Dimming the whole row, so a disabled switch does not keep its gold and read as live.
                 if (!r.enabled) row.Ensure<CanvasGroup>().alpha = 0.45f;
                 if (i < rows.Length - 1) W.Divider(panel);
@@ -181,7 +185,7 @@ namespace Blackjack.Game.UI
                 if (r.icon != null) W.Icon(row, r.icon, 22, Theme.Gold);
                 var col = Ui.VStack(row, 2, null, TextAnchor.MiddleLeft, true);
                 col.FlexW();
-                Ui.Text(col, r.label, 16, Theme.TextPrimary, FontKind.SoraSemiBold, TextAlignmentOptions.TopLeft, true);
+                Ui.Text(col, r.label, 17, Theme.TextPrimary, FontKind.SoraSemiBold, TextAlignmentOptions.TopLeft, true);
                 Ui.Text(col, r.sub, 13, Theme.TextMuted, FontKind.Sora, TextAlignmentOptions.TopLeft, true, 0, 6);
                 W.Icon(row, "chevron_right", 22, Theme.TextFaint);
                 row.MakePressable(r.tap);
@@ -191,7 +195,7 @@ namespace Blackjack.Game.UI
             if (info.HasValue)
             {
                 var row = Ui.HStack(panel, 12, Ui.Pad(0, 15), TextAnchor.MiddleLeft, false);
-                Ui.Text(row, info.Value.label, 16, Theme.TextMuted, FontKind.Sora, TextAlignmentOptions.Left, false).rectTransform.FlexW();
+                Ui.Text(row, info.Value.label, 17, Theme.TextMuted, FontKind.Sora, TextAlignmentOptions.Left, false).rectTransform.FlexW();
                 Ui.Text(row, info.Value.value, 16, Theme.TextPrimary, FontKind.Mono, TextAlignmentOptions.Right, false);
             }
         }

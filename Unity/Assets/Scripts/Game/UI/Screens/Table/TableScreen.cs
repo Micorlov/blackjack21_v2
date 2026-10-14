@@ -180,7 +180,7 @@ namespace Blackjack.Game.UI
             outer.FitContent(true, true);
             outer.MinSize(null, Theme.MinTarget);
             card.GetComponent<VerticalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
-            Ui.Text(card, Loc.Or("leaveTable", "Leave Table"), 19, Theme.LoseSoft, FontKind.Sora, TextAlignmentOptions.Center, false);
+            Ui.Text(card, Loc.Or("leaveTable", "Leave Table"), 17, Theme.LoseSoft, FontKind.Sora, TextAlignmentOptions.Center, false);
             outer.MakePressable(G.ExitTable);
             outer.GetComponent<Image>().raycastTarget = true;
         }
@@ -192,7 +192,7 @@ namespace Blackjack.Game.UI
             scrim.raycastTarget = true;
             scrim.rectTransform.MakePressable(G.ToggleTableChat);
 
-            var sheet = Ui.Card(host, Theme.Surface, 24, Theme.Gold.WithAlpha(0.3f), 1, Ui.Pad(16, 10, 16, 22), 0, true, "Sheet");
+            var sheet = Ui.Card(host, Theme.Surface, Theme.RadiusXxl, Theme.Gold.WithAlpha(0.3f), 1, Ui.Pad(Theme.Lg, Theme.Sm, Theme.Lg, Theme.Xxl), 0, true, "Sheet");
             var outer = (RectTransform)sheet.parent;
             outer.anchorMin = new Vector2(0, 0); outer.anchorMax = new Vector2(1, 0); outer.pivot = new Vector2(0.5f, 0);
             outer.offsetMin = outer.offsetMax = Vector2.zero;
@@ -207,13 +207,13 @@ namespace Blackjack.Game.UI
 
             var atTable = Roster.TableSeats(s.Friends, s.Round.Stake?.Key).Count + 1;
             var head = Ui.HStack(sheet, Theme.Sm, null, TextAnchor.LowerLeft, false);
-            Ui.Text(head, Loc.Or("tableChat", "Table chat"), 26, Theme.TextPrimary, FontKind.SerifItalic, TextAlignmentOptions.Left, false);
+            Ui.Text(head, Loc.Or("tableChat", "Table chat"), 24, Theme.TextPrimary, FontKind.SerifItalic, TextAlignmentOptions.Left, false);
             Ui.Text(head, Loc.Or("atTheTable", "{n} at the table", ("n", atTable)), 13, Theme.TextFaint, FontKind.Mono, TextAlignmentOptions.Left, false);
             Ui.Spacer(sheet, 12);
 
             var list = Ui.VStack(sheet, 10, null, TextAnchor.UpperLeft, true, "Messages");
             if (s.ChatMessages.Count == 0)
-                Ui.Text(list, Loc.Or("noTableTalk", "No table talk yet — say GG below."), 14, Theme.TextFaint, FontKind.Sora, TextAlignmentOptions.Center, true);
+                Ui.Text(list, Loc.Or("noTableTalk", "No table talk yet — say GG below."), 15, Theme.TextFaint, FontKind.Sora, TextAlignmentOptions.Center, true);
             foreach (var m in s.ChatMessages) ChatBubble(list, m);
             Ui.Spacer(sheet, 6);
 
@@ -223,7 +223,7 @@ namespace Blackjack.Game.UI
                 var reaction = label;
                 var pill = Ui.Card(pills, Theme.Gold.WithAlpha(0.1f), Theme.RadiusPill, Theme.Gold.WithAlpha(0.35f), 1, Ui.Pad(14, 10), 0, true, "Reaction");
                 var shell = (RectTransform)pill.parent;
-                shell.MinSize(null, 44);
+                shell.MinSize(Theme.MinTarget, Theme.MinTarget);
                 pill.GetComponent<VerticalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
                 Ui.Text(pill, reaction, 13, Theme.Gold, FontKind.SoraBold, TextAlignmentOptions.Center, false);
                 shell.MakePressable(() => G.SendChatMessage(reaction));
@@ -235,7 +235,7 @@ namespace Blackjack.Game.UI
         {
             var self = m.Name == "You";
             var row = Ui.HStack(parent, 0, null, self ? TextAnchor.MiddleRight : TextAnchor.MiddleLeft, false);
-            var bubble = Ui.Card(row, self ? Theme.Gold.WithAlpha(0.14f) : Color.white.WithAlpha(0.07f), 14,
+            var bubble = Ui.Card(row, self ? Theme.Gold.WithAlpha(0.14f) : Color.white.WithAlpha(0.07f), Theme.RadiusMd,
                 self ? Theme.Gold.WithAlpha(0.3f) : Color.white.WithAlpha(0.1f), 1, Ui.Pad(13, 9), 2, false, "Bubble");
             Ui.Text(bubble, m.Name, 12, self ? Theme.Gold : Theme.TextFaint, FontKind.SoraBold, TextAlignmentOptions.Left, false);
             Ui.Text(bubble, m.Text, 15, Theme.TextPrimary, FontKind.Sora, TextAlignmentOptions.Left, true);

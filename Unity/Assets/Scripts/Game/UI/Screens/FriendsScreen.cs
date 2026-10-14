@@ -56,8 +56,8 @@ namespace Blackjack.Game.UI
             W.GoldButton(panel, Loc.T("inviteButtonWhatsApp"), G.ShareInviteWhatsApp);
             Ui.Spacer(panel, 8);
             var row = Ui.HStack(panel, 8, null, TextAnchor.MiddleCenter, true);
-            W.ActionPill(row, Loc.T("inviteButtonShare"), Theme.Gold.WithAlpha(0.4f), Color.clear, Theme.Gold, G.ShareInviteSheet, 12, 0, 14).FlexW();
-            W.ActionPill(row, Loc.T("inviteCopyLink"), Theme.Gold.WithAlpha(0.4f), Color.clear, Theme.Gold, G.CopyInviteLink, 12, 0, 14).FlexW();
+            W.ActionPill(row, Loc.T("inviteButtonShare"), Theme.Gold.WithAlpha(0.7f), Color.clear, Theme.Gold, G.ShareInviteSheet, 12, 0, 15).FlexW();
+            W.ActionPill(row, Loc.T("inviteCopyLink"), Theme.Gold.WithAlpha(0.7f), Color.clear, Theme.Gold, G.CopyInviteLink, 12, 0, 15).FlexW();
 
             Ui.Spacer(host, 14);
             W.SectionLabel(host, Loc.Or("friendsJoinGroup", "Join a friends group"));
@@ -65,7 +65,7 @@ namespace Blackjack.Game.UI
             var jrow = Ui.HStack(join, 8, null, TextAnchor.MiddleLeft, false);
             _codeField = W.Input(jrow, Loc.Or("groupCode", "Group code"), s.FriendCodeInput, 17, G.OnFriendCodeInput, InviteLink.CodeLength);
             ((RectTransform)_codeField.transform).FlexW();
-            W.OutlinePill(jrow, Loc.Or("join", "Join"), G.JoinGroupByCode, 15, 16, null, true);
+            W.OutlinePill(jrow, Loc.Or("join", "Join"), G.JoinGroupByCode, 15, 17, null, true).MinSize(Theme.MinTarget * 2, Theme.MinTarget);
 
             // The seeded practice bots are opponents, not people, so they are never listed as friends.
             if (s.FriendsAreLive)
@@ -121,9 +121,9 @@ namespace Blackjack.Game.UI
             var row = Ui.HStack(panel, 12, Ui.Pad(0, 15), TextAnchor.MiddleLeft, false);
             var medal = W.Dot(row, 22, e.MedalColor);
             Ui.Text(medal.transform, e.Rank.ToString(), 13, Theme.GoldInk, FontKind.SoraBold, TextAlignmentOptions.Center, false).rectTransform.Fill();
-            var name = Ui.Text(row, e.Name, 16, e.NameColor, FontKind.SoraBold, TextAlignmentOptions.Left, false);
+            var name = Ui.Text(row, e.Name, 17, e.NameColor, FontKind.SoraBold, TextAlignmentOptions.Left, false);
             name.rectTransform.FlexW();
-            Ui.Text(row, e.ScoreLabel, 16, e.NameColor, FontKind.SoraBold, TextAlignmentOptions.Right, false);
+            Ui.Text(row, e.ScoreLabel, 17, e.NameColor, FontKind.SoraBold, TextAlignmentOptions.Right, false);
             W.Divider(panel);
         }
 
@@ -144,9 +144,9 @@ namespace Blackjack.Game.UI
             }
             var col = Ui.VStack(row, 0, null, TextAnchor.MiddleLeft, true);
             col.FlexW();
-            Ui.Text(col, f.Name, 16, Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.Left, false);
+            Ui.Text(col, f.Name, 17, Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.Left, false);
             var today = (f.DailyScore >= 0 ? "+" : "-") + "$" + TableCatalog.FormatChips(System.Math.Abs(f.DailyScore));
-            Ui.Text(col, $"${TableCatalog.FormatChips(f.Chips)} · {today} {Loc.Or("today", "today")}", 14, Theme.TextMuted, FontKind.Sora, TextAlignmentOptions.Left, false);
+            Ui.Text(col, $"${TableCatalog.FormatChips(f.Chips)} · {today} {Loc.Or("today", "today")}", 15, Theme.TextMuted, FontKind.Sora, TextAlignmentOptions.Left, false);
             W.Divider(panel);
         }
     }

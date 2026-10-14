@@ -31,7 +31,7 @@ namespace Blackjack.Game.UI
             _avatarHost = Ui.Node("Avatar", header);
             _avatarHost.Size(40, 40);
             _avatar = new Dyn(_avatarHost);
-            _name = Ui.Text(header, "", 18, Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.Left, false);
+            _name = Ui.Text(header, "", 17, Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.Left, false);
             _name.Shrink();
             _name.rectTransform.FlexW();
             var coin = Ui.Text(header, "●", 13, Theme.Gold, FontKind.Mono, TextAlignmentOptions.Center, false);
@@ -91,7 +91,7 @@ namespace Blackjack.Game.UI
             var row = Ui.HStack(card, 12, null, TextAnchor.MiddleLeft, false);
             var col = Ui.VStack(row, 2, null, TextAnchor.MiddleLeft, true);
             col.FlexW();
-            Ui.Text(col, Loc.Or("dailyBonus", "Daily bonus"), 16, Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.Left, false);
+            Ui.Text(col, Loc.Or("dailyBonus", "Daily bonus"), 17, Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.Left, false);
             Ui.Text(col, sub, 13, Theme.TextMuted, FontKind.Sora, TextAlignmentOptions.TopLeft, true);
             if (ready)
                 W.GoldButton(row, "+" + TableCatalog.FormatChips(reward), () => DailyBonusDialog.Show(G, Overlays), 12, 18, 15);
@@ -99,14 +99,14 @@ namespace Blackjack.Game.UI
             {
                 var done = Ui.HStack(row, 4, null, TextAnchor.MiddleCenter, false);
                 W.Icon(done, "check", 18, Theme.Win);
-                Ui.Text(done, Loc.Or("claimed", "Claimed"), 14, Theme.Win, FontKind.SoraSemiBold, TextAlignmentOptions.Left, false);
+                Ui.Text(done, Loc.Or("claimed", "Claimed"), 15, Theme.Win, FontKind.SoraSemiBold, TextAlignmentOptions.Left, false);
             }
         }
 
         private void BuildTable(RectTransform host, TableStake table, System.Collections.Generic.IReadOnlyList<Friend> here, bool recommended)
         {
             var label = Roster.PresenceLabel(here);
-            var tint = table.Key switch { "bronze" => Theme.Win, "silver" => Theme.Hex(0xFF9FB8C9), _ => Theme.Gold };
+            var tint = table.Key switch { "bronze" => Theme.Win, "silver" => Theme.Silver, _ => Theme.Gold };
             var card = Ui.Card(host, Theme.Panel, Theme.RadiusLg, recommended ? Theme.BorderStrong : Theme.Border, 1, Ui.Pad(14), 0, true, "Table_" + table.Key);
             var shell = (RectTransform)card.parent;
             var row = Ui.HStack(card, 14, null, TextAnchor.MiddleLeft, false);
@@ -117,7 +117,7 @@ namespace Blackjack.Game.UI
             {
                 "bronze" => Loc.T("gameBronzeTable"), "silver" => Loc.T("gameSilverTable"), "vip" => Loc.T("gameVipTable"), _ => table.Name,
             };
-            Ui.Text(col, title, 16, Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.Left, false);
+            Ui.Text(col, title, 17, Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.Left, false);
             var range = $"${table.Min} – ${table.Max}";
             Ui.Text(col, label.Length == 0 ? range : range + " · " + label, 13, label.Length == 0 ? Theme.TextMuted : Theme.Gold,
                 FontKind.Sora, TextAlignmentOptions.TopLeft, true);
@@ -125,7 +125,7 @@ namespace Blackjack.Game.UI
             if (here.Count > 0)
             {
                 var faces = Ui.HStack(row, -12, null, TextAnchor.MiddleLeft, false);
-                foreach (var f in here.Take(3)) W.Avatar(faces, f.Initial, Theme.Gold.WithAlpha(0.22f), 28);
+                foreach (var f in here.Take(3)) W.Avatar(faces, f.Initial, Theme.Gold, 28);
             }
             var tap = (Action)(() => G.EnterTable(table));
             if (recommended) W.GoldButton(row, Loc.Or("play", "Play"), tap, 10, 20, 14);

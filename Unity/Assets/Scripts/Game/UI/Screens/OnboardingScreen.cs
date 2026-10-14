@@ -17,8 +17,7 @@ namespace Blackjack.Game.UI
         public override void Build(RectTransform parent)
         {
             Root = Ui.Node("Onboarding", parent).Fill();
-            var bg = W.Raw(Root, Gfx.RadialCircular("onboardingBg", 96, 208, new Vector2(0, -0.6f), 1.0f,
-                new[] { Theme.Felt, Theme.FeltDark, Theme.FeltDarkest }, new[] { 0f, 0.45f, 1f }), "Background");
+            var bg = W.Raw(Root, Gfx.Room(), "Background");
             bg.rectTransform.Fill();
 
             // Faint decorative suits: background chrome only.
@@ -61,9 +60,9 @@ namespace Blackjack.Game.UI
             var t = Ui.Text(badge.transform, "21", 33, Theme.GoldInk, FontKind.MonoBold, TextAlignmentOptions.Center, false);
             t.rectTransform.Fill();
             Ui.Spacer(host, 22);
-            Ui.Text(host, "Blackjack 21", 48, Theme.TextPrimary, FontKind.SerifItalic, TextAlignmentOptions.Center, false);
+            Ui.Text(host, "Blackjack 21", 40, Theme.TextPrimary, FontKind.SerifItalic, TextAlignmentOptions.Center, false);
             Ui.Spacer(host, 10);
-            var benefit = Ui.Text(host, Loc.T("welcomeBenefit"), 18, Theme.TextPrimary.WithAlpha(0.85f), FontKind.Sora,
+            var benefit = Ui.Text(host, Loc.T("welcomeBenefit"), 17, Theme.TextPrimary.WithAlpha(0.85f), FontKind.Sora,
                 TextAlignmentOptions.Top, true, 0, 18);
             benefit.rectTransform.Size(280);
             Ui.Spacer(host, 40);
@@ -86,14 +85,14 @@ namespace Blackjack.Game.UI
 
         private RectTransform GoogleButton(RectTransform host)
         {
-            var card = Ui.Card(host, Color.white, 14, null, 0, Ui.Pad(0, 15), 0, true, "Google");
+            var card = Ui.Card(host, Color.white, Theme.RadiusMd, null, 0, Ui.Pad(0, Theme.Lg), 0, true, "Google");
             card.GetComponent<VerticalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
             var row = Ui.HStack(card, 10, null, TextAnchor.MiddleCenter, false);
             var g = Ui.Box(row, Color.white, 0, "G");
             g.sprite = Sprites.Circle; g.type = Image.Type.Simple;
             g.rectTransform.Size(20, 20);
-            Ui.Text(g.transform, "G", 15, Theme.Hex(0xFF4285F4), FontKind.SoraBold, TextAlignmentOptions.Center, false).rectTransform.Fill();
-            Ui.Text(row, Loc.T("continueGoogle"), 17, Theme.Hex(0xFF1A1A1A), FontKind.SoraBold, TextAlignmentOptions.Center, false);
+            Ui.Text(g.transform, "G", 15, Theme.GoogleBlue, FontKind.SoraBold, TextAlignmentOptions.Center, false).rectTransform.Fill();
+            Ui.Text(row, Loc.T("continueGoogle"), 17, Theme.PillInk, FontKind.SoraBold, TextAlignmentOptions.Center, false);
             card.MakePressable(G.SignInGoogle);
             card.GetComponent<Image>().raycastTarget = true;
             return card;
@@ -101,13 +100,15 @@ namespace Blackjack.Game.UI
 
         private RectTransform VoiceToggle(RectTransform host, bool on)
         {
-            var card = Ui.Card(host, Color.black.WithAlpha(0.22f), 14, null, 0, Ui.Pad(14, 6, 8, 6), 0, true, "Voice");
+            var card = Ui.Card(host, Color.black.WithAlpha(0.22f), Theme.RadiusMd, null, 0, Ui.Pad(Theme.Md, Theme.Sm, Theme.Sm, Theme.Sm), 0, true, "Voice");
+            card.MinSize(null, Theme.MinTarget);
             var row = Ui.HStack(card, 10, null, TextAnchor.MiddleLeft, false);
             W.Icon(row, on ? "volume_up" : "volume_off", 20, on ? Theme.Gold : Theme.TextPrimary.WithAlpha(0.55f));
             var label = Ui.Text(row, Loc.T("voiceCalloutsLabel"), 15, Theme.TextPrimary.WithAlpha(on ? 0.95f : 0.6f), FontKind.SoraBold,
                 TextAlignmentOptions.Left, true);
             label.rectTransform.FlexW();
-            W.Switch(row, on, G.ToggleVoice);
+            // The card is the target; the switch only shows the state.
+            W.Switch(row, on, null);
             card.MakePressable(G.ToggleVoice);
             card.GetComponent<Image>().raycastTarget = true;
             return card;
@@ -124,7 +125,7 @@ namespace Blackjack.Game.UI
                 var col = Ui.VStack(safe, 0, null, TextAnchor.UpperLeft, true, "Legal").Fill();
                 var head = Ui.HStack(col, Theme.Xs, Ui.Pad(Theme.Sm, Theme.Sm, Theme.Xl, Theme.Sm), TextAnchor.MiddleLeft, false);
                 W.CircleIconButton(head, "chevron_left", close, 26).GetComponent<Image>().color = Color.clear;
-                var title = Ui.Text(head, doc.Title, 28, Theme.TextPrimary, FontKind.SerifItalic, TextAlignmentOptions.Left, true, 0, -10);
+                var title = Ui.Text(head, doc.Title, 32, Theme.TextPrimary, FontKind.SerifItalic, TextAlignmentOptions.Left, true, 0, -10);
                 title.rectTransform.FlexW();
 
                 var scrollRoot = W.Scroll(col, Ui.Pad(Theme.Xl, 0, Theme.Xl, Theme.Xxl), 0, true, false, out var sr);

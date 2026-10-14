@@ -61,7 +61,7 @@ namespace Blackjack.Game.UI
 
             var holder = Ui.VStack(root, 0, Ui.Pad(24, 0), TextAnchor.MiddleCenter, true, "DialogHolder").Fill();
             holder.GetComponent<VerticalLayoutGroup>().childForceExpandHeight = false;
-            var card = Ui.Card(holder, Theme.Panel, 22, border ?? Theme.Border, 1, Ui.Pad(22, 26, 22, 22), 0, true, "Dialog");
+            var card = Ui.Card(holder, Theme.Panel, Theme.RadiusXxl, border ?? Theme.Gold.WithAlpha(0.35f), 1, Ui.Pad(Theme.Xxl), 0, true, "Dialog");
             // Taps on the card must not fall through to the scrim.
             card.parent.GetComponent<Image>().raycastTarget = true;
             card.GetComponent<Image>().raycastTarget = true;
@@ -93,7 +93,7 @@ namespace Blackjack.Game.UI
             var root = Scrim(0.5f, close, out entry);
             entry.OnClose = onClose;
 
-            var sheet = Ui.Card(root, Theme.Surface, 24, border ?? Theme.Gold.WithAlpha(0.3f), 1, Ui.Pad(16, 10, 16, 22), 0, true, "Sheet");
+            var sheet = Ui.Card(root, Theme.Surface, Theme.RadiusXxl, border ?? Theme.Gold.WithAlpha(0.3f), 1, Ui.Pad(Theme.Lg, Theme.Sm, Theme.Lg, Theme.Xxl), 0, true, "Sheet");
             var outer = (RectTransform)sheet.parent;
             outer.anchorMin = new Vector2(0, 0);
             outer.anchorMax = new Vector2(1, 0);

@@ -410,6 +410,18 @@ lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
 
+### 2026-10-14 (The Seat, phase 5: the rest of the app)
+- feat: the lobby, stats, friends, settings, onboarding, the navigation bar, dialogs and sheets move into
+  The Seat's language — the room backdrop behind every screen, leather-dark panels with warm keylines,
+  ivory type, serif titles, brass-gold buttons, a gold active tab. Sizes move onto the type ramp and
+  radii and padding onto the tokens; the lobby's silver mark and Google's blue become tokens.
+- fix: every on/off row in Settings (and the voice row on the first screen) is now one 48-unit target —
+  the 52x30 switch alone was too small to hit; table-chat reactions are 48 tall; the Join button is
+  96 wide; invite outlines and outline pills reach 3:1; avatar initials pick ivory or ink for 4.5:1 and
+  never drop under 12 units, and the green, blue and violet avatar colours are a shade deeper for it.
+- test: the design-rules baseline is empty — every screen, table state and dialog passes the type
+  floor, 48x48 targets and contrast on all four phone sizes. Any new violation now fails `RulesAudit`.
+
 ### 2026-10-14 (The Seat, phase 4: table controls)
 - feat: the controls under the felt follow The Seat. Your turn shows a turn row (gold label, the clock's
   bar, the seconds), DOUBLE / SPLIT / SURRENDER at 52 units with what each costs or why it is off ("+$100",

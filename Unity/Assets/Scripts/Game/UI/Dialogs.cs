@@ -106,7 +106,7 @@ namespace Blackjack.Game.UI
             overlays.Sheet((sheet, close) =>
             {
                 var col = Ui.VStack(sheet, 0, Ui.Pad(0, 6, 0, 0), TextAnchor.UpperCenter, true, "OutOfChips");
-                Ui.Text(col, Loc.Or("outOfChips", "Out of chips"), 28, Theme.TextPrimary, FontKind.SerifItalic, TextAlignmentOptions.Center, false);
+                Ui.Text(col, Loc.Or("outOfChips", "Out of chips"), 32, Theme.TextPrimary, FontKind.SerifItalic, TextAlignmentOptions.Center, false);
                 Ui.Spacer(col, 4);
                 Ui.Text(col, Loc.Or("outOfChipsHint", "Here is every way to get back to the table."), 13, Theme.TextMuted, FontKind.Sora, TextAlignmentOptions.Center, true);
                 Ui.Spacer(col, Theme.Lg);
@@ -151,7 +151,7 @@ namespace Blackjack.Game.UI
                     var block = Ui.VStack(content, 7, null, TextAnchor.UpperLeft, true);
                     Ui.Text(block, Loc.Joined(section.TitleKeys).ToUpperInvariant(), 12, Theme.Gold, FontKind.MonoBold, TextAlignmentOptions.Left, true, 1.2f);
                     foreach (var key in section.BodyKeys)
-                        Ui.Text(block, Loc.T(key), 14.5f, Theme.TextBody, FontKind.Sora, TextAlignmentOptions.TopLeft, true, 0, 14);
+                        Ui.Text(block, Loc.T(key), 15, Theme.TextBody, FontKind.Sora, TextAlignmentOptions.TopLeft, true, 0, 14);
                 }
             }, 0.9f);
         }
@@ -165,7 +165,7 @@ namespace Blackjack.Game.UI
             overlays.Dialog((card, close) =>
             {
                 var col = Ui.VStack(card, Theme.Md, null, TextAnchor.UpperLeft, true, "Confirm");
-                Ui.Text(col, title, 22, Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.TopLeft, true);
+                Ui.Text(col, title, 24, Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.TopLeft, true);
                 Ui.Text(col, message, 15, Theme.TextMuted, FontKind.Sora, TextAlignmentOptions.TopLeft, true, 0, 14);
                 var row = Ui.HStack(col, Theme.Sm, null, TextAnchor.MiddleRight, false);
                 W.TextLink(row, cancelLabel ?? Loc.Or("cancel", "Cancel"), close, Theme.TextMuted, 16);
@@ -187,7 +187,7 @@ namespace Blackjack.Game.UI
             var body = tip.UsesMinimum ? Loc.T(tip.BodyKey, ("min", minimum)) : Loc.T(tip.BodyKey);
             var lesson = s.TutorialRoundsSeen;
 
-            var card = Ui.Card(host, Color.black.WithAlpha(0.72f), 14, Theme.Gold.WithAlpha(0.55f), 1, Ui.Pad(12, 9), 0, true, "Coach");
+            var card = Ui.Card(host, Color.black.WithAlpha(0.72f), Theme.RadiusMd, Theme.Gold.WithAlpha(0.55f), 1, Ui.Pad(Theme.Md, Theme.Sm), 0, true, "Coach");
             var head = Ui.HStack(card, 8, null, TextAnchor.MiddleLeft, false);
             var left = Ui.HStack(head, 8, null, TextAnchor.MiddleLeft, false);
             left.FlexW();
@@ -226,7 +226,7 @@ namespace Blackjack.Game.UI
                 shell.FlexW();
                 shell.MinSize(null, Theme.MinTarget);
                 pill.GetComponent<VerticalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
-                Ui.Text(pill, item.label, 14, item.active ? Theme.Gold : Theme.TextMuted, FontKind.SoraBold, TextAlignmentOptions.Center, false);
+                Ui.Text(pill, item.label, 15, item.active ? Theme.Gold : Theme.TextMuted, FontKind.SoraBold, TextAlignmentOptions.Center, false);
                 shell.MakePressable(item.onTap);
                 shell.GetComponent<Image>().raycastTarget = true;
             }

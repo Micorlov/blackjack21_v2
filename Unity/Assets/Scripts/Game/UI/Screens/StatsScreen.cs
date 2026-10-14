@@ -107,7 +107,7 @@ namespace Blackjack.Game.UI
             var tile = W.Panel(parent, Ui.Pad(16), 0);
             var outer = (RectTransform)tile.parent;
             Ui.Text(tile, value, 30, valueColor ?? Theme.Gold, FontKind.MonoBold, TextAlignmentOptions.Left, false);
-            Ui.Text(tile, label, 14, Theme.TextMuted, FontKind.Sora, TextAlignmentOptions.TopLeft, true);
+            Ui.Text(tile, label, 15, Theme.TextMuted, FontKind.Sora, TextAlignmentOptions.TopLeft, true);
             return outer;
         }
     }

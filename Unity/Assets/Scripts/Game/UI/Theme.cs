@@ -16,13 +16,14 @@ namespace Blackjack.Game.UI
 
         public static Color WithAlpha(this Color c, float alpha) => new Color(c.r, c.g, c.b, alpha);
 
-        // Shell / backgrounds
-        public static readonly Color ShellBlack = Hex(0xFF0B0E0D);
-        public static readonly Color Surface = Hex(0xFF131716);
-        public static readonly Color Panel = Hex(0xFF1C2120);
-        public static readonly Color NavSurface = Hex(0xFF171B1A);
-        public static readonly Color Border = Hex(0xFF2B3230);
-        public static readonly Color BorderStrong = Hex(0xFF6B7572);
+        // Shell / backgrounds: The Seat's room — near-black browns, leather-dark panels, warm keylines.
+        public static readonly Color ShellBlack = Hex(0xFF0E0805);
+        public static readonly Color Surface = Hex(0xFF140A05);
+        public static readonly Color Panel = Hex(0xFF22120A);
+        public static readonly Color NavSurface = Hex(0xFF1A0D06);
+        public static readonly Color Border = Hex(0xFF3D2618);
+        /// <summary>A keyline that must read as a boundary: 3:1 or more against Panel and Surface.</summary>
+        public static readonly Color BorderStrong = Hex(0xFF9A7A5C);
 
         // Felt
         public static readonly Color Felt = Hex(0xFF175943);
@@ -30,10 +31,10 @@ namespace Blackjack.Game.UI
         public static readonly Color FeltDarkest = Hex(0xFF0A2018);
 
         // Text
-        public static readonly Color TextPrimary = Hex(0xFFF5F1E8);
-        public static readonly Color TextMuted = Hex(0xFFC7C3B7);
-        public static readonly Color TextLabel = Hex(0xFFC2BEB2);
-        public static readonly Color TextFaint = Hex(0xFF9AA79E);
+        public static readonly Color TextPrimary = Hex(0xFFF4EBD8);
+        public static readonly Color TextMuted = Hex(0xFFCFC4AE);
+        public static readonly Color TextLabel = Hex(0xFFC9BDA4);
+        public static readonly Color TextFaint = Hex(0xFFB3A68E);
         public static readonly Color TextBody = Hex(0xFFD8D3C6);
 
         // Gold accent
@@ -57,7 +58,13 @@ namespace Blackjack.Game.UI
         public static readonly Color CardRed = Hex(0xFFA51D28);
         public static readonly Color CardBlack = Hex(0xFF141210);
 
-        public static readonly Color Scrim = Hex(0xFF040806);
+        public static readonly Color Scrim = Hex(0xFF050302);
+
+        /// <summary>Google's own blue, only on the Google sign-in button, at the shade that keeps 4.5:1 on white.</summary>
+        public static readonly Color GoogleBlue = Hex(0xFF1967D2);
+
+        /// <summary>The silver table's mark in the lobby.</summary>
+        public static readonly Color Silver = Hex(0xFF9FB8C9);
 
         // The Seat: the room around the table, the wooden edge, the padded leather rail and the brass fittings.
         public static readonly Color Room = Hex(0xFF1C0F07);
@@ -112,9 +119,10 @@ namespace Blackjack.Game.UI
             Hex(0xFFC86A9E), Hex(0xFF4FAE8E), Hex(0xFF8A9BB8), Hex(0xFFE0A050),
         };
 
+        // Deep enough (or light enough) that an initial in ivory or ink keeps 4.5:1 on every one.
         public static readonly Color[] AvatarSwatches =
         {
-            Hex(0xFF1E7D5D), Gold, Hex(0xFFB23A2E), Hex(0xFF3E7FA8), Hex(0xFF8A6BB8), Win,
+            Hex(0xFF17654B), Gold, Hex(0xFFB23A2E), Hex(0xFF2F6688), Hex(0xFF6E4F9C), Win,
         };
 
         /// <summary>The avatar colour for a saved ARGB value; 0 (never chosen) is the first swatch.</summary>

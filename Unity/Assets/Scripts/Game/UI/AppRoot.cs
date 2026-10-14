@@ -96,7 +96,7 @@ namespace Blackjack.Game.UI
         private void BuildNav(RectTransform host, AppScreen current)
         {
             var bar = Blackjack.Game.UI.Ui.Card(host, Theme.NavSurface, 0, null, 0, Blackjack.Game.UI.Ui.Pad(4, 8, 4, 8), 0, true, "NavBar");
-            var line = Blackjack.Game.UI.Ui.Box(bar, Theme.Border, 0, "TopLine");
+            var line = Blackjack.Game.UI.Ui.Box(bar, Theme.Gold.WithAlpha(0.3f), 0, "TopLine");
             line.rectTransform.IgnoreLayout();
             line.rectTransform.PinTop(1);
             var row = Blackjack.Game.UI.Ui.HStack(bar, 0, null, TextAnchor.MiddleCenter, true);
@@ -109,7 +109,7 @@ namespace Blackjack.Game.UI
         private static void NavItem(RectTransform row, AppScreen screen, string icon, string label, AppScreen current, Action onTap)
         {
             var active = current == screen;
-            var color = active ? Theme.TextPrimary : Theme.TextFaint;
+            var color = active ? Theme.Gold : Theme.TextFaint;
             var item = Blackjack.Game.UI.Ui.VStack(row, 4, Blackjack.Game.UI.Ui.Pad(0, 6), TextAnchor.MiddleCenter, false, "Item_" + screen);
             item.FlexW();
             W.Icon(item, icon, 24, color);

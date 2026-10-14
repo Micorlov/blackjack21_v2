@@ -52,7 +52,8 @@ namespace Blackjack.Game.UI
             }
             go.AddComponent<GraphicRaycaster>();
 
-            var background = Ui.Box(go.transform, Theme.Surface, 0, "Background");
+            // Every screen sits in the Seat's room: warm light from above, out-of-focus lamps, near-black below.
+            var background = W.Raw(go.transform, Gfx.Room(), "Background");
             background.rectTransform.Fill();
 
             root.Safe = Ui.Node("Safe", go.transform).Fill();

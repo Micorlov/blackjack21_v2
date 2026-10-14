@@ -101,8 +101,8 @@ namespace Blackjack.Game.UI
         public static RectTransform GoldButton(Transform parent, string label, Action onClick, float vPad = 16,
             float hPad = 0, float fontSize = 17, bool enabled = true)
         {
-            var shell = ButtonShell(parent, Theme.Gold, null, Theme.RadiusLg, vPad, hPad, onClick, enabled, "GoldButton", out var content);
-            Ui.Text(content, label, fontSize, Theme.GoldInk, FontKind.SoraBold, TextAlignmentOptions.Center, false, 0.2f);
+            var shell = ButtonShell(parent, GoldFill, null, Theme.RadiusMd, vPad, hPad, onClick, enabled, "GoldButton", out var content);
+            Ui.Text(content, label, fontSize, GoldInkDeep, FontKind.SoraBold, TextAlignmentOptions.Center, false, 0.2f);
             return shell;
         }
 
@@ -119,7 +119,7 @@ namespace Blackjack.Game.UI
         {
             var c = color ?? Theme.Gold;
             return ActionPill(parent, label,
-                neutral ? Theme.BorderStrong : c.WithAlpha(0.45f),
+                neutral ? Theme.BorderStrong : c.WithAlpha(0.7f),
                 neutral ? Color.clear : c.WithAlpha(0.1f),
                 neutral ? Theme.TextPrimary : c, onClick, vPad, 0, fontSize, enabled);
         }
@@ -207,7 +207,8 @@ namespace Blackjack.Game.UI
             }
             var disc = Ui.Box(inner, color, 0, "Disc");
             disc.sprite = Sprites.Circle; disc.type = Image.Type.Simple; disc.rectTransform.Fill();
-            var t = Ui.Text(inner, initial, size * 0.42f, textColor ?? Theme.GoldInk, FontKind.SoraBold, TextAlignmentOptions.Center, false);
+            var t = Ui.Text(inner, initial, Mathf.Max(Type.Floor, size * 0.42f), textColor ?? Theme.InkOn(color), FontKind.SoraBold,
+                TextAlignmentOptions.Center, false);
             t.rectTransform.Fill();
             return rt;
         }
@@ -228,6 +229,7 @@ namespace Blackjack.Game.UI
         // ---- switch -------------------------------------------------------------------------------------
 
         /// <summary>An on/off switch. Returns the root; call <see cref="SetSwitch"/> to move it.</summary>
+        /// <param name="onToggle">Null draws the switch only: the row it sits in is the 48-unit target.</param>
         public static RectTransform Switch(Transform parent, bool on, Action onToggle, bool enabled = true)
         {
             var track = Ui.Box(parent, on ? Theme.Gold : Theme.Border, 0, "Switch");
@@ -238,6 +240,7 @@ namespace Blackjack.Game.UI
             knob.sprite = Sprites.Circle; knob.type = Image.Type.Simple;
             knob.rectTransform.Pin(new Vector2(on ? 1 : 0, 0.5f), new Vector2(on ? 1 : 0, 0.5f),
                 new Vector2(on ? -4 : 4, 0), new Vector2(22, 22));
+            if (onToggle == null) return track.rectTransform;
             var p = track.rectTransform.MakePressable(onToggle);
             p.Interactable = enabled;
             track.raycastTarget = true;
