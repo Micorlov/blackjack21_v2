@@ -530,6 +530,10 @@ emulator testing.
 ## Changelog
 
 ### 2026-10-14
+- feat: Unity port — progression logic (daily bonus, play streak, points and ranking, rebuy, referrals,
+  invite links, review prompt, table presence and seats, play-time tracker), the save record, spoken
+  numbers and tutorial coach mapping are now in `Blackjack.Core` (105 tests); locale JSON converted from
+  the ARB files and the sfx/voice clips and fonts copied into `Unity/Assets`.
 - feat: start the Unity port in `Unity/` — the blackjack rules engine (shoe, comeback dealing, betting
   limits, insurance, split/double/surrender, opponent seats, dealer play, sweep-pot settlement) is now
   plain C# with 49 passing EditMode tests. The Flutter app is unchanged and remains the shipping build.
