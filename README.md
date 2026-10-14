@@ -227,7 +227,7 @@ its `assets/` and `android/` output paths; point them at `Unity/Assets/Resources
 - `Unity/Assets/Scripts/Core/` — the rules engine as plain C# (`Blackjack.Core` assembly, no Unity
   references). Every step is a pure function from one immutable `RoundState` to the next; timing is left
   to the caller (`GameController`).
-- `Unity/Assets/Tests/EditMode/` — 171 NUnit tests (rules, betting, settlement, progression, controller,
+- `Unity/Assets/Tests/EditMode/` — 172 NUnit tests (rules, betting, settlement, progression, controller,
   RTL, contrast, turn order, turn timer). `Unity/Assets/Tests/PlayMode/` holds the scenario registry (`Scenarios.cs`), the
   screenshot test (`ScenarioShots`) and the design-rules audit (`RulesAudit` + `rules-baseline.txt`).
 - `Unity/Assets/Scripts/Game/UI/Type.cs` — the type ramp (`Type.Display` … `Type.Caption`, `Type.Numeral`)
@@ -402,6 +402,13 @@ A Core change is not done until the EditMode suite passes. Check on a device or 
 lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
+
+### 2026-10-14 (turn timer fixes)
+- fix: switching to another app on your turn no longer comes back to a hand stood by "Time's up" — the
+  clock banks its seconds the moment the app is backgrounded, not on the next frame (a phone runs none
+  while away).
+- fix: leaving the table during the dealer's turn settles the hand at once, and re-entering a table
+  cancels any dealer beat left over, so it can never draw a card into the next round.
 
 ### 2026-10-14 (The Seat, phase 1: casino turn order and turn timer)
 - feat: seats act in casino order — Maya and Jordan before you, Sam and Priya after you, then the dealer

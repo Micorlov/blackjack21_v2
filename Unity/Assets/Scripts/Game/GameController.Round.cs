@@ -32,6 +32,9 @@ namespace Blackjack.Game
 
         public void EnterTable(TableStake stake)
         {
+            // A dealer beat left over from leaving mid-turn must never draw into the new round.
+            Cancel(ref _dealerTimer);
+            Cancel(ref _dealerTotalTimer);
             Set(s => s with
             {
                 Screen = AppScreen.Table,
@@ -45,10 +48,16 @@ namespace Blackjack.Game
         public void ExitTable()
         {
             Cancel(ref _npcTimer);
-            var heroDone = Round.Phase == RoundPhase.NpcsAfter;
+            var phase = Round.Phase;
             Set(s => s with { Screen = AppScreen.Lobby, Round = RoundEngine.SetActingSeat(s.Round, null) });
             // The hero's bet is already decided: play the seats after them and the dealer out now, so it settles.
-            if (heroDone) FinishSeatsAfterHeroWithoutPacing();
+            if (phase == RoundPhase.NpcsAfter) FinishSeatsAfterHeroWithoutPacing();
+            else if (phase == RoundPhase.Dealer)
+            {
+                Cancel(ref _dealerTimer);
+                Cancel(ref _dealerTotalTimer);
+                FinishDealerWithoutPacing();
+            }
             ReportScore();
         }
 

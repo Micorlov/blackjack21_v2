@@ -62,11 +62,7 @@ namespace Blackjack.Game
 
             if (TurnClockPaused)
             {
-                if (Round.TurnDeadline is double running)
-                {
-                    _turnRemaining = Math.Max(0, running - Clock());
-                    SetRound(r => r with { TurnDeadline = null });
-                }
+                PauseTurnClock();
                 return;
             }
 
@@ -79,8 +75,21 @@ namespace Blackjack.Game
             }
 
             if (Clock() < Round.TurnDeadline.Value) return;
+            // Cleared first so a split's next hand never shows an expired clock for a frame.
+            SetRound(r => r with { TurnDeadline = null });
             ShowToast(Loc.Or("toastTurnTimeUp", "Time's up — you stand"));
             PlayerStand();
+        }
+
+        /// <summary>
+        /// Banks the seconds left and stops the clock. Called the moment the app goes to the background, because
+        /// a phone stops calling Update there: waiting for the next tick would find the deadline long past.
+        /// </summary>
+        private void PauseTurnClock()
+        {
+            if (!(Round.TurnDeadline is double running)) return;
+            _turnRemaining = Math.Max(0, running - Clock());
+            SetRound(r => r with { TurnDeadline = null });
         }
     }
 }

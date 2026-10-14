@@ -279,6 +279,7 @@ namespace Blackjack.Game
         public void OnAppPaused()
         {
             _appInBackground = true;
+            PauseTurnClock();
             FlushSave();
             _playTime.Pause();
             if (State.SocialReady) _svc.Social.AddPlayTime(_playTime.TakeSeconds());

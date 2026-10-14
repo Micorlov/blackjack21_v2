@@ -505,6 +505,20 @@ namespace Blackjack.Core.Tests
         }
 
         [Test]
+        public void TheBackgroundPauseHoldsEvenWhenNoFrameRunsWhileAway()
+        {
+            // A phone stops calling Update in the background: the clock moves on without a single tick.
+            DealToTheHero("10", "6", "10", "7");
+            _rig.Advance(5);
+            _rig.C.OnAppPaused();
+            _rig.Time += 60;
+            _rig.C.OnAppResumed();
+            _rig.Advance(0.1);
+            Assert.AreEqual(RoundPhase.Playing, _rig.Round.Phase, "coming back must not find the hand stood");
+            Assert.Greater(_rig.C.TurnSecondsLeft ?? 0f, 14f);
+        }
+
+        [Test]
         public void EachSplitHandGetsItsOwnClock()
         {
             DealToTheHero("8", "8", "10", "7", "3", "2");
