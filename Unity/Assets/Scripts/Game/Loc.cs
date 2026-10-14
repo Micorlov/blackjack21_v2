@@ -33,7 +33,8 @@ namespace Blackjack.Game
             _code = code;
             UI.Fonts.EnsureScript(code);
             // Every string of the language goes into the font atlases now, so text measures correctly on first draw.
-            UI.Fonts.Prewarm(string.Concat(Table(code).Values));
+            var everything = string.Concat(Table(code).Values);
+            UI.Fonts.Prewarm(code == "ar" ? Blackjack.Core.ArabicShaper.Shape(everything) + everything : everything);
             Changed?.Invoke();
         }
 

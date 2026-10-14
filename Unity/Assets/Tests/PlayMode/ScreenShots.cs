@@ -170,5 +170,27 @@ namespace Blackjack.PlayTests
             yield return Shots.Capture(_stage, "table_chat");
             Teardown();
         }
+
+        [UnityTest] public IEnumerator Rtl_hebrew_lobby_and_table()
+        {
+            Loc.Use("he");
+            Setup(new AppState { Screen = AppScreen.Lobby, DisplayName = "Michael", Round = History() });
+            yield return Shots.Capture(_stage, "rtl_he_lobby");
+            _g.Force(new AppState { Screen = AppScreen.Table, DisplayName = "Michael", TutorialDismissed = true, Round = new RoundState { Chips = 1250, Stake = TableCatalog.Tables[0], Bet = 125, NpcSeats = new[] { new NpcSeat(25), new NpcSeat(50), new NpcSeat(25), new NpcSeat(100) } } });
+            yield return Shots.Capture(_stage, "rtl_he_table");
+            Teardown();
+            Loc.Use("en");
+        }
+
+        [UnityTest] public IEnumerator Rtl_arabic_settings_and_howto()
+        {
+            Loc.Use("ar");
+            Setup(new AppState { Screen = AppScreen.Settings, Round = History() });
+            yield return Shots.Capture(_stage, "rtl_ar_settings");
+            HowToPlaySheet.Show(OverlaysOf(_app));
+            yield return Shots.Capture(_stage, "rtl_ar_howto");
+            Teardown();
+            Loc.Use("en");
+        }
     }
 }

@@ -530,6 +530,9 @@ emulator testing.
 ## Changelog
 
 ### 2026-10-14
+- feat: Unity port — Hebrew and Arabic: Arabic letter shaping and a bidirectional reorderer in the tested Core,
+  a text component that wraps and reorders per line, mirrored rows and alignment, and a full UI rebuild when the
+  language changes. Labels shrink to fit instead of using ellipsis.
 - feat: Unity port — Android build: `Blackjack.EditorTools.BuildTools.BuildAndroid` builds an IL2CPP ARM64 APK
   (`com.micorlov.blackjack21_v2`, 1.7.0 / versionCode 9, signed with the debug key so it upgrades the Flutter app
   in place) with the invite-link filter, vibration/notification permissions, notification icons and launcher

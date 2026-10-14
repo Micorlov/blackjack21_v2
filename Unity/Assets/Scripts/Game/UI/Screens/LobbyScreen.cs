@@ -32,7 +32,7 @@ namespace Blackjack.Game.UI
             _avatarHost.Size(40, 40);
             _avatar = new Dyn(_avatarHost);
             _name = Ui.Text(header, "", 18, Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.Left, false);
-            _name.overflowMode = TextOverflowModes.Ellipsis;
+            _name.Shrink();
             _name.rectTransform.FlexW();
             var coin = Ui.Text(header, "●", 13, Theme.Gold, FontKind.Mono, TextAlignmentOptions.Center, false);
             var bal = Ui.Text(header, "0", 18, Theme.TextPrimary, FontKind.MonoBold, TextAlignmentOptions.Right, false);

@@ -359,7 +359,7 @@ namespace Blackjack.Game.UI
             col.FlexW();
             var line1 = Ui.HStack(col, 6, null, TextAnchor.MiddleLeft, false);
             _name = Ui.Text(line1, "", 16, Theme.TextPrimary.WithAlpha(0.95f), FontKind.Sora, TextAlignmentOptions.Left, false);
-            _name.overflowMode = TextOverflowModes.Ellipsis;
+            _name.Shrink(0.7f);
             _name.rectTransform.FlexW();
             _status = Ui.Text(line1, "", 20, Theme.WinLight, FontKind.MonoBold, TextAlignmentOptions.Right, false);
             var line2 = Ui.HStack(col, 6, null, TextAnchor.MiddleLeft, false);

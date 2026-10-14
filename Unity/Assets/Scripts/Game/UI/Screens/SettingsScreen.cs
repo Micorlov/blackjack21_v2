@@ -98,7 +98,7 @@ namespace Blackjack.Game.UI
             var initial = s.DisplayName.Trim().Length == 0 ? "G" : s.DisplayName.Trim().Substring(0, 1).ToUpperInvariant();
             W.Avatar(row, initial, Theme.AvatarColorOf(s.AvatarColor), 44);
             var name = Ui.Text(row, s.DisplayName, 16, Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.Left, false);
-            name.overflowMode = TextOverflowModes.Ellipsis;
+            name.Shrink();
             name.rectTransform.FlexW();
             // Signing out drops a signed-in player back to guest and leaves the live group: confirm first.
             W.ActionPill(panel, Loc.T("signOut"), Theme.BorderStrong, Color.clear, Theme.TextPrimary,

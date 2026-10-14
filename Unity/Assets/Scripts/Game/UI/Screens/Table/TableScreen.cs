@@ -101,7 +101,7 @@ namespace Blackjack.Game.UI
                 "vip" => Loc.T("gameVipTable"),
                 _ => stake?.Name ?? "",
             };
-            Ui.Text(col, title, 24, Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.Center, false).overflowMode = TextOverflowModes.Ellipsis;
+            Ui.Text(col, title, 24, Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.Center, false).Shrink();
             if (stake != null)
                 Ui.Text(col, $"${TableCatalog.FormatChips(stake.Min)}–${TableCatalog.FormatChips(stake.Max)} · 3:2", 17,
                     Theme.TextPrimary.WithAlpha(0.82f), FontKind.Mono, TextAlignmentOptions.Center, false);
@@ -149,7 +149,7 @@ namespace Blackjack.Game.UI
                 heroTurn ? Theme.Gold : Theme.Gold.WithAlpha(0.3f), 1, Ui.Pad(Theme.Lg, Theme.Xs + Theme.Xxs), 0, false, "Headline");
             pill.GetComponent<VerticalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
             var t = Ui.Text(pill, label, 18, heroTurn ? Theme.GoldInk : Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.Center, false, 0.4f);
-            t.overflowMode = TextOverflowModes.Ellipsis;
+            t.Shrink();
 
             var track = Ui.HStack(col, Theme.Xs, null, TextAnchor.MiddleCenter, true);
             track.Size(null, 6);

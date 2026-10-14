@@ -92,12 +92,11 @@ namespace Blackjack.Game.UI
 
             // One compact line: the bet figure, the table minimum folded in until the bet clears it, ALL IN on the end.
             var line = Ui.HStack(col, Theme.Sm, null, TextAnchor.MiddleCenter);
-            var bet = Ui.Text(line, "", 28, Theme.Gold, FontKind.MonoBold, TextAlignmentOptions.Center, false);
-            var txt = $"<size=15><color=#{ColorUtility.ToHtmlStringRGB(Theme.TextPrimary)}>{Loc.T("gameBet")} </color></size>$"
-                      + r.Bet;
+            Ui.Text(line, Loc.T("gameBet"), 15, Theme.TextPrimary.WithAlpha(0.82f), FontKind.Mono, TextAlignmentOptions.Left, false, 1.2f);
+            Ui.Text(line, "$" + r.Bet, 28, Theme.Gold, FontKind.MonoBold, TextAlignmentOptions.Left, false);
             if (belowMin)
-                txt += $"  <size=15><color=#{ColorUtility.ToHtmlStringRGB(Theme.TextMuted)}>·  {Loc.T("gameMinimum", ("amount", "$" + TableCatalog.FormatChips(tableMin)))}</color></size>";
-            bet.text = txt;
+                Ui.Text(line, "·  " + Loc.T("gameMinimum", ("amount", "$" + TableCatalog.FormatChips(tableMin))), 15, Theme.TextMuted,
+                    FontKind.Mono, TextAlignmentOptions.Left, false, 0.8f);
             if (canAllIn)
                 W.ActionPill(line, Loc.T("gameAllIn"), Theme.Gold.WithAlpha(0.45f), Theme.Gold.WithAlpha(0.1f), Theme.Gold,
                     _g.BetAllIn, 8, 12, 15);
@@ -231,7 +230,7 @@ namespace Blackjack.Game.UI
                 rank.rectTransform.Size(26);
                 var name = Ui.Text(row, e.row.name, 12, e.row.self ? Theme.Gold : Theme.TextPrimary,
                     e.row.self ? FontKind.SoraBold : FontKind.SoraSemiBold, TextAlignmentOptions.Left, false);
-                name.overflowMode = TextOverflowModes.Ellipsis;
+                name.Shrink();
                 name.rectTransform.FlexW();
                 Ui.Text(row, (e.row.points >= 0 ? "+" : "-") + "$" + TableCatalog.FormatChips(Mathf.Abs(e.row.points)), 12,
                     e.row.points >= 0 ? Theme.WinLight : Theme.LoseSoft, FontKind.MonoBold, TextAlignmentOptions.Right, false);
@@ -325,9 +324,10 @@ namespace Blackjack.Game.UI
             foreach (var c in sweep.Contributors)
             {
                 var chip = Ui.Card(wrap, Color.black.WithAlpha(0.5f), 6, null, 0, Ui.Pad(6, 1), 0, true, "Contributor");
-                var text = $"{c.Name} {(c.Reason == "bust" ? Loc.T("gameBusted") : Loc.T("gameLost"))} " +
-                           $"<b><color=#{ColorUtility.ToHtmlStringRGB(Theme.LoseLight)}>−${TableCatalog.FormatChips(c.Amount)}</color></b>";
-                Ui.Text(chip, text, 13, Theme.TextPrimary.WithAlpha(0.6f), FontKind.Mono, TextAlignmentOptions.Left, false);
+                var cell = Ui.HStack(chip, 4, null, TextAnchor.MiddleLeft, false);
+                Ui.Text(cell, $"{c.Name} {(c.Reason == "bust" ? Loc.T("gameBusted") : Loc.T("gameLost"))}", 13,
+                    Theme.TextPrimary.WithAlpha(0.6f), FontKind.Mono, TextAlignmentOptions.Left, false);
+                Ui.Text(cell, "−$" + TableCatalog.FormatChips(c.Amount), 13, Theme.LoseLight, FontKind.MonoBold, TextAlignmentOptions.Left, false);
             }
         }
     }

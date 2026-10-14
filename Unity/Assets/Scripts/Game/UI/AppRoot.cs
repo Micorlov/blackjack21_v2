@@ -21,6 +21,7 @@ namespace Blackjack.Game.UI
         private readonly Dictionary<AppScreen, ScreenView> _screens = new Dictionary<AppScreen, ScreenView>();
         private AppScreen? _shown;
         private AppState _state;
+        private bool _rebuildForLanguage;
 
         public GameController Controller => _g;
         public UiRoot Ui => _ui;
@@ -48,6 +49,7 @@ namespace Blackjack.Game.UI
             _toasts = new ToastLayer(_ui.Overlay);
             _g.OverlayBack = () => _overlays.CloseTop();
             _g.Changed += OnState;
+            Loc.Changed += OnLanguageChanged;
             OnState(_g.State);
         }
 
@@ -115,8 +117,24 @@ namespace Blackjack.Game.UI
             item.MakePressable(onTap);
         }
 
+        // Direction, alignment and every label depend on the language, so a language change rebuilds the whole UI.
+        private void OnLanguageChanged() => _rebuildForLanguage = true;
+
+        private void RebuildForLanguage()
+        {
+            _rebuildForLanguage = false;
+            _overlays.CloseAll();
+            foreach (var view in _screens.Values) view.Dispose();
+            _screens.Clear();
+            _shown = null;
+            _nav.Invalidate();
+            for (var i = _navHost.childCount - 1; i >= 0; i--) Destroy(_navHost.GetChild(i).gameObject);
+            OnState(_g.State);
+        }
+
         private void Update()
         {
+            if (_rebuildForLanguage) RebuildForLanguage();
             if (_shown.HasValue && _screens.TryGetValue(_shown.Value, out var view)) view.Tick();
             _toasts?.Tick();
             // Android's back button arrives as Escape. At the lobby there is nothing left to close: leave the app.
@@ -125,6 +143,7 @@ namespace Blackjack.Game.UI
 
         private void OnDestroy()
         {
+            Loc.Changed -= OnLanguageChanged;
             if (_g != null) { _g.Changed -= OnState; _g.OverlayBack = null; }
         }
     }

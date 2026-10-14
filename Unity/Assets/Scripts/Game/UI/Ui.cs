@@ -127,6 +127,20 @@ namespace Blackjack.Game.UI
             return rt;
         }
 
+        public static TextAnchor MirrorAnchor(TextAnchor a)
+        {
+            switch (a)
+            {
+                case TextAnchor.UpperLeft: return TextAnchor.UpperRight;
+                case TextAnchor.UpperRight: return TextAnchor.UpperLeft;
+                case TextAnchor.MiddleLeft: return TextAnchor.MiddleRight;
+                case TextAnchor.MiddleRight: return TextAnchor.MiddleLeft;
+                case TextAnchor.LowerLeft: return TextAnchor.LowerRight;
+                case TextAnchor.LowerRight: return TextAnchor.LowerLeft;
+                default: return a;
+            }
+        }
+
         // ---- stacks --------------------------------------------------------------------------------
 
         public static RectOffset Pad(float all) => new RectOffset((int)all, (int)all, (int)all, (int)all);
@@ -143,7 +157,7 @@ namespace Blackjack.Game.UI
             var g = rt.gameObject.AddComponent<VerticalLayoutGroup>();
             g.spacing = spacing;
             g.padding = padding ?? new RectOffset();
-            g.childAlignment = align;
+            g.childAlignment = Loc.IsRtl ? MirrorAnchor(align) : align;
             g.childControlWidth = true;
             g.childControlHeight = true;
             g.childForceExpandWidth = stretch;
@@ -158,7 +172,9 @@ namespace Blackjack.Game.UI
             var g = rt.gameObject.AddComponent<HorizontalLayoutGroup>();
             g.spacing = spacing;
             g.padding = padding ?? new RectOffset();
-            g.childAlignment = align;
+            // Right-to-left languages read a row from the right: reverse its order and mirror its alignment.
+            g.reverseArrangement = Loc.IsRtl;
+            g.childAlignment = Loc.IsRtl ? MirrorAnchor(align) : align;
             g.childControlWidth = true;
             g.childControlHeight = true;
             g.childForceExpandWidth = false;
@@ -260,17 +276,17 @@ namespace Blackjack.Game.UI
 
         // ---- text -----------------------------------------------------------------------------------
 
-        public static TextMeshProUGUI Text(Transform parent, string text, float size, Color color,
+        public static UiText Text(Transform parent, string text, float size, Color color,
             FontKind font = FontKind.Sora, TextAlignmentOptions align = TextAlignmentOptions.TopLeft,
             bool wrap = true, float spacing = 0, float lineSpacing = 0, string name = "Text")
         {
             var rt = Node(name, parent);
-            var t = rt.gameObject.AddComponent<TextMeshProUGUI>();
+            var t = rt.gameObject.AddComponent<UiText>();
             t.font = Fonts.Get(font);
             t.fontSize = size;
             t.color = color;
-            t.alignment = align;
-            t.characterSpacing = spacing;
+            t.SetAlignment(align);
+            t.SetSpacing(spacing);
             t.lineSpacing = lineSpacing;
             t.textWrappingMode = wrap ? TextWrappingModes.Normal : TextWrappingModes.NoWrap;
             t.overflowMode = TextOverflowModes.Overflow;
@@ -284,7 +300,7 @@ namespace Blackjack.Game.UI
                 var mono = font == FontKind.Mono || font == FontKind.MonoBold;
                 var box = size * (mono ? 1.15f : 1.28f);
                 t.rectTransform.Size(null, box);
-                t.alignment = ToMiddle(align);
+                t.SetAlignment(ToMiddle(align));
             }
             return t;
         }
@@ -301,6 +317,18 @@ namespace Blackjack.Game.UI
         }
 
         // ---- interaction ----------------------------------------------------------------------------
+
+        /// <summary>
+        /// Lets a one-line label shrink to fit the room it is given instead of overflowing — Flutter's
+        /// FittedBox(scaleDown). Used instead of ellipsis, which TMP applies unreliably across fallback fonts.
+        /// </summary>
+        public static T Shrink<T>(this T text, float minScale = 0.55f) where T : TMP_Text
+        {
+            text.enableAutoSizing = true;
+            text.fontSizeMax = text.fontSize;
+            text.fontSizeMin = text.fontSize * minScale;
+            return text;
+        }
 
         public static Pressable MakePressable(this RectTransform rt, Action onClick)
         {

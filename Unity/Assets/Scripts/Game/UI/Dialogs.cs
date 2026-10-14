@@ -38,8 +38,9 @@ namespace Blackjack.Game.UI
                 var cells = Ui.HStack(col, 6, null, TextAnchor.MiddleCenter, true);
                 for (var d = 1; d <= DailyBonus.StreakDays; d++) DayCell(cells, d, day);
                 Ui.Spacer(col, 8);
-                Ui.Text(col, $"{Loc.Or("bonusDay7", "Day 7 pays")} <b><color=#{ColorUtility.ToHtmlStringRGB(Theme.Gold)}>+{DailyBonus.Day7Chips}</color></b>",
-                    13, Theme.TextFaint, FontKind.Sora, TextAlignmentOptions.Center, false);
+                var day7 = Ui.HStack(col, 4, null, TextAnchor.MiddleCenter, false);
+                Ui.Text(day7, Loc.Or("bonusDay7", "Day 7 pays"), 13, Theme.TextFaint, FontKind.Sora, TextAlignmentOptions.Center, false);
+                Ui.Text(day7, "+" + DailyBonus.Day7Chips, 13, Theme.Gold, FontKind.SoraBold, TextAlignmentOptions.Center, false);
                 Ui.Spacer(col, 18);
                 W.GoldButton(col, Loc.Or("bonusClaim", "Claim {chips} chips", ("chips", reward)), () => { g.ClaimDailyBonus(); close(); },
                     16, 0, 17, ready);
