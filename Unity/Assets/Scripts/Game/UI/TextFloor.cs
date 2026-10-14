@@ -20,6 +20,7 @@ namespace Blackjack.Game.UI
         private float _size, _min, _max;
         private bool _autoSize;
         private float _appliedScale = -1f;
+        private Transform _root;
 
         /// <summary>
         /// Adds the floor to <paramref name="text"/>, remembering its current size as the authored one. Call it after
@@ -79,7 +80,14 @@ namespace Blackjack.Game.UI
         private void Enforce()
         {
             if (_text == null) return;
-            var scale = OnScreenScale(transform);
+            if (_root == null)
+            {
+                var canvas = GetComponentInParent<Canvas>();
+                if (canvas == null) return;
+                _root = canvas.rootCanvas.transform;
+            }
+            var rootScale = Mathf.Abs(_root.lossyScale.y);
+            var scale = rootScale < Epsilon ? 1f : Mathf.Abs(transform.lossyScale.y) / rootScale;
             if (Mathf.Abs(scale - _appliedScale) < Epsilon) return;
             _appliedScale = scale;
             var least = Type.Floor / Mathf.Max(scale, SmallestScale);

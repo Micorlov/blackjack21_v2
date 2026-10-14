@@ -221,11 +221,13 @@ namespace Blackjack.Game.UI
 
         public RectTransform Root => (RectTransform)transform;
 
-        public void Set(bool revealed, PlayingCard card = default)
+        /// <summary>Turns the card face up or down; true when it actually turned.</summary>
+        public bool Set(bool revealed, PlayingCard card = default)
         {
-            if (revealed == _revealed) return;
+            if (revealed == _revealed) return false;
             _revealed = revealed;
             if (revealed) _start = Time.unscaledTime; else { _start = -1f; Pose(0f); }
+            return true;
         }
 
         private void Update()
@@ -258,6 +260,7 @@ namespace Blackjack.Game.UI
         private readonly RectTransform _host;
         private readonly List<RectTransform> _cards = new List<RectTransform>();
         private readonly List<PlayingCard> _shown = new List<PlayingCard>();
+        private Vector2 _size;
 
         public CardFan(RectTransform host) { _host = host; }
 
@@ -275,7 +278,9 @@ namespace Blackjack.Game.UI
         public void Sync(IReadOnlyList<PlayingCard> cards, float w, float h, Action<RectTransform, int, int> place,
             Func<Transform, int, PlayingCard, RectTransform> create = null)
         {
-            if (cards.Count < _cards.Count) Clear();
+            // A shorter hand (a new round) or a new card size (a split) starts the fan again.
+            if (cards.Count < _cards.Count || _size != new Vector2(w, h)) Clear();
+            _size = new Vector2(w, h);
             for (var i = 0; i < cards.Count; i++)
             {
                 if (i < _cards.Count)

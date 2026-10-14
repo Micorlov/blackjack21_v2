@@ -12,6 +12,7 @@ Shader "Blackjack/Felt"
         _Color ("Tint", Color) = (1,1,1,1)
         _Canvas ("Canvas size (units)", Vector) = (384, 600, 0, 0)
         _Rail ("Rail side y, rail middle y, overhang, wood height", Vector) = (360, 520, 40, 10)
+        _Table ("Table left, table width", Vector) = (0, 384, 0, 0)
 
         _StencilComp ("Stencil Comparison", Float) = 8
         _Stencil ("Stencil ID", Float) = 0
@@ -75,6 +76,7 @@ Shader "Blackjack/Felt"
             float4 _ClipRect;
             float4 _Canvas;
             float4 _Rail;
+            float4 _Table;
 
             v2f vert(appdata_t v)
             {
@@ -93,8 +95,8 @@ Shader "Blackjack/Felt"
             float CurveDistance(float2 p, float side, float mid)
             {
                 float over = _Rail.z;
-                float span = _Canvas.x + 2.0 * over;
-                float u = (p.x + over) / span;
+                float span = _Table.y + 2.0 * over;
+                float u = (p.x - _Table.x + over) / span;
                 float y = side + 4.0 * (mid - side) * u * (1.0 - u);
                 float slope = 4.0 * (mid - side) * (1.0 - 2.0 * u) / span;
                 return (p.y - y) / sqrt(1.0 + slope * slope);
@@ -128,8 +130,8 @@ Shader "Blackjack/Felt"
                 float feltCover = saturate((p.y - wood) / max(fwidth(p.y), 1e-4)) * saturate(-railD / max(fwidth(railD), 1e-4) + 0.5);
                 if (feltCover > 0.0)
                 {
-                    float2 centre = float2(_Canvas.x * 0.5, wood + (mid - wood) * 0.62);
-                    float2 radius = float2(_Canvas.x * 0.8, (mid - wood) * 0.7);
+                    float2 centre = float2(_Table.x + _Table.y * 0.5, wood + (mid - wood) * 0.62);
+                    float2 radius = float2(_Table.y * 0.8, (mid - wood) * 0.7);
                     float t = saturate(length((p - centre) / radius));
                     float3 felt = Ramp3(t, float3(0.0902, 0.3490, 0.2627), float3(0.0784, 0.3137, 0.2235), float3(0.0392, 0.1882, 0.1333), 0.6);
                     // A shadow cast by the wooden edge onto the top of the felt.

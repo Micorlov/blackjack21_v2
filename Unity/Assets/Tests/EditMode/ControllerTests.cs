@@ -561,4 +561,29 @@ namespace Blackjack.Core.Tests
             Assert.IsFalse(_rig.Store.Saved.TurnTimerOn);
         }
     }
+
+    public class CardFanTests
+    {
+        [Test]
+        public void ANewCardSizeRebuildsTheWholeFan()
+        {
+            // A split keeps the first card but deals both hands at a smaller size: no card may stay at the old one.
+            // (The fan frees old cards with Destroy, which edit mode reports but the test does not depend on.)
+            UnityEngine.TestTools.LogAssert.ignoreFailingMessages = true;
+            var host = new GameObject("Fan", typeof(RectTransform));
+            try
+            {
+                var fan = new Blackjack.Game.UI.CardFan((RectTransform)host.transform);
+                var pair = new[] { T.C("8"), T.C("8", "♥") };
+                fan.Sync(pair, 88f, 128f, (card, i, n) => { });
+                fan.Sync(new[] { pair[0], T.C("3", "♦") }, 66f, 96f, (card, i, n) => { });
+                Assert.AreEqual(2, fan.Count);
+                foreach (var card in fan.Cards) Assert.AreEqual(new Vector2(66f, 96f), card.sizeDelta);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(host);
+            }
+        }
+    }
 }

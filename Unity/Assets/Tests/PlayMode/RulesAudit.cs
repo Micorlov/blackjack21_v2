@@ -128,12 +128,24 @@ namespace Blackjack.PlayTests
 
             public bool InFront(Transform t) => !_index.TryGetValue(t, out var i) || i > _cutoff;
 
-            /// <summary>True when an opaque shape drawn after <paramref name="text"/> covers <paramref name="point"/>.</summary>
-            public bool Covered(Transform text, Vector2 point)
+            /// <summary>
+            /// True when an opaque shape drawn after <paramref name="text"/> hides at least <see cref="CoveredShareOfGlyph"/>
+            /// of the glyph <paramref name="box"/>: a glyph that far under a card or a sheet is not there to be read.
+            /// </summary>
+            public bool Covered(Transform text, Rect box)
             {
                 if (!_subtreeEnd.TryGetValue(text, out var end)) return false;
+                var area = Mathf.Max(1f, box.width * box.height);
                 foreach (var (index, rect, clips) in _opaque)
-                    if (index > end && rect.Contains(point) && clips.All(c => c.Contains(point))) return true;
+                {
+                    if (index <= end || !clips.All(c => c.Overlaps(box))) continue;
+                    var xMin = Mathf.Max(box.xMin, rect.xMin);
+                    var xMax = Mathf.Min(box.xMax, rect.xMax);
+                    var yMin = Mathf.Max(box.yMin, rect.yMin);
+                    var yMax = Mathf.Min(box.yMax, rect.yMax);
+                    if (xMax <= xMin || yMax <= yMin) continue;
+                    if ((xMax - xMin) * (yMax - yMin) / area >= CoveredShareOfGlyph) return true;
+                }
                 return false;
             }
         }
@@ -144,6 +156,7 @@ namespace Blackjack.PlayTests
         // Confetti and chip flights must have landed before the pixels are read.
         private const float CelebrationSeconds = 1.8f;
         private const float FullScreenShare = 0.9f;
+        private const float CoveredShareOfGlyph = 0.3f;
 
         private static Rect ScreenRect(RectTransform rt, Camera cam)
         {
@@ -243,7 +256,7 @@ namespace Blackjack.PlayTests
                 var a = ScreenPoint(f.Stage.Camera, t.transform, ch.bottomLeft);
                 var b = ScreenPoint(f.Stage.Camera, t.transform, ch.topRight);
                 var box = Rect.MinMaxRect(Mathf.Min(a.x, b.x), Mathf.Min(a.y, b.y), Mathf.Max(a.x, b.x), Mathf.Max(a.y, b.y));
-                if (!Visible(box.center, f.Stage, clips) || layers.Covered(t.transform, box.center)) continue;
+                if (!Visible(box.center, f.Stage, clips) || layers.Covered(t.transform, box)) continue;
                 var c = (Color)ch.color;
                 var ratio = RatioIfVisible(new Rgba(c.r, c.g, c.b, c.a * groupAlpha), box, f);
                 if (ratio.HasValue) worst = Math.Min(worst, ratio.Value);

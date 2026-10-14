@@ -8,7 +8,7 @@ using UnityEngine.UI;
 namespace Blackjack.Game.UI
 {
     /// <summary>The app's reusable controls — ports of the Flutter <c>widgets/buttons.dart</c> family and friends.</summary>
-    public static class W
+    public static partial class W
     {
         // ---- icons ------------------------------------------------------------------------------------
 
@@ -404,7 +404,13 @@ namespace Blackjack.Game.UI
         {
             if (signature == _signature) return false;
             _signature = signature;
-            for (var i = _host.childCount - 1; i >= 0; i--) UnityEngine.Object.Destroy(_host.GetChild(i).gameObject);
+            for (var i = _host.childCount - 1; i >= 0; i--)
+            {
+                // Destroy is deferred to the end of the frame; hidden now, the old content is not measured with the new.
+                var old = _host.GetChild(i).gameObject;
+                old.SetActive(false);
+                UnityEngine.Object.Destroy(old);
+            }
             build(_host);
             return true;
         }

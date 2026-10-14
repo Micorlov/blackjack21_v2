@@ -224,7 +224,7 @@ its `assets/` and `android/` output paths; point them at `Unity/Assets/Resources
 - `Unity/Assets/Scripts/Core/` — the rules engine as plain C# (`Blackjack.Core` assembly, no Unity
   references). Every step is a pure function from one immutable `RoundState` to the next; timing is left
   to the caller (`GameController`).
-- `Unity/Assets/Tests/EditMode/` — 171 NUnit tests (rules, betting, settlement, progression, controller,
+- `Unity/Assets/Tests/EditMode/` — 172 NUnit tests (rules, betting, settlement, progression, controller,
   RTL, contrast, turn order, turn timer). `Unity/Assets/Tests/PlayMode/` holds the scenario registry (`Scenarios.cs`), the
   screenshot test (`ScenarioShots`) and the design-rules audit (`RulesAudit` + `rules-baseline.txt`).
 - `Unity/Assets/Scripts/Game/UI/Type.cs` — the type ramp (`Type.Display` … `Type.Caption`, `Type.Numeral`)
@@ -242,7 +242,10 @@ its `assets/` and `android/` output paths; point them at `Unity/Assets/Resources
 - The felt (`Game/UI/Screens/Table/`): `FeltView` owns the canvas, fixtures and print and lays out
   `DealerView`, four `SeatView`s (cards on one layer, name pills on a layer above every card) and
   `HeroView`; `FeltBits` holds the shared pills, chip stacks, bet rings and glows; `FeltEffects` flies
-  chips from each seat's ring to yours. Every row comes from `FeltMetrics` (`Y()`, `X()`, `SeatSlot`).
+  chips from each seat's ring to yours, and pins the ribbons and the result float. Every row comes from
+  `FeltMetrics` (`Y()`, `X()`, `SeatSlot`). `TablePanels` builds the controls from `W.SeatButton` (gold,
+  leather, felt and loss finishes) and `W.OutlineChip` in `Game/UI/Widgets.Seat.cs`; `TurnTimerView`
+  is the turn row.
 
 Firebase (Auth, Firestore, Analytics, Crashlytics — SDK 13.17.0) is **not committed**: it is ~760 MB of
 native libraries. `Unity/tools/install_firebase.sh` downloads Google's official zip, verifies its SHA-256,
@@ -361,7 +364,7 @@ on a Play-distributed one. One-time manual steps to fix that:
 ## Assets
 
 - `Unity/Assets/Resources/Locales/*.json` — the 10 UI languages (en, he, ar, es, fr, de, pt, ru, ja, zh),
-  181 keys each; `ar` and `he` render right-to-left.
+  202 keys each; `ar` and `he` render right-to-left.
 - `Unity/Assets/Resources/Sfx/` — sound effects and the spoken call-outs (`Sfx/num/` holds the spoken
   amounts, so adding a clip is just adding the file).
 - `Unity/Assets/Resources/Fonts/` — Sora (Regular/SemiBold/Bold static instances), Instrument Serif
@@ -406,6 +409,24 @@ A Core change is not done until the EditMode suite passes. Check on a device or 
 lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
+
+### 2026-10-14 (The Seat, phase 4: table controls)
+- feat: the controls under the felt follow The Seat. Your turn shows a turn row (gold label, the clock's
+  bar, the seconds), DOUBLE / SPLIT / SURRENDER at 52 units with what each costs or why it is off ("+$100",
+  "pairs only", "keep $50", "not after split"), and leather STAND / gold HIT at 64 units on a pressed lip.
+  Betting shows the bet, ALL IN as a 48-unit pill, the house chips and CLEAR / DEAL. While others play:
+  who is playing and that you play third, the turn order in casino order (done names struck through, the
+  acting one in gold), and 48-unit quick-chat chips ("GG", "Nice hand", Chat). The dealer's turn says
+  what it has and why it draws. Insurance is an offer card over INSURE / NO THANKS (declining stays the
+  gold primary: insurance is a losing bet).
+- feat: the result is a sheet over the felt (the table keeps its full size behind it): the outcome in the
+  serif with the net figure, then You bet / Hand vs dealer / Sweep pot / Balance and READY FOR NEXT HAND.
+  Ribbons pop over the felt print for a double, a split, a blackjack and a bust, and the round's result
+  floats up from your bet ring. The coach card's Rules and Skip links are full 48-unit targets.
+- fix: a split no longer leaves the first card at the old 88-unit size beside its new 66-unit partner; the
+  dealer's box never covers a card or runs off the felt; the rail follows the table on wide screens; the
+  pot no longer recomputes every frame of the result; flying chips take the colour of the bet; the felt
+  material is freed on a language change. 22 new strings in all 10 languages. Baseline 67 → 48.
 
 ### 2026-10-14 (The Seat, phase 3: seats, hero and chips on the curve)
 - feat: the felt is laid out as The Seat — one 384x520 design canvas (`FeltMetrics`) that squeezes only the

@@ -8,10 +8,22 @@ using UnityEngine.UI;
 
 namespace Blackjack.Game.UI
 {
-    /// <summary>The bottom action panels, one per round phase. Each is rebuilt only when what it shows changes.</summary>
+    /// <summary>
+    /// The Seat's controls under the felt, one panel per phase: the chip row while betting, the insurance offer,
+    /// the hero's moves with the turn clock, the turn order and quick chat while others play, and the result
+    /// sheet. Each is rebuilt only when what it shows changes.
+    /// </summary>
     public sealed class TablePanels
     {
         private const float DebounceSeconds = 0.25f;
+        private const float ChipSize = 52f;
+        private const float AllInWidth = 88f;
+        private const int QuickReactions = 2;
+
+        private static readonly Color InfoFill = Color.black.WithAlpha(0.4f);
+        private static readonly Color InfoBorder = Theme.Gold.WithAlpha(0.35f);
+        private static readonly Color ChipBorder = Theme.Ivory.WithAlpha(0.5f);
+        private static readonly Color SheetFill = Theme.Hex(0xFF1E0D06);
 
         private readonly GameController _g;
         private readonly Overlays _overlays;
@@ -30,34 +42,14 @@ namespace Blackjack.Game.UI
             var r = s.Round;
             switch (r.Phase)
             {
-                case RoundPhase.Betting:
-                    _dyn.Update(BettingSignature(s), h => Betting(h, s));
-                    break;
-                case RoundPhase.Insurance:
-                    _dyn.Update("ins" + r.InsuranceBet, h => Insurance(h, s));
-                    break;
-                case RoundPhase.Playing:
-                    _dyn.Update(PlayingSignature(s), h => Playing(h, s));
-                    break;
+                case RoundPhase.Betting: _dyn.Update(BettingSignature(s), h => Betting(h, s)); break;
+                case RoundPhase.Insurance: _dyn.Update($"ins{r.InsuranceBet}|{Loc.Code}", h => Insurance(h, s)); break;
+                case RoundPhase.Playing: _dyn.Update(PlayingSignature(s), h => Playing(h, s)); break;
                 case RoundPhase.Npcs:
                 case RoundPhase.NpcsAfter:
-                    _dyn.Update("npc" + r.ActingSeat + StandingsSignature(s), h => Waiting(h, s,
-                        Loc.T("gameSeatPlaying", ("name", ActingName(s))), 20));
-                    break;
-                case RoundPhase.Dealer:
-                    _dyn.Update("dealer" + StandingsSignature(s), h => Waiting(h, s, Loc.T("gameDealerPlaying"), 24));
-                    break;
-                case RoundPhase.Settlement:
-                    _dyn.Update(SettlementSignature(s), h => Settlement(h, s));
-                    break;
+                case RoundPhase.Dealer: _dyn.Update(WaitingSignature(s), h => Waiting(h, s)); break;
+                case RoundPhase.Settlement: _dyn.Update(SettlementSignature(s), h => Settlement(h, s)); break;
             }
-        }
-
-        private static string ActingName(AppState s)
-        {
-            var seats = Roster.TableSeats(s.Friends, s.Round.Stake?.Key);
-            var seat = s.Round.ActingSeat;
-            return seat == null || seat.Value >= seats.Count ? "Table" : seats[seat.Value].FirstName;
         }
 
         private Action Debounced(Action a) => () =>
@@ -67,9 +59,17 @@ namespace Blackjack.Game.UI
             a();
         };
 
+        private static string Money(int amount) => "$" + TableCatalog.FormatChips(amount);
+
+        private static RectTransform Column(RectTransform host, string name) =>
+            Ui.VStack(host, Theme.Sm, null, TextAnchor.UpperCenter, true, name);
+
+        private static RectTransform Pair(RectTransform parent, float gap = Theme.Md) =>
+            Ui.HStack(parent, gap, null, TextAnchor.MiddleCenter, true, "Buttons");
+
         // ---- betting --------------------------------------------------------------------------------
 
-        private string BettingSignature(AppState s)
+        private static string BettingSignature(AppState s)
         {
             var r = s.Round;
             var rebuyReady = Core.Rebuy.IsReady(s.LastRebuyAt, DateTime.Now);
@@ -80,7 +80,6 @@ namespace Blackjack.Game.UI
         {
             var r = s.Round;
             var stake = r.Stake;
-            var denoms = TableCatalog.ChipDenomsFor(stake);
             var tableMin = stake?.Min ?? 0;
             int? tableMax = stake?.Max;
             var belowMin = r.Bet < tableMin;
@@ -89,80 +88,60 @@ namespace Blackjack.Game.UI
             var canRebet = r.Bet == 0 && r.LastBet > 0 && r.LastBet <= r.Chips && r.LastBet >= tableMin
                            && (tableMax == null || r.LastBet <= tableMax);
 
-            var col = Ui.VStack(host, 0, null, TextAnchor.UpperCenter, true, "Betting");
+            var col = Column(host, "Betting");
+            var line = Ui.HStack(col, Theme.Sm, null, TextAnchor.MiddleLeft, false, "BetLine");
+            Ui.Text(line, Loc.T("gameBet"), new TextStyle(13, FontKind.SoraSemiBold), Theme.Gold, TextAlignmentOptions.Left, false);
+            Ui.Text(line, Money(r.Bet), Type.Numeral(20), Theme.Gold, TextAlignmentOptions.Left, false);
+            var hint = Ui.Text(line, belowMin ? Loc.T("gameMinimum", ("amount", Money(tableMin))) : "", Type.Numeral(Type.Floor, bold: false),
+                Theme.TextBody, TextAlignmentOptions.Left, false);
+            hint.rectTransform.FlexW();
+            W.OutlineChip(line, Loc.T("gameAllIn"), _g.BetAllIn, Theme.Gold.WithAlpha(0.6f), Color.clear, Theme.Gold, 14, FontKind.SoraBold,
+                AllInWidth, canAllIn);
 
-            // One compact line: the bet figure, the table minimum folded in until the bet clears it, ALL IN on the end.
-            var line = Ui.HStack(col, Theme.Sm, null, TextAnchor.MiddleCenter);
-            Ui.Text(line, Loc.T("gameBet"), 15, Theme.TextPrimary.WithAlpha(0.82f), FontKind.Mono, TextAlignmentOptions.Left, false, 1.2f);
-            Ui.Text(line, "$" + r.Bet, 28, Theme.Gold, FontKind.MonoBold, TextAlignmentOptions.Left, false);
-            if (belowMin)
-                Ui.Text(line, "·  " + Loc.T("gameMinimum", ("amount", "$" + TableCatalog.FormatChips(tableMin))), 15, Theme.TextMuted,
-                    FontKind.Mono, TextAlignmentOptions.Left, false, 0.8f);
-            if (canAllIn)
-                W.ActionPill(line, Loc.T("gameAllIn"), Theme.Gold.WithAlpha(0.45f), Theme.Gold.WithAlpha(0.1f), Theme.Gold,
-                    _g.BetAllIn, 8, 12, 15);
+            var chips = Ui.HStack(col, 0, null, TextAnchor.MiddleCenter, true, "Chips");
+            foreach (var d in TableCatalog.ChipDenomsFor(stake))
+            {
+                var disabled = r.Bet + d > r.Chips || (tableMax != null && r.Bet + d > tableMax);
+                var amount = d;
+                Ui.Spacer(chips, 0, 1);
+                W.ChipButton(chips, d, Theme.ChipColor(d), disabled, () => _g.PlaceBet(amount), ChipSize);
+            }
+            Ui.Spacer(chips, 0, 1);
 
-            Ui.Spacer(col, Theme.Xs);
-            ChipTray(col, r, denoms, tableMax);
-            Ui.Spacer(col, Theme.Xs);
-
-            var buttons = Ui.HStack(col, 8, null, TextAnchor.MiddleCenter, true);
-            var clear = W.ActionPill(buttons, Loc.T("gameClear"), Theme.Lose.WithAlpha(0.6f), Theme.Lose.WithAlpha(0.2f),
-                Theme.LoseLight, _g.ClearBet, 16, 0, 20);
-            clear.FlexW(1);
-            var main = canRebet
-                ? W.GoldButton(buttons, Loc.T("gameRebet", ("amount", "$" + TableCatalog.FormatChips(r.LastBet))), _g.RebetAndDeal, 16, 0, 20)
-                : W.GoldButton(buttons, Loc.T("gameDeal"), _g.DealRound, 16, 0, 20, !dealDisabled);
-            main.FlexW(2);
+            var buttons = Pair(col);
+            W.SeatButton(buttons, Loc.T("gameClear"), null, W.Finish.Leather, _g.ClearBet).FlexW();
+            var deal = canRebet
+                ? W.SeatButton(buttons, Loc.T("gameRebet", ("amount", Money(r.LastBet))), null, W.Finish.Gold, _g.RebetAndDeal)
+                : W.SeatButton(buttons, Loc.T("gameDeal"), null, W.Finish.Gold, _g.DealRound, !dealDisabled);
+            deal.FlexW();
 
             // Practice bots fill the empty seats; say so once, quietly.
             if (!s.FriendsAreLive)
             {
-                Ui.Spacer(col, Theme.Xs);
-                var wrap = Ui.HStack(col, Theme.Sm, null, TextAnchor.MiddleCenter);
-                Ui.Text(wrap, Loc.T("gamePracticeBots"), 15, Theme.TextMuted, FontKind.Sora, TextAlignmentOptions.Center, false);
-                W.TextLink(wrap, Loc.T("gameInvite"), _g.ShareInviteWhatsApp, Theme.Gold, 16);
+                var wrap = Ui.HStack(col, Theme.Sm, null, TextAnchor.MiddleCenter, false, "Practice");
+                Ui.Text(wrap, Loc.T("gamePracticeBots"), Type.BodySm, Theme.TextBody, TextAlignmentOptions.Center, false);
+                W.TextLink(wrap, Loc.T("gameInvite"), _g.ShareInviteWhatsApp, Theme.Gold, 15);
             }
 
             // Below the table minimum the rebuy must appear before the stack hits zero.
-            if (r.Chips < (stake?.Min ?? TableCatalog.StartingChips))
-            {
-                Ui.Spacer(col, Theme.Sm);
-                var ready = Core.Rebuy.IsReady(s.LastRebuyAt, DateTime.Now);
-                W.GoldButton(col, ready ? Loc.T("rebuyButtonLabel", ("chips", 1000)) : Loc.T("gameChipOptions"),
-                    ready ? (Action)_g.Rebuy : () => OutOfChipsSheet.Show(_g, _overlays), 14, 0, 18);
-                Ui.Spacer(col, Theme.Xs);
-                W.TextLink(col, Loc.T("gameChipOptions"), () => OutOfChipsSheet.Show(_g, _overlays), Theme.Gold, 15);
-            }
-        }
-
-        private void ChipTray(RectTransform parent, RoundState r, int[] denoms, int? tableMax)
-        {
-            const float chip = 64f;
-            var row = Ui.HStack(parent, 8, null, TextAnchor.MiddleCenter);
-            row.Size(null, chip);
-            // Evenly spaced when they fit; the tray never scrolls, so ALL IN lives on the bet line instead.
-            row.GetComponent<HorizontalLayoutGroup>().spacing = 8;
-            foreach (var d in denoms)
-            {
-                var disabled = r.Bet + d > r.Chips || (tableMax != null && r.Bet + d > tableMax);
-                var amount = d;
-                W.ChipButton(row, d, Theme.ChipColor(d), disabled, () => _g.PlaceBet(amount), chip);
-            }
+            if (r.Chips >= (stake?.Min ?? TableCatalog.StartingChips)) return;
+            var ready = Core.Rebuy.IsReady(s.LastRebuyAt, DateTime.Now);
+            W.SeatButton(col, ready ? Loc.T("rebuyButtonLabel", ("chips", 1000)) : Loc.T("gameChipOptions"), null, W.Finish.Gold,
+                ready ? (Action)_g.Rebuy : () => OutOfChipsSheet.Show(_g, _overlays), true, W.SeatButtonShort);
+            W.TextLink(col, Loc.T("gameChipOptions"), () => OutOfChipsSheet.Show(_g, _overlays), Theme.Gold, 15);
         }
 
         // ---- insurance ------------------------------------------------------------------------------
 
         private void Insurance(RectTransform host, AppState s)
         {
-            var col = Ui.VStack(host, 12, null, TextAnchor.UpperCenter, true, "Insurance");
-            Ui.Text(col, Loc.T("gameInsuranceOffer", ("amount", "$" + TableCatalog.FormatChips(s.Round.InsuranceBet))), 20,
-                Theme.TextPrimary.WithAlpha(0.85f), FontKind.Sora, TextAlignmentOptions.Center, true, 0, 20);
+            var col = Column(host, "Insurance");
+            var info = Ui.Card(col, InfoFill, Theme.RadiusMd, InfoBorder, 1, Ui.Pad(Theme.Md, Theme.Sm), Theme.Xs, true, "Offer");
+            Ui.Text(info, Loc.T("gameInsuranceOffer", ("amount", Money(s.Round.InsuranceBet))), Type.Body, Theme.Ivory);
             // Declining carries the primary weight and insuring is the considered opt-in: insurance is a losing bet.
-            var row = Ui.HStack(col, 8, null, TextAnchor.MiddleCenter, true);
-            W.ActionPill(row, Loc.T("gameInsure"), Theme.Gold.WithAlpha(0.32f), Theme.Gold.WithAlpha(0.08f), Theme.Gold,
-                _g.TakeInsurance, 22, 0, 20).FlexW(1);
-            W.GoldButton(row, Loc.T("gameNoThanks"), _g.DeclineInsurance, 22, 0, 24).FlexW(2);
+            var buttons = Pair(col);
+            W.SeatButton(buttons, Loc.T("gameInsure"), Money(s.Round.InsuranceBet), W.Finish.Leather, _g.TakeInsurance).FlexW();
+            W.SeatButton(buttons, Loc.T("gameNoThanks"), null, W.Finish.Gold, _g.DeclineInsurance).FlexW();
         }
 
         // ---- playing --------------------------------------------------------------------------------
@@ -170,29 +149,39 @@ namespace Blackjack.Game.UI
         private static string PlayingSignature(AppState s)
         {
             var r = s.Round;
-            return $"play{RoundEngine.CanDouble(r)}{RoundEngine.CanSplit(r)}{RoundEngine.CanSurrender(r)}{r.ActiveHandIndex}{Loc.Code}";
+            return $"play{RoundEngine.CanDouble(r)}{RoundEngine.CanSplit(r)}{RoundEngine.CanSurrender(r)}|{r.ActiveHandIndex}|{r.Hands.Count}"
+                   + $"|{r.ActiveHand.Bet}|{r.ActiveHand.Doubled}|{Loc.Code}";
         }
 
         private void Playing(RectTransform host, AppState s)
         {
             var r = s.Round;
-            var col = Ui.VStack(host, Theme.Sm + Theme.Xxs, null, TextAnchor.UpperCenter, true, "Playing");
-            TurnTimerView.Build(col, _g);
-            var top = Ui.HStack(col, Theme.Sm, null, TextAnchor.MiddleCenter, true);
-            var gold = Theme.Gold.WithAlpha(0.32f);
-            W.ActionPill(top, Loc.T("gameDouble"), gold, Theme.Gold.WithAlpha(0.08f), Theme.Gold, Debounced(_g.PlayerDouble), 16, 0, 20,
-                RoundEngine.CanDouble(r)).FlexW(3);
-            W.ActionPill(top, Loc.T("gameSplit"), gold, Theme.Gold.WithAlpha(0.08f), Theme.Gold, Debounced(_g.PlayerSplit), 16, 0, 20,
-                RoundEngine.CanSplit(r)).FlexW(3);
-            // Surrender forfeits half the bet for good: smallest share, destructive outline.
-            W.ActionPill(top, Loc.T("gameSurrender"), Theme.Lose, Color.clear, Theme.LoseLight, Debounced(_g.PlayerSurrender), 16, 8, 16,
-                RoundEngine.CanSurrender(r)).FlexW(2);
+            var hand = r.ActiveHand;
+            var split = r.Hands.Count > 1;
+            var col = Column(host, "Playing");
+            var label = hand.Doubled
+                ? Loc.T("turnDoubled", ("total", BlackjackRules.HandValue(hand.Cards)))
+                : split ? Loc.T("turnHandOf", ("hand", r.ActiveHandIndex + 1), ("total", r.Hands.Count)) : Loc.T("gameYourTurn");
+            TurnTimerView.Build(col, _g, label, hand.Doubled ? Loc.T("turnStandsAutomatically") : "");
 
-            // Equal halves, deliberately: neither action is right for every hand, so neither gets extra weight.
-            var bottom = Ui.HStack(col, Theme.Sm, null, TextAnchor.MiddleCenter, true);
-            W.ActionPill(bottom, Loc.T("gameStand"), Theme.Win.WithAlpha(0.6f), Theme.Win.WithAlpha(0.2f), Theme.WinLight,
-                Debounced(_g.PlayerStand), 22, 0, 24).FlexW(1);
-            W.GoldButton(bottom, Loc.T("gameHit"), Debounced(_g.PlayerHit), 22, 0, 24).FlexW(1);
+            var moves = Ui.HStack(col, Theme.Sm, null, TextAnchor.MiddleCenter, true, "Moves");
+            var bet = Money(hand.Bet);
+            var canDouble = RoundEngine.CanDouble(r);
+            var canSplit = RoundEngine.CanSplit(r);
+            var canSurrender = RoundEngine.CanSurrender(r);
+            W.SeatButton(moves, Loc.T("gameDouble"), Loc.T("actionAdd", ("amount", bet)), W.Finish.Felt, Debounced(_g.PlayerDouble),
+                canDouble, W.SeatButtonShort).FlexW(1.2f);
+            W.SeatButton(moves, Loc.T("gameSplit"),
+                canSplit ? Loc.T("actionAdd", ("amount", bet)) : split ? Loc.T("actionOnceOnly") : Loc.T("actionPairsOnly"),
+                W.Finish.Felt, Debounced(_g.PlayerSplit), canSplit, W.SeatButtonShort).FlexW(1f);
+            W.SeatButton(moves, Loc.T("gameSurrender"),
+                canSurrender ? Loc.T("actionKeep", ("amount", Money(hand.Bet / 2))) : split ? Loc.T("actionNotAfterSplit") : Loc.T("actionTwoCardsOnly"),
+                W.Finish.Loss, Debounced(_g.PlayerSurrender), canSurrender, W.SeatButtonShort).FlexW(1f);
+
+            // Equal halves, deliberately: neither move is right for every hand, so neither gets extra weight.
+            var buttons = Pair(col);
+            W.SeatButton(buttons, Loc.T("gameStand"), null, W.Finish.Leather, Debounced(_g.PlayerStand)).FlexW();
+            W.SeatButton(buttons, Loc.T("gameHit"), null, W.Finish.Gold, Debounced(_g.PlayerHit)).FlexW();
         }
 
         // ---- waiting --------------------------------------------------------------------------------
@@ -200,22 +189,88 @@ namespace Blackjack.Game.UI
         private static string StandingsSignature(AppState s) =>
             s.FriendsAreLive ? string.Join(",", s.Friends.Select(f => f.Id + f.HourlyScore)) + s.HeroHourlyPoints : "";
 
-        private void Waiting(RectTransform host, AppState s, string text, float fontSize)
+        private static string WaitingSignature(AppState s)
         {
-            var col = Ui.VStack(host, Theme.Sm, null, TextAnchor.UpperCenter, true, "Waiting");
-            var pad = Ui.VStack(col, 0, Ui.Pad(0, 38), TextAnchor.MiddleCenter, true);
-            var row = Ui.HStack(pad, 10, null, TextAnchor.MiddleCenter);
-            var dot = W.Dot(row, 10, Theme.Gold);
-            dot.gameObject.AddComponent<PulseAlpha>();
-            Ui.Text(row, text, fontSize, Theme.TextPrimary.WithAlpha(0.85f), FontKind.Sora, TextAlignmentOptions.Center, false);
-            // Only once there are real people to race; with bots-only seats there is nothing to rank.
+            var r = s.Round;
+            var seats = string.Join(",", r.NpcSeats.Select(n => n.Done ? "d" : "-"));
+            var dealer = r.Phase == RoundPhase.Dealer ? TableCalc.DealerTotalLabel(r) : "";
+            return $"wait{r.Phase}|{r.ActingSeat}|{seats}|{dealer}|{StandingsSignature(s)}|{Loc.Code}";
+        }
+
+        private static string ActingName(AppState s)
+        {
+            var seats = Roster.TableSeats(s.Friends, s.Round.Stake?.Key);
+            var seat = s.Round.ActingSeat;
+            return seat == null || seat.Value >= seats.Count ? Loc.Or("theTable", "The table") : seats[seat.Value].FirstName;
+        }
+
+        private void Waiting(RectTransform host, AppState s)
+        {
+            var r = s.Round;
+            var col = Column(host, "Waiting");
+            if (r.Phase == RoundPhase.Dealer) DealerNote(col, r);
+            else TurnTimerView.Build(col, _g, Loc.T("gameSeatPlaying", ("name", ActingName(s))),
+                r.Phase == RoundPhase.Npcs ? Loc.T("turnYouPlayThird") : "");
+            TurnOrder(col, s);
+            QuickChat(col);
             if (s.FriendsAreLive) Standings(col, s);
+        }
+
+        /// <summary>What the dealer is doing and why: it must draw to 16 and stands on all 17s.</summary>
+        private static void DealerNote(RectTransform col, RoundState r)
+        {
+            var info = Ui.Card(col, InfoFill, Theme.RadiusMd, InfoBorder, 1, Ui.Pad(Theme.Md, Theme.Sm), Theme.Xxs, true, "DealerNote");
+            info.GetComponent<VerticalLayoutGroup>().childAlignment = TextAnchor.UpperCenter;
+            var total = BlackjackRules.HandValue(r.DealerHand);
+            var line = !r.HoleRevealed ? Loc.T("gameDealerPlaying")
+                : RoundEngine.DealerShouldHit(r.DealerHand) ? Loc.T("dealerMustDraw", ("total", total))
+                : Loc.T("dealerStandsOn", ("total", total));
+            Ui.Text(info, line, Type.Body, Theme.Ivory, TextAlignmentOptions.Center);
+            Ui.Text(info, Loc.T("dealerRule"), Type.Caption.WithFont(FontKind.Sora), Theme.TextBody, TextAlignmentOptions.Center);
+        }
+
+        /// <summary>Who plays in what order, in casino order with the hero in the middle chair.</summary>
+        private static void TurnOrder(RectTransform col, AppState s)
+        {
+            var r = s.Round;
+            var seats = Roster.TableSeats(s.Friends, r.Stake?.Key);
+            var row = Ui.HStack(col, Theme.Xs, null, TextAnchor.MiddleCenter, false, "Order");
+            var heroDone = r.Phase == RoundPhase.NpcsAfter || r.Phase == RoundPhase.Dealer;
+            for (var i = 0; i < r.NpcSeats.Count; i++)
+            {
+                if (i == TableCatalog.SeatsBeforeHero) OrderChip(row, Loc.T("orderYou"), heroDone, false, true);
+                var name = i < seats.Count ? seats[i].FirstName : "";
+                OrderChip(row, name, r.NpcSeats[i].Done, r.ActingSeat == i, false);
+            }
+            if (r.NpcSeats.Count <= TableCatalog.SeatsBeforeHero) OrderChip(row, Loc.T("orderYou"), heroDone, false, true);
+        }
+
+        private static void OrderChip(RectTransform row, string name, bool done, bool now, bool me)
+        {
+            var fill = now ? Theme.Gold : Color.clear;
+            var border = now ? Theme.Gold : me ? Theme.Gold.WithAlpha(0.6f) : Theme.Ivory.WithAlpha(0.3f);
+            var ink = now ? Theme.PillInk : me ? Theme.Gold : done ? Theme.TextFaintOnPanel : Theme.TextBody;
+            var pill = FeltBits.Pill(row, fill, out _, border, "Turn", Theme.Sm, Theme.Xs);
+            Ui.Text(pill, done && !now ? "<s>" + name + "</s>" : name, new TextStyle(Type.Floor, FontKind.SoraSemiBold), ink,
+                TextAlignmentOptions.Center, false);
+        }
+
+        /// <summary>Two canned reactions and the way into the table chat, each a full 48-unit target.</summary>
+        private void QuickChat(RectTransform col)
+        {
+            var row = Ui.HStack(col, Theme.Sm, null, TextAnchor.MiddleCenter, false, "QuickChat");
+            foreach (var reaction in GameController.Reactions.Take(QuickReactions))
+            {
+                var label = reaction;
+                W.OutlineChip(row, label, () => _g.SendChatMessage(label), ChipBorder, Color.white.WithAlpha(0.08f), Theme.Ivory);
+            }
+            W.OutlineChip(row, Loc.T("chatShort"), _g.ToggleTableChat, ChipBorder, Color.white.WithAlpha(0.08f), Theme.Ivory);
         }
 
         private static void Standings(RectTransform parent, AppState s)
         {
             var hero = Points.Rolled(s.HeroHourlyPoints, s.HeroHourKey, Points.HourKeyOf(DateTime.Now));
-            var rows = new List<(string name, int points, bool self)> { ("You", hero, true) };
+            var rows = new List<(string name, int points, bool self)> { (Loc.T("orderYou"), hero, true) };
             rows.AddRange(s.Friends.Select(f => (f.FirstName, f.HourlyScore, false)));
             rows = rows.OrderByDescending(x => x.points).ToList();
             var visible = rows.Select((x, i) => (rank: i + 1, row: x)).ToList();
@@ -223,19 +278,18 @@ namespace Blackjack.Game.UI
             if (visible.Count > 5)
                 visible = selfIdx >= 5 ? visible.Take(4).Append(visible[selfIdx]).ToList() : visible.Take(5).ToList();
 
-            var card = Ui.Card(parent, Color.black.WithAlpha(0.35f), Theme.RadiusMd, Color.white.WithAlpha(0.1f), 1, Ui.Pad(12, 8), 2, true, "Standings");
-            Ui.Text(card, Loc.Or("friendsThisHour", "Friends this hour"), 12, Theme.TextFaint, FontKind.SoraSemiBold);
+            var card = Ui.Card(parent, InfoFill, Theme.RadiusMd, Color.white.WithAlpha(0.1f), 1, Ui.Pad(Theme.Md, Theme.Sm), Theme.Xxs, true, "Standings");
+            Ui.Text(card, Loc.Or("friendsThisHour", "Friends this hour"), Type.Caption, Theme.TextBody);
             foreach (var e in visible)
             {
-                var row = Ui.HStack(card, 4, null, TextAnchor.MiddleLeft, false);
-                var rank = Ui.Text(row, "#" + e.rank, 13, Theme.TextFaint, FontKind.MonoBold, TextAlignmentOptions.Left, false);
-                rank.rectTransform.Size(26);
-                var name = Ui.Text(row, e.row.name, 12, e.row.self ? Theme.Gold : Theme.TextPrimary,
-                    e.row.self ? FontKind.SoraBold : FontKind.SoraSemiBold, TextAlignmentOptions.Left, false);
+                var row = Ui.HStack(card, Theme.Xs, null, TextAnchor.MiddleLeft, false);
+                Ui.Text(row, "#" + e.rank, Type.Numeral(13), Theme.TextBody, TextAlignmentOptions.Left, false).rectTransform.Size(Theme.Xxxl);
+                var name = Ui.Text(row, e.row.name, Type.Caption.WithFont(e.row.self ? FontKind.SoraBold : FontKind.SoraSemiBold),
+                    e.row.self ? Theme.Gold : Theme.Ivory, TextAlignmentOptions.Left, false);
                 name.Shrink();
                 name.rectTransform.FlexW();
-                Ui.Text(row, (e.row.points >= 0 ? "+" : "-") + "$" + TableCatalog.FormatChips(Mathf.Abs(e.row.points)), 12,
-                    e.row.points >= 0 ? Theme.WinLight : Theme.LoseSoft, FontKind.MonoBold, TextAlignmentOptions.Right, false);
+                Ui.Text(row, (e.row.points >= 0 ? "+" : "-") + Money(Mathf.Abs(e.row.points)), Type.Numeral(Type.Floor),
+                    e.row.points >= 0 ? Theme.WinLight : Theme.LoseOnPanel, TextAlignmentOptions.Right, false);
             }
         }
 
@@ -247,102 +301,37 @@ namespace Blackjack.Game.UI
             return $"set{r.Stats.HandsPlayed}|{r.Message}|{r.RoundNet}|{r.SweepAmount}|{r.Chips}|{Loc.Code}";
         }
 
+        /// <summary>The result sheet: the outcome and the figure the player came for, then where it came from.</summary>
         private void Settlement(RectTransform host, AppState s)
         {
             var r = s.Round;
-            var netColor = r.RoundNet > 0 ? Theme.WinLight : r.RoundNet < 0 ? Theme.LoseLight : Theme.Push;
-            var messageColor = r.MessageType switch
-            {
-                MessageType.Win => Theme.Win, MessageType.Lose => Theme.Lose, MessageType.Push => Theme.Push, _ => Theme.TextPrimary,
-            };
-            var pot = TableCalc.MidRound(r);
-            var winner = TableCalc.WinnerInfo(s);
+            var netColour = r.RoundNet > 0 ? Theme.WinLight : r.RoundNet < 0 ? Theme.LoseOnPanel : Theme.Ivory;
             var resultKey = Guide.ResultKey(r.Message);
-            var handColor = r.RoundHandNet > 0 ? Theme.WinLight : r.RoundHandNet < 0 ? Theme.LoseLight : Theme.Push;
 
-            var card = Ui.Card(host, Color.black.WithAlpha(0.72f), 18, netColor, 2, Ui.Pad(15, 8), 0, true, "Settlement");
-
-            // Message on the left, the figure the player came for on the right.
-            var head = Ui.HStack(card, 12, null, TextAnchor.UpperLeft, false);
-            var msg = Ui.Text(head, resultKey != null ? Loc.T(resultKey) : r.Message, 28, messageColor, FontKind.SerifItalic, TextAlignmentOptions.TopLeft, true, 0, -10);
-            msg.rectTransform.FlexW();
-            var net = Ui.Text(head, "", 40, netColor, FontKind.MonoBold, TextAlignmentOptions.TopRight, false);
+            var sheet = Ui.Card(host, SheetFill, Theme.RadiusXxl, Theme.Gold, 1.5f, Ui.Pad(Theme.Xl, Theme.Lg, Theme.Xl, Theme.Xl), Theme.Xs, true, "Sheet");
+            var head = Ui.HStack(sheet, Theme.Md, null, TextAnchor.MiddleLeft, false, "Head");
+            var title = Ui.Text(head, resultKey != null ? Loc.T(resultKey) : r.Message, Type.H2, Theme.Ivory, TextAlignmentOptions.Left, true);
+            title.rectTransform.FlexW();
+            var net = Ui.Text(head, "", Type.Numeral(26), netColour, TextAlignmentOptions.Right, false);
             CountUpText.Make(net, r.RoundNet, "$", true, () => { if (s.HapticsOn) _g.Services.Haptics.Selection(); });
-            net.rectTransform.Ensure<LayoutElement>().minWidth = 80;
+            Ui.Spacer(sheet, Theme.Xs);
 
-            Ui.Spacer(card, 4);
-            var cardsRow = Ui.HStack(card, 7, null, TextAnchor.MiddleLeft, false);
-            var strip = Ui.HStack(cardsRow, -2, null, TextAnchor.MiddleLeft, false);
-            foreach (var c in r.Hands.SelectMany(h => h.Cards))
-                CardViews.Face(strip, c, 24, 33, false);
-            Ui.Text(cardsRow, TableCalc.ShowdownLabel(r, pot.HeroLiveTotal), 14, Theme.TextPrimary.WithAlpha(0.6f),
-                FontKind.Mono, TextAlignmentOptions.Left, false, 0.06f);
-
-            Ui.Spacer(card, 6);
-            W.Divider(card, Color.white.WithAlpha(0.1f));
-            Ui.Spacer(card, 6);
-            StatRow(card, Loc.T("gameYouBet"), "$" + TableCatalog.FormatChips(r.RoundStake), Theme.TextPrimary, null);
-            StatRow(card, Loc.T("gameAgainstDealer"), (r.RoundHandNet >= 0 ? "+" : "−") + "$" + TableCatalog.FormatChips(Mathf.Abs(r.RoundHandNet)), handColor, null);
-            if (r.SweepAmount > 0)
-                StatRow(card, Loc.T("gameSweepPot"), "+$" + TableCatalog.FormatChips(r.SweepAmount), Theme.Gold, Theme.Gold);
-            W.Divider(card, Color.white.WithAlpha(0.08f));
-            StatRow(card, Loc.T("gameBalance"), TableCatalog.FormatChips(r.Chips), Theme.TextPrimary, null);
-
-            Ui.Spacer(card, 6);
-            PotDetail(card, r, winner);
-            Ui.Spacer(card, 6);
-            W.GoldButton(card, Loc.T("gameNextHand"), _g.NextHand, 16, 0, 17);
+            Line(sheet, Loc.T("gameYouBet"), Money(r.RoundStake), Theme.Ivory, null);
+            Line(sheet, Loc.T("gameAgainstDealer"), (r.RoundHandNet >= 0 ? "+" : "−") + Money(Mathf.Abs(r.RoundHandNet)),
+                r.RoundHandNet > 0 ? Theme.WinLight : r.RoundHandNet < 0 ? Theme.LoseOnPanel : Theme.Ivory, null);
+            if (r.SweepAmount > 0) Line(sheet, Loc.T("gameSweepPot"), "+" + Money(r.SweepAmount), Theme.Gold, Theme.Gold);
+            Line(sheet, Loc.T("gameBalance"), Money(r.Chips), Theme.Ivory, null, last: true);
+            Ui.Spacer(sheet, Theme.Sm);
+            W.SeatButton(sheet, Loc.T("gameNextHand"), null, W.Finish.Gold, _g.NextHand, true, W.SeatButtonShort + Theme.Xs);
         }
 
-        private static void StatRow(RectTransform parent, string label, string value, Color valueColor, Color? labelColor)
+        private static void Line(RectTransform parent, string label, string value, Color valueColour, Color? labelColour, bool last = false)
         {
-            var row = Ui.HStack(parent, 8, Ui.Pad(0, 1), TextAnchor.MiddleLeft, false);
-            var l = Ui.Text(row, label, 16, labelColor ?? Theme.TextPrimary.WithAlpha(0.66f), FontKind.Mono, TextAlignmentOptions.Left, false);
-            // No ellipsis here: TMP drops the whole line in the mono face when it tries to ellipsise.
+            var row = Ui.HStack(parent, Theme.Sm, Ui.Pad(0, Theme.Xs), TextAnchor.MiddleLeft, false, "Line");
+            var l = Ui.Text(row, label, new TextStyle(14, FontKind.Sora), labelColour ?? Theme.TextBody, TextAlignmentOptions.Left, false);
             l.rectTransform.FlexW();
-            Ui.Text(row, value, 18, valueColor, FontKind.MonoBold, TextAlignmentOptions.Right, false);
-        }
-
-        private static void PotDetail(RectTransform parent, RoundState r, PotWinnerInfo winner)
-        {
-            var sweep = r.SweepInfo;
-            var card = Ui.Card(parent, sweep != null ? Theme.Gold.WithAlpha(0.06f) : Color.white.WithAlpha(0.03f), Theme.RadiusMd,
-                sweep != null ? Theme.Gold.WithAlpha(0.3f) : Color.white.WithAlpha(0.1f), 1, Ui.Pad(9, 5), 5, true, "PotDetail");
-            var row = Ui.Card(card, winner.RowBg, 10, winner.RowBorder, 1, Ui.Pad(9, 5), 0, true, "Winner");
-            var hs = Ui.HStack(row, 9, null, TextAnchor.MiddleLeft, false);
-            W.Avatar(hs, winner.Initial, winner.AvatarBg, 36);
-            var col = Ui.VStack(hs, 0, null, TextAnchor.MiddleLeft, true);
-            col.FlexW();
-            Ui.Text(col, winner.Headline, 17, winner.TextColor, FontKind.SoraBold, TextAlignmentOptions.TopLeft, true);
-            Ui.Text(col, winner.Sub, 13, Theme.TextPrimary.WithAlpha(0.55f), FontKind.Mono, TextAlignmentOptions.Left, false, 0.06f);
-            Ui.Text(hs, sweep != null ? "$" + TableCatalog.FormatChips(sweep.TotalWin) : "—", 22, winner.TextColor, FontKind.MonoBold, TextAlignmentOptions.Right, false);
-
-            if (sweep == null || sweep.Contributors.Count == 0) return;
-            var wrap = Ui.Node("Contributors", card);
-            var flow = wrap.gameObject.AddComponent<GridLayoutGroup>();
-            flow.cellSize = new Vector2(150, 24);
-            flow.spacing = new Vector2(4, 4);
-            wrap.FitContent();
-            foreach (var c in sweep.Contributors)
-            {
-                var chip = Ui.Card(wrap, Color.black.WithAlpha(0.5f), 6, null, 0, Ui.Pad(6, 1), 0, true, "Contributor");
-                var cell = Ui.HStack(chip, 4, null, TextAnchor.MiddleLeft, false);
-                Ui.Text(cell, $"{c.Name} {(c.Reason == "bust" ? Loc.T("gameBusted") : Loc.T("gameLost"))}", 13,
-                    Theme.TextPrimary.WithAlpha(0.6f), FontKind.Mono, TextAlignmentOptions.Left, false);
-                Ui.Text(cell, "−$" + TableCatalog.FormatChips(c.Amount), 13, Theme.LoseLight, FontKind.MonoBold, TextAlignmentOptions.Left, false);
-            }
-        }
-    }
-
-    /// <summary>Pulses an image's alpha (the "waiting" dot).</summary>
-    public sealed class PulseAlpha : MonoBehaviour
-    {
-        private Image _image;
-        private void Awake() => _image = GetComponent<Image>();
-        private void Update()
-        {
-            var t = Mathf.PingPong(Time.unscaledTime / 1.2f, 1f);
-            var c = _image.color; c.a = Mathf.Lerp(0.35f, 1f, t); _image.color = c;
+            Ui.Text(row, value, Type.Numeral(14), valueColour, TextAlignmentOptions.Right, false);
+            if (!last) W.Divider(parent, Theme.Ivory.WithAlpha(0.08f));
         }
     }
 }

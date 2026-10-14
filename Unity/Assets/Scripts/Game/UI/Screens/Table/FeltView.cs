@@ -23,6 +23,7 @@ namespace Blackjack.Game.UI
         private RawImage _feltImage;
         private Material _feltMaterial;
         private Dyn _placardText;
+        private CanvasGroup _printGroup;
         private DealerView _dealer;
         private readonly SeatView[] _seats = new SeatView[TableCatalog.OpponentSeats];
         private HeroView _hero;
@@ -99,6 +100,7 @@ namespace Blackjack.Game.UI
         {
             _print = Ui.Text(_canvas, Loc.T("feltPaysThreeToTwo"), Type.FeltPrint, Theme.FeltPrint, TextAlignmentOptions.Center, false, 0, "Print").rectTransform;
             ArcText.Apply(_print.GetComponent<TMP_Text>(), PrintRadius);
+            _printGroup = _print.gameObject.AddComponent<CanvasGroup>();
             _note = Ui.Text(_canvas, Loc.T("feltDealerStands"), Type.FeltNote, Theme.Ivory, TextAlignmentOptions.Center, false, 0, "Note").rectTransform;
             ArcText.Apply(_note.GetComponent<TMP_Text>(), PrintRadius);
         }
@@ -115,6 +117,14 @@ namespace Blackjack.Game.UI
             if (_host.rect.size != _lastSize) Relayout();
             _dealer.Tick();
             _effects.Tick();
+            // A ribbon is pinned over the first line of print; the print steps aside rather than show through.
+            _printGroup.alpha = _effects.RibbonShowing ? 0f : 1f;
+        }
+
+        /// <summary>The felt's material is made per view; a language change rebuilds the view, so it is freed here.</summary>
+        public void Dispose()
+        {
+            if (_feltMaterial != null) Object.Destroy(_feltMaterial);
         }
 
         private void Relayout()
@@ -133,6 +143,7 @@ namespace Blackjack.Game.UI
             _canvas.anchoredPosition = Vector2.zero;
             _feltMaterial.SetVector("_Canvas", new Vector4(m.CanvasWidth, m.CanvasHeight, 0, 0));
             _feltMaterial.SetVector("_Rail", new Vector4(m.Y(FeltMetrics.RailSide), m.Y(FeltMetrics.RailMiddle), RailOverhang, FeltMetrics.WoodEdge));
+            _feltMaterial.SetVector("_Table", new Vector4(m.Inset, m.ContentWidth, 0, 0));
 
             LayoutFixtures(m, r.Stake);
 

@@ -11,6 +11,8 @@ namespace Blackjack.Game.UI
     public sealed class TableScreen : ScreenView
     {
         private const float HeaderHeight = 64f;
+        private const float PanelShare = 0.62f;
+        private const float SheetShare = 0.6f;
         private const float PhaseLineHeight = 28f;
         private const float HeaderIcon = 20f;
         private static readonly Color HeaderRing = Theme.Gold.WithAlpha(0.3f);
@@ -70,15 +72,34 @@ namespace Blackjack.Game.UI
             _chat.Update($"chat{s.TableChatOpen}|{string.Join(",", s.ChatMessages.Select(m => m.Id))}", h => { if (s.TableChatOpen) BuildChat(h, s); });
         }
 
+        public override void Dispose()
+        {
+            _felt?.Dispose();
+            base.Dispose();
+        }
+
         public override void Tick()
         {
             _felt.Tick();
-            // Cap the panel at a share of the screen: the result card gets more, because the felt gives way to it.
             if (_state == null) return;
+            // The controls are capped at a share of the screen and scroll from the bottom if they ever outgrow it.
             var total = _content.rect.height;
-            var share = _state.Round.Phase == RoundPhase.Settlement ? 0.72f : 0.62f;
-            var preferred = LayoutUtility.GetPreferredHeight(_panelScrollRect.content);
-            _panelScroll.Ensure<LayoutElement>().preferredHeight = Mathf.Min(preferred, total * share);
+            var settled = _state.Round.Phase == RoundPhase.Settlement;
+            var height = Mathf.Min(LayoutUtility.GetPreferredHeight(_panelScrollRect.content), total * (settled ? SheetShare : PanelShare));
+            var layout = _panelScroll.Ensure<LayoutElement>();
+            layout.preferredHeight = height;
+            // The result sheet lies over the felt, as on the design: the table keeps its full size behind it.
+            if (layout.ignoreLayout != settled)
+            {
+                layout.ignoreLayout = settled;
+                LayoutRebuilder.MarkLayoutForRebuild(_content);
+            }
+            if (!settled) return;
+            _panelScroll.anchorMin = new Vector2(0, 0);
+            _panelScroll.anchorMax = new Vector2(1, 0);
+            _panelScroll.pivot = new Vector2(0.5f, 0);
+            _panelScroll.anchoredPosition = Vector2.zero;
+            _panelScroll.sizeDelta = new Vector2(0, height);
         }
 
         // ---- header ---------------------------------------------------------------------------------

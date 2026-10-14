@@ -203,10 +203,12 @@ namespace Blackjack.Game.UI
             Ui.Spacer(host, 8);
         }
 
+        /// <summary>A small text link with a full 48x48 hit area around it.</summary>
         private static void Link(RectTransform parent, string label, Action onTap, Color color)
         {
-            var box = Ui.VStack(parent, 0, Ui.Pad(2, 4), TextAnchor.MiddleCenter, false);
-            Ui.Text(box, label, 12, color, FontKind.SoraBold, TextAlignmentOptions.Center, false);
+            var box = Ui.VStack(parent, 0, Ui.Pad(Theme.Sm, 0), TextAnchor.MiddleCenter, false, "Link");
+            box.MinSize(Theme.MinTarget, Theme.MinTarget);
+            Ui.Text(box, label, Type.Caption.WithFont(FontKind.SoraBold), color, TextAlignmentOptions.Center, false);
             box.MakePressable(onTap);
         }
     }

@@ -1,5 +1,6 @@
 using Blackjack.Core;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace Blackjack.Game.UI
 {
@@ -22,6 +23,7 @@ namespace Blackjack.Game.UI
         private Dyn _box, _call, _pot;
         private CardFan _fan;
         private RoundState _round;
+        private bool _potWaitsForFlip;
         private FlipCard _hole;
         private float _flipStart = -1f;
 
@@ -46,14 +48,19 @@ namespace Blackjack.Game.UI
             var count = r.DealerHand.Count;
             var step = FeltMetrics.DealerCardStep(count, m.ContentWidth - 2 * Theme.Xxxl);
             var rowWidth = FeltMetrics.CardWidth + Mathf.Max(0, count - 1) * step;
-            _cards.At(m.CentreX - rowWidth / 2f, m.Y(FeltMetrics.DealerTop), new Vector2(0, 1));
-            _cards.sizeDelta = new Vector2(rowWidth, FeltMetrics.CardHeight);
-            RefreshCards(r, step);
 
-            _boxHost.At(m.CentreX + rowWidth / 2f + BoxGap, m.Y(FeltMetrics.DealerTop) + Theme.Sm, new Vector2(0, 1));
             var label = DealerLabel(r);
             var bust = TableCalc.DealerBusted(r);
             _box.Update(count == 0 ? "" : $"{label}|{bust}|{Loc.Code}", host => { if (count > 0) BuildBox(host, label, bust); });
+            LayoutRebuilder.ForceRebuildLayoutImmediate(_boxHost);
+            var boxWidth = _boxHost.childCount > 0 ? LayoutUtility.GetPreferredWidth((RectTransform)_boxHost.GetChild(_boxHost.childCount - 1)) : 0f;
+            // Centred under the tray; a long hand with a wide box slides left so the box never covers a card.
+            var cardsX = Mathf.Min(m.CentreX - rowWidth / 2f, m.Inset + m.ContentWidth - Theme.Xs - boxWidth - BoxGap - rowWidth);
+            cardsX = Mathf.Max(cardsX, m.Inset + Theme.Xs);
+            _cards.At(cardsX, m.Y(FeltMetrics.DealerTop), new Vector2(0, 1));
+            _cards.sizeDelta = new Vector2(rowWidth, FeltMetrics.CardHeight);
+            RefreshCards(r, step);
+            _boxHost.At(cardsX + rowWidth + BoxGap, m.Y(FeltMetrics.DealerTop) + Theme.Sm, new Vector2(0, 1));
 
             _callHost.At(m.CentreX, m.Y(FeltMetrics.CallTop));
             var callSig = count == 0 && r.Phase == RoundPhase.Betting ? "call" + Loc.Code : "";
@@ -67,7 +74,7 @@ namespace Blackjack.Game.UI
         /// <summary>The settled pot waits for the hole card to finish turning, so the result is not told before it is shown.</summary>
         public void Tick()
         {
-            if (_round != null && _round.Phase == RoundPhase.Settlement) RefreshPot(_round);
+            if (_potWaitsForFlip && !Flipping) RefreshPot(_round);
         }
 
         /// <summary>"6 + ?" while the hole card is down, the total once it is up, "16 · draws" while the dealer must hit.</summary>
@@ -82,7 +89,7 @@ namespace Blackjack.Game.UI
 
         private static void BuildBox(RectTransform host, string label, bool bust)
         {
-            var card = Ui.Card(host, Color.black.WithAlpha(0.6f), Theme.RadiusMd, bust ? Theme.LoseOnPanel.WithAlpha(0.7f) : BoxBorder, 1,
+            var card = Ui.Card(host, FeltBits.PillFill, Theme.RadiusMd, bust ? Theme.LoseOnPanel.WithAlpha(0.7f) : BoxBorder, 1,
                 Ui.Pad(Theme.Sm, Theme.Xs), 0, false, "Box");
             var outer = (RectTransform)card.parent;
             outer.At(0, 0, new Vector2(0, 1));
@@ -103,6 +110,7 @@ namespace Blackjack.Game.UI
             var pot = TableCalc.MidRound(r);
             var settled = r.Phase == RoundPhase.Settlement;
             var show = pot.PotValueLabel.Length > 0 && (!settled || !Flipping);
+            _potWaitsForFlip = settled && pot.PotValueLabel.Length > 0 && Flipping;
             var sig = show ? $"{pot.PotLabelText}|{pot.PotValueLabel}|{pot.HeroLeads}|{settled}|{Loc.Code}" : "";
             _pot.Update(sig, host =>
             {
@@ -143,8 +151,9 @@ namespace Blackjack.Game.UI
                     return _hole.Root;
                 });
             if (_hole == null) return;
-            _hole.Set(r.HoleRevealed);
-            if (r.HoleRevealed && _flipStart < 0) _flipStart = Time.unscaledTime;
+            // Only a card that actually turns over holds the pot back; one built face-up (re-entering a settled
+            // table) has nothing to wait for.
+            if (_hole.Set(r.HoleRevealed) && r.HoleRevealed) _flipStart = Time.unscaledTime;
             if (!r.HoleRevealed) _flipStart = -1f;
         }
     }

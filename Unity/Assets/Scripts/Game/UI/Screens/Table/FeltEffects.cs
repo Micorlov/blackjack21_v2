@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Blackjack.Core;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -52,6 +53,8 @@ namespace Blackjack.Game.UI
 
         public void Refresh(AppState s, FeltMetrics m)
         {
+            RefreshRibbon(s.Round, m);
+            RefreshFloat(s.Round, m);
             var r = s.Round;
             if (r.Phase != RoundPhase.Settlement) { Clear(); _firedToken = ""; return; }
 
@@ -127,7 +130,7 @@ namespace Blackjack.Game.UI
                 if (seat < 0 || seat >= 4) continue;
                 var place = m.SeatSlot(seat);
                 var from = new Vector2(place.X, place.Y + SeatRingDrop);
-                var chip = W.ChipDisc(_layer, Theme.ChipColor(c.Amount), 30f);
+                var chip = W.ChipDisc(_layer, FeltBits.StacksFor(c.Amount).Select(st => st.colour).DefaultIfEmpty(Theme.ChipRed).First(), 30f);
                 chip.Pin(new Vector2(0, 1), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(30, 30));
                 chip.IgnoreLayout();
                 var group = chip.Ensure<CanvasGroup>();
@@ -141,6 +144,103 @@ namespace Blackjack.Game.UI
         {
             TickConfetti();
             TickFlights();
+            TickRibbon();
+            TickFloat();
+        }
+
+        // ---- ribbons --------------------------------------------------------------------------------
+
+        private const float RibbonPop = 0.25f;
+        private const float RibbonHold = 2.2f;
+        private const float RibbonFade = 0.4f;
+        private const float RibbonDrop = 10f;
+        private const float FloatRise = Theme.Md;
+        private const float FloatSeconds = 0.6f;
+
+        private RectTransform _ribbon, _float;
+
+        /// <summary>True while a ribbon is on the felt, so the print under it can step aside.</summary>
+        public bool RibbonShowing => _ribbon != null && _ribbonGroup != null && _ribbonGroup.alpha > 0.01f;
+        private CanvasGroup _ribbonGroup, _floatGroup;
+        private string _ribbonToken = "", _floatToken = "";
+        private float _ribbonStart = -10f, _floatStart = -10f;
+        private Vector2 _floatAt;
+
+        /// <summary>The banner the design pins over the felt print when something happens to the hero's hand.</summary>
+        private static (string token, string title, string detail, bool loss) RibbonFor(RoundState r)
+        {
+            if (r.Phase == RoundPhase.Settlement || r.Phase == RoundPhase.Betting) return ("", null, null, false);
+            var hand = r.Hands[0];
+            var bet = "$" + TableCatalog.FormatChips(hand.Bet);
+            if (r.Hands.Count > 1)
+                return ("split" + r.Hands[1].Bet, Loc.T("ribbonSplit"), "2 × $" + TableCatalog.FormatChips(r.Hands[1].Bet), false);
+            if (hand.Status == HandStatus.Blackjack) return ("bj", Loc.T("ribbonBlackjack"), Loc.T("ribbonPays"), false);
+            if (hand.Status == HandStatus.Busted) return ("bust" + hand.Bet, Loc.T("ribbonBusted"), "−" + bet, true);
+            if (hand.Doubled) return ("double" + hand.Bet, Loc.T("ribbonDoubleDown"), bet, false);
+            return ("", null, null, false);
+        }
+
+        private void RefreshRibbon(RoundState r, FeltMetrics m)
+        {
+            var (token, title, detail, loss) = RibbonFor(r);
+            if (token == _ribbonToken)
+            {
+                if (_ribbon != null) _ribbon.At(m.CentreX, m.Y(FeltMetrics.PrintTop) - RibbonDrop);
+                return;
+            }
+            _ribbonToken = token;
+            if (_ribbon != null) Object.Destroy(_ribbon.gameObject);
+            _ribbon = null;
+            if (token.Length == 0) return;
+
+            var row = FeltBits.Pill(_layer, loss ? Theme.LoseOnFelt : Theme.BrassLight, out var root, null, "Ribbon", Theme.Lg, Theme.Xs);
+            Ui.Text(row, title, new TextStyle(15, Type.FeltPrint.Font, Type.FeltPrint.Tracking), Theme.PillInk, TextAlignmentOptions.Center, false);
+            Ui.Text(row, detail, Type.Numeral(Type.Floor), Theme.PillInk, TextAlignmentOptions.Center, false);
+            root.At(m.CentreX, m.Y(FeltMetrics.PrintTop) - RibbonDrop);
+            _ribbon = root;
+            _ribbonGroup = root.Ensure<CanvasGroup>();
+            _ribbonGroup.alpha = 0f;
+            _ribbonStart = Time.unscaledTime;
+        }
+
+        private void TickRibbon()
+        {
+            if (_ribbon == null) return;
+            var t = Time.unscaledTime - _ribbonStart;
+            var pop = Mathf.Clamp01(t / RibbonPop);
+            _ribbon.localScale = Vector3.one * Mathf.Lerp(0.8f, 1f, 1f - Mathf.Pow(1f - pop, 3f));
+            _ribbonGroup.alpha = t < RibbonPop + RibbonHold ? pop : Mathf.Clamp01(1f - (t - RibbonPop - RibbonHold) / RibbonFade);
+        }
+
+        /// <summary>The round's result, floated up from the hero's bet ring: "+$400" in green, "−$100" in red.</summary>
+        private void RefreshFloat(RoundState r, FeltMetrics m)
+        {
+            var token = r.Phase == RoundPhase.Settlement && r.RoundNet != 0 ? r.RoundNet + "|" + r.Stats.HandsPlayed : "";
+            // Over the hero's bet ring, clear of the index at the foot of the cards.
+            _floatAt = new Vector2(m.CentreX, m.Y(FeltMetrics.BetTop) + Theme.Xs);
+            if (token == _floatToken) return;
+            _floatToken = token;
+            if (_float != null) Object.Destroy(_float.gameObject);
+            _float = null;
+            if (token.Length == 0) return;
+
+            var won = r.RoundNet > 0;
+            var row = FeltBits.Pill(_layer, Color.black.WithAlpha(0.72f), out var root, null, "Float", Theme.Md, Theme.Xxs);
+            Ui.Text(row, (won ? "+$" : "−$") + TableCatalog.FormatChips(Mathf.Abs(r.RoundNet)), Type.Numeral(18),
+                won ? Theme.WinLight : Theme.LoseOnFelt, TextAlignmentOptions.Center, false);
+            _float = root;
+            _floatGroup = root.Ensure<CanvasGroup>();
+            _floatStart = Time.unscaledTime;
+            TickFloat();
+        }
+
+        private void TickFloat()
+        {
+            if (_float == null) return;
+            var t = Mathf.Clamp01((Time.unscaledTime - _floatStart) / FloatSeconds);
+            var eased = 1f - Mathf.Pow(1f - t, 3f);
+            _float.At(_floatAt.x, _floatAt.y - FloatRise * eased);
+            _floatGroup.alpha = eased;
         }
 
         private void TickConfetti()
