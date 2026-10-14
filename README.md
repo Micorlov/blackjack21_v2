@@ -319,9 +319,21 @@ published, `alpha` accepts `--status completed` too; the draft-only restriction 
 `completed` to `internal` no longer applies.
 
 Bump `VersionName` / `VersionCode` in `Unity/Assets/Scripts/Editor/BuildTools.cs` before building — Play
-rejects a bundle whose version code is already on the account. `BuildAndroid` currently writes a
-development APK (`buildAppBundle = false`); a Play release needs an `.aab` signed with the upload key,
-which is not wired up yet.
+rejects a bundle whose version code is already on the account. `BuildAndroid` writes the development APK
+(debug key, for `adb install -r`); `BuildAndroidRelease` writes `Unity/Builds/Android/blackjack21-unity.aab`
+signed with the Play **upload key**, read from environment variables so no password is in the repo:
+
+```bash
+export BJ21_UPLOAD_KEYSTORE=~/AndroidKeys/.android-keys/blackjack21_v2_upload.jks
+export BJ21_UPLOAD_ALIAS=upload BJ21_UPLOAD_STORE_PASS=... BJ21_UPLOAD_KEY_PASS=...   # from ~/AndroidKeys/blackjack21_v2/android/key.properties
+Unity -batchmode -nographics -quit -projectPath Unity \
+  -executeMethod Blackjack.EditorTools.BuildTools.BuildAndroidRelease -logFile /tmp/build-release.log
+```
+
+The release manifest must not carry `com.google.android.gms.permission.AD_ID` (the Play listing declares no
+advertising ID, and Play fails the commit with a 400 otherwise). Firebase Analytics merges it in from a
+dependency, so `Unity/Assets/Plugins/Android/LauncherManifest.xml` (enabled by `useCustomLauncherManifest`)
+removes it with `tools:node="remove"`; a removal marker in a library manifest does not outrank it.
 Keep `tool/release_notes_en-US.txt` under **500 characters**; Play rejects anything longer.
 
 Auth is a Google Cloud service account, `play-publisher@blackjack21-v2.iam.gserviceaccount.com`,
@@ -415,6 +427,15 @@ A Core change is not done until the EditMode suite passes. Check on a device or 
 lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
+
+### 2026-10-14 (Google Play 1.8.0)
+- chore: **released 1.8.0 (10) to the Google Play internal track** — the first Play release from the Unity
+  port and the first with The Seat; the last production build is still 1.6.1 (8). `BuildTools` gains
+  `BuildAndroidRelease`, which builds an `.aab` signed with the upload key from `BJ21_UPLOAD_*` environment
+  variables, and the version moves to 1.8.0 (10).
+- fix: the release bundle no longer requests `AD_ID` again (the Unity port had lost the Flutter build's
+  removal, which made Play reject the release); `LauncherManifest.xml` removes it.
+- docs: `tool/release_notes_en-US.txt` now reads "What's new in 1.8.0".
 
 ### 2026-10-14 (settings fix)
 - fix: the switch rows in Settings (sound and haptics, the turn timer, notifications, privacy) no longer

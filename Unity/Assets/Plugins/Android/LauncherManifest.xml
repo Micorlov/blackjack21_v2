@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:installLocation="preferExternal">
+    <supports-screens
+        android:smallScreens="true"
+        android:normalScreens="true"
+        android:largeScreens="true"
+        android:xlargeScreens="true"
+        android:anyDensity="true"/>
+
+    <!-- The game shows no ads and profiles nobody; the Play listing says it uses no advertising ID. Firebase
+         Analytics merges this permission in from a dependency, and only the launcher manifest outranks it. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
+
+    <application android:label="@string/app_name"
+                 android:icon="@mipmap/app_icon"
+                 android:roundIcon="@mipmap/app_icon_round"/>
+</manifest>

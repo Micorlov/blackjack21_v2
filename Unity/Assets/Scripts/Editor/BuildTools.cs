@@ -19,11 +19,18 @@ namespace Blackjack.EditorTools
         public const string ScenePath = "Assets/Scenes/Main.unity";
         public const string OutputDir = "Builds/Android";
         public const string ApkName = "blackjack21-unity.apk";
+        public const string AabName = "blackjack21-unity.aab";
+
+        // The Play upload key is read from these environment variables so no password ever lands in the repo.
+        private const string UploadKeystoreEnv = "BJ21_UPLOAD_KEYSTORE";
+        private const string UploadStorePassEnv = "BJ21_UPLOAD_STORE_PASS";
+        private const string UploadAliasEnv = "BJ21_UPLOAD_ALIAS";
+        private const string UploadKeyPassEnv = "BJ21_UPLOAD_KEY_PASS";
 
         public const string PackageId = "com.micorlov.blackjack21_v2";
         // Above the Flutter app's versionCode (8) so `adb install -r` upgrades it in place.
-        public const string VersionName = "1.7.0";
-        public const int VersionCode = 9;
+        public const string VersionName = "1.8.0";
+        public const int VersionCode = 10;
 
         public static void Configure()
         {
@@ -147,8 +154,40 @@ namespace Blackjack.EditorTools
         public static void BuildAndroid()
         {
             Configure();
+            BuildAndExit(ApkName, appBundle: false);
+        }
+
+        /// <summary>
+        /// A Play release: an .aab signed with the upload key named by the BJ21_UPLOAD_* environment variables.
+        /// Run with <c>-executeMethod Blackjack.EditorTools.BuildTools.BuildAndroidRelease</c>.
+        /// </summary>
+        public static void BuildAndroidRelease()
+        {
+            Configure();
+            var keystore = Environment.GetEnvironmentVariable(UploadKeystoreEnv);
+            var storePass = Environment.GetEnvironmentVariable(UploadStorePassEnv);
+            var alias = Environment.GetEnvironmentVariable(UploadAliasEnv);
+            var keyPass = Environment.GetEnvironmentVariable(UploadKeyPassEnv);
+            if (string.IsNullOrEmpty(keystore) || !File.Exists(keystore) || string.IsNullOrEmpty(storePass)
+                || string.IsNullOrEmpty(alias) || string.IsNullOrEmpty(keyPass))
+            {
+                Debug.LogError($"Release build needs {UploadKeystoreEnv} (an existing file), {UploadStorePassEnv}, {UploadAliasEnv} and {UploadKeyPassEnv}");
+                EditorApplication.Exit(1);
+                return;
+            }
+            PlayerSettings.Android.useCustomKeystore = true;
+            PlayerSettings.Android.keystoreName = keystore;
+            PlayerSettings.Android.keystorePass = storePass;
+            PlayerSettings.Android.keyaliasName = alias;
+            PlayerSettings.Android.keyaliasPass = keyPass;
+            BuildAndExit(AabName, appBundle: true);
+        }
+
+        private static void BuildAndExit(string fileName, bool appBundle)
+        {
             Directory.CreateDirectory(OutputDir);
-            var path = Path.Combine(OutputDir, ApkName);
+            var path = Path.Combine(OutputDir, fileName);
+            EditorUserBuildSettings.buildAppBundle = appBundle;
             var options = new BuildPlayerOptions
             {
                 scenes = new[] { ScenePath },

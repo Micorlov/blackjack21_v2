@@ -1,3 +1,7 @@
-What's new in 1.6.1
+What's new in 1.8.0
 
-- New app icon.
+- A brand-new table look: you sit at the table, with seats curving around the felt and bigger, clearer cards and controls.
+- Casino turn order and a 20-second turn timer.
+- Easier to read and tap everywhere: larger text, bigger buttons, better contrast.
+- Hebrew and Arabic now mirror properly.
+- Fixed a white strip behind the Settings switches.
