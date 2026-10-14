@@ -31,6 +31,9 @@ namespace Blackjack.Game
             if (Array.IndexOf(Supported, code) < 0) code = "en";
             if (code == _code) return;
             _code = code;
+            UI.Fonts.EnsureScript(code);
+            // Every string of the language goes into the font atlases now, so text measures correctly on first draw.
+            UI.Fonts.Prewarm(string.Concat(Table(code).Values));
             Changed?.Invoke();
         }
 

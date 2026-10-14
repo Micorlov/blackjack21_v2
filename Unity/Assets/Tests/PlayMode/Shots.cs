@@ -44,9 +44,10 @@ namespace Blackjack.PlayTests
             return new Stage { Camera = cam, Target = target, Root = root };
         }
 
-        public static IEnumerator Capture(Stage stage, string name, int settleFrames = 4)
+        public static IEnumerator Capture(Stage stage, string name, int settleFrames = 4, float settleSeconds = 0.9f)
         {
             for (var i = 0; i < settleFrames; i++) yield return null;
+            yield return new WaitForSecondsRealtime(settleSeconds);
             Canvas.ForceUpdateCanvases();
             stage.Camera.Render();
             var previous = RenderTexture.active;

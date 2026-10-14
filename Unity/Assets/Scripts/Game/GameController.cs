@@ -41,7 +41,9 @@ namespace Blackjack.Game
         private const float SaveDebounce = 0.6f;
         private const float ToastSeconds = 2.2f;
         private const float ReactionSeconds = 1.6f;
-        private const int ChatLogLimit = 30;
+        private const int ChatLogLimit = 6;
+
+        public static readonly string[] Reactions = { "GG", "Nice hand", "Ouch", "One more", "Dealer luck" };
 
         private GameServices _svc = new GameServices();
         private System.Random _rng = new System.Random();

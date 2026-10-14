@@ -77,6 +77,8 @@ namespace Blackjack.Game.UI
             var le = rt.Ensure<LayoutElement>();
             if (width.HasValue) { le.preferredWidth = width.Value; le.minWidth = width.Value; }
             if (height.HasValue) { le.preferredHeight = height.Value; le.minHeight = height.Value; }
+            // Outside a layout group nothing reads the LayoutElement, so size the rect itself too.
+            rt.sizeDelta = new Vector2(width ?? rt.sizeDelta.x, height ?? rt.sizeDelta.y);
             return rt;
         }
 
@@ -160,7 +162,9 @@ namespace Blackjack.Game.UI
             g.childControlWidth = true;
             g.childControlHeight = true;
             g.childForceExpandWidth = false;
-            g.childForceExpandHeight = stretch;
+            // Never force-expand height: a flexible row makes every group above it report itself as flexible and
+            // balloon to the whole screen. Rows that should match heights simply share padding.
+            g.childForceExpandHeight = false;
             return rt;
         }
 
@@ -179,7 +183,7 @@ namespace Blackjack.Game.UI
         public static Image Box(Transform parent, Color color, float radius = 0, string name = "Box")
         {
             var rt = Node(name, parent);
-            var img = rt.gameObject.AddComponent<Image>();
+            var img = rt.gameObject.AddComponent<FlatImage>();
             Style(img, color, radius);
             return img;
         }
@@ -188,15 +192,33 @@ namespace Blackjack.Game.UI
         {
             img.color = color;
             img.raycastTarget = false;
+            var fit = img.GetComponent<RoundedFit>();
             if (radius <= 0.01f)
             {
+                if (fit != null) UnityEngine.Object.Destroy(fit);
                 img.sprite = null;
                 img.type = Image.Type.Simple;
                 return;
             }
             img.sprite = Sprites.Rounded;
             img.type = Image.Type.Sliced;
-            img.pixelsPerUnitMultiplier = Sprites.RoundedBorder / radius;
+            if (fit == null) fit = img.gameObject.AddComponent<RoundedFit>();
+            fit.Radius = radius;
+            fit.Apply();
+        }
+
+        /// <summary>Styles an image as a rounded outline: transparent inside, <paramref name="thickness"/> units wide.</summary>
+        public static void StyleRing(Image img, Color color, float radius, float thickness)
+        {
+            img.color = color;
+            img.raycastTarget = false;
+            img.sprite = Sprites.RoundedRing(thickness * Sprites.RoundedBorder / Mathf.Max(1f, radius));
+            img.type = Image.Type.Sliced;
+            var fit = img.GetComponent<RoundedFit>();
+            if (fit == null) fit = img.gameObject.AddComponent<RoundedFit>();
+            fit.Radius = radius;
+            fit.RingThickness = thickness;
+            fit.Apply();
         }
 
         /// <summary>
@@ -211,11 +233,12 @@ namespace Blackjack.Game.UI
             if (border.HasValue)
             {
                 var outer = Box(parent, border.Value, radius, name + "Border");
+                StyleRing(outer, border.Value, radius, borderWidth);
                 var g = outer.gameObject.AddComponent<VerticalLayoutGroup>();
                 g.padding = Pad(borderWidth);
                 g.childControlWidth = true; g.childControlHeight = true;
                 // Force-expand would make the group report itself as flexible and swallow free space.
-                g.childForceExpandWidth = true; g.childForceExpandHeight = false;
+                g.childForceExpandWidth = stretch; g.childForceExpandHeight = false;
                 host = outer.transform;
             }
             var inner = Box(host, fill, Mathf.Max(0, border.HasValue ? radius - borderWidth : radius), name);
@@ -246,7 +269,27 @@ namespace Blackjack.Game.UI
             t.raycastTarget = false;
             t.richText = true;
             t.text = text;
+            if (!wrap)
+            {
+                // One-line labels get a fixed line box like the Flutter design's `height:` values: the monospace
+                // font's natural line is far taller than the 1.15 the design specifies.
+                var mono = font == FontKind.Mono || font == FontKind.MonoBold;
+                var box = size * (mono ? 1.15f : 1.28f);
+                t.rectTransform.Size(null, box);
+                t.alignment = ToMiddle(align);
+            }
             return t;
+        }
+
+        private static TextAlignmentOptions ToMiddle(TextAlignmentOptions a)
+        {
+            switch (a)
+            {
+                case TextAlignmentOptions.TopLeft: return TextAlignmentOptions.Left;
+                case TextAlignmentOptions.Top: return TextAlignmentOptions.Center;
+                case TextAlignmentOptions.TopRight: return TextAlignmentOptions.Right;
+                default: return a;
+            }
         }
 
         // ---- interaction ----------------------------------------------------------------------------
@@ -256,6 +299,46 @@ namespace Blackjack.Game.UI
             var p = rt.Ensure<Pressable>();
             p.OnClick = onClick;
             return p;
+        }
+    }
+
+    /// <summary>
+    /// An <see cref="Image"/> that takes no part in layout. A stock sliced Image reports its un-multiplied border
+    /// size as its preferred size (96 units for our rounded sprite), which would inflate every container behind it.
+    /// </summary>
+    public sealed class FlatImage : Image
+    {
+        public override float minWidth => 0;
+        public override float minHeight => 0;
+        public override float preferredWidth => 0;
+        public override float preferredHeight => 0;
+    }
+
+    /// <summary>
+    /// Keeps a 9-sliced rounded rect's corner radius true as its size changes: the radius is capped at half the
+    /// shorter side, so a very wide, short rect (a pill) gets round ends rather than elliptical ones.
+    /// </summary>
+    [RequireComponent(typeof(Image))]
+    public sealed class RoundedFit : MonoBehaviour
+    {
+        public float Radius = 12f;
+
+        /// <summary>When above zero this draws an outline of that thickness (in units) instead of a filled shape.</summary>
+        public float RingThickness;
+        private Image _image;
+
+        private void OnEnable() => Apply();
+        private void OnRectTransformDimensionsChange() => Apply();
+
+        public void Apply()
+        {
+            if (_image == null) _image = GetComponent<Image>();
+            if (_image == null || _image.sprite == null) return;
+            var rect = ((RectTransform)transform).rect;
+            var r = Mathf.Max(1f, Mathf.Min(Radius, Mathf.Min(rect.width, rect.height) / 2f));
+            _image.pixelsPerUnitMultiplier = Sprites.RoundedBorder / r;
+            if (RingThickness > 0f)
+                _image.sprite = Sprites.RoundedRing(RingThickness * Sprites.RoundedBorder / r);
         }
     }
 
@@ -285,7 +368,7 @@ namespace Blackjack.Game.UI
             // Every pressable needs something to hit-test; a transparent image does it without drawing.
             if (GetComponent<Graphic>() == null)
             {
-                var hit = gameObject.AddComponent<Image>();
+                var hit = gameObject.AddComponent<FlatImage>();
                 hit.color = Color.clear;
             }
             foreach (var g in GetComponents<Graphic>()) g.raycastTarget = true;

@@ -24,6 +24,44 @@ namespace Blackjack.Game.UI
 
         public static float RoundedBorder => RoundedRadius;
 
+        private static readonly Dictionary<int, Sprite> Rings = new Dictionary<int, Sprite>();
+
+        /// <summary>
+        /// A rounded-rect outline (transparent inside), 9-sliced like <see cref="Rounded"/>. Thickness is in
+        /// texels of the 128px sprite and is quantised to half a texel so the cache stays small.
+        /// </summary>
+        public static Sprite RoundedRing(float thicknessTexels)
+        {
+            var key = Mathf.Clamp(Mathf.RoundToInt(thicknessTexels * 2f), 1, 60);
+            if (Rings.TryGetValue(key, out var cached)) return cached;
+            var t = key / 2f;
+            var tex = NewTexture(RoundedSize, RoundedSize);
+            var pixels = new Color32[RoundedSize * RoundedSize];
+            var innerRadius = Mathf.Max(0.5f, RoundedRadius - t);
+            for (var y = 0; y < RoundedSize; y++)
+            for (var x = 0; x < RoundedSize; x++)
+            {
+                float px = x + 0.5f, py = y + 0.5f;
+                var outer = CoverageOf(px, py, RoundedSize, RoundedSize, RoundedRadius);
+                var inner = CoverageOf(px - t, py - t, RoundedSize - 2 * t, RoundedSize - 2 * t, innerRadius);
+                pixels[y * RoundedSize + x] = new Color(1, 1, 1, Mathf.Clamp01(outer - inner));
+            }
+            tex.SetPixels32(pixels);
+            tex.Apply();
+            var sprite = Sprite.Create(tex, new Rect(0, 0, RoundedSize, RoundedSize), new Vector2(0.5f, 0.5f), 100f, 0,
+                SpriteMeshType.FullRect, new Vector4(RoundedRadius, RoundedRadius, RoundedRadius, RoundedRadius));
+            Rings[key] = sprite;
+            return sprite;
+        }
+
+        private static float CoverageOf(float px, float py, float w, float h, float radius)
+        {
+            var cx = Mathf.Clamp(px, radius, w - radius);
+            var cy = Mathf.Clamp(py, radius, h - radius);
+            var d = Mathf.Sqrt((px - cx) * (px - cx) + (py - cy) * (py - cy));
+            return Mathf.Clamp01(radius - d + 0.5f);
+        }
+
         public static Sprite Circle => _circle ??= MakeCircle(128);
 
         private static Texture2D NewTexture(int w, int h)

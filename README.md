@@ -530,6 +530,10 @@ emulator testing.
 ## Changelog
 
 ### 2026-10-14
+- feat: Unity port — all screens built in code (onboarding, lobby, table with the tilted felt drawn by a shader,
+  stats, friends, settings, legal pages, daily-bonus dialog, out-of-chips and how-to-play sheets, table chat,
+  coach cards, confetti and chip flights) on a runtime UI toolkit; reviewed through offscreen PlayMode
+  screenshots (`Unity/Assets/Tests/PlayMode`).
 - feat: Unity port — the game controller (`Blackjack.Game`): paced NPC/dealer turns, voice and haptic cueing
   with the Flutter timings, daily bonus and play-streak reminders, rebuy, tutorial, referral rewards, the
   friends-group/sign-in flow behind an `ISocialService` seam, and a Flutter-compatible save blob. Runs on a

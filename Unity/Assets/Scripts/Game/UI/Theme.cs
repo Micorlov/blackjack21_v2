@@ -81,6 +81,13 @@ namespace Blackjack.Game.UI
             Hex(0xFF1E7D5D), Gold, Hex(0xFFB23A2E), Hex(0xFF3E7FA8), Hex(0xFF8A6BB8), Win,
         };
 
+        /// <summary>The avatar colour for a saved ARGB value; 0 (never chosen) is the first swatch.</summary>
+        public static Color AvatarColorOf(int argb) => argb == 0 ? AvatarSwatches[0] : Hex(unchecked((uint)argb));
+
+        public static int ToArgb(Color c) =>
+            unchecked((int)(((uint)Mathf.RoundToInt(c.a * 255) << 24) | ((uint)Mathf.RoundToInt(c.r * 255) << 16)
+                            | ((uint)Mathf.RoundToInt(c.g * 255) << 8) | (uint)Mathf.RoundToInt(c.b * 255)));
+
         public static Color Medal(int rank) => rank switch
         {
             1 => Gold,
