@@ -132,6 +132,10 @@ namespace Blackjack.PlayTests
                     new NpcSeat(50, new[] { C("Q", "♣"), C("4", "♦"), C("8") }, "BUST", true), new NpcSeat(100, new[] { C("10"), C("10", "♦") }, "STAND", true),
                     new NpcSeat(25, new[] { C("9", "♥"), C("5") }, "HIT"), new NpcSeat(50, new[] { C("K", "♦"), C("8", "♣") }),
                 }, 1450, acting: 2))),
+            // Six dealer cards and the widest box label ("26 · bust"): the row must leave the box room on the felt.
+            new Scenario("seat_11_dealer_long_bust", () => Table(SeatRound(RoundPhase.Dealer,
+                new[] { new Hand(new[] { C("4", "♣"), C("3", "♣"), C("Q", "♥") }, 100, HandStatus.Stood) },
+                new[] { C("5"), C("A", "♦"), C("8"), C("A"), C("A"), C("10") }, SeatsMidRound(), 1000, true))),
         };
 
         // ---- every other screen, dialog and sheet -------------------------------------------------------

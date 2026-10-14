@@ -46,14 +46,16 @@ namespace Blackjack.Game.UI
         {
             var r = s.Round;
             var count = r.DealerHand.Count;
-            var step = FeltMetrics.DealerCardStep(count, m.ContentWidth - 2 * Theme.Xxxl);
-            var rowWidth = FeltMetrics.CardWidth + Mathf.Max(0, count - 1) * step;
-
             var label = DealerLabel(r);
             var bust = TableCalc.DealerBusted(r);
             _box.Update(count == 0 ? "" : $"{label}|{bust}|{Loc.Code}", host => { if (count > 0) BuildBox(host, label, bust); });
             LayoutRebuilder.ForceRebuildLayoutImmediate(_boxHost);
             var boxWidth = _boxHost.childCount > 0 ? LayoutUtility.GetPreferredWidth((RectTransform)_boxHost.GetChild(_boxHost.childCount - 1)) : 0f;
+
+            // The box is measured first so a long hand tightens its overlap instead of pushing the box off the felt.
+            var rowRoom = Mathf.Min(m.ContentWidth - 2 * Theme.Xxxl, m.ContentWidth - 2 * Theme.Xs - boxWidth - BoxGap);
+            var step = FeltMetrics.DealerCardStep(count, rowRoom);
+            var rowWidth = FeltMetrics.CardWidth + Mathf.Max(0, count - 1) * step;
             // Centred under the tray; a long hand with a wide box slides left so the box never covers a card.
             var cardsX = Mathf.Min(m.CentreX - rowWidth / 2f, m.Inset + m.ContentWidth - Theme.Xs - boxWidth - BoxGap - rowWidth);
             cardsX = Mathf.Max(cardsX, m.Inset + Theme.Xs);

@@ -18,6 +18,7 @@ namespace Blackjack.PlayTests
     /// Holds every scenario, on four phone sizes, to the design rules (CLAUDE.md, "Design rules"):
     /// <list type="bullet">
     /// <item>text: every character at least <see cref="Blackjack.Game.UI.Type.Floor"/> units on screen, felt scale included;</item>
+    /// <item>on screen: no glyph cut off by the screen edge (text a scroll view clips away does not count);</item>
     /// <item>targets: every control at least <see cref="Theme.MinTarget"/> square on screen;</item>
     /// <item>contrast: text 4.5:1 and marked control outlines 3:1 against the pixels actually behind them.</item>
     /// </list>
@@ -80,6 +81,7 @@ namespace Blackjack.PlayTests
             foreach (var t in texts) t.ForceMeshUpdate();
 
             foreach (var t in texts) CheckTextSize(t, root, scenario, phone);
+            foreach (var t in texts) CheckOnScreen(t, root, run.Stage, scenario, phone);
             foreach (var control in Controls(root).Where(c => layers.InFront(c))) CheckTarget(control, root, scenario, phone);
             CheckContrast(run, texts, layers, root, scenario, phone);
         }
@@ -182,6 +184,38 @@ namespace Blackjack.PlayTests
             Report("text", scenario, Dump.PathOf(t.transform, root), smallest, true, phone,
                 $"{smallest:0.#}u \"{Excerpt(t)}\"");
         }
+
+        /// <summary>
+        /// Every glyph lies wholly on screen. A row half-scrolled out of a scroll view is meant to be cut, so only
+        /// the part of a glyph inside its scroll viewports counts; what the screen edge cuts off is a layout bug.
+        /// </summary>
+        private void CheckOnScreen(TMP_Text t, Transform root, Shots.Stage stage, string scenario, Vector2Int phone)
+        {
+            var cam = stage.Camera;
+            var clips = Clips(t.transform, cam);
+            var viewports = ScrollViewports(t.transform, cam);
+            var info = t.textInfo;
+            var worst = 0f;
+            for (var i = 0; i < info.characterCount; i++)
+            {
+                var ch = info.characterInfo[i];
+                if (!ch.isVisible) continue;
+                var a = ScreenPoint(cam, t.transform, ch.bottomLeft);
+                var b = ScreenPoint(cam, t.transform, ch.topRight);
+                var box = Rect.MinMaxRect(Mathf.Min(a.x, b.x), Mathf.Min(a.y, b.y), Mathf.Max(a.x, b.x), Mathf.Max(a.y, b.y));
+                if (!clips.All(c => c.Overlaps(box))) continue;
+                foreach (var v in viewports)
+                    box = Rect.MinMaxRect(Mathf.Max(box.xMin, v.xMin), Mathf.Max(box.yMin, v.yMin),
+                        Mathf.Min(box.xMax, v.xMax), Mathf.Min(box.yMax, v.yMax));
+                var outside = Mathf.Max(Mathf.Max(-box.xMin, box.xMax - stage.Width), Mathf.Max(-box.yMin, box.yMax - stage.Height));
+                worst = Mathf.Max(worst, outside);
+            }
+            if (worst <= OffScreenTolerance) return;
+            Report("offscreen", scenario, Dump.PathOf(t.transform, root), worst, false, phone, $"{worst:0}px off \"{Excerpt(t)}\"");
+        }
+
+        // A glyph's box includes side bearings; a pixel or two past the edge is not a clipped letter.
+        private const float OffScreenTolerance = 2f;
 
         private void CheckTarget(RectTransform control, Transform root, string scenario, Vector2Int phone)
         {
@@ -397,6 +431,18 @@ namespace Blackjack.PlayTests
                 clips.Add(Rect.MinMaxRect(Mathf.Min(a.x, b.x), Mathf.Min(a.y, b.y), Mathf.Max(a.x, b.x), Mathf.Max(a.y, b.y)));
             }
             return clips;
+        }
+
+        /// <summary>The screen rects of the scroll viewports above <paramref name="t"/>, innermost first.</summary>
+        private static List<Rect> ScrollViewports(Transform t, Camera cam)
+        {
+            var viewports = new List<Rect>();
+            for (var p = t.parent; p != null; p = p.parent)
+            {
+                var scroll = p.GetComponent<ScrollRect>();
+                if (scroll != null && scroll.viewport != null) viewports.Add(ScreenRect(scroll.viewport, cam));
+            }
+            return viewports;
         }
 
         private static bool Visible(Vector2 point, Shots.Stage stage, List<Rect> clips) =>

@@ -412,11 +412,11 @@ BJ_SHOTS=/tmp/shots /Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Content
 ```
 
 - `ScenarioShots` writes one PNG per entry of `Tests/PlayMode/Scenarios.cs` — every screen, the ten
-  Seat table states, every dialog and sheet, and the Hebrew/Arabic views.
+  Seat table states plus a long dealer bust, every dialog and sheet, and the Hebrew/Arabic views.
 - `RulesAudit` draws every scenario on four phone sizes (1080×2340, 720×1600, 1080×1920, 1600×2560) and
   checks the design rules in `CLAUDE.md`: no character under 12 units on screen (the felt's scale
   included), no tap target under 48×48, text at 4.5:1 and control outlines at 3:1 against the pixels
-  really behind them. Known violations are listed in `Tests/PlayMode/rules-baseline.txt`; a new one fails
+  really behind them, and no text cut off by the screen edge. Known violations are listed in `Tests/PlayMode/rules-baseline.txt`; a new one fails
   the test, and so does a fixed one whose line is still there. `BJ_SHOTS/rules-report.txt` lists every
   violation with its worst value. `BJ_RULES_BASELINE=write` rewrites the baseline from a full run;
   `BJ_SCENARIO=seat_` narrows either test to matching scenario names. The baseline is empty: any violation
@@ -427,6 +427,12 @@ A Core change is not done until the EditMode suite passes. Check on a device or 
 lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
+
+### 2026-10-14 (dealer box fix)
+- fix: with a long dealer hand the "Dealer 26 · bust" box no longer runs off the right edge of the felt —
+  `DealerView` measures the box first and tightens the card overlap to leave it room.
+- test: `RulesAudit` gains an on-screen rule (no glyph cut off by the screen edge), and `Scenarios.cs` a
+  six-card dealer bust (`seat_11_dealer_long_bust`) that reproduces the clipped box.
 
 ### 2026-10-14 (sound fix)
 - fix: the game was silent — the empty Main scene and the camera `GameBootstrap` builds in code have no

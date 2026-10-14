@@ -82,6 +82,7 @@ breaks a rule is fixed, never added to the baseline.
 | Type ramp (`Type.cs`) | display 40 · h1 32 · h2 24 · title/button 17 · body 15 · bodySm 13 · caption 12 = **floor**, measured on screen (felt `Scale` and `Shrink` included) |
 | Tap targets | ≥ 48×48 (`Theme.MinTarget`), disabled controls included |
 | Contrast | text ≥ 4.5:1 · control outlines (`ControlBorder`) ≥ 3:1; disabled controls exempt |
+| On screen | no glyph cut off by the screen edge (`offscreen`); text a scroll view clips away is exempt |
 | Fonts | Sora (UI, card ranks) · Instrument Serif italic (titles) · Space Mono (numbers) · Cinzel only for felt print |
 | Tokens | spacing 2/4/8/12/16/20/24/32/48 · radius 8/12/16/20/24/pill — no other values |
 | Labels | sentence case as in `en.json`; button captions stay in caps as `en.json` has them |
