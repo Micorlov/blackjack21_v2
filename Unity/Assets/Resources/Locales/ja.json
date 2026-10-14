@@ -155,5 +155,9 @@
 "turnTimerLabel": "ターンタイマー",
 "turnTimerSublabel": "本物のテーブルのように、20秒でスタンドします",
 "toastTurnTimeUp": "時間切れ — スタンドしました",
-"gameSecondsLeft": "{n}秒"
+"gameSecondsLeft": "{n}秒",
+"feltPaysThreeToTwo": "ブラックジャックは3対2",
+"feltDealerStands": "ディーラーは17でスタンド",
+"feltMin": "最小 {amount}",
+"feltMax": "最大 {amount}"
 }

@@ -28,8 +28,6 @@ namespace Blackjack.Game.UI
         public static readonly Color Felt = Hex(0xFF175943);
         public static readonly Color FeltDark = Hex(0xFF0E3B2E);
         public static readonly Color FeltDarkest = Hex(0xFF0A2018);
-        public static readonly Color FeltTableMid = Hex(0xFF123A2C);
-        public static readonly Color FeltTableDark = Hex(0xFF0A1F18);
 
         // Text
         public static readonly Color TextPrimary = Hex(0xFFF5F1E8);
@@ -56,8 +54,8 @@ namespace Blackjack.Game.UI
         // Cards
         public static readonly Color CardFaceTop = Hex(0xFFFFFDF8);
         public static readonly Color CardFaceBottom = Hex(0xFFF0E9D9);
-        public static readonly Color CardRed = Hex(0xFFB23A2E);
-        public static readonly Color CardBlack = Hex(0xFF16130E);
+        public static readonly Color CardRed = Hex(0xFFB5202B);
+        public static readonly Color CardBlack = Hex(0xFF141210);
 
         public static readonly Color Scrim = Hex(0xFF040806);
 
@@ -82,15 +80,32 @@ namespace Blackjack.Game.UI
         public static readonly Color LoseOnFelt = Hex(0xFFFFB4A6);
         public static readonly Color LoseOnPanel = Hex(0xFFFF9C8C);
 
+        // Casino chip colours (The Seat): the house's racked colours, used by denomination.
+        public static readonly Color ChipGreen = Hex(0xFF1A6B40);
+        public static readonly Color ChipOrange = Hex(0xFFD9731E);
+        public static readonly Color ChipBlack = Hex(0xFF151515);
+        public static readonly Color ChipPurple = Hex(0xFF5B2F86);
+        public static readonly Color ChipYellow = Hex(0xFFD9A520);
+        public static readonly Color ChipRed = Hex(0xFFC4302B);
+
         public static Color ChipColor(int denomination) => denomination switch
         {
-            25 => Win,
-            50 => Lose,
-            100 => TextPrimary,
-            500 => Gold,
-            1000 => Hex(0xFF9B7FD4),
-            _ => Gold,
+            25 => ChipGreen,
+            50 => ChipOrange,
+            100 => ChipBlack,
+            500 => ChipPurple,
+            1000 => ChipYellow,
+            _ => ChipRed,
         };
+
+        /// <summary>Ivory or ink, whichever reads better on <paramref name="background"/> (a chip, a pill).</summary>
+        public static Color InkOn(Color background)
+        {
+            var bg = new Blackjack.Core.Rgba(background.r, background.g, background.b);
+            var light = Blackjack.Core.Contrast.Ratio(new Blackjack.Core.Rgba(Ivory.r, Ivory.g, Ivory.b), bg);
+            var dark = Blackjack.Core.Contrast.Ratio(new Blackjack.Core.Rgba(PillInk.r, PillInk.g, PillInk.b), bg);
+            return light >= dark ? Ivory : PillInk;
+        }
 
         public static readonly Color[] SeatColors =
         {

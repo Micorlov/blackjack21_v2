@@ -22,14 +22,33 @@ namespace Blackjack.Game.UI
                 new Vector2(w + pad, h + pad));
         }
 
-        /// <summary>A card face. The returned node is the layout-sized root; its first child carries the animation.</summary>
+        // The design's card shadow: a drop of 4% of the width, blurred over 10% on each side. Wider, it greys the
+        // corner index of the card beneath.
+        private const float CardShadowBlur = 58f * 0.2f;
+        private const float CardShadowDrop = 58f * 0.04f;
+
+        /// <summary>Below this width a card is drawn compact (the other seats' cards): one corner index, the pip low.</summary>
+        private const float CompactBelow = 60f;
+
+        /// <summary>The mirrored bottom-right index only fits clear of the centre pip on a card this wide (the hero's).</summary>
+        private const float MirroredIndexFrom = 80f;
+
+        private static readonly Color CourtBorder = new Color(150 / 255f, 110 / 255f, 40 / 255f, 0.75f);
+        private static readonly Color CourtFill = Theme.Hex(0xFFF7E9C4);
+
+        /// <summary>
+        /// A card face in the Seat's classic style: the rank and suit in the corner (mirrored in the opposite one on
+        /// full-size cards), a large centre pip, and a framed panel for the court cards. Ranks are Sora and never
+        /// smaller than <see cref="Type.Floor"/>. The returned node is the layout-sized root; its first child
+        /// carries the animation.
+        /// </summary>
         public static RectTransform Face(Transform parent, PlayingCard card, float width, float height, bool shadow = true)
         {
             var root = Ui.Node("Card", parent);
             root.Size(width, height);
             var anim = Ui.Node("Anim", root).Fill();
             var scale = width / 58f;
-            if (shadow) AddShadow(anim, width, height, scale, 0.42f, 28f, 7f);
+            if (shadow) AddShadow(anim, width, height, scale, 0.42f, CardShadowBlur, CardShadowDrop);
 
             var face = Ui.Box(anim, Color.white, 0, "Face");
             face.sprite = Gfx.CardFace();
@@ -37,22 +56,81 @@ namespace Blackjack.Game.UI
             face.rectTransform.Fill();
 
             var color = card.IsRed ? Theme.CardRed : Theme.CardBlack;
-            var rank = Ui.Text(anim, card.Rank, 25 * scale, color, FontKind.SoraBold, TextAlignmentOptions.TopLeft, false, 0, 0, "Rank");
-            rank.rectTransform.IgnoreLayout();
-            rank.rectTransform.Pin(new Vector2(0, 1), new Vector2(0, 1), new Vector2(6.5f * scale, 0f), new Vector2(40 * scale, 34 * scale));
+            var compact = width < CompactBelow;
+            Index(anim, card, color, width, compact, mirrored: false);
+            if (width >= MirroredIndexFrom) Index(anim, card, color, width, compact, mirrored: true);
 
-            var pip = Ui.Box(anim, color, 0, "Pip");
+            var court = card.Rank == "J" || card.Rank == "Q" || card.Rank == "K";
+            if (court) Court(anim, card, color, width, height, compact);
+            else Pip(anim, card.Suit, color, width, height, compact);
+            return root;
+        }
+
+        private static void Index(RectTransform anim, PlayingCard card, Color color, float w, bool compact, bool mirrored)
+        {
+            var corner = Ui.Node(mirrored ? "IndexBR" : "Index", anim);
+            corner.IgnoreLayout();
+            var rankSize = Mathf.Max(Type.Floor, w * (compact ? 0.34f : 0.3f));
+            var suitSize = w * (compact ? 0.26f : 0.19f);
+            var boxW = Mathf.Max(w * 0.3f, rankSize * (card.Rank == "10" ? 1.25f : 0.8f));
+            var boxH = rankSize + suitSize + w * 0.02f;
+            // Pinned by its centre so the mirrored copy turns in place rather than swinging out past the corner.
+            var anchor = mirrored ? new Vector2(1, 0) : new Vector2(0, 1);
+            var inset = new Vector2(w * 0.035f + boxW / 2f, w * 0.06f + boxH / 2f);
+            corner.Pin(anchor, new Vector2(0.5f, 0.5f), mirrored ? new Vector2(-inset.x, inset.y) : new Vector2(inset.x, -inset.y), new Vector2(boxW, boxH));
+            if (mirrored) corner.localRotation = Quaternion.Euler(0, 0, 180);
+
+            var rank = Ui.Text(corner, card.Rank, rankSize, color, FontKind.SoraBold, TextAlignmentOptions.Top, false, -6f, 0, "Rank");
+            rank.rectTransform.IgnoreLayout();
+            rank.rectTransform.Pin(new Vector2(0.5f, 1), new Vector2(0.5f, 1), Vector2.zero, new Vector2(boxW, rankSize * 1.05f));
+            var pip = Ui.Box(corner, color, 0, "Pip");
             pip.sprite = Sprites.Suit(card.Suit);
             pip.type = Image.Type.Simple;
+            pip.preserveAspect = true;
             pip.rectTransform.IgnoreLayout();
-            pip.rectTransform.Pin(new Vector2(0, 1), new Vector2(0, 1), new Vector2(9 * scale, -34 * scale), new Vector2(15 * scale, 15 * scale));
+            pip.rectTransform.Pin(new Vector2(0.5f, 1), new Vector2(0.5f, 1), new Vector2(0, -rankSize - w * 0.02f), new Vector2(suitSize, suitSize));
+        }
 
+        private static void Pip(RectTransform anim, string suit, Color color, float w, float h, bool compact)
+        {
+            var size = w * (compact ? 0.5f : 0.52f);
             var big = Ui.Box(anim, color, 0, "BigPip");
-            big.sprite = Sprites.Suit(card.Suit);
+            big.sprite = Sprites.Suit(suit);
             big.type = Image.Type.Simple;
+            big.preserveAspect = true;
             big.rectTransform.IgnoreLayout();
-            big.rectTransform.Pin(new Vector2(1, 0), new Vector2(1, 0), new Vector2(-6 * scale, 6 * scale), new Vector2(30 * scale, 30 * scale));
-            return root;
+            // A compact card shows its pip low and to the right, clear of the corner index the next card leaves showing.
+            var offset = compact ? new Vector2(w * 0.11f, -h * 0.14f) : Vector2.zero;
+            big.rectTransform.PinCentre(offset, new Vector2(size, size));
+        }
+
+        private static void Court(RectTransform anim, PlayingCard card, Color color, float w, float h, bool compact)
+        {
+            // The design's court panel: inset 17%/21% on a full card, tucked bottom-right on a compact one.
+            var panel = Ui.Node("Court", anim);
+            panel.IgnoreLayout();
+            if (compact) panel.Fill(w * 0.34f, h * 0.40f, w * 0.10f, h * 0.08f);
+            else panel.Fill(w * 0.21f, h * 0.17f, w * 0.21f, h * 0.17f);
+            var fill = Ui.Box(panel, CourtFill, Theme.Xxs, "Fill");
+            fill.rectTransform.Fill();
+            var line = Ui.Box(panel, CourtBorder, Theme.Xxs, "Border");
+            Ui.StyleRing(line, CourtBorder, Theme.Xxs, 1f);
+            line.rectTransform.Fill();
+            var letter = Ui.Text(panel, card.Rank, Mathf.Max(Type.Floor, w * (compact ? 0.3f : 0.36f)), color, FontKind.SoraBold,
+                TextAlignmentOptions.Center, false, 0, 0, "Letter");
+            letter.rectTransform.IgnoreLayout();
+            if (compact)
+            {
+                letter.rectTransform.Fill();
+                return;
+            }
+            letter.rectTransform.Fill(0, 0, 0, h * 0.12f);
+            var suit = Ui.Box(panel, color, 0, "Suit");
+            suit.sprite = Sprites.Suit(card.Suit);
+            suit.type = Image.Type.Simple;
+            suit.preserveAspect = true;
+            suit.rectTransform.IgnoreLayout();
+            suit.rectTransform.Pin(new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, h * 0.05f), new Vector2(w * 0.22f, w * 0.22f));
         }
 
         public static RectTransform Back(Transform parent, float width, float height, bool shadow = true)
@@ -61,7 +139,7 @@ namespace Blackjack.Game.UI
             root.Size(width, height);
             var anim = Ui.Node("Anim", root).Fill();
             var scale = width / 58f;
-            if (shadow) AddShadow(anim, width, height, scale, 0.5f, 34f, 12f);
+            if (shadow) AddShadow(anim, width, height, scale, 0.5f, CardShadowBlur, CardShadowDrop);
             var back = Ui.Box(anim, Color.white, 0, "Back");
             back.sprite = Gfx.CardBack();
             back.type = Image.Type.Simple;

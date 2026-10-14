@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Blackjack.Game.UI
 {
     /// <summary>Baked art: card faces and backs, casino chips, soft shadows, and the felt table texture.</summary>
-    public static class Gfx
+    public static partial class Gfx
     {
         private static readonly Dictionary<string, Sprite> SpriteCache = new Dictionary<string, Sprite>();
         private static readonly Dictionary<string, Texture2D> TextureCache = new Dictionary<string, Texture2D>();
@@ -85,121 +85,6 @@ namespace Blackjack.Game.UI
             tex.Apply();
             Gradients[cacheKey] = tex;
             return tex;
-        }
-
-        // ---- cards ------------------------------------------------------------------------------------
-
-        private const int CardW = 132, CardH = 192;
-
-        /// <summary>The cream card face: a soft diagonal gradient inside a hairline rim, rounded like a card.</summary>
-        public static Sprite CardFace()
-        {
-            if (SpriteCache.TryGetValue("cardFace", out var cached)) return cached;
-            var tex = NewTexture(CardW, CardH);
-            var pixels = new Color32[CardW * CardH];
-            const float radius = 18f;
-            for (var y = 0; y < CardH; y++)
-            for (var x = 0; x < CardW; x++)
-            {
-                float px = x + 0.5f, py = y + 0.5f;
-                var cover = RoundRectCoverage(px, py, CardW, CardH, radius);
-                var t = Mathf.Clamp01((px / CardW + (1f - py / CardH)) / 2f);
-                var c = Color.Lerp(Theme.CardFaceTop, Theme.CardFaceBottom, t);
-                var inner = RoundRectCoverage(px - 1.5f, py - 1.5f, CardW - 3f, CardH - 3f, radius - 1.5f);
-                c = Color.Lerp(new Color(0, 0, 0, 0.14f), c, inner);
-                c.a = cover;
-                pixels[y * CardW + x] = c;
-            }
-            tex.SetPixels32(pixels);
-            tex.Apply();
-            var sprite = Sprite.Create(tex, new Rect(0, 0, CardW, CardH), new Vector2(0.5f, 0.5f), 100f);
-            SpriteCache["cardFace"] = sprite;
-            return sprite;
-        }
-
-        /// <summary>The gold-striped card back with its gold border.</summary>
-        public static Sprite CardBack()
-        {
-            if (SpriteCache.TryGetValue("cardBack", out var cached)) return cached;
-            var tex = NewTexture(CardW, CardH);
-            var pixels = new Color32[CardW * CardH];
-            const float radius = 18f;
-            const float period = 24f;   // 6-unit stripes at 2 texels per unit, alternating
-            var dark = Theme.Hex(0xFF14100A);
-            var gold = Theme.GoldDark;
-            for (var y = 0; y < CardH; y++)
-            for (var x = 0; x < CardW; x++)
-            {
-                float px = x + 0.5f, py = y + 0.5f;
-                var cover = RoundRectCoverage(px, py, CardW, CardH, radius);
-                var stripe = ((px + py) % period) < period / 2f;
-                var c = stripe ? gold : dark;
-                var inner = RoundRectCoverage(px - 4f, py - 4f, CardW - 8f, CardH - 8f, radius - 4f);
-                c = Color.Lerp(Theme.Gold, c, inner);
-                c.a = cover;
-                pixels[y * CardW + x] = c;
-            }
-            tex.SetPixels32(pixels);
-            tex.Apply();
-            var sprite = Sprite.Create(tex, new Rect(0, 0, CardW, CardH), new Vector2(0.5f, 0.5f), 100f);
-            SpriteCache["cardBack"] = sprite;
-            return sprite;
-        }
-
-        // ---- chips ------------------------------------------------------------------------------------
-
-        /// <summary>A casino chip: dark moulded body, a coloured denomination band with six edge spots, an inner ring.</summary>
-        public static Sprite Chip(Color rim)
-        {
-            var key = "chip" + ColorUtility.ToHtmlStringRGB(rim);
-            if (SpriteCache.TryGetValue(key, out var cached)) return cached;
-            const int size = 192;
-            var tex = NewTexture(size, size);
-            var pixels = new Color32[size * size];
-            var r = size / 2f;
-            var unit = size / 60f;
-            var lightA = Theme.Hex(0xFF1E2A26);
-            var lightB = Theme.Hex(0xFF0C1110);
-            for (var y = 0; y < size; y++)
-            for (var x = 0; x < size; x++)
-            {
-                float px = x + 0.5f - r, py = y + 0.5f - r;
-                var dist = Mathf.Sqrt(px * px + py * py);
-                var cover = Mathf.Clamp01(r - dist + 0.5f);
-                if (cover <= 0) { pixels[y * size + x] = new Color32(0, 0, 0, 0); continue; }
-
-                // Body: radial gradient lit from the upper left.
-                var lx = px - (-0.24f * r); var ly = py - (0.4f * r);
-                var body = Color.Lerp(lightA, lightB, Mathf.Clamp01(Mathf.Sqrt(lx * lx + ly * ly) / (r * 1.2f)));
-                Color c = body;
-
-                // Denomination band around the rim.
-                var band = Mathf.Clamp01(1.5f * unit - Mathf.Abs(dist - (r - 1.5f * unit)) + 0.5f);
-                // Six short thick spots straddling the band (a ~13 degree arc, 5 units thick, as in the Flutter painter).
-                var angle = Mathf.Atan2(py, px);
-                if (angle < 0) angle += Mathf.PI * 2f;
-                var step = Mathf.PI * 2f / 6f;
-                var offset = angle % step;
-                var arcLength = Mathf.Min(offset, step - offset) * dist;
-                var spot = arcLength < 3.3f * unit && dist > r - 5f * unit ? 1f : 0f;
-                var rimAmount = Mathf.Max(band, spot * Mathf.Clamp01(r - dist + 0.5f));
-                c = Color.Lerp(c, rim, rimAmount);
-
-                // Inner ring.
-                var inner = Mathf.Clamp01(0.5f * unit - Mathf.Abs(dist - r * 0.62f) + 0.5f) * 0.45f;
-                c = Color.Lerp(c, rim, inner);
-                // One top-left highlight.
-                var hi = Mathf.Clamp01(0.75f * unit - Mathf.Abs(dist - (r - 2f * unit)) + 0.5f);
-                var highlightAngle = Mathf.Atan2(py, px) * Mathf.Rad2Deg;
-                if (highlightAngle < -100 && highlightAngle > -175) c = Color.Lerp(c, Color.white, hi * 0.18f);
-                c.a = cover;
-                pixels[y * size + x] = c;
-            }
-            tex.SetPixels32(pixels);
-            tex.Apply();
-            var sprite = Sprite.Create(tex, new Rect(0, 0, size, size), new Vector2(0.5f, 0.5f), 100f);
-            SpriteCache[key] = sprite;
-            return sprite;
         }
 
         // ---- shadows ----------------------------------------------------------------------------------

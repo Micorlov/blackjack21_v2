@@ -155,5 +155,9 @@
 "turnTimerLabel": "مؤقت الدور",
 "turnTimerSublabel": "الوقوف تلقائيًا بعد 20 ثانية، كما في طاولة حقيقية",
 "toastTurnTimeUp": "انتهى الوقت — وقفت",
-"gameSecondsLeft": "{n} ث"
+"gameSecondsLeft": "{n} ث",
+"feltPaysThreeToTwo": "البلاك جاك يدفع 3 إلى 2",
+"feltDealerStands": "الموزّع يقف عند كل 17",
+"feltMin": "أدنى {amount}",
+"feltMax": "أقصى {amount}"
 }

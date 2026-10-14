@@ -155,5 +155,9 @@
 "turnTimerLabel": "Turn timer",
 "turnTimerSublabel": "Stand automatically after 20 seconds, like a real table",
 "toastTurnTimeUp": "Time's up — you stand",
-"gameSecondsLeft": "{n}s"
+"gameSecondsLeft": "{n}s",
+"feltPaysThreeToTwo": "Blackjack pays 3 to 2",
+"feltDealerStands": "Dealer stands on all 17s",
+"feltMin": "Min {amount}",
+"feltMax": "Max {amount}"
 }

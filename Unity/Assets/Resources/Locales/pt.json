@@ -155,5 +155,9 @@
 "turnTimerLabel": "Cronômetro da vez",
 "turnTimerSublabel": "Parar automaticamente após 20 segundos, como numa mesa real",
 "toastTurnTimeUp": "Acabou o tempo — você parou",
-"gameSecondsLeft": "{n} s"
+"gameSecondsLeft": "{n} s",
+"feltPaysThreeToTwo": "Blackjack paga 3 para 2",
+"feltDealerStands": "O dealer para em todos os 17",
+"feltMin": "Mín {amount}",
+"feltMax": "Máx {amount}"
 }

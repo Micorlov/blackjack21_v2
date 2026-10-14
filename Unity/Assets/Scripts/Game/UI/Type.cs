@@ -41,6 +41,17 @@ namespace Blackjack.Game.UI
         public static readonly TextStyle BodySm = new TextStyle(13, FontKind.Sora);
         public static readonly TextStyle Caption = new TextStyle(Floor, FontKind.SoraSemiBold);
 
+        /// <summary>
+        /// The print on the felt ("Blackjack pays 3 to 2"): Cinzel, tracked out, in Latin-script languages; Sora bold
+        /// elsewhere, since Cinzel has no Cyrillic, Hebrew, Arabic or CJK and a half-Cinzel line reads badly.
+        /// </summary>
+        public static TextStyle FeltPrint => Loc.IsLatin
+            ? new TextStyle(13, FontKind.Cinzel, 12f)
+            : new TextStyle(13, FontKind.SoraBold);
+
+        /// <summary>The felt's second line ("Dealer stands on all 17s") in the italic serif.</summary>
+        public static readonly TextStyle FeltNote = new TextStyle(13, FontKind.SerifItalic);
+
         /// <summary>Figures (chips, totals, timers) in Space Mono, never below the floor.</summary>
         public static TextStyle Numeral(float size, bool bold = true) =>
             new TextStyle(Mathf.Max(Floor, size), bold ? FontKind.MonoBold : FontKind.Mono);

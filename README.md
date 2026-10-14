@@ -239,6 +239,9 @@ its `assets/` and `android/` output paths; point them at `Unity/Assets/Resources
   `FeltMetrics.SeatSlot(i)` places each seat on the curve of the felt in that order (first base on the
   right in every language). The turn clock is `GameController.TurnTimer.cs` (`RoundState.TurnDeadline`)
   and `TurnTimerView` draws it.
+- The Seat's art: `Resources/Shaders/Felt.shader` (room, wood edge, felt, seat arc, leather rail — the
+  rail's curve comes in as `_Rail`), `Game/UI/Gfx.Seat.cs` (cards, chips, chip stacks, tray, shoe,
+  discard holder, the room backdrop with its bokeh, each baked once and cached) and `Game/UI/ArcText.cs`.
 
 Firebase (Auth, Firestore, Analytics, Crashlytics — SDK 13.17.0) is **not committed**: it is ~760 MB of
 native libraries. `Unity/tools/install_firebase.sh` downloads Google's official zip, verifies its SHA-256,
@@ -357,7 +360,7 @@ on a Play-distributed one. One-time manual steps to fix that:
 ## Assets
 
 - `Unity/Assets/Resources/Locales/*.json` — the 10 UI languages (en, he, ar, es, fr, de, pt, ru, ja, zh),
-  157 keys each; `ar` and `he` render right-to-left.
+  161 keys each; `ar` and `he` render right-to-left.
 - `Unity/Assets/Resources/Sfx/` — sound effects and the spoken call-outs (`Sfx/num/` holds the spoken
   amounts, so adding a clip is just adding the file).
 - `Unity/Assets/Resources/Fonts/` — Sora (Regular/SemiBold/Bold static instances), Instrument Serif
@@ -402,6 +405,21 @@ A Core change is not done until the EditMode suite passes. Check on a device or 
 lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
+
+### 2026-10-14 (The Seat, phase 2: felt art)
+- feat: the table is drawn as The Seat — a dark room with out-of-focus lamps behind it, a wooden edge on
+  the dealer's side, the green felt with a dashed arc of betting spots, and a padded leather rail with a
+  stitched seam curving across the bottom (`Felt.shader`, all closed-form, no loops or noise).
+- feat: classic cards (rank and suit in the corner, a large centre pip, a framed court panel, the
+  mirrored index on the 88-wide hero cards) on 256x372 art, with red cross-hatched backs; casino chips
+  with white edge spots in the house colours (25 green, 50 orange, 100 black, 500 purple, 1000 yellow),
+  labelled by figure in whichever of ivory or ink reads better; the dealer's racked chip tray, the shoe
+  and the discard holder.
+- feat: `ArcText` bends a label along an arc after shaping, for the felt print ("Blackjack pays 3 to 2",
+  "Dealer stands on all 17s", in Cinzel for Latin-script languages and Sora elsewhere) and the table
+  placard ("Min $25 / Max $500"); 4 new strings in all 10 languages. Both are placed by the phase 3 layout.
+- fix: card shadows follow the design's size (they were wide enough to grey the index of the card
+  beneath), and a chip's figure no longer sits on its white ring. Design-rules baseline: 125 → 111.
 
 ### 2026-10-14 (turn timer fixes)
 - fix: switching to another app on your turn no longer comes back to a hand stood by "Time's up" — the

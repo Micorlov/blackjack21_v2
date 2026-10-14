@@ -155,5 +155,9 @@
 "turnTimerLabel": "Таймер хода",
 "turnTimerSublabel": "Автоматически оставаться через 20 секунд, как за настоящим столом",
 "toastTurnTimeUp": "Время вышло — вы остаётесь",
-"gameSecondsLeft": "{n} с"
+"gameSecondsLeft": "{n} с",
+"feltPaysThreeToTwo": "Блэкджек платит 3 к 2",
+"feltDealerStands": "Дилер останавливается на 17",
+"feltMin": "Мин {amount}",
+"feltMax": "Макс {amount}"
 }

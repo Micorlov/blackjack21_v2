@@ -155,5 +155,9 @@
 "turnTimerLabel": "回合计时",
 "turnTimerSublabel": "像真实牌桌一样，20 秒后自动停牌",
 "toastTurnTimeUp": "时间到 — 已停牌",
-"gameSecondsLeft": "{n}秒"
+"gameSecondsLeft": "{n}秒",
+"feltPaysThreeToTwo": "黑杰克赔 3 比 2",
+"feltDealerStands": "庄家 17 点必停",
+"feltMin": "最低 {amount}",
+"feltMax": "最高 {amount}"
 }

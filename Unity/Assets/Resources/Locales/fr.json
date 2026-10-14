@@ -155,5 +155,9 @@
 "turnTimerLabel": "Minuteur de tour",
 "turnTimerSublabel": "Rester automatiquement après 20 secondes, comme à une vraie table",
 "toastTurnTimeUp": "Temps écoulé — vous restez",
-"gameSecondsLeft": "{n} s"
+"gameSecondsLeft": "{n} s",
+"feltPaysThreeToTwo": "Le blackjack paie 3 pour 2",
+"feltDealerStands": "Le croupier reste sur tous les 17",
+"feltMin": "Min {amount}",
+"feltMax": "Max {amount}"
 }

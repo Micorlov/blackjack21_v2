@@ -73,8 +73,6 @@ namespace Blackjack.Core
             var centre = Inset + ContentWidth / 2f;
             return new SeatPlace(centre + x * ContentWidth / ReferenceWidth, SeatRowTop + y, tilt, Math.Sign(x));
         }
-        public float OvalBleed => 58f * ContentWidth / ReferenceWidth;
-        public float OvalHeight => 540f * ContentWidth / ReferenceWidth;
 
         /// <summary>The betting phase is "compact": no dealer cards, no hero fan, so those bands shrink.</summary>
         public static bool IsCompactPhase(RoundPhase phase) => phase == RoundPhase.Betting;

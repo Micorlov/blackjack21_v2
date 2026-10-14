@@ -155,5 +155,9 @@
 "turnTimerLabel": "Zug-Timer",
 "turnTimerSublabel": "Nach 20 Sekunden automatisch stehen, wie an einem echten Tisch",
 "toastTurnTimeUp": "Zeit abgelaufen — du stehst",
-"gameSecondsLeft": "{n} s"
+"gameSecondsLeft": "{n} s",
+"feltPaysThreeToTwo": "Blackjack zahlt 3 zu 2",
+"feltDealerStands": "Der Dealer steht bei jeder 17",
+"feltMin": "Min {amount}",
+"feltMax": "Max {amount}"
 }

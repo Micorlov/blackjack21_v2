@@ -29,8 +29,8 @@ namespace Blackjack.Game.UI
         public override void Build(RectTransform parent)
         {
             Root = Ui.Node("TableScreen", parent).Fill();
-            var bg = W.Raw(Root, Gfx.RadialCircular("tableBg", 96, 208, new Vector2(0, 0.92f), 1.3f,
-                new[] { Theme.FeltTableMid, Theme.FeltTableDark, Theme.Hex(0xFF05100C) }, new[] { 0f, 0.45f, 1f }), "Background");
+            // The room around the table: warm light from above, out-of-focus lamps, falling to near black.
+            var bg = W.Raw(Root, Gfx.Room(), "Background");
             bg.rectTransform.Fill();
 
             _content = Ui.VStack(Root, 0, null, TextAnchor.UpperCenter, true, "Content").Fill();

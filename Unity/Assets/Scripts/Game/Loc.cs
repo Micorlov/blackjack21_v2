@@ -24,6 +24,9 @@ namespace Blackjack.Game
 
         public static bool IsRtl => _code == "he" || _code == "ar";
 
+        /// <summary>True for the languages written in the Latin alphabet, the only ones Cinzel (the felt print) covers.</summary>
+        public static bool IsLatin => _code == "en" || _code == "es" || _code == "fr" || _code == "de" || _code == "pt";
+
         /// <summary>Applies an explicit choice, or the device language when <paramref name="overrideCode"/> is null.</summary>
         public static void Use(string overrideCode)
         {

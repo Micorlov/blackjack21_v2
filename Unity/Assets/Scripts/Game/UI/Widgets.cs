@@ -153,10 +153,10 @@ namespace Blackjack.Game.UI
         public static RectTransform ChipDisc(Transform parent, Color color, float size, string label = null)
         {
             var rt = Ui.Node("ChipDisc", parent);
-            var shadow = Ui.Box(rt, Color.black.WithAlpha(0.5f), 0, "Shadow");
+            var shadow = Ui.Box(rt, Color.black.WithAlpha(0.45f), 0, "Shadow");
             shadow.sprite = Sprites.Circle;
             shadow.type = Image.Type.Simple;
-            shadow.rectTransform.PinCentre(new Vector2(0, -size * 0.08f), new Vector2(size * 1.08f, size * 1.08f));
+            shadow.rectTransform.PinCentre(new Vector2(0, -size * 0.06f), new Vector2(size, size));
             var img = Ui.Box(rt, Color.white, 0, "Chip");
             img.sprite = Gfx.Chip(color);
             img.type = Image.Type.Simple;
@@ -164,7 +164,7 @@ namespace Blackjack.Game.UI
             rt.Size(size, size);
             if (label != null)
             {
-                var t = Ui.Text(rt, label, size * 0.25f, Theme.TextPrimary, FontKind.MonoBold, TextAlignmentOptions.Center, false);
+                var t = Ui.Text(rt, label, Mathf.Max(Type.Floor, size * 0.25f), Theme.InkOn(color), FontKind.MonoBold, TextAlignmentOptions.Center, false);
                 t.rectTransform.Fill();
             }
             return rt;
@@ -172,7 +172,8 @@ namespace Blackjack.Game.UI
 
         public static RectTransform ChipButton(Transform parent, int amount, Color color, bool disabled, Action onClick, float size = 64)
         {
-            var disc = ChipDisc(parent, color, Mathf.Max(size, Theme.MinTarget), "$" + amount);
+            // The figure alone, as on a real chip: "$25" spills onto the white ring and loses its contrast.
+            var disc = ChipDisc(parent, color, Mathf.Max(size, Theme.MinTarget), amount.ToString());
             var p = disc.MakePressable(onClick);
             p.Interactable = !disabled;
             if (disabled) disc.Ensure<CanvasGroup>().alpha = 0.4f;

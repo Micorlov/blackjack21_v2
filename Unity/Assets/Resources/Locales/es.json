@@ -155,5 +155,9 @@
 "turnTimerLabel": "Temporizador de turno",
 "turnTimerSublabel": "Plantarse solo tras 20 segundos, como en una mesa real",
 "toastTurnTimeUp": "Se acabó el tiempo: te plantas",
-"gameSecondsLeft": "{n} s"
+"gameSecondsLeft": "{n} s",
+"feltPaysThreeToTwo": "Blackjack paga 3 a 2",
+"feltDealerStands": "La banca se planta con 17",
+"feltMin": "Mín {amount}",
+"feltMax": "Máx {amount}"
 }

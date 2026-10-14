@@ -1,9 +1,9 @@
-// The tilted oval card table, drawn analytically per pixel so it is crisp at any resolution.
+// The Seat: the table seen from a player's chair, drawn analytically per pixel so it is crisp at any size.
 //
-// Mirrors the Flutter felt: a wooden-rimmed oval put through rotateX(-50deg) with perspective 1/760,
-// anchored at its top-centre, so it widens toward the player and tapers into an arc at the top.
-// Each fragment is mapped back into the flat oval plane and shaded there: drop shadow, rim gradient,
-// radial felt, a top inner shadow and a faint gold keyline.
+// Top to bottom on the felt canvas (units, y down): the wooden edge on the dealer's side, the green felt with
+// its dashed arc of betting spots, the padded leather rail (a parabola across the canvas, with a highlight,
+// a stitched seam and a dark lower lip), and the dark room below it. No loops, no noise: every layer is a
+// closed-form distance, so it stays cheap on a phone GPU.
 Shader "Blackjack/Felt"
 {
     Properties
@@ -11,7 +11,7 @@ Shader "Blackjack/Felt"
         [PerRendererData] _MainTex ("Texture", 2D) = "white" {}
         _Color ("Tint", Color) = (1,1,1,1)
         _Canvas ("Canvas size (units)", Vector) = (384, 600, 0, 0)
-        _Oval ("Oval width, height, top", Vector) = (500, 540, 56, 0)
+        _Rail ("Rail side y, rail middle y, overhang, wood height", Vector) = (360, 520, 40, 10)
 
         _StencilComp ("Stencil Comparison", Float) = 8
         _Stencil ("Stencil ID", Float) = 0
@@ -74,7 +74,7 @@ Shader "Blackjack/Felt"
             fixed4 _Color;
             float4 _ClipRect;
             float4 _Canvas;
-            float4 _Oval;
+            float4 _Rail;
 
             v2f vert(appdata_t v)
             {
@@ -88,87 +88,86 @@ Shader "Blackjack/Felt"
                 return OUT;
             }
 
-            // Approximate signed distance to an axis-aligned ellipse (negative inside), good to ~1 unit.
-            float EllipseSd(float2 p, float2 r)
+            // A parabola across the canvas through (-over, side), (w/2, mid), (w+over, side): the curve of the rail.
+            // Returns the signed distance to it, positive below, measured across the curve rather than straight down.
+            float CurveDistance(float2 p, float side, float mid)
             {
-                float k = sqrt((p.x * p.x) / (r.x * r.x) + (p.y * p.y) / (r.y * r.y));
-                if (k < 1e-5) return -min(r.x, r.y);
-                float2 grad = p / (r * r);
-                return (k * k - k) / max(length(grad), 1e-5);
+                float over = _Rail.z;
+                float span = _Canvas.x + 2.0 * over;
+                float u = (p.x + over) / span;
+                float y = side + 4.0 * (mid - side) * u * (1.0 - u);
+                float slope = 4.0 * (mid - side) * (1.0 - 2.0 * u) / span;
+                return (p.y - y) / sqrt(1.0 + slope * slope);
             }
 
-            float3 FeltRamp(float t)
+            // Coverage of a line of the given width centred on distance 0, antialiased to a pixel.
+            float Line(float d, float width)
             {
-                const float3 c0 = float3(0.1647, 0.5608, 0.4392);   // #2A8F70
-                const float3 c1 = float3(0.0863, 0.3843, 0.2824);   // #166248
-                const float3 c2 = float3(0.0431, 0.2078, 0.1529);   // #0B3527
-                const float3 c3 = float3(0.0314, 0.1647, 0.1255);   // #082A20
-                if (t < 0.42) return lerp(c0, c1, t / 0.42);
-                if (t < 0.78) return lerp(c1, c2, (t - 0.42) / 0.36);
-                return lerp(c2, c3, (t - 0.78) / 0.22);
+                float aa = max(fwidth(d), 1e-4);
+                return saturate((width * 0.5 - abs(d)) / aa + 0.5);
+            }
+
+            float3 Ramp3(float t, float3 a, float3 b, float3 c, float split)
+            {
+                return t < split ? lerp(a, b, t / split) : lerp(b, c, (t - split) / (1.0 - split));
             }
 
             fixed4 frag(v2f IN) : SV_Target
             {
-                // Canvas position in units, y growing downward, then relative to the oval's top-centre.
-                float2 cpos = float2(IN.texcoord.x * _Canvas.x, (1.0 - IN.texcoord.y) * _Canvas.y);
-                float sx = cpos.x - _Canvas.x * 0.5;
-                float sy = max(cpos.y - _Oval.z, -200.0);
+                float2 p = float2(IN.texcoord.x * _Canvas.x, (1.0 - IN.texcoord.y) * _Canvas.y);
+                float side = _Rail.x;
+                float mid = _Rail.y;
+                float wood = _Rail.w;
 
-                const float tilt = 0.8726646;          // 50 degrees
-                const float persp = 1.0 / 760.0;
-                float cs = cos(tilt);
-                float sn = sin(tilt);
+                const float3 roomTop = float3(0.1098, 0.0588, 0.0275);   // #1C0F07
+                const float3 roomDeep = float3(0.0549, 0.0314, 0.0196);  // #0E0805
+                float3 col = lerp(roomTop, roomDeep, saturate(p.y / (_Canvas.y * 0.3)));
 
-                // Invert: sy = cs*y / (1 - sn*persp*y);  sx = x / (1 - sn*persp*y).
-                float y = sy / (cs + sn * persp * sy);
-                float w = 1.0 - sn * persp * y;
-                float x = sx * w;
-                float2 p = float2(x, y - _Oval.y * 0.5);   // centred oval-plane coordinates
-
-                float ow = _Oval.x;
-                float oh = _Oval.y;
-                const float inset = 20.0;
-                float2 outerR = float2(ow * 0.5, oh * 0.5);
-                float2 innerR = float2(ow * 0.5 - inset, oh * 0.5 - inset);
-
-                // Drop shadow: the oval shifted down 30 and blurred.
-                float shadowD = EllipseSd(p - float2(0, 30), outerR);
-                float shadowA = 0.62 * exp(-pow(max(shadowD, 0.0) / 38.0, 2.0));
-                float4 col = float4(0, 0, 0, shadowA);
-
-                float rimSd = EllipseSd(p, outerR);
-                float rimCover = saturate(0.5 - rimSd / max(fwidth(rimSd), 1e-4));
-                if (rimCover > 0.0)
-                {
-                    float t = saturate(y / oh);
-                    const float3 rimTop = float3(0.4784, 0.2902, 0.1725);   // #7A4A2C
-                    const float3 rimMid = float3(0.2902, 0.1647, 0.0941);   // #4A2A18
-                    const float3 rimLow = float3(0.1647, 0.0902, 0.0549);   // #2A170E
-                    float3 rim = t < 0.4 ? lerp(rimTop, rimMid, t / 0.4) : lerp(rimMid, rimLow, (t - 0.4) / 0.6);
-                    col.rgb = lerp(col.rgb, rim, rimCover);
-                    col.a = rimCover + col.a * (1.0 - rimCover);
-                }
-
-                float feltSd = EllipseSd(p, innerR);
-                float feltCover = saturate(0.5 - feltSd / max(fwidth(feltSd), 1e-4));
+                // Felt: the radial ramp of the design, brightest a little below the middle.
+                float railD = CurveDistance(p, side, mid);
+                float feltCover = saturate((p.y - wood) / max(fwidth(p.y), 1e-4)) * saturate(-railD / max(fwidth(railD), 1e-4) + 0.5);
                 if (feltCover > 0.0)
                 {
-                    float shortest = min(innerR.x, innerR.y) * 2.0;
-                    float2 centre = float2(0.0, -0.48 * innerR.y);
-                    float dist = length(p - centre) / (0.9 * shortest);
-                    float3 felt = FeltRamp(saturate(dist));
-                    // Top inner shadow: black 40% fading out over the top third of the felt.
-                    float ty = saturate((p.y + innerR.y) / (innerR.y * 2.0) / 0.34);
-                    felt = lerp(felt, float3(0, 0, 0), lerp(0.4, 0.0, ty));
-                    // Gold keyline just inside the felt edge.
-                    float keyline = saturate(1.0 - abs(feltSd + 1.0)) * 0.16;
-                    felt = lerp(felt, float3(0.8627, 0.7490, 0.4784), keyline);
-                    col.rgb = lerp(col.rgb, felt, feltCover);
-                    col.a = max(col.a, feltCover);
+                    float2 centre = float2(_Canvas.x * 0.5, wood + (mid - wood) * 0.62);
+                    float2 radius = float2(_Canvas.x * 0.8, (mid - wood) * 0.7);
+                    float t = saturate(length((p - centre) / radius));
+                    float3 felt = Ramp3(t, float3(0.0902, 0.3490, 0.2627), float3(0.0784, 0.3137, 0.2235), float3(0.0392, 0.1882, 0.1333), 0.6);
+                    // A shadow cast by the wooden edge onto the top of the felt.
+                    felt *= lerp(0.55, 1.0, saturate((p.y - wood) / 26.0));
+
+                    // The dashed arc the bets sit on: 2 on, 5 off, faint gold.
+                    float arcD = CurveDistance(p, side - 80.0, mid - 57.0);
+                    float dash = step(frac(p.x / 7.0), 2.0 / 7.0);
+                    felt = lerp(felt, float3(0.902, 0.780, 0.478), Line(arcD, 1.0) * dash * 0.18);
+                    col = lerp(col, felt, feltCover);
                 }
 
-                fixed4 color = fixed4(col) * IN.color;
+                // The wooden edge on the dealer's side.
+                if (p.y < wood + 2.0)
+                {
+                    float t = saturate(p.y / max(wood, 1.0));
+                    float3 woodCol = lerp(float3(0.5412, 0.3333, 0.1882), float3(0.2902, 0.1569, 0.0706), t);   // #8A5530 -> #4A2812
+                    float cover = saturate((wood - p.y) / max(fwidth(p.y), 1e-4) + 0.5);
+                    col = lerp(col, woodCol, cover);
+                    col = lerp(col, float3(0.07, 0.03, 0.01), Line(p.y - wood, 1.5) * 0.8);
+                }
+
+                // The padded leather rail: 56 units across, lit from above, with its seam and lip.
+                const float railHalf = 28.0;
+                float railCover = Line(railD, railHalf * 2.0);
+                if (railCover > 0.0)
+                {
+                    float t = saturate((railD + railHalf) / (railHalf * 2.0));
+                    float3 leather = Ramp3(t, float3(0.4157, 0.1961, 0.1020), float3(0.2784, 0.1255, 0.0588), float3(0.1176, 0.0392, 0.0118), 0.35);
+                    leather = lerp(leather, float3(1.0, 0.839, 0.667), Line(railD + 20.0, 1.3) * 0.28);     // highlight
+                    float stitch = step(frac(p.x / 7.0), 4.0 / 7.0);
+                    leather = lerp(leather, float3(0.941, 0.824, 0.667), Line(railD + 10.0, 1.0) * stitch * 0.4); // seam
+                    col = lerp(col, leather, railCover);
+                }
+                col = lerp(col, float3(0.0706, 0.0235, 0.0078), Line(railD - railHalf, 2.0));                   // lower lip
+                if (railD > railHalf + 1.0) col = lerp(col, roomDeep, saturate((railD - railHalf) / 30.0));
+
+                fixed4 color = fixed4(col, 1.0) * IN.color;
 
                 #ifdef UNITY_UI_CLIP_RECT
                 color.a *= UnityGet2DClipping(IN.worldPosition.xy, _ClipRect);

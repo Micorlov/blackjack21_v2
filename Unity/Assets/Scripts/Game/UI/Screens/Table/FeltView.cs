@@ -14,7 +14,12 @@ namespace Blackjack.Game.UI
     /// </summary>
     public sealed class FeltView
     {
-        private const float OvalTop = 56f;
+        private const float WoodEdge = 10f;
+        private const float RailOverhang = 40f;
+        private const float RailDepthShare = 0.3f;
+        private const float RailBelowCanvas = 20f;
+        /// <summary>The current layout's corners hold the fixtures at this scale; the Seat layout gives them their own room.</summary>
+        private const float FixtureScale = 0.6f;
 
         private readonly GameController _g;
         private RectTransform _host;
@@ -52,15 +57,6 @@ namespace Blackjack.Game.UI
             _feltImage.material = _feltMaterial;
             _feltImage.rectTransform.Fill();
 
-            var lamp = W.Raw(_canvas, Gfx.RadialCircular("lamp", 64, 64, new Vector2(0, -0.45f), 0.95f,
-                new[] { Color.clear, Color.clear, Theme.Scrim.WithAlpha(0.28f), Theme.Scrim.WithAlpha(0.55f) },
-                new[] { 0f, 0.42f, 0.78f, 1f }), "Lamp");
-            lamp.rectTransform.Fill();
-
-            var vignette = W.Raw(_canvas, Gfx.Linear(new[] { Theme.Scrim, Theme.Scrim.WithAlpha(0.55f), Theme.Scrim.WithAlpha(0f) },
-                new[] { 0f, 0.5f, 1f }), "TopVignette");
-            vignette.rectTransform.PinTop(96);
-
             BuildChipTray();
             BuildDiscardPile();
 
@@ -78,34 +74,42 @@ namespace Blackjack.Game.UI
 
         private RectTransform _tray, _pile;
 
+        /// <summary>The dealer's chip tray: racked columns of chips in a dark well.</summary>
         private void BuildChipTray()
         {
-            _tray = Ui.VStack(_canvas, 0, null, TextAnchor.UpperLeft, false, "ChipTray");
-            var box = Ui.Card(_tray, Theme.Hex(0xFF1D160F), Theme.RadiusSm, Theme.Gold.WithAlpha(0.2f), 1, Ui.Pad(8, 6), 0, false, "Tray");
-            var row = Ui.HStack(box, 4, null, TextAnchor.MiddleCenter);
-            for (var i = 0; i < 4; i++)
-            {
-                var chip = Ui.Box(row, Theme.Hex(0xFFB98F3E), 0, "Slot");
-                chip.rectTransform.Size(15, 13);
-            }
-            _tray.FitContent(true, true);
-            _tray.anchorMin = _tray.anchorMax = new Vector2(0, 1);
-            _tray.pivot = new Vector2(0, 1);
+            _tray = Fixture("ChipTray", Gfx.ChipTray(), Gfx.TraySize, new Vector2(0, 1));
+            _tray.localScale = Vector3.one * FixtureScale;
         }
 
+        /// <summary>The discard holder and the shoe, side by side on the dealer's right.</summary>
         private void BuildDiscardPile()
         {
             _pile = Ui.Node("DiscardPile", _canvas);
             _pile.anchorMin = _pile.anchorMax = new Vector2(1, 1);
             _pile.pivot = new Vector2(1, 1);
-            _pile.sizeDelta = new Vector2(78, 44);
-            for (var i = 0; i < 3; i++)
-            {
-                var card = Ui.Box(_pile, Theme.Hex(0xFF7A2A25), 4, "Discard");
-                card.rectTransform.Pin(new Vector2(0, 0), new Vector2(0, 0), new Vector2(i * 7, 0), new Vector2(26, 36));
-            }
-            var shoe = Ui.Box(_pile, Color.black.WithAlpha(0.6f), 3, "Shoe");
-            shoe.rectTransform.Pin(new Vector2(1, 0), new Vector2(1, 0), Vector2.zero, new Vector2(13, 44));
+            _pile.sizeDelta = new Vector2(Gfx.DiscardSize.x + Theme.Xs + Gfx.ShoeSize.x, Gfx.ShoeSize.y);
+            _pile.localScale = Vector3.one * FixtureScale;
+            var discard = FixtureImage(_pile, "Discard", Gfx.DiscardHolder());
+            discard.rectTransform.Pin(new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, -Theme.Xxs), Gfx.DiscardSize);
+            var shoe = FixtureImage(_pile, "Shoe", Gfx.Shoe());
+            shoe.rectTransform.Pin(new Vector2(1, 1), new Vector2(1, 1), Vector2.zero, Gfx.ShoeSize);
+        }
+
+        private RectTransform Fixture(string name, Sprite art, Vector2 size, Vector2 corner)
+        {
+            var img = FixtureImage(_canvas, name, art);
+            img.rectTransform.anchorMin = img.rectTransform.anchorMax = corner;
+            img.rectTransform.pivot = corner;
+            img.rectTransform.sizeDelta = size;
+            return img.rectTransform;
+        }
+
+        private static Image FixtureImage(Transform parent, string name, Sprite art)
+        {
+            var img = Ui.Box(parent, Color.white, 0, name);
+            img.sprite = art;
+            img.type = Image.Type.Simple;
+            return img;
         }
 
         public void Refresh(AppState state)
@@ -140,10 +144,13 @@ namespace Blackjack.Game.UI
             _canvas.anchoredPosition = Vector2.zero;
 
             _feltMaterial.SetVector("_Canvas", new Vector4(m.CanvasWidth, m.CanvasHeight, 0, 0));
-            _feltMaterial.SetVector("_Oval", new Vector4(m.ContentWidth + 2 * m.OvalBleed, m.OvalHeight, OvalTop, 0));
+            // The padded rail curves across the bottom of the felt, deepest in front of the hero.
+            var railMid = m.CanvasHeight + RailBelowCanvas;
+            var railSide = railMid - RailDepthShare * m.ContentWidth;
+            _feltMaterial.SetVector("_Rail", new Vector4(railSide, railMid, RailOverhang, WoodEdge));
 
-            _tray.anchoredPosition = new Vector2(m.Inset + 10, -10);
-            _pile.anchoredPosition = new Vector2(-(m.Inset + 10), -4);
+            _tray.anchoredPosition = new Vector2(m.Inset + 10, -(WoodEdge + Theme.Sm));
+            _pile.anchoredPosition = new Vector2(-(m.Inset + 10), -(WoodEdge + Theme.Xs));
 
             _dealer.Refresh(_state, m);
             var seatFriends = Roster.TableSeats(_state.Friends, r.Stake?.Key);

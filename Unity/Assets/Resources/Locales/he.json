@@ -155,5 +155,9 @@
 "turnTimerLabel": "שעון תור",
 "turnTimerSublabel": "עמידה אוטומטית אחרי 20 שניות, כמו בשולחן אמיתי",
 "toastTurnTimeUp": "הזמן נגמר — עמדת",
-"gameSecondsLeft": "{n} שנ׳"
+"gameSecondsLeft": "{n} שנ׳",
+"feltPaysThreeToTwo": "בלאק ג׳ק משלם 3 ל־2",
+"feltDealerStands": "הדילר עומד על כל 17",
+"feltMin": "מינ׳ {amount}",
+"feltMax": "מקס׳ {amount}"
 }
