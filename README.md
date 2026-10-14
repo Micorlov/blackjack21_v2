@@ -530,6 +530,11 @@ emulator testing.
 ## Changelog
 
 ### 2026-10-14
+- feat: Unity port — the game controller (`Blackjack.Game`): paced NPC/dealer turns, voice and haptic cueing
+  with the Flutter timings, daily bonus and play-streak reminders, rebuy, tutorial, referral rewards, the
+  friends-group/sign-in flow behind an `ISocialService` seam, and a Flutter-compatible save blob. Runs on a
+  fake clock in tests (124 EditMode tests). UI toolkit (runtime sprites, TextMeshPro fonts, builders) and a
+  PlayMode screenshot harness added; screens come next.
 - feat: Unity port — progression logic (daily bonus, play streak, points and ranking, rebuy, referrals,
   invite links, review prompt, table presence and seats, play-time tracker), the save record, spoken
   numbers and tutorial coach mapping are now in `Blackjack.Core` (105 tests); locale JSON converted from

@@ -1,0 +1,14 @@
+{
+    "name": "Blackjack.Editor",
+    "rootNamespace": "Blackjack.EditorTools",
+    "references": ["Blackjack.Core", "Blackjack.Game", "Unity.TextMeshPro"],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
