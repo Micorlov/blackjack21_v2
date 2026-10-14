@@ -428,6 +428,11 @@ lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
 
+### 2026-10-14 (sound fix)
+- fix: the game was silent — the empty Main scene and the camera `GameBootstrap` builds in code have no
+  `AudioListener`, and Unity mixes nothing without one, so every tone and spoken call-out played into
+  nothing. `GameBootstrap.Launch` now adds a listener to the camera when the scene has none.
+
 ### 2026-10-14 (Google Play 1.8.0)
 - chore: **released 1.8.0 (10) to the Google Play internal track** — the first Play release from the Unity
   port and the first with The Seat; the last production build is still 1.6.1 (8). `BuildTools` gains

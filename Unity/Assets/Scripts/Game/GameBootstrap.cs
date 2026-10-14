@@ -38,6 +38,14 @@ namespace Blackjack.Game
                 camera.tag = "MainCamera";
             }
 
+            // Unity mixes nothing without an AudioListener, and a camera made in code does not get one — the
+            // empty Main scene has none either, so every tone and call-out played into silence.
+            if (Object.FindFirstObjectByType<AudioListener>() == null)
+            {
+                var anchor = Camera.main != null ? Camera.main.gameObject : new GameObject("Audio Listener");
+                anchor.AddComponent<AudioListener>();
+            }
+
             var host = new GameObject("Game");
             Object.DontDestroyOnLoad(host);
             var controller = host.AddComponent<GameController>();
