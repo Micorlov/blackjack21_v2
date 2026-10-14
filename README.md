@@ -416,6 +416,12 @@ lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
 
+### 2026-10-14 (settings fix)
+- fix: the switch rows in Settings (sound and haptics, the turn timer, notifications, privacy) no longer
+  sit on a white strip — the row's tap area was given a default white image before its clear one.
+- test: `settings_middle` and `settings_bottom` scroll the Settings list before the design-rules audit,
+  which only reads what is on screen; content below the fold is now held to the rules too.
+
 ### 2026-10-14 (The Seat, phase 6: portrait, right-to-left, reference)
 - chore: portrait only — `BuildTools.Configure` switches every landscape and upside-down rotation off, so
   the Seat (drawn for a phone held upright) can never be turned sideways.

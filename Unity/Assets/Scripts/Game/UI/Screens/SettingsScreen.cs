@@ -165,7 +165,7 @@ namespace Blackjack.Game.UI
                 W.Switch(row, r.on, null, r.enabled);
                 // The whole row is the switch's target: a 52x30 knob alone is too small to hit.
                 row.MinSize(null, Theme.MinTarget);
-                row.Ensure<FlatImage>();
+                // Pressable adds its own clear hit image; adding an Image first would leave a white one behind.
                 row.MakePressable(r.toggle).Interactable = r.enabled;
                 // Dimming the whole row, so a disabled switch does not keep its gold and read as live.
                 if (!r.enabled) row.Ensure<CanvasGroup>().alpha = 0.45f;

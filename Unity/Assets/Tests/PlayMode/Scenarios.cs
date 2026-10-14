@@ -161,6 +161,9 @@ namespace Blackjack.PlayTests
                 LeaderboardPeriod = LeaderboardPeriod.Daily, HeroDailyPoints = 75, HeroDayKey = Points.DayKeyOf(DateTime.Now),
             }),
             new Scenario("settings", () => new AppState { Screen = AppScreen.Settings, Round = History() }),
+            // The rules hold below the fold too: the audit only reads what is on screen, so scroll there.
+            new Scenario("settings_bottom", () => new AppState { Screen = AppScreen.Settings, Round = History() }, (g, o) => ScrollToEnd.Start()),
+            new Scenario("settings_middle", () => new AppState { Screen = AppScreen.Settings, Round = History() }, (g, o) => ScrollToEnd.Start(0.45f)),
             new Scenario("settings_signedin", () => new AppState
                 { Screen = AppScreen.Settings, Round = History(), SignedIn = true, DisplayName = "Michael Orlov", SoundOn = false }),
 
@@ -252,6 +255,29 @@ namespace Blackjack.PlayTests
                 var only = Environment.GetEnvironmentVariable("BJ_SCENARIO");
                 return string.IsNullOrEmpty(only) ? all : all.FindAll(s => s.Name.Contains(only));
             }
+        }
+    }
+
+    /// <summary>Scrolls every scroll view on screen to a point (0 = the bottom) once the layout has settled.</summary>
+    internal sealed class ScrollToEnd : MonoBehaviour
+    {
+        private float _position;
+        private int _frames;
+
+        public static void Start(float position = 0f)
+        {
+            var go = new GameObject("ScrollToEnd");
+            go.AddComponent<ScrollToEnd>()._position = position;
+        }
+
+        private void LateUpdate()
+        {
+            foreach (var scroll in FindObjectsByType<UnityEngine.UI.ScrollRect>(FindObjectsSortMode.None))
+            {
+                scroll.verticalNormalizedPosition = _position;
+                scroll.velocity = Vector2.zero;
+            }
+            if (++_frames > 10) Destroy(gameObject);
         }
     }
 
