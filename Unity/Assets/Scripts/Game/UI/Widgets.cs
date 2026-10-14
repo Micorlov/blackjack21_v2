@@ -135,13 +135,21 @@ namespace Blackjack.Game.UI
             return box;
         }
 
-        public static RectTransform CircleIconButton(Transform parent, string icon, Action onClick, float iconSize = 24)
+        public static RectTransform CircleIconButton(Transform parent, string icon, Action onClick, float iconSize = 24,
+            Color? iconColor = null, Color? ring = null)
         {
-            var box = Ui.Box(parent, Color.black.WithAlpha(0.32f), 0, "CircleIconButton");
+            var box = Ui.Box(parent, Color.black.WithAlpha(ring.HasValue ? 0.35f : 0.32f), 0, "CircleIconButton");
             box.sprite = Sprites.Circle;
             box.type = Image.Type.Simple;
             box.rectTransform.Size(Theme.MinTarget, Theme.MinTarget);
-            var ic = Icon(box.transform, icon, iconSize, Theme.TextPrimary);
+            if (ring.HasValue)
+            {
+                var outline = Ui.Box(box.transform, ring.Value, 0, "Ring");
+                Ui.StyleRing(outline, ring.Value, Theme.MinTarget / 2f, 1f);
+                outline.rectTransform.IgnoreLayout();
+                outline.rectTransform.Fill();
+            }
+            var ic = Icon(box.transform, icon, iconSize, iconColor ?? Theme.TextPrimary);
             ic.rectTransform.PinCentre(Vector2.zero, new Vector2(iconSize, iconSize));
             ic.rectTransform.Ensure<LayoutElement>().ignoreLayout = true;
             box.rectTransform.MakePressable(onClick);

@@ -54,7 +54,7 @@ namespace Blackjack.Game.UI
         // Cards
         public static readonly Color CardFaceTop = Hex(0xFFFFFDF8);
         public static readonly Color CardFaceBottom = Hex(0xFFF0E9D9);
-        public static readonly Color CardRed = Hex(0xFFB5202B);
+        public static readonly Color CardRed = Hex(0xFFA51D28);
         public static readonly Color CardBlack = Hex(0xFF141210);
 
         public static readonly Color Scrim = Hex(0xFF040806);
@@ -70,7 +70,7 @@ namespace Blackjack.Game.UI
         public static readonly Color Brass = Hex(0xFFCDA65A);
         public static readonly Color BrassLight = Hex(0xFFF2DCA0);
         public static readonly Color Ivory = Hex(0xFFF4EBD8);
-        public static readonly Color FeltPrint = Hex(0xEBE6C77A);
+        public static readonly Color FeltPrint = Hex(0xFFE6C77A);
         public static readonly Color PillInk = Hex(0xFF1A1206);
 
         // Text that sits straight on the felt or on a leather/wood panel needs lighter tones than on the dark

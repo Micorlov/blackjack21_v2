@@ -15,13 +15,10 @@ A Unity (Android) blackjack game with a multi-seat table and a friends race. Fou
 - **Blackjack table** — multi-seat felt with dealer area, hero hand, betting, insurance,
   splits/doubles, and settlement panels
 - **Drawn for large type** — the game is for players in their sixties and up, so the table is
-  big by default rather than behind a setting: 66x96 cards, a 24px balance, 64px chips,
-  20–24px action buttons, and a felt whose vertical budget is sized so a 384x832 phone draws
-  the hand at full scale instead of the two-thirds it used to shrink to mid-round. Every seat
-  shows the hand it is playing — 42x60 cards fanned *beside* the name, in the room the avatar
-  takes before the deal, with the running total on the name line and `STAND`/`BUST` under it.
-  The cards used to be a 27px fan above the plate, which the felt's own scaling then shrank to
-  about 7px of rank
+  big by default rather than behind a setting: 88-unit hero cards (66 for the dealer, never under
+  42x60 for the other seats), 64-unit chips, 20–24 unit action buttons, and no character anywhere
+  smaller than 12 units on screen — the felt's scaling included, which `RulesAudit` checks on four
+  phone sizes. A short phone squeezes the gaps on the felt before it shrinks a single card
 - **Casino seat order** — the table plays the way a real one does: the two seats on your right (first
   base, Maya and Jordan) act before you, the two on your left (Sam and Priya) after you, then the
   dealer. A bust, surrender or natural on your side still lets the seats after you play, and their
@@ -227,7 +224,7 @@ its `assets/` and `android/` output paths; point them at `Unity/Assets/Resources
 - `Unity/Assets/Scripts/Core/` — the rules engine as plain C# (`Blackjack.Core` assembly, no Unity
   references). Every step is a pure function from one immutable `RoundState` to the next; timing is left
   to the caller (`GameController`).
-- `Unity/Assets/Tests/EditMode/` — 172 NUnit tests (rules, betting, settlement, progression, controller,
+- `Unity/Assets/Tests/EditMode/` — 171 NUnit tests (rules, betting, settlement, progression, controller,
   RTL, contrast, turn order, turn timer). `Unity/Assets/Tests/PlayMode/` holds the scenario registry (`Scenarios.cs`), the
   screenshot test (`ScenarioShots`) and the design-rules audit (`RulesAudit` + `rules-baseline.txt`).
 - `Unity/Assets/Scripts/Game/UI/Type.cs` — the type ramp (`Type.Display` … `Type.Caption`, `Type.Numeral`)
@@ -242,6 +239,10 @@ its `assets/` and `android/` output paths; point them at `Unity/Assets/Resources
 - The Seat's art: `Resources/Shaders/Felt.shader` (room, wood edge, felt, seat arc, leather rail — the
   rail's curve comes in as `_Rail`), `Game/UI/Gfx.Seat.cs` (cards, chips, chip stacks, tray, shoe,
   discard holder, the room backdrop with its bokeh, each baked once and cached) and `Game/UI/ArcText.cs`.
+- The felt (`Game/UI/Screens/Table/`): `FeltView` owns the canvas, fixtures and print and lays out
+  `DealerView`, four `SeatView`s (cards on one layer, name pills on a layer above every card) and
+  `HeroView`; `FeltBits` holds the shared pills, chip stacks, bet rings and glows; `FeltEffects` flies
+  chips from each seat's ring to yours. Every row comes from `FeltMetrics` (`Y()`, `X()`, `SeatSlot`).
 
 Firebase (Auth, Firestore, Analytics, Crashlytics — SDK 13.17.0) is **not committed**: it is ~760 MB of
 native libraries. `Unity/tools/install_firebase.sh` downloads Google's official zip, verifies its SHA-256,
@@ -360,7 +361,7 @@ on a Play-distributed one. One-time manual steps to fix that:
 ## Assets
 
 - `Unity/Assets/Resources/Locales/*.json` — the 10 UI languages (en, he, ar, es, fr, de, pt, ru, ja, zh),
-  161 keys each; `ar` and `he` render right-to-left.
+  181 keys each; `ar` and `he` render right-to-left.
 - `Unity/Assets/Resources/Sfx/` — sound effects and the spoken call-outs (`Sfx/num/` holds the spoken
   amounts, so adding a clip is just adding the file).
 - `Unity/Assets/Resources/Fonts/` — Sora (Regular/SemiBold/Bold static instances), Instrument Serif
@@ -405,6 +406,27 @@ A Core change is not done until the EditMode suite passes. Check on a device or 
 lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
+
+### 2026-10-14 (The Seat, phase 3: seats, hero and chips on the curve)
+- feat: the felt is laid out as The Seat — one 384x520 design canvas (`FeltMetrics`) that squeezes only the
+  gaps above your hand on a short phone (so nothing shrinks and the bet stays clear of your cards) before
+  it scales. The dealer's cards sit under the chip tray with a "Dealer 6 + ?" box beside them ("16 ·
+  draws", "25 · bust"); the placard, discard holder and shoe take their places; "Blackjack pays 3 to 2 /
+  Dealer stands on all 17s" is printed along the curve; "Place your bets" shows while the table bets.
+- feat: the four opponents sit on the curve in casino order (Maya and Jordan on your right, Sam and Priya
+  on your left), each a name/total pill over a fan of cards turned toward the dealer and a bet ring with
+  its chips; the seat acting glows and its pill turns gold; a seat that busts is cleared to an empty
+  dashed ring; at the result each pill shows what that seat won or lost. Names sit above every card.
+- feat: your hand is 88 units wide under a gold total badge ("11 hard", "21 doubled", "21 blackjack",
+  "25 bust", "21 you win"); a double is dealt sideways across the hand; a split lays both hands side by
+  side at the dealer's card size, the one in play lit and the other dimmed, each with its own ring and a
+  "Hand 1 11" label. Your bet stands in a ring as chip stacks; your balance is racked on the rail.
+- feat: the table header is an Instrument Serif title with Space Mono stakes and gold-ringed 48-unit
+  round buttons; the five-segment track is now one sentence-case phase pill. 20 new strings in all 10
+  languages.
+- fix (rules): seat pills are 80% black (the design's 66% washed ivory text out over cards), the felt
+  print is solid, the card red is a shade deeper, the idle split hand counts as inactive, and the room's
+  lamps are dimmer behind the title. Design-rules baseline: 111 → 67.
 
 ### 2026-10-14 (The Seat, phase 2: felt art)
 - feat: the table is drawn as The Seat — a dark room with out-of-focus lamps behind it, a wooden edge on

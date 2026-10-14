@@ -57,7 +57,7 @@ namespace Blackjack.PlayTests
                 var run = ScenarioRun.Start(scenario, phone.x, phone.y);
                 try
                 {
-                    yield return run.Settle();
+                    yield return Shots.Settle(4, CelebrationSeconds);
                     Audit(run, scenario.Name, phone);
                 }
                 finally
@@ -138,7 +138,11 @@ namespace Blackjack.PlayTests
             }
         }
 
-        private const float OpaqueAlpha = 0.9f;
+        // Text under a shape this opaque (a seat pill, the next card) is hidden, not meant to be read through it.
+        private const float OpaqueAlpha = 0.75f;
+
+        // Confetti and chip flights must have landed before the pixels are read.
+        private const float CelebrationSeconds = 1.8f;
         private const float FullScreenShare = 0.9f;
 
         private static Rect ScreenRect(RectTransform rt, Camera cam)
@@ -204,7 +208,10 @@ namespace Blackjack.PlayTests
             foreach (var r in hidden) r.SetAlpha(1f);
             var frames = new Frames { Stage = run.Stage, Shown = shown.GetPixels32(), Background = background.GetPixels32() };
             if (Environment.GetEnvironmentVariable("BJ_RULES_DEBUG") == "1")
+            {
                 Shots.Save(background, $"debug_{scenario}_{phone.x}x{phone.y}_bg");
+                Shots.Save(shown, $"debug_{scenario}_{phone.x}x{phone.y}_shown");
+            }
             UnityEngine.Object.Destroy(shown);
             UnityEngine.Object.Destroy(background);
 
@@ -324,11 +331,16 @@ namespace Blackjack.PlayTests
                 if (s.enabled && Alpha(s.transform, 1f) > HiddenAlpha && seen.Add(s.transform)) yield return (RectTransform)s.transform;
         }
 
-        /// <summary>Disabled controls are exempt from contrast (WCAG 1.4.3), though not from the size rules.</summary>
+        /// <summary>
+        /// Disabled controls and inactive parts of the UI (a split hand waiting its turn, marked by a non-interactable
+        /// CanvasGroup) are exempt from contrast (WCAG 1.4.3), though not from the size rules.
+        /// </summary>
         private static bool Disabled(Transform t)
         {
             for (var p = t; p != null; p = p.parent)
             {
+                var group = p.GetComponent<CanvasGroup>();
+                if (group != null && group.enabled && !group.interactable && group.alpha > HiddenAlpha) return true;
                 var pressable = p.GetComponent<Pressable>();
                 if (pressable != null && !pressable.Interactable) return true;
                 var selectable = p.GetComponent<Selectable>();

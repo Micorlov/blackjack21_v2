@@ -137,7 +137,7 @@ namespace Blackjack.Game.UI
             _toastText = Ui.Text(toastBox, "", 15, Theme.Gold, FontKind.SoraSemiBold, TextAlignmentOptions.Center, true);
             _toastText.rectTransform.Ensure<LayoutElement>().preferredWidth = 330;
             _toastGroup = _toast.gameObject.AddComponent<CanvasGroup>();
-            _toastGroup.alpha = 0; _toastGroup.blocksRaycasts = false; _toastGroup.interactable = false;
+            _toastGroup.alpha = 0; _toastGroup.blocksRaycasts = false;
 
             var reactionBox = Ui.Card(parent, Theme.NavSurface.WithAlpha(0.95f), Theme.RadiusPill, Theme.Gold, 1, Ui.Pad(16, 8), 0, false, "Reaction");
             _reaction = (RectTransform)reactionBox.parent;
@@ -146,7 +146,7 @@ namespace Blackjack.Game.UI
             _reaction.FitContent(true, true);
             _reactionText = Ui.Text(reactionBox, "", 15, Theme.GoldLight, FontKind.SoraBold, TextAlignmentOptions.Center, false);
             _reactionGroup = _reaction.gameObject.AddComponent<CanvasGroup>();
-            _reactionGroup.alpha = 0; _reactionGroup.blocksRaycasts = false; _reactionGroup.interactable = false;
+            _reactionGroup.alpha = 0; _reactionGroup.blocksRaycasts = false;
         }
 
         public void Apply(AppState s)

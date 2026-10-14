@@ -3,33 +3,40 @@ using System;
 namespace Blackjack.Core
 {
     /// <summary>
-    /// The felt's vertical budget and scale, ported from the Flutter <c>FeltMetrics</c>. The felt is drawn on
-    /// a virtual canvas in fixed units and scaled uniformly to the room it is given; the bands are sized so a
-    /// 384x832 phone draws every phase at full scale.
+    /// The Seat's felt: one design canvas, 384 x 520 units (docs/design-concepts/the-seat), scaled uniformly to the
+    /// room it is given. A short room first squeezes the gaps above the hero's cards (to
+    /// <see cref="MinVerticalFit"/>) so nothing changes size, and everything from the hero's cards down keeps its
+    /// spacing (the bet ring must stay clear of 128-unit cards); only past that does the whole felt scale down. A
+    /// tall room spreads every gap a little (to <see cref="MaxVerticalFit"/>) and leaves the rest below the rail.
     /// </summary>
     public sealed record FeltMetrics
     {
         public const float ReferenceWidth = 384f;
+        public const float DesignHeight = 520f;
         public const float MaxScale = 1.4f;
         public const float MaxContentWidth = 560f;
-        public const float MaxSeatWidth = 260f;
-        public const float SeatColumnGap = 8f;
-        public const float SeatBandGap = 6f;
+        public const float MinVerticalFit = 0.85f;
+        public const float MaxVerticalFit = 1.15f;
 
+        /// <summary>The dealer's cards, and the size every other card is measured against.</summary>
         public const float CardWidth = 66f;
         public const float CardHeight = 96f;
-        public const float CardGap = 6f;
+
+        /// <summary>The dealer's cards overlap by 30% of a card, as in the design.</summary>
+        public const float DealerOverlap = 0.3f;
 
         /// <summary>The hero's own cards: larger than the dealer's (88 vs 66), no more than 1.4x.</summary>
         public const float HeroCardWidth = 88f;
         public const float HeroCardHeight = HeroCardWidth * CardHeight / CardWidth;
+        public const float HeroOverlap = 0.48f;
 
         /// <summary>The other seats' cards: never smaller than this, so their rank stays readable.</summary>
         public const float SeatCardWidth = 42f;
         public const float SeatCardHeight = 60f;
+        public const float SeatOverlap = 0.4f;
 
         // Where each opponent sits on the curve of the felt, for a 384-unit-wide table: horizontal offset from the
-        // centre line, depth below the top of the seat band, and how far its cards turn toward the dealer.
+        // centre line, depth below the top seats, and how far its cards turn toward the dealer.
         // First base (the dealer's left) is on the right of the screen in every language.
         private static readonly (float x, float y, float tilt)[] SeatCurve =
         {
@@ -39,82 +46,80 @@ namespace Blackjack.Core
             (-144f, 0f, 14f),   // third base
         };
 
-        private const float DealerBandSpread = 198f;
-        private const float DealerBandCompact = 102f;
-        private const float SweepBannerBand = 56f;
-        private const float SeatPitch = 78f;
-        private const float SeatHeightUnits = 72f;
-        private const float HeroBandWithCards = 182f;
-        private const float HeroBandNoCards = 80f;
-        private const float DealerBandTextShare = 0.45f;
+        // Design rows, in units below the wooden edge (the mockup's screen y minus 100).
+        public const float WoodEdge = 10f;
+        public const float FixturesTop = 4f;
+        public const float PlacardTop = 46f;
+        public const float DealerTop = 50f;
+        public const float CallTop = 82f;
+        public const float PotTop = 154f;
+        public const float PrintTop = 186f;
+        public const float SeatsTop = 226f;
+        public const float HeroBadgeTop = 232f;
+        public const float SplitLabelTop = 248f;
+        public const float HeroCardsTop = 276f;
+        public const float BetTop = 406f;
+        public const float RailSide = 332f;
+        public const float RailMiddle = 478f;
+        public const float RailChipsTop = 450f;
+        public const float BalanceTop = 488f;
 
         public float Scale { get; init; }
         public float CanvasWidth { get; init; }
         public float CanvasHeight { get; init; }
         public float Inset { get; init; }
         public float ContentWidth { get; init; }
-        public float SeatWidth { get; init; }
-        public float SeatHeight { get; init; }
-        public float SeatRowTop { get; init; }
-        public float SeatRowPitch { get; init; }
-        public float HeroTop { get; init; }
-        public bool Compact { get; init; }
 
-        public float SeatTopOf(int row) => SeatRowTop + row * SeatRowPitch;
+        /// <summary>How the design's vertical gaps are stretched (above 1) or squeezed (below 1) to fill the room.</summary>
+        public float VerticalFit { get; init; }
+
+        /// <summary>The middle of the table, in canvas units.</summary>
+        public float CentreX => Inset + ContentWidth / 2f;
+
+        /// <summary>The least room the felt needs before it has to scale: the upper gaps fully squeezed.</summary>
+        public const float SqueezedHeight = HeroCardsTop * MinVerticalFit + (DesignHeight - HeroCardsTop);
+
+        /// <summary>A design row's y on this canvas.</summary>
+        public float Y(float designY) => VerticalFit >= 1f || designY <= HeroCardsTop
+            ? designY * VerticalFit
+            : HeroCardsTop * VerticalFit + (designY - HeroCardsTop);
+
+        /// <summary>A design x offset from the centre line, widened with the table.</summary>
+        public float X(float designOffset) => CentreX + designOffset * ContentWidth / ReferenceWidth;
 
         /// <summary>
         /// Where opponent seat <paramref name="index"/> (casino order: 0 and 1 act before the hero, 2 and 3 after)
-        /// sits on the felt canvas: the centre of its cards, the tilt of its fan, and its side (+1 right, -1 left).
-        /// The curve widens with the table but its depth does not.
+        /// sits: the centre line of its column, the top of its name pill, the tilt of its fan, and its side
+        /// (+1 right, -1 left).
         /// </summary>
         public SeatPlace SeatSlot(int index)
         {
             var (x, y, tilt) = SeatCurve[Math.Clamp(index, 0, SeatCurve.Length - 1)];
-            var centre = Inset + ContentWidth / 2f;
-            return new SeatPlace(centre + x * ContentWidth / ReferenceWidth, SeatRowTop + y, tilt, Math.Sign(x));
+            return new SeatPlace(X(x), Y(SeatsTop + y), tilt, Math.Sign(x));
         }
 
-        /// <summary>The betting phase is "compact": no dealer cards, no hero fan, so those bands shrink.</summary>
-        public static bool IsCompactPhase(RoundPhase phase) => phase == RoundPhase.Betting;
-
+        /// <summary>The step between the dealer's cards: the design's 30% overlap, tightened only if a long hand would not fit.</summary>
         public static float DealerCardStep(int count, float available)
         {
-            if (count <= 1) return CardWidth + CardGap;
-            var full = CardWidth + CardGap;
-            if (CardWidth + (count - 1) * full <= available) return full;
+            var full = CardWidth * (1f - DealerOverlap);
+            if (count <= 1 || CardWidth + (count - 1) * full <= available) return full;
             // Below this the corner index disappears under the next card.
             return Math.Max((available - CardWidth) / (count - 1), 20f);
         }
 
-        public static FeltMetrics For(RoundPhase phase, bool heroHasCards, int sweepAmount,
-            float availableWidth, float availableHeight, float textScale = 1f)
+        public static FeltMetrics For(float availableWidth, float availableHeight)
         {
-            var compact = IsCompactPhase(phase);
-            var rawDealerBand = (compact ? DealerBandCompact : DealerBandSpread) + (sweepAmount > 0 ? SweepBannerBand : 0f);
-            var dealerBand = rawDealerBand * (1f + (textScale - 1f) * DealerBandTextShare);
-            var seatsBottom = dealerBand + SeatPitch + SeatHeightUnits + SeatBandGap;
-
-            // Settlement hides the hero's hand (the result card recaps it), so the felt keeps its full size.
-            float heroBand;
-            if (phase == RoundPhase.Settlement) heroBand = 0f;
-            else if (compact) heroBand = HeroBandNoCards;
-            else heroBand = heroHasCards ? HeroBandWithCards : HeroBandNoCards;
-            var required = seatsBottom + heroBand;
-
-            var fit = Math.Min(availableWidth / ReferenceWidth, availableHeight / required);
-            var scale = Math.Min(fit, MaxScale);
+            var scale = Math.Min(Math.Min(availableWidth / ReferenceWidth, availableHeight / SqueezedHeight), MaxScale);
             var canvasW = availableWidth / scale;
             var canvasH = availableHeight / scale;
-
             var contentWidth = Math.Min(canvasW, MaxContentWidth);
-            var inset = (canvasW - contentWidth) / 2f;
-            var seatWidth = Math.Min((contentWidth - SeatColumnGap) / 2f, MaxSeatWidth);
-
+            // Squeezing only takes from the rows above the hero's cards; stretching spreads every row.
+            var fit = canvasH >= DesignHeight ? canvasH / DesignHeight : (canvasH - (DesignHeight - HeroCardsTop)) / HeroCardsTop;
             return new FeltMetrics
             {
-                Scale = scale, CanvasWidth = canvasW, CanvasHeight = canvasH, Inset = inset, ContentWidth = contentWidth,
-                SeatWidth = seatWidth, SeatHeight = SeatHeightUnits, SeatRowTop = dealerBand, SeatRowPitch = SeatPitch,
-                HeroTop = seatsBottom, Compact = compact,
+                Scale = scale, CanvasWidth = canvasW, CanvasHeight = canvasH,
+                Inset = (canvasW - contentWidth) / 2f, ContentWidth = contentWidth,
+                VerticalFit = Math.Clamp(fit, MinVerticalFit, MaxVerticalFit),
             };
         }
     }

@@ -48,7 +48,8 @@ namespace Blackjack.Game.UI
             root.Size(width, height);
             var anim = Ui.Node("Anim", root).Fill();
             var scale = width / 58f;
-            if (shadow) AddShadow(anim, width, height, scale, 0.42f, CardShadowBlur, CardShadowDrop);
+            // A compact card's shadow falls on the index of the card beneath it; it is kept lighter.
+            if (shadow) AddShadow(anim, width, height, scale, width < CompactBelow ? 0.22f : 0.42f, CardShadowBlur, CardShadowDrop);
 
             var face = Ui.Box(anim, Color.white, 0, "Face");
             face.sprite = Gfx.CardFace();

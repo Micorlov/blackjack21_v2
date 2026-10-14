@@ -18,6 +18,9 @@ namespace Blackjack.Game.UI
         private const int ParticleCount = 60;
         private const float Gravity = 1.35f;
 
+        /// <summary>How far below a seat's name pill its bet ring sits.</summary>
+        private const float SeatRingDrop = 96f;
+
         private sealed class Particle
         {
             public RectTransform Rt; public Image Image; public float Angle, Speed, Spin, Delay;
@@ -47,7 +50,7 @@ namespace Blackjack.Game.UI
             _layer = Ui.Node("Effects", canvas).Fill();
         }
 
-        public void Refresh(AppState s, FeltMetrics m, HeroAreaView hero, SeatPlateView[] seats)
+        public void Refresh(AppState s, FeltMetrics m)
         {
             var r = s.Round;
             if (r.Phase != RoundPhase.Settlement) { Clear(); _firedToken = ""; return; }
@@ -58,7 +61,7 @@ namespace Blackjack.Game.UI
 
             if (DeservesConfetti(r))
             {
-                _confettiOrigin = new Vector2(m.CanvasWidth / 2f, m.HeroTop);
+                _confettiOrigin = new Vector2(m.CentreX, m.Y(FeltMetrics.HeroCardsTop));
                 _reach = Mathf.Min(m.CanvasWidth, m.CanvasHeight);
                 StartConfetti();
             }
@@ -114,18 +117,17 @@ namespace Blackjack.Game.UI
             _flights.Clear();
             var info = s.Round.SweepInfo;
             var seats = Roster.TableSeats(s.Friends, s.Round.Stake?.Key);
-            var target = new Vector2(m.CanvasWidth / 2f, m.HeroTop - 24f);
+            // Every chip lands in the hero's bet ring; each starts from its seat's own ring on the curve.
+            var target = new Vector2(m.CentreX, m.Y(FeltMetrics.BetTop));
 
             var index = 0;
             foreach (var c in info.Contributors)
             {
                 var seat = seats.ToList().FindIndex(f => f.FirstName == c.Name);
                 if (seat < 0 || seat >= 4) continue;
-                var right = seat % 2 == 1;
-                var from = new Vector2(
-                    right ? m.CanvasWidth - m.Inset - m.SeatWidth / 2f : m.Inset + m.SeatWidth / 2f,
-                    m.SeatTopOf(seat / 2) + m.SeatHeight / 2f);
-                var chip = W.ChipDisc(_layer, Theme.SeatColors[seat % Theme.SeatColors.Length], 30f);
+                var place = m.SeatSlot(seat);
+                var from = new Vector2(place.X, place.Y + SeatRingDrop);
+                var chip = W.ChipDisc(_layer, Theme.ChipColor(c.Amount), 30f);
                 chip.Pin(new Vector2(0, 1), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(30, 30));
                 chip.IgnoreLayout();
                 var group = chip.Ensure<CanvasGroup>();

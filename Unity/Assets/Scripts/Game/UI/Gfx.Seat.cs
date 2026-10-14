@@ -237,14 +237,45 @@ namespace Blackjack.Game.UI
             });
         }
 
+        // ---- bet spots ----------------------------------------------------------------------------------
+
+        /// <summary>
+        /// The ellipse a bet sits in, <paramref name="width"/> x <paramref name="height"/> units with a 1.5-unit white
+        /// line (tint it). Dashed for an empty spot or a seat that bust.
+        /// </summary>
+        public static Sprite BetRing(float width, float height, bool dashed)
+        {
+            var w = Mathf.CeilToInt(width * FixtureTexels);
+            var h = Mathf.CeilToInt(height * FixtureTexels);
+            const float line = 1.5f;
+            return Bake($"ring{width:0}x{height:0}{(dashed ? "d" : "")}", w, h, (px, py) =>
+            {
+                var rx = w / 2f - line * FixtureTexels / 2f;
+                var ry = h / 2f - line * FixtureTexels / 2f;
+                var dx = (px - w / 2f) / rx;
+                var dy = (py - h / 2f) / ry;
+                var k = Mathf.Sqrt(dx * dx + dy * dy);
+                // Distance from the ellipse in texels, near enough for a thin line.
+                var d = Mathf.Abs(k - 1f) * Mathf.Min(rx, ry);
+                var cover = Mathf.Clamp01(line * FixtureTexels / 2f - d + 0.5f);
+                if (dashed && Mathf.Repeat(Mathf.Atan2(dy, dx) * Mathf.Rad2Deg + 180f, 20f) > 11f) cover = 0f;
+                return new Color(1f, 1f, 1f, cover);
+            });
+        }
+
+        /// <summary>A soft round glow, white at the centre fading to nothing; tint it (the acting seat, a blackjack).</summary>
+        public static Texture2D Glow() => RadialCircular("seatGlow", 64, 64, Vector2.zero, 0.5f,
+            new[] { Color.white, new Color(1f, 1f, 1f, 0.35f), new Color(1f, 1f, 1f, 0f) }, new[] { 0f, 0.4f, 1f });
+
         // ---- the room -----------------------------------------------------------------------------------
 
         private static readonly (float x, float y, float core, float glow, uint argb)[] Bokeh =
         {
-            (0.12f, 0.04f, 5f, 14f, 0x80FFC46E),
-            (0.30f, 0.09f, 4f, 12f, 0x59FFDC96),
-            (0.64f, 0.03f, 6f, 16f, 0x73FFB45A),
-            (0.86f, 0.08f, 4f, 12f, 0x59FFD28C),
+            // Dimmer than the design's lamps: the table title sits over them and must keep 4.5:1.
+            (0.12f, 0.04f, 5f, 14f, 0x4DFFC46E),
+            (0.30f, 0.09f, 4f, 12f, 0x38FFDC96),
+            (0.64f, 0.03f, 6f, 16f, 0x45FFB45A),
+            (0.86f, 0.08f, 4f, 12f, 0x38FFD28C),
         };
 
         /// <summary>

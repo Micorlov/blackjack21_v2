@@ -84,22 +84,55 @@ namespace Blackjack.Core.Tests
         private const float PhoneWidth = 384f;
 
         [Test]
-        public void BettingPhaseIsDrawnAtFullScaleOnTheTargetPhone() =>
-            Assert.AreEqual(1f, FeltMetrics.For(RoundPhase.Betting, false, 0, PhoneWidth, 388f).Scale);
+        public void TheDesignRoomDrawsAtFullScale()
+        {
+            var m = FeltMetrics.For(PhoneWidth, FeltMetrics.DesignHeight);
+            Assert.AreEqual(1f, m.Scale, 1e-4);
+            Assert.AreEqual(1f, m.VerticalFit, 1e-4);
+        }
 
         [Test]
-        public void ThePlayedHandStaysNearFullScale() =>
-            Assert.GreaterOrEqual(FeltMetrics.For(RoundPhase.Playing, true, 0, PhoneWidth, 475f).Scale, 0.85f);
+        public void AShortRoomSqueezesTheGapsAboveTheHand_andKeepsTheBetClearOfTheCards()
+        {
+            var m = FeltMetrics.For(PhoneWidth, 490f);
+            Assert.AreEqual(1f, m.Scale, 1e-4, "cards keep their size");
+            Assert.Less(m.VerticalFit, 1f);
+            Assert.AreEqual(FeltMetrics.HeroCardsTop * m.VerticalFit, m.Y(FeltMetrics.HeroCardsTop), 1e-3);
+            Assert.AreEqual(FeltMetrics.BetTop - FeltMetrics.HeroCardsTop, m.Y(FeltMetrics.BetTop) - m.Y(FeltMetrics.HeroCardsTop), 1e-3,
+                "the rows under the hand keep their spacing");
+            Assert.AreEqual(490f, m.Y(FeltMetrics.DesignHeight), 0.01f, "the design fills the room exactly");
+        }
 
         [Test]
-        public void TheSettledFeltStaysReadableUnderTheResultCard() =>
-            Assert.GreaterOrEqual(FeltMetrics.For(RoundPhase.Settlement, true, 300, PhoneWidth, 269f).Scale, 0.65f);
+        public void PastTheSqueezeTheWholeFeltScales()
+        {
+            var m = FeltMetrics.For(PhoneWidth, 400f);
+            Assert.AreEqual(400f / FeltMetrics.SqueezedHeight, m.Scale, 1e-4);
+            Assert.AreEqual(FeltMetrics.MinVerticalFit, m.VerticalFit, 1e-4);
+        }
+
+        [Test]
+        public void ATallRoomSpreadsALittle_andNeverScalesPastTheCap()
+        {
+            var tall = FeltMetrics.For(PhoneWidth, 900f);
+            Assert.AreEqual(FeltMetrics.MaxVerticalFit, tall.VerticalFit, 1e-4);
+            Assert.AreEqual(1f, tall.Scale, 1e-4);
+            Assert.AreEqual(FeltMetrics.MaxScale, FeltMetrics.For(1600f, 2000f).Scale, 1e-4);
+        }
+
+        [Test]
+        public void AWideTableCentresItsContent()
+        {
+            var m = FeltMetrics.For(1000f, 720f);
+            Assert.AreEqual(FeltMetrics.MaxContentWidth, m.ContentWidth, 1e-3);
+            Assert.AreEqual(m.CanvasWidth / 2f, m.CentreX, 1e-3);
+            Assert.Greater(m.Inset, 0f);
+        }
 
         [Test]
         public void SeatSlot_placesFirstBaseOnTheRightAndCurvesTowardTheHero()
         {
-            var m = FeltMetrics.For(RoundPhase.Playing, true, 0, PhoneWidth, 800f);
-            var centre = m.Inset + m.ContentWidth / 2f;
+            var m = FeltMetrics.For(PhoneWidth, FeltMetrics.DesignHeight);
             var maya = m.SeatSlot(0);
             var jordan = m.SeatSlot(1);
             var sam = m.SeatSlot(2);
@@ -110,7 +143,7 @@ namespace Blackjack.Core.Tests
             Assert.Greater(maya.X, jordan.X, "the curve narrows toward the hero");
             Assert.Less(priya.X, sam.X);
             Assert.Greater(jordan.Y, maya.Y, "seats nearer the hero sit lower on the felt");
-            Assert.AreEqual(maya.X - centre, centre - priya.X, 0.01f, "the table is symmetric");
+            Assert.AreEqual(maya.X - m.CentreX, m.CentreX - priya.X, 0.01f, "the table is symmetric");
             Assert.Less(maya.Tilt, 0f);
             Assert.Greater(priya.Tilt, 0f);
             for (var i = 0; i < TableCatalog.OpponentSeats; i++)
@@ -124,8 +157,8 @@ namespace Blackjack.Core.Tests
         [Test]
         public void SeatSlot_widensWithTheTable()
         {
-            var narrow = FeltMetrics.For(RoundPhase.Playing, true, 0, PhoneWidth, 800f);
-            var wide = FeltMetrics.For(RoundPhase.Playing, true, 0, 900f, 900f);
+            var narrow = FeltMetrics.For(PhoneWidth, FeltMetrics.DesignHeight);
+            var wide = FeltMetrics.For(900f, 900f);
             Assert.Greater(wide.SeatSlot(0).X - wide.SeatSlot(3).X, narrow.SeatSlot(0).X - narrow.SeatSlot(3).X);
         }
 
@@ -140,49 +173,22 @@ namespace Blackjack.Core.Tests
         }
 
         [Test]
-        public void SeatSlotsKeepTheirHeightInEveryPhase()
+        public void TheDealersCardsOverlapByThirtyPercent_andTightenOnlyWhenTheyMust()
         {
-            var betting = FeltMetrics.For(RoundPhase.Betting, false, 0, PhoneWidth, 800f);
-            var playing = FeltMetrics.For(RoundPhase.Playing, true, 0, PhoneWidth, 800f);
-            var settled = FeltMetrics.For(RoundPhase.Settlement, true, 0, PhoneWidth, 800f);
-            Assert.AreEqual(betting.SeatHeight, playing.SeatHeight);
-            Assert.AreEqual(betting.SeatHeight, settled.SeatHeight);
-            Assert.AreEqual(betting.SeatRowPitch, playing.SeatRowPitch);
+            Assert.AreEqual(FeltMetrics.CardWidth * 0.7f, FeltMetrics.DealerCardStep(3, 384f), 1e-3);
+            var tight = FeltMetrics.DealerCardStep(9, 300f);
+            Assert.Less(tight, FeltMetrics.CardWidth * 0.7f);
+            Assert.GreaterOrEqual(tight, 20f);
         }
 
         [Test]
-        public void TheHeroBlockStartsWhereTheLowerSeatRowEnds()
+        public void TheHeroHandSitsAboveItsBetAndTheBetAboveTheRail()
         {
-            var m = FeltMetrics.For(RoundPhase.Playing, true, 0, PhoneWidth, 800f);
-            Assert.AreEqual(m.SeatTopOf(1) + m.SeatHeight + FeltMetrics.SeatBandGap, m.HeroTop, 0.001f);
-        }
-
-        [Test]
-        public void WhenHeightWinsTheCanvasIsExactlyTheRequiredHeight()
-        {
-            var m = FeltMetrics.For(RoundPhase.Playing, true, 0, 320f, 279f);
-            Assert.Less(m.Scale, 1f);
-            Assert.AreEqual(279f, m.CanvasHeight * m.Scale, 0.01f);
-            Assert.Less(m.HeroTop, m.CanvasHeight);
-        }
-
-        [Test]
-        public void DealerCardsFanTighterWhenTheyWouldOverflow()
-        {
-            Assert.AreEqual(72f, FeltMetrics.DealerCardStep(3, 384f));
-            Assert.Less(FeltMetrics.DealerCardStep(8, 300f), 72f);
-            Assert.GreaterOrEqual(FeltMetrics.DealerCardStep(12, 100f), 20f);
-        }
-
-        [Test]
-        public void WideScreensCapTheContentAndCentreIt()
-        {
-            var m = FeltMetrics.For(RoundPhase.Betting, false, 0, 1200f, 900f);
-            Assert.LessOrEqual(m.ContentWidth, FeltMetrics.MaxContentWidth);
-            Assert.Greater(m.Inset, 0f);
+            Assert.LessOrEqual(FeltMetrics.HeroCardsTop + FeltMetrics.HeroCardHeight, FeltMetrics.BetTop + 2f);
+            Assert.Less(FeltMetrics.BetTop, FeltMetrics.RailMiddle);
+            Assert.Less(FeltMetrics.BalanceTop, FeltMetrics.DesignHeight);
         }
     }
-
     public class ContrastTests
     {
         private static readonly Rgba White = new Rgba(1, 1, 1);

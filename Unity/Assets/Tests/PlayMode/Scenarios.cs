@@ -90,7 +90,7 @@ namespace Blackjack.PlayTests
                 {
                     new NpcSeat(50, new[] { C("6", "♦"), C("6", "♥") }), new NpcSeat(100, new[] { C("Q", "♣"), C("5", "♦") }),
                     new NpcSeat(25, new[] { C("10", "♥"), C("10", "♣") }), new NpcSeat(50, new[] { C("7", "♣"), C("9", "♥") }),
-                }))),
+                }) with { InsuranceBet = 50 })),
             new Scenario("seat_03_seat_playing", () => Table(SeatRound(RoundPhase.Npcs,
                 new[] { new Hand(new[] { C("8"), C("3", "♥") }, 100) }, new[] { C("6", "♦"), C("9", "♣") },
                 new[]

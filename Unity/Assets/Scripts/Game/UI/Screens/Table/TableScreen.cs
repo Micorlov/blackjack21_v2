@@ -10,10 +10,10 @@ namespace Blackjack.Game.UI
     /// <summary>The table: header, phase banner, the felt, and the action panel for whichever phase is live.</summary>
     public sealed class TableScreen : ScreenView
     {
-        private static readonly RoundPhase[] PhaseOrder =
-        {
-            RoundPhase.Betting, RoundPhase.Npcs, RoundPhase.Playing, RoundPhase.Dealer, RoundPhase.Settlement,
-        };
+        private const float HeaderHeight = 64f;
+        private const float PhaseLineHeight = 28f;
+        private const float HeaderIcon = 20f;
+        private static readonly Color HeaderRing = Theme.Gold.WithAlpha(0.3f);
 
         private RectTransform _headerHost, _bannerHost, _panelScroll, _panelHost, _coachHost, _menuHost, _chatHost;
         private ScrollRect _panelScrollRect;
@@ -87,10 +87,9 @@ namespace Blackjack.Game.UI
         {
             var r = s.Round;
             var stake = r.Stake;
-            var row = Ui.HStack(host, Theme.Sm, Ui.Pad(TableLayout.GutterOf(412), (int)Theme.Xxs, TableLayout.GutterOf(412), (int)Theme.Xs),
-                TextAnchor.MiddleCenter, false, "HeaderRow");
+            var row = Ui.HStack(host, Theme.Sm, Ui.Pad(Theme.Md, Theme.Sm), TextAnchor.MiddleCenter, false, "HeaderRow");
             row.Fill();
-            W.CircleIconButton(row, "chevron_left", G.ExitTable, 28);
+            W.CircleIconButton(row, "chevron_left", G.ExitTable, HeaderIcon + Theme.Xs, Theme.Gold, HeaderRing);
 
             var col = Ui.VStack(row, 0, null, TextAnchor.MiddleCenter, true);
             col.FlexW();
@@ -101,15 +100,14 @@ namespace Blackjack.Game.UI
                 "vip" => Loc.T("gameVipTable"),
                 _ => stake?.Name ?? "",
             };
-            Ui.Text(col, title, 24, Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.Center, false).Shrink();
+            Ui.Text(col, title, Type.H2, Theme.Ivory, TextAlignmentOptions.Center, false).Shrink();
             if (stake != null)
-                Ui.Text(col, $"${TableCatalog.FormatChips(stake.Min)}–${TableCatalog.FormatChips(stake.Max)} · 3:2", 17,
-                    Theme.TextPrimary.WithAlpha(0.82f), FontKind.Mono, TextAlignmentOptions.Center, false);
+                Ui.Text(col, $"${TableCatalog.FormatChips(stake.Min)} – ${TableCatalog.FormatChips(stake.Max)}", Type.Numeral(Type.Floor, bold: false),
+                    Theme.Gold, TextAlignmentOptions.Center, false);
 
-            W.CircleIconButton(row, "chat", G.ToggleTableChat, 24);
-            W.CircleIconButton(row, "more_vert", G.ToggleTableMenu, 24);
-            // Header height = tallest child (48) + padding.
-            _headerHost.Size(null, 64);
+            W.CircleIconButton(row, "chat", G.ToggleTableChat, HeaderIcon, Theme.Gold, HeaderRing);
+            W.CircleIconButton(row, "more_vert", G.ToggleTableMenu, HeaderIcon, Theme.Gold, HeaderRing);
+            _headerHost.Size(null, HeaderHeight);
         }
 
         // ---- phase banner ---------------------------------------------------------------------------
@@ -136,31 +134,12 @@ namespace Blackjack.Game.UI
                 RoundPhase.Dealer => Loc.T("gameDealerPlaying"),
                 _ => Loc.T("gameRoundResult"),
             };
-            // Betting and insurance are the player's move as much as `playing` is.
-            var heroTurn = r.Phase == RoundPhase.Playing || r.Phase == RoundPhase.Betting || r.Phase == RoundPhase.Insurance;
-            var current = r.Phase == RoundPhase.Insurance ? RoundPhase.Npcs : r.Phase == RoundPhase.NpcsAfter ? RoundPhase.Playing : r.Phase;
-            var curIdx = Mathf.Clamp(System.Array.IndexOf(PhaseOrder, current), 0, PhaseOrder.Length - 1);
-
-            var gutter = TableLayout.GutterOf(412);
-            var col = Ui.VStack(host, Theme.Xs, Ui.Pad(gutter, 0, gutter, Theme.Xs), TextAnchor.UpperCenter, true);
-            col.Fill();
-            var pillRow = Ui.HStack(col, 0, null, TextAnchor.MiddleCenter, false, "HeadlineRow");
-            var pill = Ui.Card(pillRow, heroTurn ? Theme.Gold : Color.black.WithAlpha(0.42f), Theme.RadiusPill,
-                heroTurn ? Theme.Gold : Theme.Gold.WithAlpha(0.3f), 1, Ui.Pad(Theme.Lg, Theme.Xs + Theme.Xxs), 0, false, "Headline");
-            pill.GetComponent<VerticalLayoutGroup>().childAlignment = TextAnchor.MiddleCenter;
-            var t = Ui.Text(pill, label, 18, heroTurn ? Theme.GoldInk : Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.Center, false, 0.4f);
-            t.Shrink();
-
-            var track = Ui.HStack(col, Theme.Xs, null, TextAnchor.MiddleCenter, true);
-            track.Size(null, 6);
-            for (var i = 0; i < PhaseOrder.Length; i++)
-            {
-                var seg = Ui.Box(track, i == curIdx ? Theme.Gold : i < curIdx ? Theme.Gold.WithAlpha(0.45f) : Theme.TextPrimary.WithAlpha(0.18f),
-                    Theme.RadiusPill, "Step");
-                seg.rectTransform.FlexW();
-                seg.rectTransform.Size(null, 6);
-            }
-            _bannerHost.Size(null, 56);
+            // One quiet line naming the moment, in sentence case: the felt itself shows whose turn it is.
+            var line = Ui.HStack(host, 0, null, TextAnchor.MiddleCenter, false, "PhaseLine");
+            line.Fill();
+            var row = FeltBits.Pill(line, Color.black.WithAlpha(0.55f), out _, Theme.Gold.WithAlpha(0.35f), "Phase", Theme.Md, Theme.Xxs);
+            Ui.Text(row, label, Type.Caption, Theme.Gold, TextAlignmentOptions.Center, false).Shrink();
+            _bannerHost.Size(null, PhaseLineHeight);
         }
 
         // ---- menu and chat ----------------------------------------------------------------------------
