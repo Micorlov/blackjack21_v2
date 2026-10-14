@@ -1,14 +1,14 @@
 # blackjack21_v2
 
-A Flutter blackjack game with a multi-seat table and a friends race. Four tabs, one felt, no shop.
+A Unity (Android) blackjack game with a multi-seat table and a friends race. Four tabs, one felt, no shop.
 
 > **Contributor rule:** every change to this project must update this file in the same
 > commit. See [CLAUDE.md](CLAUDE.md) for the exact requirements.
 
 ## Features
 
-- **Play now** — native guest entry opens the coached Bronze table directly, with no bet placed.
-  Google sign-in stays available, and web sign-in behavior is unchanged.
+- **Play now** — guest entry opens the coached Bronze table directly, with no bet placed.
+  Google sign-in stays available.
 - **Activation measurement** — first-hand, ten-hand and tutorial milestones, entry-choice events,
   plus an export-based funnel and day-one retention report. See [growth measurement](docs/growth/README.md).
 
@@ -41,8 +41,8 @@ A Flutter blackjack game with a multi-seat table and a friends race. Four tabs, 
   6-character code by hand) shares one Firestore-backed group and appears live in the friends
   list, leaderboard, and table seats (guests get anonymous Firebase accounts, so no sign-in is
   required). Tapping the link on Android opens the app straight to the join (App Links, verified
-  via `web/.well-known/assetlinks.json`); without the app it opens the playable web version, which
-  joins automatically and shows a "Get it on Google Play" banner. The Friends screen also pre-fills
+  via `hosting/.well-known/assetlinks.json`); without the app it opens a landing page
+  with a "Get it on Google Play" link. The Friends screen also pre-fills
   the join field from the clipboard on first visit. The friends standings list only ever shows real
   people who joined — never the practice bots. The table itself always seats 4 opponents (hero + 4
   = 5 players in the room): real friends fill seats first (a friend actually seated at this table
@@ -145,17 +145,17 @@ A Flutter blackjack game with a multi-seat table and a friends race. Four tabs, 
   including a tap for each NPC seat's stand/bust
 - **Respectful review requests** — after ten hands, a quiet settlement can request the Play review
   sheet. Failed/unavailable requests wait seven days; completed calls wait 90 days, with a
-  three-request cap. Attempts, outcomes and cooldowns survive relaunch. Legacy one-shot saves
-  migrate safely. A completed API call is not proof that a sheet appeared or a rating was left.
-- **Web version** — runs in the browser at https://blackjack21-v2.web.app, auto-deployed by
-  GitHub Actions on every push to `main`. Google sign-in is required on web (guest mode has no
-  Firebase account behind it, so it's mobile/desktop only there)
-- **Branded link preview** — sharing the web URL (WhatsApp, iMessage, Facebook, etc.) shows a
+  three-request cap. Attempts, outcomes and cooldowns survive relaunch. The timing logic is ported
+  and tested, but the Unity build's review service is still a no-op: no sheet is shown yet.
+- **Invite landing page** — https://blackjack21-v2.web.app serves the invite link and the privacy
+  policy, auto-deployed by GitHub Actions on every push to `main`
+- **Branded link preview** — sharing the invite URL (WhatsApp, iMessage, Facebook, etc.) shows a
   custom casino-themed card: an Ace of Spades and King of Hearts fanned on a felt table, the
-  "Blackjack 21: Sweep the Pot" title, and a real description, instead of the generic Flutter placeholder
+  "Blackjack 21: Sweep the Pot" title, and a real description, instead of a generic placeholder
 - **Multi-language gameplay** — Settings, core table controls and labels, results, the three-hand
   coaching and reference rules support English, Spanish, French, German, Portuguese, Russian,
-  Chinese, Japanese, Hebrew and Arabic through ARB. Native onboarding benefits and entry buttons
+  Chinese, Hebrew and Arabic (10 locales, `Unity/Assets/Resources/Locales/*.json`); Hebrew and
+  Arabic render right-to-left, with Arabic letter shaping. Native onboarding benefits and entry buttons
   are translated too. Lobby, social, legal documents and some accessibility copy remain English.
 - **"More games: Video Poker" link** — Settings → About has a row (card icon, "Free video poker,
   no ads", translated into all 10 languages) that opens the developer's Video Poker game on
@@ -168,110 +168,71 @@ A Flutter blackjack game with a multi-seat table and a friends race. Four tabs, 
 
 ## Getting Started
 
-```bash
-flutter pub get
-flutter run
-```
-
-Run the web build locally:
+The game is a Unity 6000.3.25f1 project in `Unity/` (Android, IL2CPP ARM64). Everything — every screen,
+dialog and the felt — is built in code at runtime, so the scene is empty and there are no prefabs.
 
 ```bash
-flutter run -d chrome
+# once per checkout: fetch Firebase (~760 MB, not committed) and configure the project
+Unity/tools/install_firebase.sh
+
+# build the development APK (signed with the debug key) -> Unity/Builds/Android/blackjack21-unity.apk
+/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity -batchmode -nographics -quit \
+  -projectPath Unity -executeMethod Blackjack.EditorTools.BuildTools.BuildAndroid -logFile /tmp/build.log
+
+adb -s <serial> install -r Unity/Builds/Android/blackjack21-unity.apk
 ```
+
+Keep `-r`: it upgrades in place so the player's save survives. The build is signed with
+`~/.android/debug.keystore`, the key the old Flutter build used, so it upgrades that install too (saved
+Flutter data does not carry over).
 
 ## Project Structure
 
-Growth additions: `lib/l10n/gameplay.dart` supplies localized coaching/results;
-`tool/growth_funnel.py` aggregates event exports; `docs/growth/README.md` documents measurement;
-`test/store_screenshot_capture_test.dart` renders the staged screenshot set.
-
 ```
-lib/
-├── main.dart
-├── data/          # static game data, tutorial_data (3 lessons + "How to play" guide copy)
-├── models/        # enums, game_state, hand, playing_card, social_models, table_pot
-├── screens/       # lobby, table, friends, settings, stats, onboarding
-│   ├── legal/     # Terms + Privacy copy and the in-app reader (offline, no webview)
-│   ├── shared/    # cross-screen pieces: tab_pill, async_action (pending state),
-│   │              #   confirm_dialog, empty_state, avatar_initial
-│   └── table/     # table sub-panels (felt, betting, action, chat sheet, settlement,
-│                  #   table_layout (breakpoints + felt metrics), table_phase_banner,
-│                  #   dealt_card, …)
-├── services/      # sound_player, spoken_amount, social_service (Firestore), local_notifier,
-│                  #   notification_support (web-safe "can we notify here?" check),
-│                  #   daily_bonus_store (persists the last claim time + streak day),
-│                  #   review_prompter (opens Play's in-app review sheet)
-├── state/         # game_notifier (Riverpod)
-├── theme/         # design tokens — app_colors (raw values incl. the light set),
-│                  #   app_palette (semantic roles per brightness, a ThemeExtension),
-│                  #   app_theme (ThemeData for both brightnesses), app_spacing
-│                  #   (4/8dp scale, radii, 48dp touch minimum), app_motion
-│                  #   (durations, curves, reduced-motion), app_text_styles (+ type ramp)
-├── utils/         # formatters, leaderboard, points (hourly/daily buckets), comeback,
-│                  #   daily_bonus (pure cooldown + 7-day streak logic),
-│                  #   tutorial (pure "which coaching card, if any, right now?"),
-│                  #   table_seats (pads real friends to 4 table seats with practice bots),
-│                  #   review_prompt (pure "is this the hand to ask for a rating on?"),
-│                  #   play_time (foreground-time counter behind the admin "Time Played")
-└── widgets/       # shared UI (buttons, overlays, cards, nav bar,
-                   #   tutorial_coach_card, how_to_play_sheet, daily_bonus_dialog,
-                   #   web_viewport_scaler)
-
-tool/
-├── make_icons.py             # renders every app icon (Android/iOS/macOS/web/Play) from one master
-├── play_upload.py            # uploads a signed .aab to a Play track (Android Publisher API v3)
-├── make_store_shots.py       # composes captioned store screenshots from raw device captures
-├── play_images.py            # uploads the listing's images (screenshots, feature graphic, icon)
-├── make_promo.py             # cuts the 30s vertical promo from a screenrecord of a real session
-└── release_notes_en-US.txt   # en-US release notes passed to --notes-file
-
-play-assets/                  # what the Play Store listing shows — the uploaded copies live on Play
-├── icon-512.png              # 512×512 store icon, generated by tool/make_icons.py from the master
-├── feature-graphic.png       # 1024×500 feature graphic
-├── feature-graphic.html      # the source the feature graphic is rendered from
-├── screenshot-frame.html     # caption-band template the screenshots are composed against
-├── screen-01..08.png         # phone screenshots, 1344×2992, one benefit captioned on each
-├── tab7-01..02.png           # 7-inch tablet screenshots, 1200×1920
-├── tab10-01..02.png          # 10-inch tablet screenshots, 1600×2560
-├── promo-vertical.mp4        # 31s 1080×1920 promo, for YouTube then the listing video slot
-├── src/                      # icon-master.png (the app icon itself) + tool/make_icons.py's
-│                              #   generated dealer cutouts for feature-graphic.html — see src/README.md
-└── raw/                      # gitignored device captures the above are composed from
+Unity/
+├── Assets/
+│   ├── Scripts/Core/          # rules engine as plain C# (Blackjack.Core, no UnityEngine): cards, shoe,
+│   │                          #   round engine, settlement, progression, RTL (ArabicShaper, Bidi)
+│   ├── Scripts/Game/          # GameController (paced NPC/dealer turns, audio/haptic cues, bonus, social),
+│   │   │                      #   services behind interfaces with Null implementations
+│   │   └── UI/                # runtime UI toolkit + every screen (onboarding, lobby, table, stats,
+│   │                          #   friends, settings), dialogs, overlays, the felt shader view
+│   ├── Scripts/GameFirebase/  # Firebase-backed services, compiled only when FIREBASE_SDK is defined
+│   ├── Scripts/Editor/        # BuildTools (configure + Android build), ProjectSetup, audio import
+│   ├── Resources/             # Locales (10 JSON files), Sfx (+ spoken amounts), Fonts, Felt shader
+│   ├── Plugins/Android/       # BlackjackExtras.androidlib: permissions + invite-link intent filter
+│   └── Tests/                 # EditMode (NUnit) and PlayMode (offscreen screenshots)
+├── tools/                     # install_firebase.sh, unpack_unitypackage.py
+hosting/                       # Firebase Hosting: invite landing page, privacy policy, assetlinks.json
+play-assets/  tool/            # Google Play listing artwork and the store upload scripts
+firestore.rules  firestore.indexes.json  firebase.json  .firebaserc
+admin.html  push-admin.html  dashboard.html   # admin pages (deploy-admin.yml publishes the first two)
 ```
 
-### Unity port (`Unity/`)
+`tool/gen_voice.py` and `tool/make_icons.py` were written for the removed Flutter tree and still target
+its `assets/` and `android/` output paths; point them at `Unity/Assets/Resources/Sfx` and
+`Unity/Assets/Icons` before using them again.
 
-The game is being ported to Unity (6000.3.25f1, Android) in this folder; the Flutter app above stays
-the shipping build until the port reaches parity. The Unity app keeps the same package id
-(`com.micorlov.blackjack21_v2`) so an `adb install -r` upgrades in place (saved Flutter data does not
-carry over).
+### Unity internals
 
 - `Unity/Assets/Scripts/Core/` — the rules engine as plain C# (`Blackjack.Core` assembly, no Unity
-  references): cards and shoe, comeback dealing, betting limits, the round engine (deal, insurance,
-  hit/stand/double/split/surrender, opponent seats, dealer play) and the sweep-pot settlement. Every
-  step is a pure function from one immutable `RoundState` to the next; timing is left to the caller.
-- `Unity/Assets/Tests/EditMode/` — NUnit tests ported from the Flutter suite.
-
-Run the Unity tests from the repo root:
-
-```bash
-/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity -batchmode -nographics \
-  -projectPath Unity -runTests -testPlatform EditMode -testResults /tmp/unity-results.xml
-```
+  references). Every step is a pure function from one immutable `RoundState` to the next; timing is left
+  to the caller (`GameController`).
+- `Unity/Assets/Tests/EditMode/` — 147 NUnit tests (rules, betting, settlement, progression, controller,
+  RTL). `Unity/Assets/Tests/PlayMode/` renders each screen offscreen to PNGs for visual review.
 
 Firebase (Auth, Firestore, Analytics, Crashlytics — SDK 13.17.0) is **not committed**: it is ~760 MB of
-native libraries. Run `Unity/tools/install_firebase.sh` once per checkout; it downloads Google's official
-zip, verifies its SHA-256, unpacks the four `.unitypackage`s into `Unity/Assets` with
-`tools/unpack_unitypackage.py` (Unity's own importer hangs headless once the External Dependency Manager
-starts); the Firebase console `Assets/google-services.json` (public client keys) is committed. `BuildTools.Configure` then defines
+native libraries. `Unity/tools/install_firebase.sh` downloads Google's official zip, verifies its SHA-256,
+unpacks the four `.unitypackage`s into `Unity/Assets` with `tools/unpack_unitypackage.py` (Unity's own
+importer hangs headless once the External Dependency Manager starts); the Firebase console
+`Assets/google-services.json` (public client keys) is committed. `BuildTools.Configure` then defines
 `FIREBASE_SDK`, which switches on the `Blackjack.Game.Firebase` assembly (`FirebaseSocialService`,
 `FirebaseAnalyticsService`, `FirebaseRegistration`). Without the SDK the game runs on the offline Null
-services. The Firestore collections and fields are the Flutter app's, so both builds share a friends group.
+services. Firestore collections and fields (`players`, `groups/{code}/players`, `leaderboard`,
+`config/features`) are unchanged, so a group created on an older build still works.
 
-Port status: **done** — rules engine, controller, every screen, persistence, audio, the 10 locales
-(incl. Hebrew/Arabic RTL), notifications, the Android build and Firebase. Verified on an emulator:
-Firebase initialises, anonymous sign-in returns a uid, the lobby renders. **Not yet verified** — Google
-sign-in (needs an interactive account on a device) and Play in-app review (still a no-op).
+Not yet verified: Google sign-in (needs an interactive account on a device) and Play in-app review
+(still a no-op).
 
 ### Regenerating the store assets
 
@@ -318,7 +279,7 @@ route is a dead end here, because a release bundle is ~58 MB and browser file-up
 is capped well below that.
 
 ```bash
-flutter build appbundle --release && python3 tool/play_upload.py --aab build/app/outputs/bundle/release/app-release.aab --track internal --release-name "1.0.0 (1)" --notes-file tool/release_notes_en-US.txt
+python3 tool/play_upload.py --aab <path-to>.aab --track internal --release-name "1.0.0 (1)" --notes-file tool/release_notes_en-US.txt
 ```
 
 Pass `--version-code N` instead of `--aab` to put a bundle that is already on Play onto a second
@@ -326,14 +287,16 @@ track — Play rejects a re-upload of a version code it already has. Now that th
 published, `alpha` accepts `--status completed` too; the draft-only restriction that once limited
 `completed` to `internal` no longer applies.
 
-Bump `version:` in `pubspec.yaml` before building — Gradle reads it as `flutter.versionCode` /
-`flutter.versionName`, and Play rejects a bundle whose version code is already on the account.
+Bump `VersionName` / `VersionCode` in `Unity/Assets/Scripts/Editor/BuildTools.cs` before building — Play
+rejects a bundle whose version code is already on the account. `BuildAndroid` currently writes a
+development APK (`buildAppBundle = false`); a Play release needs an `.aab` signed with the upload key,
+which is not wired up yet.
 Keep `tool/release_notes_en-US.txt` under **500 characters**; Play rejects anything longer.
 
 Auth is a Google Cloud service account, `play-publisher@blackjack21-v2.iam.gserviceaccount.com`,
 granted "Release apps to testing tracks" and "Manage testing tracks and edit tester lists" on this
-app in Play Console. Its JSON key lives at `android/play-service-account.json` and is gitignored,
-like `android/key.properties` — neither ever gets committed.
+app in Play Console. Its JSON key lives at `android/play-service-account.json` (path used by `tool/play_upload.py`) and is
+gitignored — it never gets committed.
 
 It can release to production as of 1.3.0 (4). Until then it could not: a `--track production` run
 uploaded the bundle and staged the release, then failed on the final commit with `HttpError 403 …
@@ -349,196 +312,72 @@ overview. Anything else already sitting in **Changes in review** rides along wit
 
 ### Verifying the invite deep link (Android App Links)
 
-`web/.well-known/assetlinks.json` currently lists only the local debug keystore's SHA-256
+`hosting/.well-known/assetlinks.json` currently lists only the local debug keystore's SHA-256
 fingerprint, so an invite link opens the app directly on a debug/`adb install`ed build but not yet
 on a Play-distributed one. One-time manual steps to fix that:
 
 1. Play Console → **Setup → App signing** → copy the **App signing key certificate**'s SHA-256 (not
    the upload key — Play re-signs the bundle with this one).
-2. Add it to the `sha256_cert_fingerprints` array in `web/.well-known/assetlinks.json`, alongside
+2. Add it to the `sha256_cert_fingerprints` array in `hosting/.well-known/assetlinks.json`, alongside
    the existing debug entry.
-3. `flutter build web && firebase deploy --only hosting`.
+3. `firebase deploy --only hosting` (or merge to `main`; the workflow deploys `hosting/`).
 4. Verify: `adb shell pm get-app-links com.micorlov.blackjack21_v2` should report the domain
    `verified`. Until it does, tapping a link still works — it just opens the web app (which
    auto-joins) instead of the installed app directly.
 
 ## Dependencies
 
-| Package | Purpose |
+| Package | Why |
 |---|---|
-| `flutter_riverpod` | State management (`game_notifier`) |
-| `audioplayers` | Sound effect playback |
-| `cupertino_icons` | iOS-style icons |
-| `firebase_core` / `firebase_auth` | Firebase app + Google/anonymous sign-in |
-| `google_sign_in` | Google account picker for sign-in |
-| `google_sign_in_web` | Renders Google's own Identity Services button on web — `authenticate()` isn't supported there |
-| `cloud_firestore` | Friends groups and live hourly/daily score sync |
-| `firebase_analytics` | Anonymous counts of what happens in the game — see **Privacy** below |
-| `firebase_crashlytics` | Crash and non-fatal error reporting; installs the app's only `FlutterError.onError` / `PlatformDispatcher.onError` handlers |
-| `url_launcher` | Opens WhatsApp with the prefilled invite link, and the Play Store from the web install banner |
-| `share_plus` | The system share sheet for the invite link, alongside the WhatsApp button |
-| `flutter_web_plugins` | `usePathUrlStrategy()`, so a web invite link resolves `/join/CODE` from the real URL path instead of the default `#/` hash fragment |
-| `flutter_local_notifications` | "Friend passed you" leaderboard alerts, the daily-bonus reminder, and the play-streak reminder |
-| `shared_preferences` | Saves the bankroll, stats, points, referral/streak/rebuy state and settings between launches (`game_store`), and the last daily-bonus claim time (`daily_bonus_store`) |
-| `timezone` | Builds the `TZDateTime` the daily-bonus and streak reminders are scheduled against |
-| `flutter_localizations` | Wires the Material/Widgets/Cupertino locale delegates the app-wide UI translation uses |
-| `intl` | Backs `flutter gen-l10n`'s generated `AppLocalizations` class and ICU plural/placeholder syntax |
-| `in_app_review` | Google Play review requests with persisted cooldowns and a cap (`review_prompter`) |
-| `package_info_plus` | Reads the running build's version+build number, stamped onto `leaderboard` rows and error/install reports for the admin panel's Analytics/Health tabs |
-
-Dev: `flutter_test`, `flutter_lints`, `integration_test`.
-
-Typography is no longer a dependency: Sora, Instrument Serif and Space Mono ship inside the app
-under `assets/fonts` (see **Assets**), replacing `google_fonts`, which fetched all three over the
-network on first launch.
+| Unity 6000.3.25f1 | Engine; built-in render pipeline, Gamma colour space, uGUI + TextMeshPro |
+| `com.unity.mobile.notifications` | Local daily-bonus and friends-activity notifications (Android channels) |
+| `com.unity.test-framework` | EditMode and PlayMode tests |
+| Firebase Unity SDK 13.17.0 | Auth, Firestore, Analytics, Crashlytics — fetched by `Unity/tools/install_firebase.sh` |
+| External Dependency Manager | Bundled with Firebase; resolves its Android Gradle dependencies |
 
 ## Assets
 
-`play-assets/big-cards/en-US/01.png` through `03.png` are staged 1080×1920 screenshots rendered
-from actual Flutter table widgets. They are not uploaded; existing store artwork is retained.
-See [capture instructions](play-assets/big-cards/README.md).
-
-`assets/fonts/` holds the three typefaces the design is drawn in, declared under `flutter: fonts:`
-in `pubspec.yaml`:
-
-| File | Family | Used for |
-|---|---|---|
-| `Sora-Variable.ttf` | `Sora` | Body and UI text. The upstream variable font — `AppText.sora` drives its `wght` axis through `fontVariations`, because Flutter will not do that from `fontWeight` alone |
-| `InstrumentSerif-Italic.ttf` | `Instrument Serif` | Screen titles and display headings |
-| `SpaceMono-Regular.ttf`, `SpaceMono-Bold.ttf` | `Space Mono` | Money, totals and uppercase labels |
-
-They were fetched at runtime by `google_fonts` until 2026-09-05, so a cold first launch drew the
-whole game in the platform fallback face and then reflowed once the download landed.
-
-The app icon — Android (legacy + adaptive), iOS, macOS, web favicon/PWA icons and the Play Store
-listing icon — is generated by `tool/make_icons.py` from a single master under `play-assets/src/`
-rather than hand-resized per platform. See `play-assets/src/README.md` for the two master
-conventions it supports; regenerate every size after swapping the master:
-
-```bash
-python3 tool/make_icons.py
-```
-
-`web/og-image.jpg` is the 1200×630 social/link-preview banner (Open Graph + Twitter Card) referenced
-from `web/index.html`; it was made by a one-off Pillow script (not checked in). `web/favicon.png`
-and `web/icons/Icon-*.png` (including the `-maskable-` variants) are the matching browser-tab and
-PWA/home-screen icons and come out of the same `tool/make_icons.py` run as every other icon.
-
-`web/privacy-policy.html` is a standalone static page (not part of the Flutter app) served at
-`https://blackjack21-v2.web.app/privacy-policy.html` — it's the Privacy Policy URL required by the
-Google Play Store listing. Firebase Hosting serves static files under `web/` ahead of the SPA
-catch-all rewrite, so this loads directly without going through `index.html`.
-
-`assets/sfx/` holds two kinds of clip, all registered wholesale by the `- assets/sfx/` entry
-under `flutter: assets:` in `pubspec.yaml` — a new file in the folder needs no pubspec change.
-
-| Kind | Files | Plays on |
-|---|---|---|
-| Tones | `deal.wav`, `chip.wav`, `turn.wav`, `win.wav`, `lose.wav`, `push.wav`, `blackjack.wav` | Dealing, betting, your turn, and hand outcomes |
-| NPC voice | `npc_stand.wav`, `npc_bust.wav` | An opponent seat standing or busting |
-| Result voice | `player_win.wav`, `player_lose.wav`, `player_push.wav`, `player_blackjack.wav`, `player_blackjack_pot.wav`, `player_pot.wav` | Your settled hand, 700ms after its tone — or later, if something is still speaking |
-| Celebration | `pot_celebration.wav` | After the pot call-out — a synthesized drum roll, downbeat and major triad |
-| Number words | `num/*.wav` — 0-19, the tens, `hundred`, `thousand`, `dollars`, `sweep_pot`, `no_sweep_pot`, `you_have`, `dealer_has`, `blackjack`, `player_bust`, `dealer_bust` | Stitched into the spoken pot call-out, your hand total, and the dealer's |
-
-`assets/sfx/num/` needs its own `pubspec.yaml` entry: Flutter's asset folders are **not**
-recursive, so a nested folder left out of the manifest is silently missing at runtime.
-
-Pot figures are arbitrary multiples of the table minimum, so the sentence cannot be
-pre-recorded. `spoken_amount.dart` turns the amount into words, and `SoundPlayer.playWords`
-joins those clips into a single WAV in memory (45ms of silence between words) and plays it
-through one `BytesSource` — playing them as separate calls would need each to report
-completion before the next, and any gap would land mid-sentence.
-
-Voice clips are synthesized speech (Kokoro, `am_michael` voice) rather than tones, so the
-table reads as spoken call-outs. All are mono 16-bit 44.1kHz and peak-normalised to -6.5 dBFS
-so no one line is louder than the rest.
-
-Every clip must contain its whole word and decay naturally — a file cut short mid-syllable
-still loads and plays, it just sounds like an unintelligible click, which is how a truncated
-`npc_stand.wav` shipped once. `test/sfx_assets_test.dart` guards against that: it reads each
-WAV and fails any clip still sounding above 10% of its own peak in its final 10ms.
-
-`tool/gen_voice.py` re-cuts the whole spoken set in one command, so changing the table's voice
-is a one-liner rather than 37 hand-trimmed files:
-
-```bash
-python3 tool/gen_voice.py --voice am_michael
-```
-
-It synthesizes each line, trims it to its own edges, resamples to 44.1kHz, peak-normalises and
-fades it out. Clips are produced on the build machine and bundled, so Android and iOS play
-byte-identical audio — nothing runs a TTS engine on the phone.
-
-Kokoro's model is ~325MB and stays out of the repo, under `$KOKORO_HOME`
-(default `~/.cache/blackjack21-voice`): a `kokoro-env/` venv with `kokoro-onnx` and
-`soundfile`, plus `kokoro-v1.0.onnx` and `voices-v1.0.bin`. It also needs
-`brew install espeak-ng` — the espeak bundled inside `espeakng-loader` has its data path
-compiled in as a build-machine path that does not exist locally, so the tool redirects the
-loader at Homebrew's copy.
-
-The tool also speaks through macOS `say` (`--engine say`) for quick auditions. That path
-fingerprints `say`'s fallback voice and refuses to run when the requested voice matches it:
-`say -v Alex` on a machine without Alex returns success and audio in the fallback voice
-instead of failing, which nearly shipped a whole set in the wrong voice.
+- `Unity/Assets/Resources/Locales/*.json` — the 10 UI languages (en, he, ar, es, fr, de, pt, ru, tr, zh),
+  152 keys each; `ar` and `he` render right-to-left.
+- `Unity/Assets/Resources/Sfx/` — sound effects and the spoken call-outs (`Sfx/num/` holds the spoken
+  amounts, so adding a clip is just adding the file).
+- `Unity/Assets/Resources/Fonts/` — Sora (Regular/SemiBold/Bold static instances), Instrument Serif
+  Italic, Space Mono; OS fonts are added as fallbacks per language.
+- `Unity/Assets/Icons/` — launcher (adaptive foreground/background, legacy) and notification icons.
+- `hosting/` — `privacy-policy.html` is the Privacy Policy URL the Play listing requires, served at
+  `https://blackjack21-v2.web.app/privacy-policy.html`; `index.html` is the invite landing page;
+  `og-image.jpg` is the 1200×630 link-preview banner.
+- `play-assets/` — Play Store listing artwork; see **Regenerating the store assets**.
 
 ## Testing
 
-```bash
-flutter analyze
-flutter test
-```
-
-### Layout sweeps
-
-`test/screen_overflow_test.dart` pumps **every screen and overlay** — onboarding, lobby, stats
-(both tabs), friends, settings, the table in five states, the daily-bonus dialog, the
-how-to-play sheet, the out-of-chips sheet and the friends standings card — on
-five phone/tablet sizes at both text scales the app allows, and fails on any `RenderFlex`
-overflow. Half the scenarios use "loaded account" data (a 35-character Google display name,
-seven-figure bankrolls, a full hand history) because every row in the design was drawn around
-"Guest" and "$1,150". `test/table_layout_test.dart` does the same for the felt's round phases
-across seventeen device sizes (including the 384x832 phone the game is tuned on), and checks
-that every bot seat shows its hand, that a bot card is never drawn under 32px wide on that
-phone, that the empty pot pill stays hidden, and that the hero's cards draw at full size. `test/felt_metrics_test.dart` checks the felt's
-vertical budget as plain arithmetic — the scale each phase gets on the target phone, and that
-seat slots are the same height in every phase.
-
-These sweeps only mean anything because `test/support/real_fonts.dart` loads the app's own three
-faces from `assets/fonts`. Without it every glyph is a full em wide in `flutter test`, roughly
-twice the shipped faces, and almost any row holding a sentence "overflows" in a test while being
-fine on a phone. It used to substitute Roboto from the Flutter SDK cache, which measures about
-10% narrower than Sora and so let two real overflows through.
-
-Layout work that still has to be judged against the real fonts and real device metrics has a
-driver test that walks the app from onboarding to a dealt round and then holds the table still:
+EditMode (rules, betting, settlement, progression, controller, RTL — no graphics needed):
 
 ```bash
-flutter test integration_test/table_shot_test.dart -d <device-id>
-# while it holds: xcrun simctl io <device-id> screenshot shot.png
+/Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity -batchmode -nographics \
+  -projectPath Unity -runTests -testPlatform EditMode -testResults /tmp/unity-results.xml
 ```
 
-### Android emulator
-
-The `bj21_test` AVD needs **4 GB of RAM and hardware GPU** to run this app. It was originally
-created with `hw.ramSize = 2G` and `hw.gpu.enabled = no`, and under that configuration the
-Android 16 system image plus Play Services plus a Flutter debug build does not fit in memory:
-the kernel OOM-kills `com.android.systemui` (the screen goes black while the activity is still
-resumed) and then the app process itself, which surfaces in `flutter run` as
-`Lost connection to device`. It looks exactly like an app crash and is not one — the crash
-buffer stays empty and `logcat` shows `mem-pressure-event` instead.
-
-The AVD config now carries the fix, so `flutter emulators --launch bj21_test` is enough. To
-force it explicitly, or for a fresh AVD:
+PlayMode screenshot tests render each screen offscreen (needs graphics, so no `-nographics`); set
+`BJ_SHOTS` to the output folder and review the PNGs:
 
 ```bash
-emulator -avd bj21_test -memory 4096 -gpu host
+BJ_SHOTS=/tmp/shots /Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity -batchmode \
+  -projectPath Unity -runTests -testPlatform PlayMode -testResults /tmp/play-results.xml
 ```
 
-Google sign-in returns `DEVELOPER_ERROR` on the emulator unless that machine's debug-keystore
-SHA-1 is registered in the Firebase project. **Play as Guest** is unaffected — use it for
-emulator testing.
+A Core change is not done until the EditMode suite passes. Check on a device or emulator
+(`adb -s <serial> logcat --pid=$(adb -s <serial> shell pidof com.micorlov.blackjack21_v2)`): the Firebase
+lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
+
+### 2026-10-14 (Flutter removed)
+- chore: delete the Flutter app (`lib/`, `test/`, `android/`, `ios/`, `web/`, `macos/`, `windows/`, `linux/`,
+  `assets/`, `integration_test/`, `pubspec.*`) — the Unity build is now the only game. It stays in git
+  history before this commit. Static hosting content (invite landing page, privacy policy, `assetlinks.json`,
+  link-preview image) moved to `hosting/` and `firebase.json` serves it; the hosting workflow no longer builds
+  Flutter. Entries below describe the Flutter app as it was.
 
 ### 2026-10-14
 - feat: Unity port — Firebase: Auth (anonymous + Google via `FederatedOAuthProvider`), Firestore friends groups
@@ -956,7 +795,7 @@ emulator testing.
   no link at all, and nothing on any platform could open one. It now shares
   `https://blackjack21-v2.web.app/join/CODE`: tapping it opens the app straight to the join
   (Android App Links, `flutter_deeplinking_enabled` + an `autoVerify` intent-filter in
-  `AndroidManifest.xml`, verified via the new `web/.well-known/assetlinks.json`), or the playable
+  `AndroidManifest.xml`, verified via the new `hosting/.well-known/assetlinks.json`), or the playable
   web app if it isn't installed, which joins automatically and offers a Play Store banner. Added a
   system share sheet (`share_plus`) and a Copy link button alongside WhatsApp, and the Friends
   screen now pre-fills the join field from the clipboard on first visit. New pure module
