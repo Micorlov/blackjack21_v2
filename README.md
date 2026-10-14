@@ -259,8 +259,19 @@ Run the Unity tests from the repo root:
   -projectPath Unity -runTests -testPlatform EditMode -testResults /tmp/unity-results.xml
 ```
 
-Port status: **done** — rules engine and its tests. **Next** — table scene and UI, persistence, audio,
-the 10 locales, Firebase (auth, friends groups, leaderboards), notifications, then the Android build.
+Firebase (Auth, Firestore, Analytics, Crashlytics — SDK 13.17.0) is **not committed**: it is ~760 MB of
+native libraries. Run `Unity/tools/install_firebase.sh` once per checkout; it downloads Google's official
+zip, verifies its SHA-256, unpacks the four `.unitypackage`s into `Unity/Assets` with
+`tools/unpack_unitypackage.py` (Unity's own importer hangs headless once the External Dependency Manager
+starts); the Firebase console `Assets/google-services.json` (public client keys) is committed. `BuildTools.Configure` then defines
+`FIREBASE_SDK`, which switches on the `Blackjack.Game.Firebase` assembly (`FirebaseSocialService`,
+`FirebaseAnalyticsService`, `FirebaseRegistration`). Without the SDK the game runs on the offline Null
+services. The Firestore collections and fields are the Flutter app's, so both builds share a friends group.
+
+Port status: **done** — rules engine, controller, every screen, persistence, audio, the 10 locales
+(incl. Hebrew/Arabic RTL), notifications, the Android build and Firebase. Verified on an emulator:
+Firebase initialises, anonymous sign-in returns a uid, the lobby renders. **Not yet verified** — Google
+sign-in (needs an interactive account on a device) and Play in-app review (still a no-op).
 
 ### Regenerating the store assets
 
@@ -530,6 +541,10 @@ emulator testing.
 ## Changelog
 
 ### 2026-10-14
+- feat: Unity port — Firebase: Auth (anonymous + Google via `FederatedOAuthProvider`), Firestore friends groups
+  and leaderboards with the Flutter collections/fields, Analytics and Crashlytics, the install ping and error
+  log. SDK is fetched by `Unity/tools/install_firebase.sh` and guarded by the `FIREBASE_SDK` define.
+- chore: stop tracking `Unity/.utmp` (CMake/Gradle scratch that was committed by mistake) and ignore it.
 - feat: Unity port — Hebrew and Arabic: Arabic letter shaping and a bidirectional reorderer in the tested Core,
   a text component that wraps and reorders per line, mirrored rows and alignment, and a full UI rebuild when the
   language changes. Labels shrink to fit instead of using ellipsis.

@@ -28,3 +28,34 @@
 sysinfo.txt
 crashlytics-build.properties
 Builds/
+
+# Gradle/CMake scratch written during Android builds
+/.utmp/
+
+# Firebase SDK payload — fetched by tools/install_firebase.sh, never committed
+/Assets/Firebase/
+/Assets/Firebase.meta
+/Assets/ExternalDependencyManager/
+/Assets/ExternalDependencyManager.meta
+/Assets/Editor Default Resources/
+/Assets/Editor Default Resources.meta
+/Assets/Plugins/iOS/
+/Assets/Plugins/iOS.meta
+/Assets/Plugins/tvOS/
+/Assets/Plugins/tvOS.meta
+/Assets/Plugins/Android/FirebaseApp.androidlib/
+/Assets/Plugins/Android/FirebaseApp.androidlib.meta
+/Assets/StreamingAssets/
+/Assets/StreamingAssets.meta
+/ProjectSettings/GvhProjectSettings.xml
+
+# Unity test-runner scratch scenes
+/Assets/InitTestScene*
+/Assets/GeneratedLocalRepo/
+/Assets/GeneratedLocalRepo.meta
+/Assets/Plugins/Android/FirebaseCrashlytics.androidlib/
+/Assets/Plugins/Android/FirebaseCrashlytics.androidlib.meta
+/ProjectSettings/AndroidResolverDependencies.xml
+/Assets/Plugins/Android/mainTemplate.gradle*
+/Assets/Plugins/Android/settingsTemplate.gradle*
+/Assets/Plugins/Android/gradleTemplate.properties*

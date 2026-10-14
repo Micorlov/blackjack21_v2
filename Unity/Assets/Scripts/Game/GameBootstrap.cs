@@ -50,8 +50,9 @@ namespace Blackjack.Game
                 Store = new PlayerPrefsSaveStore(),
                 Notifier = new UnityNotifier(),
                 Platform = new UnityPlatform(),
-                Social = CreateSocial(),
-                Analytics = CreateAnalytics(),
+                Social = ServiceFactories.Social(),
+                Analytics = ServiceFactories.Analytics(),
+                Review = ServiceFactories.Review(),
             };
             controller.Init(services);
             Loc.Use(controller.State.LanguageOverride);
@@ -66,9 +67,5 @@ namespace Blackjack.Game
             Controller = controller;
             return controller;
         }
-
-        // Firebase-backed services are added by the Firebase integration; until then the game runs offline.
-        private static ISocialService CreateSocial() => new NullSocial();
-        private static IAnalytics CreateAnalytics() => new NullAnalytics();
     }
 }

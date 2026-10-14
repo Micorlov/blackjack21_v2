@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Android;
@@ -65,6 +66,7 @@ namespace Blackjack.EditorTools
             PlayerSettings.Android.applicationEntry = AndroidApplicationEntry.Activity;
             PlayerSettings.SetManagedStrippingLevel(android, ManagedStrippingLevel.Low);
             EditorUserBuildSettings.buildAppBundle = false;
+            ConfigureFirebaseDefine(android);
 
             // The Flutter build is signed with the standard debug key; using the same one lets this APK upgrade it in place.
             var keystore = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".android", "debug.keystore");
@@ -77,6 +79,17 @@ namespace Blackjack.EditorTools
                 PlayerSettings.Android.keyaliasPass = "android";
             }
             else Debug.LogWarning("No debug keystore at " + keystore + "; Unity will create its own and an in-place upgrade will not work.");
+        }
+
+        /// <summary>Turns the Firebase-backed services on only once tools/install_firebase.sh has imported the SDK.</summary>
+        private static void ConfigureFirebaseDefine(NamedBuildTarget target)
+        {
+            const string define = "FIREBASE_SDK";
+            var sdkPresent = File.Exists("Assets/Firebase/Plugins/Firebase.App.dll");
+            PlayerSettings.GetScriptingDefineSymbols(target, out var current);
+            var defines = current.Where(d => d != define).ToList();
+            if (sdkPresent) defines.Add(define);
+            PlayerSettings.SetScriptingDefineSymbols(target, defines.ToArray());
         }
 
         private static void ConfigureIcons()
