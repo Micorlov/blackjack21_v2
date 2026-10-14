@@ -127,6 +127,8 @@ namespace Blackjack.Game.UI
                 var takes = r.SweepInfo != null && !r.SweepInfo.HeroTook && r.SweepInfo.Winner == friend.FirstName;
                 var won = takes ? r.SweepInfo.TotalWin : npc.Bet;
                 // Short at the result: the total (red if it bust) and what the seat won or lost.
+                if (TablePot.SeatPushed(npc, dealer))
+                    return new PillText(total, "", Tone.Plain, "$0", Tone.Plain);
                 return new PillText(total, "", busted ? Tone.Bad : Tone.Plain,
                     (lost ? "−$" : "+$") + TableCatalog.FormatChips(lost ? npc.Bet : won), lost ? Tone.Bad : Tone.Good);
             }

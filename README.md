@@ -428,6 +428,12 @@ lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
 
+### 2026-10-15 (bot push fix)
+- fix: a bot seat that ties the dealer is a push — its bet returns, its pill reads "$0", and it no longer
+  counts toward the sweep pot (`Settlement` and `TablePot.SeatLost` treated an equal total as a loss;
+  new `TablePot.SeatPushed`).
+- test: `SettlementTests` covers a bot push in the sweep pot and the live pot (BUG-01).
+
 ### 2026-10-14 (dealer box fix)
 - fix: with a long dealer hand the "Dealer 26 · bust" box no longer runs off the right edge of the felt —
   `DealerView` measures the box first and tightens the card overlap to leave it room.

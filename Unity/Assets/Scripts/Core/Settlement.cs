@@ -90,7 +90,7 @@ namespace Blackjack.Core
 
             var (message, messageType) = HeadlineFor(outcomes, dealerBlackjack);
 
-            // Seats that bust or lose to the dealer forfeit their bets to the best surviving hand.
+            // Seats that bust or lose to the dealer forfeit their bets to the best surviving hand; a tie is a push and keeps its bet.
             var dealerBust = dealerValue > 21;
             var seatResults = new List<SeatResult>();
             for (var i = 0; i < s.NpcSeats.Count; i++)
@@ -101,7 +101,7 @@ namespace Blackjack.Core
                 // Live friends can change mid-round; never index past the current list.
                 var name = i < seatNames.Count ? seatNames[i] : "Player";
                 seatResults.Add(new SeatResult(name, seat.Bet, total,
-                    lost: total > 21 || (!dealerBust && total <= dealerValue), busted: total > 21));
+                    lost: total > 21 || (!dealerBust && total < dealerValue), busted: total > 21));
             }
 
             var heroWon = outcomes.Contains(Win) || outcomes.Contains(Blackjack);

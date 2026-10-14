@@ -12,15 +12,22 @@ namespace Blackjack.Core
         public bool IsSweep => Amount > 0;
 
         /// <summary>
-        /// Whether the seat has already forfeited its bet. <paramref name="dealerShown"/> is the dealer's
+        /// Whether the seat has already forfeited its bet (a tie with the dealer is a push, not a forfeit). <paramref name="dealerShown"/> is the dealer's
         /// total once revealed, or null while the hole card is down — then only a bust settles a seat early.
         /// </summary>
         public static bool SeatLost(NpcSeat seat, int? dealerShown)
         {
             var value = BlackjackRules.HandValue(seat.Cards);
             if (value > 21) return true;
-            if (dealerShown.HasValue) return dealerShown.Value <= 21 && value <= dealerShown.Value;
+            if (dealerShown.HasValue) return dealerShown.Value <= 21 && value < dealerShown.Value;
             return false;
+        }
+
+        /// <summary>Whether the seat ties a revealed dealer hand: its bet returns, so it neither forfeits nor wins.</summary>
+        public static bool SeatPushed(NpcSeat seat, int? dealerShown)
+        {
+            var value = BlackjackRules.HandValue(seat.Cards);
+            return dealerShown.HasValue && dealerShown.Value <= 21 && value == dealerShown.Value;
         }
 
         public static TablePot Live(RoundState s)

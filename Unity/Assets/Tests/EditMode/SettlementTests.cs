@@ -28,17 +28,29 @@ namespace Blackjack.Core.Tests
                 NpcSeats = new[]
                 {
                     new NpcSeat(50, T.Cards("10", "8"), "STAND", true),       // first base, beats the dealer
-                    new NpcSeat(50, T.Cards("10", "7"), "STAND", true),       // first base, ties: forfeits
+                    new NpcSeat(50, T.Cards("10", "7"), "STAND", true),       // first base, ties: a push, keeps the bet
                     new NpcSeat(25, T.Cards("10", "5", "9"), "BUST", true),   // third base, acted after the hero
                     new NpcSeat(100, T.Cards("10", "6"), "STAND", true),      // third base, under the dealer
                 },
             }, T.Names);
 
-            Assert.AreEqual(175, s.SweepAmount, "50 + 25 + 100 forfeited");
+            Assert.AreEqual(125, s.SweepAmount, "25 + 100 forfeited; the tie is a push");
             Assert.IsTrue(s.SweepInfo.HeroTook, "19 beats the best surviving seat (18)");
-            Assert.AreEqual(800 + 200 + 175, s.Chips, "one hand wins, one loses, plus the pot");
-            Assert.AreEqual(175, s.RoundNet);
-            CollectionAssert.AreEquivalent(new[] { "Jordan", "Sam", "Priya" }, s.SweepInfo.Contributors.Select(c => c.Name));
+            Assert.AreEqual(800 + 200 + 125, s.Chips, "one hand wins, one loses, plus the pot");
+            Assert.AreEqual(125, s.RoundNet);
+            CollectionAssert.AreEquivalent(new[] { "Sam", "Priya" }, s.SweepInfo.Contributors.Select(c => c.Name));
+        }
+
+        [Test]
+        public void BotPush_keepsItsBet_outOfTheSweepPot()
+        {
+            // Bronze hand 3: hero blackjack, dealer 18, Maya stands on 18 (a push).
+            var s = Settled(new[] { "A", "K" }, new[] { "10", "8" }, 25, 975,
+                new NpcSeat(50, T.Cards("3", "8", "7"), "STAND", true));
+
+            Assert.AreEqual(0, s.SweepAmount, "a push is not a forfeit");
+            Assert.IsNull(s.SweepInfo);
+            Assert.AreEqual(975 + 25 + 37, s.Chips, "blackjack pays 3:2 on $25, rounded down");
         }
 
         [Test]
@@ -184,7 +196,7 @@ namespace Blackjack.Core.Tests
         }
 
         [Test]
-        public void Live_onceRevealed_chargesSeatsAtOrBelowTheDealer()
+        public void Live_onceRevealed_chargesSeatsBelowTheDealer_andNotTies()
         {
             var s = new RoundState
             {
@@ -192,11 +204,14 @@ namespace Blackjack.Core.Tests
                 HoleRevealed = true,
                 NpcSeats = new[]
                 {
-                    new NpcSeat(50, T.Cards("10", "7")),   // ties 17 -> lost
+                    new NpcSeat(50, T.Cards("10", "7")),   // ties 17 -> push, not charged
                     new NpcSeat(60, T.Cards("10", "8")),   // 18 beats 17
+                    new NpcSeat(40, T.Cards("10", "6")),   // 16 loses
                 },
             };
-            Assert.AreEqual(50, TablePot.Live(s).Amount);
+            Assert.AreEqual(40, TablePot.Live(s).Amount);
+            Assert.IsTrue(TablePot.SeatPushed(s.NpcSeats[0], 17));
+            Assert.IsFalse(TablePot.SeatLost(s.NpcSeats[0], 17));
         }
     }
 }
