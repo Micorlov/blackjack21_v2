@@ -150,5 +150,10 @@
 "gameBronzeTable": "Bronze Table",
 "gameSilverTable": "Silver Table",
 "gameVipTable": "VIP Table",
-"gameLost": "lost"
+"gameLost": "lost",
+"settingsSectionTable": "At the table",
+"turnTimerLabel": "Turn timer",
+"turnTimerSublabel": "Stand automatically after 20 seconds, like a real table",
+"toastTurnTimeUp": "Time's up — you stand",
+"gameSecondsLeft": "{n}s"
 }

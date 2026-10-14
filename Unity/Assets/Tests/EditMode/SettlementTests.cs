@@ -1,3 +1,4 @@
+using System.Linq;
 using NUnit.Framework;
 
 namespace Blackjack.Core.Tests
@@ -15,6 +16,30 @@ namespace Blackjack.Core.Tests
                 Hands = new[] { new Hand(T.Cards(hero), bet, HandStatus.Stood) },
                 NpcSeats = seats,
             }, T.Names);
+
+        [Test]
+        public void SplitHands_takeTheSweep_includingSeatsThatActedAfterTheHero()
+        {
+            var s = Settlement.Settle(new RoundState
+            {
+                Chips = 800, Stake = T.Bronze, Phase = RoundPhase.Dealer, HoleRevealed = true,
+                DealerHand = T.Cards("10", "7"),
+                Hands = new[] { new Hand(T.Cards("10", "9"), 100, HandStatus.Stood), new Hand(T.Cards("10", "6"), 100, HandStatus.Stood) },
+                NpcSeats = new[]
+                {
+                    new NpcSeat(50, T.Cards("10", "8"), "STAND", true),       // first base, beats the dealer
+                    new NpcSeat(50, T.Cards("10", "7"), "STAND", true),       // first base, ties: forfeits
+                    new NpcSeat(25, T.Cards("10", "5", "9"), "BUST", true),   // third base, acted after the hero
+                    new NpcSeat(100, T.Cards("10", "6"), "STAND", true),      // third base, under the dealer
+                },
+            }, T.Names);
+
+            Assert.AreEqual(175, s.SweepAmount, "50 + 25 + 100 forfeited");
+            Assert.IsTrue(s.SweepInfo.HeroTook, "19 beats the best surviving seat (18)");
+            Assert.AreEqual(800 + 200 + 175, s.Chips, "one hand wins, one loses, plus the pot");
+            Assert.AreEqual(175, s.RoundNet);
+            CollectionAssert.AreEquivalent(new[] { "Jordan", "Sam", "Priya" }, s.SweepInfo.Contributors.Select(c => c.Name));
+        }
 
         [Test]
         public void Win_paysEvenMoney()

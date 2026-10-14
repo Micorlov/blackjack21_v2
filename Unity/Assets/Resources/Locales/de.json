@@ -150,5 +150,10 @@
 "gameBronzeTable": "Bronzetisch",
 "gameSilverTable": "Silbertisch",
 "gameVipTable": "VIP-Tisch",
-"gameLost": "verloren"
+"gameLost": "verloren",
+"settingsSectionTable": "Am Tisch",
+"turnTimerLabel": "Zug-Timer",
+"turnTimerSublabel": "Nach 20 Sekunden automatisch stehen, wie an einem echten Tisch",
+"toastTurnTimeUp": "Zeit abgelaufen — du stehst",
+"gameSecondsLeft": "{n} s"
 }

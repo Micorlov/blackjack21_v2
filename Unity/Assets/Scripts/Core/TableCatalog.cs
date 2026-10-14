@@ -9,6 +9,12 @@ namespace Blackjack.Core
         public const bool DealerHitsSoft17 = false;
         public const int OpponentSeats = 4;
 
+        /// <summary>
+        /// How many opponent seats sit to the hero's right and act first. The hero takes the middle chair:
+        /// Maya and Jordan (seats 0, 1) play before you, Sam and Priya (seats 2, 3) after you.
+        /// </summary>
+        public const int SeatsBeforeHero = 2;
+
         public static readonly int[] ChipDenoms = { 25, 50, 100, 500, 1000 };
 
         public static readonly TableStake[] Tables =

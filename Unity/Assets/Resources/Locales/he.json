@@ -150,5 +150,10 @@
 "gameBronzeTable": "שולחן ארד",
 "gameSilverTable": "שולחן כסף",
 "gameVipTable": "שולחן VIP",
-"gameLost": "הפסיד"
+"gameLost": "הפסיד",
+"settingsSectionTable": "ליד השולחן",
+"turnTimerLabel": "שעון תור",
+"turnTimerSublabel": "עמידה אוטומטית אחרי 20 שניות, כמו בשולחן אמיתי",
+"toastTurnTimeUp": "הזמן נגמר — עמדת",
+"gameSecondsLeft": "{n} שנ׳"
 }

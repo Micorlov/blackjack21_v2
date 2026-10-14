@@ -150,5 +150,10 @@
 "gameBronzeTable": "Mesa de bronce",
 "gameSilverTable": "Mesa de plata",
 "gameVipTable": "Mesa VIP",
-"gameLost": "perdió"
+"gameLost": "perdió",
+"settingsSectionTable": "En la mesa",
+"turnTimerLabel": "Temporizador de turno",
+"turnTimerSublabel": "Plantarse solo tras 20 segundos, como en una mesa real",
+"toastTurnTimeUp": "Se acabó el tiempo: te plantas",
+"gameSecondsLeft": "{n} s"
 }

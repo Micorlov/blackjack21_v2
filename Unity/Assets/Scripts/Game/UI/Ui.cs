@@ -293,6 +293,7 @@ namespace Blackjack.Game.UI
             t.raycastTarget = false;
             t.richText = true;
             t.text = text;
+            if (FloorScope.Covers(parent)) rt.gameObject.AddComponent<TextFloor>();
             if (!wrap)
             {
                 // One-line labels get a fixed line box like the Flutter design's `height:` values: the monospace

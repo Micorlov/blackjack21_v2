@@ -45,7 +45,10 @@ namespace Blackjack.Game
         public void ExitTable()
         {
             Cancel(ref _npcTimer);
+            var heroDone = Round.Phase == RoundPhase.NpcsAfter;
             Set(s => s with { Screen = AppScreen.Lobby, Round = RoundEngine.SetActingSeat(s.Round, null) });
+            // The hero's bet is already decided: play the seats after them and the dealer out now, so it settles.
+            if (heroDone) FinishSeatsAfterHeroWithoutPacing();
             ReportScore();
         }
 
@@ -118,7 +121,8 @@ namespace Blackjack.Game
             SetRound(_ => next);
             switch (next.Phase)
             {
-                case RoundPhase.Npcs: StartNpcTurns(); break;
+                case RoundPhase.Npcs:
+                case RoundPhase.NpcsAfter: StartSeatTurns(); break;
                 case RoundPhase.Dealer when next.Phase != prev.Phase: StartDealer(); break;
                 case RoundPhase.Settlement when prev.Phase != RoundPhase.Settlement:
                     // The only way to settle straight out of a deal/insurance is a dealer natural.
@@ -205,55 +209,76 @@ namespace Blackjack.Game
             if (announceHand) AnnounceHandTotal(next.Hands[prev.ActiveHandIndex].Cards);
             if (next.ActiveHandIndex != prev.ActiveHandIndex && next.Phase == RoundPhase.Playing)
                 AnnounceHandTotal(next.ActiveHand.Cards);
-            if (next.Phase == RoundPhase.Dealer && prev.Phase != RoundPhase.Dealer) StartDealer();
+            if (next.Phase == RoundPhase.NpcsAfter && prev.Phase != RoundPhase.NpcsAfter) StartSeatTurns();
+            else if (next.Phase == RoundPhase.Dealer && prev.Phase != RoundPhase.Dealer) StartDealer();
         }
 
         // ---- opponent seats -------------------------------------------------------------------------
 
-        private void StartNpcTurns()
+        /// <summary>
+        /// Paces the seats of the current phase one decision at a time, in casino order: the first-base seats
+        /// before the hero (<see cref="RoundPhase.Npcs"/>), the third-base seats after (<see cref="RoundPhase.NpcsAfter"/>).
+        /// </summary>
+        private void StartSeatTurns()
         {
-            if (Round.NpcSeats.Count == 0) { HandOverAfterSeats(); return; }
-            StepNpc(0);
+            var seats = RoundEngine.SeatsActingIn(Round.Phase, Round.NpcSeats.Count).ToList();
+            StepNpc(seats, 0);
         }
 
-        private void StepNpc(int k)
+        private void StepNpc(IReadOnlyList<int> seats, int k)
         {
             if (State.Screen != AppScreen.Table) return;
-            if (k >= Round.NpcSeats.Count)
+            if (k >= seats.Count)
             {
-                _npcTimer = After(NpcHandOverPause, HandOverAfterSeats);
+                _npcTimer = After(NpcHandOverPause, FinishSeatTurns);
                 return;
             }
-            SetRound(r => RoundEngine.SetActingSeat(r, k));
-            _npcTimer = After(NpcDecisionLead, () => NpcDecide(k));
+            var seat = seats[k];
+            SetRound(r => RoundEngine.SetActingSeat(r, seat));
+            _npcTimer = After(NpcDecisionLead, () => NpcDecide(seats, k));
         }
 
-        private void NpcDecide(int k)
+        private void NpcDecide(IReadOnlyList<int> seats, int k)
         {
             if (State.Screen != AppScreen.Table) return;
-            var hit = BlackjackRules.HandValue(Round.NpcSeats[k].Cards) < 17;
-            SetRound(r => RoundEngine.NpcAct(r, _shoe, k));
-            var seat = Round.NpcSeats[k];
+            var index = seats[k];
+            var hit = BlackjackRules.HandValue(Round.NpcSeats[index].Cards) < 17;
+            SetRound(r => RoundEngine.NpcAct(r, _shoe, index));
+            var seat = Round.NpcSeats[index];
             if (hit)
             {
                 var bust = seat.Action == "BUST";
                 if (bust) { PlaySpokenVoice(GameVoice.NpcBust); HapticLight(); }
-                _npcTimer = After(NpcHitPause, () => { if (bust) StepNpc(k + 1); else NpcDecide(k); });
+                _npcTimer = After(NpcHitPause, () => { if (bust) StepNpc(seats, k + 1); else NpcDecide(seats, k); });
             }
             else
             {
                 PlaySpokenVoice(GameVoice.NpcStand);
                 HapticSelection();
-                _npcTimer = After(NpcStandPause, () => StepNpc(k + 1));
+                _npcTimer = After(NpcStandPause, () => StepNpc(seats, k + 1));
             }
         }
 
-        /// <summary>Action passes to the hero once every seat has played — unless they have nothing to decide (a natural).</summary>
+        private void FinishSeatTurns()
+        {
+            if (Round.Phase == RoundPhase.Npcs) HandOverAfterSeats();
+            else if (Round.Phase == RoundPhase.NpcsAfter)
+            {
+                SetRound(RoundEngine.HandOverToDealer);
+                StartDealer();
+            }
+        }
+
+        /// <summary>
+        /// Action passes to the hero once the first-base seats have played — unless they have nothing to decide
+        /// (a natural), in which case the third-base seats play on.
+        /// </summary>
         private void HandOverAfterSeats()
         {
             var prev = Round;
             SetRound(RoundEngine.HandOverAfterSeats);
-            if (Round.Phase == RoundPhase.Dealer && prev.Phase != RoundPhase.Dealer) StartDealer();
+            if (Round.Phase == RoundPhase.NpcsAfter) StartSeatTurns();
+            else if (Round.Phase == RoundPhase.Dealer && prev.Phase != RoundPhase.Dealer) StartDealer();
             else if (Round.Phase == RoundPhase.Playing) NotifyPlayerTurn();
         }
 
@@ -312,6 +337,12 @@ namespace Blackjack.Game
             SetRound(r => RoundEngine.DealerDraw(r, _shoe));
             PlaySfx(GameSfx.Deal);
             DealerBeat(DealerDrawPause);
+        }
+
+        private void FinishSeatsAfterHeroWithoutPacing()
+        {
+            SetRound(r => RoundEngine.HandOverToDealer(RoundEngine.PlaySeats(r, _shoe, RoundPhase.NpcsAfter)));
+            FinishDealerWithoutPacing();
         }
 
         private void FinishDealerWithoutPacing()

@@ -150,5 +150,10 @@
 "gameBronzeTable": "طاولة برونزية",
 "gameSilverTable": "طاولة فضية",
 "gameVipTable": "طاولة VIP",
-"gameLost": "خسر"
+"gameLost": "خسر",
+"settingsSectionTable": "على الطاولة",
+"turnTimerLabel": "مؤقت الدور",
+"turnTimerSublabel": "الوقوف تلقائيًا بعد 20 ثانية، كما في طاولة حقيقية",
+"toastTurnTimeUp": "انتهى الوقت — وقفت",
+"gameSecondsLeft": "{n} ث"
 }

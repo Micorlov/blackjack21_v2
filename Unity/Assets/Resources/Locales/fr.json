@@ -150,5 +150,10 @@
 "gameBronzeTable": "Table bronze",
 "gameSilverTable": "Table argent",
 "gameVipTable": "Table VIP",
-"gameLost": "perdu"
+"gameLost": "perdu",
+"settingsSectionTable": "À la table",
+"turnTimerLabel": "Minuteur de tour",
+"turnTimerSublabel": "Rester automatiquement après 20 secondes, comme à une vraie table",
+"toastTurnTimeUp": "Temps écoulé — vous restez",
+"gameSecondsLeft": "{n} s"
 }

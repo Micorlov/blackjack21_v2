@@ -127,7 +127,9 @@ namespace Blackjack.Core.Tests
             Assert.IsTrue(_rig.AdvanceUntil(() => _rig.Round.Phase == RoundPhase.Playing));
 
             c.PlayerStand();
-            Assert.AreEqual(RoundPhase.Dealer, _rig.Round.Phase);
+            Assert.AreEqual(RoundPhase.NpcsAfter, _rig.Round.Phase, "the seats on the hero's left play before the dealer");
+            Assert.IsFalse(_rig.Round.HoleRevealed);
+            Assert.IsTrue(_rig.AdvanceUntil(() => _rig.Round.Phase == RoundPhase.Dealer));
             Assert.IsTrue(_rig.Round.HoleRevealed);
             Assert.AreEqual(2, _rig.Round.DealerHand.Count, "no card is drawn on the reveal beat");
 
@@ -203,6 +205,23 @@ namespace Blackjack.Core.Tests
             _rig.C.ExitTable();
             _rig.Advance(3);
             Assert.AreEqual(RoundPhase.Settlement, _rig.Round.Phase, "a bet is never stranded");
+            Assert.IsTrue(_rig.Round.NpcSeats.All(n => n.Done), "the seats after the hero still played");
+        }
+
+        [Test]
+        public void ExitingMidDealerTurnSettlesToo()
+        {
+            _rig = new Rig(seed: 6);
+            _rig.C.EnterTable(T.Bronze);
+            _rig.C.UseShoe(T.Stacked("10", "8", "10", "8", "10", "8", "10", "8", "10", "6", "5", "6", "4", "10"));
+            _rig.C.PlaceBet(100);
+            _rig.C.DealRound();
+            Assert.IsTrue(_rig.AdvanceUntil(() => _rig.Round.Phase == RoundPhase.Playing));
+            _rig.C.PlayerStand();
+            Assert.IsTrue(_rig.AdvanceUntil(() => _rig.Round.Phase == RoundPhase.Dealer));
+            _rig.C.ExitTable();
+            _rig.Advance(3);
+            Assert.AreEqual(RoundPhase.Settlement, _rig.Round.Phase);
         }
     }
 
@@ -377,6 +396,7 @@ namespace Blackjack.Core.Tests
                 Stats = new StatsSummary(12, 7, 4, 1, 2, 3, 5),
                 History = new[] { RoundResult.Win, RoundResult.Loss, RoundResult.Push },
                 RewardedReferralIds = new[] { "a", "b" }, LastRebuyAtMs = 1700000000000, PlayDayStreak = 4,
+                TurnTimerOn = false,
             };
             var back = Blackjack.Game.Services.SavedGameJson.FromJson(Blackjack.Game.Services.SavedGameJson.ToJson(game));
             Assert.AreEqual(777, back.Chips);
@@ -386,6 +406,7 @@ namespace Blackjack.Core.Tests
             CollectionAssert.AreEqual(game.History, back.History);
             CollectionAssert.AreEqual(new[] { "a", "b" }, back.RewardedReferralIds.ToArray());
             Assert.AreEqual(1700000000000, back.LastRebuyAtMs);
+            Assert.IsFalse(back.TurnTimerOn);
         }
 
         [Test]
@@ -396,6 +417,7 @@ namespace Blackjack.Core.Tests
             Assert.IsTrue(back.SoundOn);
             Assert.AreEqual(3, back.TutorialRoundsSeen, "hands played stands in, capped at the lesson count");
             Assert.IsTrue(back.OnboardingDone, "an old blob belongs to someone who got past the gate");
+            Assert.IsTrue(back.TurnTimerOn, "a save from before the turn timer gets it switched on");
         }
 
         [Test]
@@ -403,6 +425,126 @@ namespace Blackjack.Core.Tests
         {
             Assert.IsNull(Blackjack.Game.Services.SavedGameJson.FromJson("{\"v\":2}"));
             Assert.IsNull(Blackjack.Game.Services.SavedGameJson.FromJson("not json"));
+        }
+    }
+
+    /// <summary>The 20-second casino turn clock: auto-stand, pauses, a fresh clock per split hand, and when it is off.</summary>
+    public class TurnTimerTests
+    {
+        private Rig _rig;
+
+        [TearDown] public void TearDown() => _rig?.Dispose();
+
+        private void DealToTheHero(params string[] heroAndDealerAndDraws)
+        {
+            _rig = new Rig(seed: 7);
+            var c = _rig.C;
+            c.Set(s => s with { TutorialDismissed = true });
+            c.EnterTable(T.Bronze);
+            // Four seats on 18 (they all stand), then the hero's pair, the dealer's pair and any later draws.
+            c.UseShoe(T.Stacked(new[] { "10", "8", "10", "8", "10", "8", "10", "8" }.Concat(heroAndDealerAndDraws).ToArray()));
+            c.PlaceBet(100);
+            c.DealRound();
+            Assert.IsTrue(_rig.AdvanceUntil(() => _rig.Round.Phase == RoundPhase.Playing));
+            _rig.Advance(0.05);
+        }
+
+        [Test]
+        public void TheHandStandsByItselfAfterTwentySeconds()
+        {
+            DealToTheHero("10", "6", "10", "7");
+            Assert.IsNotNull(_rig.Round.TurnDeadline);
+            _rig.Advance(GameController.TurnSeconds - 1);
+            Assert.AreEqual(RoundPhase.Playing, _rig.Round.Phase, "not before the twenty seconds are up");
+
+            _rig.Advance(1.5);
+            Assert.AreEqual(HandStatus.Stood, _rig.Round.Hands[0].Status);
+            Assert.AreEqual(RoundPhase.NpcsAfter, _rig.Round.Phase);
+            Assert.IsNull(_rig.Round.TurnDeadline, "no clock outside the hero's turn");
+            StringAssert.Contains("you stand", _rig.C.State.Toast);
+        }
+
+        [Test]
+        public void HittingDoesNotRestartTheClock()
+        {
+            DealToTheHero("5", "4", "10", "7", "2");
+            var deadline = _rig.Round.TurnDeadline;
+            _rig.Advance(5);
+            _rig.C.PlayerHit();
+            _rig.Advance(0.05);
+            Assert.AreEqual(deadline, _rig.Round.TurnDeadline);
+        }
+
+        [Test]
+        public void TheClockPausesWhileTheChatIsOpen_andResumesWhereItWas()
+        {
+            DealToTheHero("10", "6", "10", "7");
+            _rig.Advance(10);
+            _rig.C.ToggleTableChat();
+            _rig.Advance(60);
+            Assert.AreEqual(RoundPhase.Playing, _rig.Round.Phase, "a paused clock never fires");
+            Assert.AreEqual(10f, _rig.C.TurnSecondsPaused ?? 0f, 0.2f);
+
+            _rig.C.ToggleTableChat();
+            _rig.Advance(9);
+            Assert.AreEqual(RoundPhase.Playing, _rig.Round.Phase);
+            _rig.Advance(1.5);
+            Assert.AreEqual(HandStatus.Stood, _rig.Round.Hands[0].Status);
+        }
+
+        [Test]
+        public void TheClockPausesInTheBackground()
+        {
+            DealToTheHero("10", "6", "10", "7");
+            _rig.C.OnAppPaused();
+            _rig.Advance(60);
+            Assert.AreEqual(RoundPhase.Playing, _rig.Round.Phase);
+            _rig.C.OnAppResumed();
+            _rig.Advance(GameController.TurnSeconds + 1);
+            Assert.AreEqual(HandStatus.Stood, _rig.Round.Hands[0].Status);
+        }
+
+        [Test]
+        public void EachSplitHandGetsItsOwnClock()
+        {
+            DealToTheHero("8", "8", "10", "7", "3", "2");
+            _rig.Advance(15);
+            _rig.C.PlayerSplit();
+            _rig.Advance(GameController.TurnSeconds - 1);
+            Assert.AreEqual(0, _rig.Round.ActiveHandIndex, "the split restarted the clock");
+
+            _rig.Advance(1.5);
+            Assert.AreEqual(HandStatus.Stood, _rig.Round.Hands[0].Status);
+            Assert.AreEqual(1, _rig.Round.ActiveHandIndex);
+            Assert.AreEqual(RoundPhase.Playing, _rig.Round.Phase);
+            Assert.Greater(_rig.C.TurnSecondsLeft ?? 0f, GameController.TurnSeconds - 1, "the second hand starts a full clock");
+        }
+
+        [Test]
+        public void TheClockIsOffWhenSwitchedOff_andOnTutorialHands()
+        {
+            DealToTheHero("10", "6", "10", "7");
+            _rig.C.ToggleTurnTimer();
+            _rig.Advance(60);
+            Assert.AreEqual(RoundPhase.Playing, _rig.Round.Phase);
+            Assert.IsNull(_rig.Round.TurnDeadline);
+            _rig.Dispose();
+
+            _rig = new Rig(seed: 7);
+            Assert.IsTrue(_rig.C.State.TurnTimerOn, "on by default");
+            _rig.C.Set(s => s with { Screen = AppScreen.Table, TutorialRoundsSeen = 0, TutorialDismissed = false,
+                Round = T.Playing(hero: new[] { "10", "6" }) });
+            _rig.Advance(60);
+            Assert.AreEqual(RoundPhase.Playing, _rig.Round.Phase, "a coached hand has no clock");
+        }
+
+        [Test]
+        public void TheSettingIsSaved()
+        {
+            DealToTheHero("10", "6", "10", "7");
+            _rig.C.ToggleTurnTimer();
+            _rig.Advance(1);
+            Assert.IsFalse(_rig.Store.Saved.TurnTimerOn);
         }
     }
 }

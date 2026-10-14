@@ -44,6 +44,8 @@ namespace Blackjack.Game.UI
             _canvas = Ui.Node("FeltCanvas", _host);
             _canvas.anchorMin = _canvas.anchorMax = new Vector2(0, 1);
             _canvas.pivot = new Vector2(0, 1);
+            // The felt scales from 0.65 to 1.4; its labels never land under the 12-unit floor.
+            _canvas.gameObject.AddComponent<FloorScope>();
 
             _feltMaterial = Gfx.NewFeltMaterial();
             _feltImage = W.Raw(_canvas, Texture2D.whiteTexture, "Table");
@@ -415,6 +417,8 @@ namespace Blackjack.Game.UI
             }
             else _fan.Clear();
 
+            // The 12-unit floor stops the bankroll shrinking beside an action badge; mid-round the badge matters more.
+            _stack.gameObject.SetActive(!takesPot && (npc == null || npc.Action.Length == 0));
             var badgeSig = takesPot ? "pot" + r.SweepInfo.TotalWin
                 : npc != null && npc.Action.Length > 0 ? "act" + npc.Action
                 : npc != null ? "bet" + npc.Bet : "";
@@ -462,6 +466,8 @@ namespace Blackjack.Game.UI
         {
             _root = Ui.Node("Hero", canvas);
             _root.anchorMin = new Vector2(0, 0); _root.anchorMax = new Vector2(1, 1);
+            // Not yet: a split stack scales itself down to fit, which a floor would fight. The Seat hero replaces it.
+            _root.gameObject.AddComponent<FloorScope>().On = false;
             _stack = Ui.VStack(_root, 10, null, TextAnchor.UpperCenter, false, "Hands");
             _stack.anchorMin = new Vector2(0.5f, 1); _stack.anchorMax = new Vector2(0.5f, 1); _stack.pivot = new Vector2(0.5f, 1);
             _stack.offsetMin = _stack.offsetMax = Vector2.zero;

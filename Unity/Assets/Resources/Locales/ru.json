@@ -150,5 +150,10 @@
 "gameBronzeTable": "Бронзовый стол",
 "gameSilverTable": "Серебряный стол",
 "gameVipTable": "VIP-стол",
-"gameLost": "проигрыш"
+"gameLost": "проигрыш",
+"settingsSectionTable": "За столом",
+"turnTimerLabel": "Таймер хода",
+"turnTimerSublabel": "Автоматически оставаться через 20 секунд, как за настоящим столом",
+"toastTurnTimeUp": "Время вышло — вы остаётесь",
+"gameSecondsLeft": "{n} с"
 }

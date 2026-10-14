@@ -150,5 +150,10 @@
 "gameBronzeTable": "青铜桌",
 "gameSilverTable": "白银桌",
 "gameVipTable": "VIP 桌",
-"gameLost": "输掉"
+"gameLost": "输掉",
+"settingsSectionTable": "牌桌",
+"turnTimerLabel": "回合计时",
+"turnTimerSublabel": "像真实牌桌一样，20 秒后自动停牌",
+"toastTurnTimeUp": "时间到 — 已停牌",
+"gameSecondsLeft": "{n}秒"
 }

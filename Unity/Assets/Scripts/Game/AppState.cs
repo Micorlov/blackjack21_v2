@@ -37,6 +37,9 @@ namespace Blackjack.Game
         public StatsTab StatsTab { get; init; } = StatsTab.Recent;
 
         public bool HapticsOn { get; init; } = true;
+
+        /// <summary>Your turn stands automatically after <see cref="GameController.TurnSeconds"/>, as at a casino table.</summary>
+        public bool TurnTimerOn { get; init; } = true;
         public bool SoundOn { get; init; } = true;
 
         /// <summary>Spoken call-outs, nested under <see cref="SoundOn"/>: muting sound silences the voice too.</summary>

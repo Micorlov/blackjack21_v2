@@ -150,5 +150,10 @@
 "gameBronzeTable": "Mesa de bronze",
 "gameSilverTable": "Mesa de prata",
 "gameVipTable": "Mesa VIP",
-"gameLost": "perdeu"
+"gameLost": "perdeu",
+"settingsSectionTable": "Na mesa",
+"turnTimerLabel": "Cronômetro da vez",
+"turnTimerSublabel": "Parar automaticamente após 20 segundos, como numa mesa real",
+"toastTurnTimeUp": "Acabou o tempo — você parou",
+"gameSecondsLeft": "{n} s"
 }

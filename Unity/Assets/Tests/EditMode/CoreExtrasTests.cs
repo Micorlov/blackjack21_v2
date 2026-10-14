@@ -96,6 +96,50 @@ namespace Blackjack.Core.Tests
             Assert.GreaterOrEqual(FeltMetrics.For(RoundPhase.Settlement, true, 300, PhoneWidth, 269f).Scale, 0.65f);
 
         [Test]
+        public void SeatSlot_placesFirstBaseOnTheRightAndCurvesTowardTheHero()
+        {
+            var m = FeltMetrics.For(RoundPhase.Playing, true, 0, PhoneWidth, 800f);
+            var centre = m.Inset + m.ContentWidth / 2f;
+            var maya = m.SeatSlot(0);
+            var jordan = m.SeatSlot(1);
+            var sam = m.SeatSlot(2);
+            var priya = m.SeatSlot(3);
+
+            Assert.AreEqual(1, maya.Side, "first base sits on the dealer's left: the right of the screen");
+            Assert.AreEqual(-1, priya.Side);
+            Assert.Greater(maya.X, jordan.X, "the curve narrows toward the hero");
+            Assert.Less(priya.X, sam.X);
+            Assert.Greater(jordan.Y, maya.Y, "seats nearer the hero sit lower on the felt");
+            Assert.AreEqual(maya.X - centre, centre - priya.X, 0.01f, "the table is symmetric");
+            Assert.Less(maya.Tilt, 0f);
+            Assert.Greater(priya.Tilt, 0f);
+            for (var i = 0; i < TableCatalog.OpponentSeats; i++)
+            {
+                var seat = m.SeatSlot(i);
+                Assert.GreaterOrEqual(seat.X - FeltMetrics.SeatCardWidth, m.Inset, $"seat {i} stays on the felt");
+                Assert.LessOrEqual(seat.X + FeltMetrics.SeatCardWidth, m.Inset + m.ContentWidth, $"seat {i} stays on the felt");
+            }
+        }
+
+        [Test]
+        public void SeatSlot_widensWithTheTable()
+        {
+            var narrow = FeltMetrics.For(RoundPhase.Playing, true, 0, PhoneWidth, 800f);
+            var wide = FeltMetrics.For(RoundPhase.Playing, true, 0, 900f, 900f);
+            Assert.Greater(wide.SeatSlot(0).X - wide.SeatSlot(3).X, narrow.SeatSlot(0).X - narrow.SeatSlot(3).X);
+        }
+
+        [Test]
+        public void CardSizesFollowTheDesignRules()
+        {
+            Assert.AreEqual(88f, FeltMetrics.HeroCardWidth);
+            Assert.LessOrEqual(FeltMetrics.HeroCardWidth / FeltMetrics.CardWidth, 1.4f);
+            Assert.AreEqual(FeltMetrics.CardHeight / FeltMetrics.CardWidth, FeltMetrics.HeroCardHeight / FeltMetrics.HeroCardWidth, 0.001f);
+            Assert.GreaterOrEqual(FeltMetrics.SeatCardWidth, 42f);
+            Assert.GreaterOrEqual(FeltMetrics.SeatCardHeight, 60f);
+        }
+
+        [Test]
         public void SeatSlotsKeepTheirHeightInEveryPhase()
         {
             var betting = FeltMetrics.For(RoundPhase.Betting, false, 0, PhoneWidth, 800f);

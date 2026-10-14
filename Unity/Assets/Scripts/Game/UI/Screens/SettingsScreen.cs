@@ -27,7 +27,7 @@ namespace Blackjack.Game.UI
 
         public override void Refresh(AppState s)
         {
-            var sig = $"{s.SignedIn}|{s.DisplayName}|{s.AvatarColor}|{s.LanguageOverride}|{s.HapticsOn}{s.SoundOn}{s.VoiceOn}"
+            var sig = $"{s.SignedIn}|{s.DisplayName}|{s.AvatarColor}|{s.LanguageOverride}|{s.HapticsOn}{s.SoundOn}{s.VoiceOn}{s.TurnTimerOn}"
                       + $"{s.NotifSocial}{s.NotifLeaderboard}{s.NotifDaily}{s.AnalyticsOn}|{Loc.Code}";
             _body.Update(sig, host => Build(host, s));
         }
@@ -53,6 +53,10 @@ namespace Blackjack.Game.UI
                 (Loc.T("soundEffectsLabel"), s.SoundOn, G.ToggleSound, null, true),
                 (Loc.T("voiceCalloutsLabel"), s.VoiceOn, G.ToggleVoice,
                     s.SoundOn ? Loc.T("voiceCalloutsSublabel") : Loc.T("voiceCalloutsDisabledReason"), s.SoundOn));
+            Ui.Spacer(host, 16);
+
+            W.SectionLabel(host, Loc.T("settingsSectionTable"));
+            Toggles(host, (Loc.T("turnTimerLabel"), s.TurnTimerOn, G.ToggleTurnTimer, Loc.T("turnTimerSublabel"), true));
             Ui.Spacer(host, 16);
 
             W.SectionLabel(host, Loc.T("settingsSectionNotifications"));

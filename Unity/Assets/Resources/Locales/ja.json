@@ -150,5 +150,10 @@
 "gameBronzeTable": "ブロンズテーブル",
 "gameSilverTable": "シルバーテーブル",
 "gameVipTable": "VIP テーブル",
-"gameLost": "負け"
+"gameLost": "負け",
+"settingsSectionTable": "テーブル",
+"turnTimerLabel": "ターンタイマー",
+"turnTimerSublabel": "本物のテーブルのように、20秒でスタンドします",
+"toastTurnTimeUp": "時間切れ — スタンドしました",
+"gameSecondsLeft": "{n}秒"
 }

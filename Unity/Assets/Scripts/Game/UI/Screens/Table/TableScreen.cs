@@ -129,7 +129,7 @@ namespace Blackjack.Game.UI
             {
                 RoundPhase.Betting => Loc.T("gamePlaceBet"),
                 RoundPhase.Insurance => Loc.T("gameInsuranceOffered"),
-                RoundPhase.Npcs => Loc.T("gameSeatPlaying", ("name", ActingName(s))),
+                RoundPhase.Npcs or RoundPhase.NpcsAfter => Loc.T("gameSeatPlaying", ("name", ActingName(s))),
                 RoundPhase.Playing => split
                     ? Loc.T("gameSplitTurn", ("hand", r.ActiveHandIndex + 1), ("total", r.Hands.Count))
                     : Loc.T("gameYourTurn"),
@@ -138,7 +138,7 @@ namespace Blackjack.Game.UI
             };
             // Betting and insurance are the player's move as much as `playing` is.
             var heroTurn = r.Phase == RoundPhase.Playing || r.Phase == RoundPhase.Betting || r.Phase == RoundPhase.Insurance;
-            var current = r.Phase == RoundPhase.Insurance ? RoundPhase.Npcs : r.Phase;
+            var current = r.Phase == RoundPhase.Insurance ? RoundPhase.Npcs : r.Phase == RoundPhase.NpcsAfter ? RoundPhase.Playing : r.Phase;
             var curIdx = Mathf.Clamp(System.Array.IndexOf(PhaseOrder, current), 0, PhaseOrder.Length - 1);
 
             var gutter = TableLayout.GutterOf(412);

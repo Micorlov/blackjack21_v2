@@ -116,8 +116,10 @@ namespace Blackjack.PlayTests
                     if (!(t is RectTransform rt)) continue;
                     var rect = ScreenRect(rt, stage.Camera);
                     var graphic = t.GetComponent<Graphic>();
-                    var solid = graphic != null && graphic.enabled && !(graphic is TMP_Text)
-                                && Alpha(t, graphic.color.a) >= OpaqueAlpha;
+                    // Text, a label's fallback-font sub-mesh and a hollow outline draw nothing solid over their rect.
+                    var ring = t.GetComponent<RoundedFit>() is RoundedFit fit && fit.RingThickness > 0f;
+                    var solid = graphic != null && graphic.enabled && !(graphic is TMP_Text) && !(graphic is TMP_SubMeshUI)
+                                && !ring && Alpha(t, graphic.color.a) >= OpaqueAlpha;
                     var fullScreen = rect.width * rect.height >= FullScreenShare * screenArea;
                     if (fullScreen && (t.GetComponent<Pressable>() != null || (solid && graphic.raycastTarget))) _cutoff = i;
                     if (solid && !fullScreen) _opaque.Add((i, rect, Clips(t, stage.Camera)));
@@ -187,7 +189,8 @@ namespace Blackjack.PlayTests
             var borders = root.GetComponentsInChildren<ControlBorder>(false)
                 .Where(b => layers.InFront(b.transform))
                 .Select(b => b.GetComponent<Image>())
-                .Where(img => img != null && img.enabled && !Disabled(img.transform) && Alpha(img.transform, img.color.a) > HiddenAlpha)
+                .Where(img => img != null && img.enabled && !Disabled(img.transform) && Alpha(img.transform, img.color.a) > HiddenAlpha
+                              && Visible(ScreenRect(img.rectTransform, run.Stage.Camera).center, run.Stage, Clips(img.transform, run.Stage.Camera)))
                 .ToList();
 
             // The faded frame is the real background (shader felt, gradients, card art) each glyph and outline is
@@ -258,9 +261,11 @@ namespace Blackjack.PlayTests
             };
             var c = ring.color;
             var outline = new Rgba(c.r, c.g, c.b, c.a * Alpha(ring.transform, 1f));
+            var clips = Clips(ring.transform, f.Stage.Camera);
             var worst = double.MaxValue;
             foreach (var e in edges)
             {
+                if (!Visible(e.center, f.Stage, clips)) continue;
                 var ratio = RatioIfVisible(outline, e, f);
                 if (ratio.HasValue) worst = Math.Min(worst, ratio.Value);
             }

@@ -24,6 +24,12 @@ namespace Blackjack.Core
         /// <summary>Index of the opponent seat currently acting, or null.</summary>
         public int? ActingSeat { get; init; }
 
+        /// <summary>
+        /// When the hero's active hand stands by itself, on the controller's timer clock (seconds); null while no
+        /// turn timer is running (another phase, the timer off, a tutorial hand, or paused).
+        /// </summary>
+        public double? TurnDeadline { get; init; }
+
         public MessageType MessageType { get; init; } = MessageType.None;
         public string Message { get; init; } = "";
 

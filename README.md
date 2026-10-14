@@ -22,6 +22,15 @@ A Unity (Android) blackjack game with a multi-seat table and a friends race. Fou
   takes before the deal, with the running total on the name line and `STAND`/`BUST` under it.
   The cards used to be a 27px fan above the plate, which the felt's own scaling then shrank to
   about 7px of rank
+- **Casino seat order** — the table plays the way a real one does: the two seats on your right (first
+  base, Maya and Jordan) act before you, the two on your left (Sam and Priya) after you, then the
+  dealer. A bust, surrender or natural on your side still lets the seats after you play, and their
+  forfeited bets reach the sweep pot. A dealer natural still ends the hand before anyone acts
+- **Turn timer** — your turn stands automatically after 20 seconds, as at a casino table; a gold bar
+  and the seconds left sit above the action buttons and turn red for the last five. Each split hand
+  gets a fresh clock (hitting does not restart it). The clock never runs on a coached tutorial hand
+  and pauses while the app is in the background or the table chat or menu is open. On by default;
+  Settings → At the table → Turn timer switches it off
 - **"Closest to 21" sweep pot** — seats that bust or lose to the dealer forfeit their bets to
   the best surviving hand; every settled hand names who took the pot, or says there was none.
   The pill above the dealer only ever quotes chips that have actually been forfeited — while
@@ -218,12 +227,18 @@ its `assets/` and `android/` output paths; point them at `Unity/Assets/Resources
 - `Unity/Assets/Scripts/Core/` — the rules engine as plain C# (`Blackjack.Core` assembly, no Unity
   references). Every step is a pure function from one immutable `RoundState` to the next; timing is left
   to the caller (`GameController`).
-- `Unity/Assets/Tests/EditMode/` — 153 NUnit tests (rules, betting, settlement, progression, controller,
-  RTL, contrast). `Unity/Assets/Tests/PlayMode/` holds the scenario registry (`Scenarios.cs`), the
+- `Unity/Assets/Tests/EditMode/` — 171 NUnit tests (rules, betting, settlement, progression, controller,
+  RTL, contrast, turn order, turn timer). `Unity/Assets/Tests/PlayMode/` holds the scenario registry (`Scenarios.cs`), the
   screenshot test (`ScenarioShots`) and the design-rules audit (`RulesAudit` + `rules-baseline.txt`).
 - `Unity/Assets/Scripts/Game/UI/Type.cs` — the type ramp (`Type.Display` … `Type.Caption`, `Type.Numeral`)
   and `Type.Floor` (12); `TextFloor` keeps a label at the floor however its parents are scaled;
-  `Core/Contrast.cs` is the WCAG luminance/ratio maths the audit uses.
+  `Core/Contrast.cs` is the WCAG luminance/ratio maths the audit uses. A `FloorScope` on the felt gives
+  every label created under it a `TextFloor` automatically (the hero area opts out until its redesign).
+- Turn order lives in `RoundEngine`: `SeatsActingIn(phase)` splits the seats around the hero
+  (`TableCatalog.SeatsBeforeHero` = 2), `RoundPhase.NpcsAfter` is the third-base turn, and
+  `FeltMetrics.SeatSlot(i)` places each seat on the curve of the felt in that order (first base on the
+  right in every language). The turn clock is `GameController.TurnTimer.cs` (`RoundState.TurnDeadline`)
+  and `TurnTimerView` draws it.
 
 Firebase (Auth, Firestore, Analytics, Crashlytics — SDK 13.17.0) is **not committed**: it is ~760 MB of
 native libraries. `Unity/tools/install_firebase.sh` downloads Google's official zip, verifies its SHA-256,
@@ -341,8 +356,8 @@ on a Play-distributed one. One-time manual steps to fix that:
 
 ## Assets
 
-- `Unity/Assets/Resources/Locales/*.json` — the 10 UI languages (en, he, ar, es, fr, de, pt, ru, tr, zh),
-  152 keys each; `ar` and `he` render right-to-left.
+- `Unity/Assets/Resources/Locales/*.json` — the 10 UI languages (en, he, ar, es, fr, de, pt, ru, ja, zh),
+  157 keys each; `ar` and `he` render right-to-left.
 - `Unity/Assets/Resources/Sfx/` — sound effects and the spoken call-outs (`Sfx/num/` holds the spoken
   amounts, so adding a clip is just adding the file).
 - `Unity/Assets/Resources/Fonts/` — Sora (Regular/SemiBold/Bold static instances), Instrument Serif
@@ -387,6 +402,21 @@ A Core change is not done until the EditMode suite passes. Check on a device or 
 lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
+
+### 2026-10-14 (The Seat, phase 1: casino turn order and turn timer)
+- feat: seats act in casino order — Maya and Jordan before you, Sam and Priya after you, then the dealer
+  (new `RoundPhase.NpcsAfter`); your bust, surrender or natural no longer skips the seats on your left.
+- feat: 20-second turn timer that stands your hand, with a gold countdown bar; fresh clock per split
+  hand, none on tutorial hands, paused in the background or with the chat/menu open; Settings →
+  At the table → Turn timer (on by default, saved as `turnTimerOn`). 5 new strings in all 10 languages.
+- fix: leaving the table after your turn while the seats on your left are still playing now plays them
+  and the dealer out and settles the bet, instead of leaving the round stranded.
+- fix: every label on the felt keeps the 12-unit floor however far the felt scales down (`FloorScope`);
+  a seat hides its bankroll while it shows STAND/BUST so the two no longer overlap. The design-rules
+  baseline drops from 221 to 125 entries.
+- test: the audit no longer treats a label's fallback-font sub-mesh or a hollow outline as an opaque
+  cover, and ignores control outlines scrolled off screen; `TextFloor` re-reads its authored size
+  safely and ignores mid-animation scales.
 
 ### 2026-10-14 (The Seat, phase 0: design rules)
 - test: `RulesAudit` checks every screen, table state and dialog on four phone sizes for the design rules

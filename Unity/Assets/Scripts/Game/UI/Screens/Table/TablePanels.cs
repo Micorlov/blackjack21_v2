@@ -40,6 +40,7 @@ namespace Blackjack.Game.UI
                     _dyn.Update(PlayingSignature(s), h => Playing(h, s));
                     break;
                 case RoundPhase.Npcs:
+                case RoundPhase.NpcsAfter:
                     _dyn.Update("npc" + r.ActingSeat + StandingsSignature(s), h => Waiting(h, s,
                         Loc.T("gameSeatPlaying", ("name", ActingName(s))), 20));
                     break;
@@ -176,6 +177,7 @@ namespace Blackjack.Game.UI
         {
             var r = s.Round;
             var col = Ui.VStack(host, Theme.Sm + Theme.Xxs, null, TextAnchor.UpperCenter, true, "Playing");
+            TurnTimerView.Build(col, _g);
             var top = Ui.HStack(col, Theme.Sm, null, TextAnchor.MiddleCenter, true);
             var gold = Theme.Gold.WithAlpha(0.32f);
             W.ActionPill(top, Loc.T("gameDouble"), gold, Theme.Gold.WithAlpha(0.08f), Theme.Gold, Debounced(_g.PlayerDouble), 16, 0, 20,

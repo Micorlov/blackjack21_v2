@@ -23,6 +23,9 @@ namespace Blackjack.Core
         public bool VoiceOn { get; init; } = true;
         public string LanguageOverride { get; init; }
         public bool HapticsOn { get; init; } = true;
+
+        /// <summary>The 20-second auto-stand on the hero's turn. Older saves lack the key and get it on.</summary>
+        public bool TurnTimerOn { get; init; } = true;
         public bool NotifSocial { get; init; } = true;
         public bool NotifLeaderboard { get; init; } = true;
         public bool NotifDaily { get; init; } = true;

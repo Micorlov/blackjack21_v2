@@ -123,6 +123,7 @@ namespace Blackjack.Game
         /// <summary>Fires every timer that is due. Called each frame; tests call it after moving their clock.</summary>
         public void Tick()
         {
+            TickTurnTimer();
             if (_timers.Count == 0) return;
             var now = Clock();
             List<TimerHandle> due = null;
@@ -179,6 +180,7 @@ namespace Blackjack.Game
                 VoiceOn = s.VoiceOn,
                 LanguageOverride = s.LanguageOverride,
                 HapticsOn = s.HapticsOn,
+                TurnTimerOn = s.TurnTimerOn,
                 NotifSocial = s.NotifSocial,
                 NotifLeaderboard = s.NotifLeaderboard,
                 NotifDaily = s.NotifDaily,
@@ -221,6 +223,7 @@ namespace Blackjack.Game
                 VoiceOn = saved.VoiceOn,
                 LanguageOverride = saved.LanguageOverride,
                 HapticsOn = saved.HapticsOn,
+                TurnTimerOn = saved.TurnTimerOn,
                 NotifSocial = saved.NotifSocial,
                 NotifLeaderboard = saved.NotifLeaderboard,
                 NotifDaily = saved.NotifDaily,
@@ -264,6 +267,7 @@ namespace Blackjack.Game
 
         public void OnAppResumed()
         {
+            _appInBackground = false;
             _playTime.Resume();
             if (!State.SocialReady) return;
             Heartbeat();
@@ -274,6 +278,7 @@ namespace Blackjack.Game
 
         public void OnAppPaused()
         {
+            _appInBackground = true;
             FlushSave();
             _playTime.Pause();
             if (State.SocialReady) _svc.Social.AddPlayTime(_playTime.TakeSeconds());

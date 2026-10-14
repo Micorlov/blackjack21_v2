@@ -102,7 +102,7 @@ namespace Blackjack.Core.Tests
                 var dealt = RoundEngine.Deal(s, new Shoe(rng), T.Names);
 
                 CollectionAssert.Contains(
-                    new[] { RoundPhase.Insurance, RoundPhase.Npcs, RoundPhase.Dealer, RoundPhase.Settlement }, dealt.Phase);
+                    new[] { RoundPhase.Insurance, RoundPhase.Npcs, RoundPhase.NpcsAfter, RoundPhase.Dealer, RoundPhase.Settlement }, dealt.Phase);
                 if (dealt.Phase != RoundPhase.Settlement) Assert.AreEqual(4975, dealt.Chips);
             }
         }
@@ -132,12 +132,7 @@ namespace Blackjack.Core.Tests
         private static RoundState PlayHero(RoundState s, Shoe shoe)
         {
             if (s.Phase == RoundPhase.Insurance) s = RoundEngine.DeclineInsurance(s, T.Names);
-            if (s.Phase == RoundPhase.Npcs)
-            {
-                for (var i = 0; i < s.NpcSeats.Count; i++)
-                    while (!s.NpcSeats[i].Done) s = RoundEngine.NpcAct(s, shoe, i);
-                s = RoundEngine.HandOverAfterSeats(s);
-            }
+            if (s.Phase == RoundPhase.Npcs) s = RoundEngine.HandOverAfterSeats(RoundEngine.PlaySeats(s, shoe, RoundPhase.Npcs));
             while (s.Phase == RoundPhase.Playing)
             {
                 s = BlackjackRules.HandValue(s.ActiveHand.Cards) >= 17
@@ -145,6 +140,100 @@ namespace Blackjack.Core.Tests
                     : RoundEngine.Hit(s, shoe);
             }
             return s;
+        }
+    }
+
+    /// <summary>Casino seat order: Maya and Jordan act before the hero, Sam and Priya after, then the dealer.</summary>
+    public class TurnOrderTests
+    {
+        private static NpcSeat Seat(params string[] cards) => new NpcSeat(50, T.Cards(cards));
+
+        private static RoundState FullTable(string[] hero, params NpcSeat[] seats) => new RoundState
+        {
+            Chips = 900, Stake = T.Bronze, Bet = 100, Phase = RoundPhase.Npcs,
+            DealerHand = T.Cards("10", "7"),
+            Hands = new[] { new Hand(T.Cards(hero), 100) },
+            NpcSeats = seats.Length > 0 ? seats : new[] { Seat("10", "8"), Seat("10", "8"), Seat("10", "8"), Seat("10", "8") },
+        };
+
+        [Test]
+        public void SeatsActingIn_splitsTheTableAroundTheHero()
+        {
+            CollectionAssert.AreEqual(new[] { 0, 1 }, RoundEngine.SeatsActingIn(RoundPhase.Npcs, 4));
+            CollectionAssert.AreEqual(new[] { 2, 3 }, RoundEngine.SeatsActingIn(RoundPhase.NpcsAfter, 4));
+            CollectionAssert.AreEqual(new[] { 0 }, RoundEngine.SeatsActingIn(RoundPhase.Npcs, 1));
+            CollectionAssert.IsEmpty(RoundEngine.SeatsActingIn(RoundPhase.NpcsAfter, 1));
+            CollectionAssert.IsEmpty(RoundEngine.SeatsActingIn(RoundPhase.Playing, 4));
+        }
+
+        [Test]
+        public void TheHeroActsAfterFirstBase_andBeforeThirdBase()
+        {
+            var shoe = T.Stacked();
+            var s = RoundEngine.HandOverAfterSeats(RoundEngine.PlaySeats(FullTable(new[] { "10", "6" }), shoe, RoundPhase.Npcs));
+
+            Assert.AreEqual(RoundPhase.Playing, s.Phase);
+            Assert.IsTrue(s.NpcSeats[0].Done && s.NpcSeats[1].Done, "first base has played");
+            Assert.IsFalse(s.NpcSeats[2].Done || s.NpcSeats[3].Done, "third base waits for the hero");
+
+            s = RoundEngine.Stand(s);
+            Assert.AreEqual(RoundPhase.NpcsAfter, s.Phase);
+            Assert.IsFalse(s.HoleRevealed, "the dealer waits for the seats after the hero");
+
+            s = RoundEngine.HandOverToDealer(RoundEngine.PlaySeats(s, shoe, RoundPhase.NpcsAfter));
+            Assert.AreEqual(RoundPhase.Dealer, s.Phase);
+            Assert.IsTrue(s.NpcSeats.All(n => n.Done));
+        }
+
+        [Test]
+        public void ABustHeroStillWatchesThirdBasePlay_andTheirBetsReachTheSweep()
+        {
+            var s = FullTable(new[] { "10", "6" }, Seat("10", "8"), Seat("10", "8"), Seat("10", "8"), Seat("10", "4")) with { Phase = RoundPhase.Playing };
+            s = s with { NpcSeats = s.NpcSeats.Take(2).Select(n => n with { Action = "STAND", Done = true }).Concat(s.NpcSeats.Skip(2)).ToArray() };
+            // The hero busts on the K; seat 3 then hits 14 with a 9 and busts too.
+            var shoe = T.Stacked("K", "9");
+            s = RoundEngine.Hit(s, shoe);
+            Assert.AreEqual(RoundPhase.NpcsAfter, s.Phase);
+
+            var settled = RoundEngine.RunToSettlement(s, shoe, T.Names);
+            Assert.AreEqual("BUST", settled.NpcSeats[3].Action, "Priya acted after the hero");
+            Assert.AreEqual(RoundPhase.Settlement, settled.Phase);
+            Assert.IsTrue(settled.SweepInfo.Contributors.Any(c => c.Name == T.Names[3] && c.Reason == "bust"));
+        }
+
+        [Test]
+        public void ANaturalLetsBothSidesPlay()
+        {
+            var s = FullTable(new[] { "A", "K" }) with { Hands = new[] { new Hand(T.Cards("A", "K"), 100, HandStatus.Blackjack) } };
+            var shoe = T.Stacked();
+            s = RoundEngine.HandOverAfterSeats(RoundEngine.PlaySeats(s, shoe, RoundPhase.Npcs));
+            Assert.AreEqual(RoundPhase.NpcsAfter, s.Phase, "nothing for the hero to decide: third base plays on");
+            var settled = RoundEngine.RunToSettlement(s, shoe, T.Names);
+            Assert.IsTrue(settled.NpcSeats.All(n => n.Done));
+            Assert.AreEqual("Blackjack! You win", settled.Message);
+        }
+
+        [Test]
+        public void ADealerNaturalStillSkipsEverySeat()
+        {
+            var s = new RoundState
+            {
+                Chips = 900, Stake = T.Bronze, Bet = 100, Phase = RoundPhase.Insurance, InsuranceBet = 50,
+                DealerHand = new[] { T.C("A", "♣"), T.C("K", "♦") },
+                Hands = new[] { new Hand(T.Cards("10", "9"), 100) },
+                NpcSeats = new[] { Seat("10", "4"), Seat("10", "4"), Seat("10", "4"), Seat("10", "4") },
+            };
+            var settled = RoundEngine.DeclineInsurance(s, T.Names);
+            Assert.AreEqual(RoundPhase.Settlement, settled.Phase);
+            Assert.IsTrue(settled.NpcSeats.All(n => n.Action == "" && n.Cards.Count == 2), "the peek ends the hand before anyone acts");
+        }
+
+        [Test]
+        public void SurrenderHandsOverToThirdBase_notStraightToTheDealer()
+        {
+            var s = FullTable(new[] { "10", "6" }) with { Phase = RoundPhase.Playing };
+            s = RoundEngine.Surrender(s);
+            Assert.AreEqual(RoundPhase.NpcsAfter, s.Phase);
         }
     }
 }
