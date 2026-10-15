@@ -451,6 +451,13 @@ lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
 
+### 2026-10-15 (privacy policy)
+- fix: the hosted Privacy Policy (`hosting/privacy-policy.html`, the URL on the Play listing) no longer
+  claims the app uses "no analytics or crash-reporting SDK". It now matches the in-app policy: it names
+  Firebase Analytics (Google Analytics for Firebase) and Crashlytics, lists what is reported, points
+  at Settings → Privacy, and lists Google Analytics under data sharing. Last-updated date is now
+  October 15, 2026.
+
 ### 2026-10-15 (Google Analytics link)
 - chore: linked the Firebase project to Google Analytics account 265592677 (new GA4 property
   `blackjack21-v2`, ID 559173540, Android + iOS streams). Console-side only — no game code or build
