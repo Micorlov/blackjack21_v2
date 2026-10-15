@@ -13,8 +13,10 @@ namespace Blackjack.Core
         /// <summary>
         /// The card for a lesson and phase, or null when the coach stays quiet. Insurance gets the same
         /// card in every lesson: it is dealt at random, so it cannot be taught on a fixed hand.
+        /// <paramref name="pushed"/> is whether the hand just settled as a push, which the second
+        /// lesson's result card turns on: the hand is dealt, not scripted, so the lesson has to read it.
         /// </summary>
-        public static CoachTip TipFor(int lesson, RoundPhase phase)
+        public static CoachTip TipFor(int lesson, RoundPhase phase, bool pushed = false)
         {
             if (phase == RoundPhase.Insurance)
                 return new CoachTip(new[] { "gameInsure" }, "coachInsuranceBody");
@@ -27,7 +29,11 @@ namespace Blackjack.Core
                 case (0, RoundPhase.Settlement): return new CoachTip(new[] { "gameBalance" }, "coachSettleBody");
                 case (1, RoundPhase.Betting): return new CoachTip(new[] { "gameBet" }, "coachBetBody", true);
                 case (1, RoundPhase.Playing): return new CoachTip(new[] { "gameAgainstDealer" }, "coachDealerBody");
-                case (1, RoundPhase.Settlement): return new CoachTip(new[] { "gamePush" }, "coachPushBody");
+                // The push card only fits a hand that actually pushed; any other result is taught by the
+                // comparison that decided it, rather than by a lesson the sheet above it contradicts.
+                case (1, RoundPhase.Settlement): return pushed
+                    ? new CoachTip(new[] { "gamePush" }, "coachPushBody")
+                    : new CoachTip(new[] { "gameAgainstDealer" }, "coachDealerBody");
                 case (2, RoundPhase.Betting): return new CoachTip(new[] { "gameSweepPot" }, "coachPotBody");
                 case (2, RoundPhase.Playing): return new CoachTip(new[] { "gameDouble", "gameSplit" }, "coachMovesBody");
                 case (2, RoundPhase.Settlement): return new CoachTip(new[] { "howToPlayLabel" }, "coachDoneBody");
@@ -36,11 +42,11 @@ namespace Blackjack.Core
         }
 
         /// <summary>The card to show now, honouring the Skip switch and the current screen.</summary>
-        public static CoachTip Active(bool dismissed, bool onTable, int roundsSeen, RoundPhase phase)
+        public static CoachTip Active(bool dismissed, bool onTable, int roundsSeen, RoundPhase phase, bool pushed = false)
         {
             if (dismissed || !onTable) return null;
             if (roundsSeen < 0 || roundsSeen >= Rounds) return null;
-            return TipFor(roundsSeen, phase);
+            return TipFor(roundsSeen, phase, pushed);
         }
     }
 

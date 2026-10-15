@@ -60,8 +60,10 @@ namespace Blackjack.Game.UI
             var settled = r.Phase == RoundPhase.Settlement;
             var sweep = r.SweepInfo;
             var label = settled ? SettledPotLabel(sweep) : (pot.IsSweep ? Loc.T("gameSweepPot").ToUpperInvariant() : Loc.T("gameNoPot").ToUpperInvariant());
-            // Mid-round with nothing forfeited there is no figure to quote.
-            var value = settled ? "$" + Chips(sweep?.TotalWin ?? 0) : (pot.IsSweep ? "$" + Chips(pot.Amount) : "");
+            // Mid-round with nothing forfeited there is no figure to quote. Settled, the pill still quotes
+            // the pot and not the pot plus the winner's own bet: it is the pot's pill, it has shown the
+            // pot all round, and the sheet below it names the round's net separately.
+            var value = settled ? "$" + Chips(sweep?.Pot ?? 0) : (pot.IsSweep ? "$" + Chips(pot.Amount) : "");
             return new MidRoundPot(pot.IsSweep, heroLeads, label, value, heroLive);
         }
 

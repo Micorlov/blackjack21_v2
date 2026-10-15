@@ -298,7 +298,8 @@ namespace Blackjack.Game.UI
         private static string SettlementSignature(AppState s)
         {
             var r = s.Round;
-            return $"set{r.Stats.HandsPlayed}|{r.Message}|{r.RoundNet}|{r.SweepAmount}|{r.Chips}|{Loc.Code}";
+            return $"set{r.Stats.HandsPlayed}|{r.Message}|{r.RoundNet}|{r.SweepAmount}|{r.Chips}"
+                   + $"|{s.TutorialRoundsSeen}|{s.TutorialDismissed}|{Loc.Code}";
         }
 
         /// <summary>The result sheet: the outcome and the figure the player came for, then where it came from.</summary>
@@ -321,6 +322,8 @@ namespace Blackjack.Game.UI
                 r.RoundHandNet > 0 ? Theme.WinLight : r.RoundHandNet < 0 ? Theme.LoseOnPanel : Theme.Ivory, null);
             if (r.SweepAmount > 0) Line(sheet, Loc.T("gameSweepPot"), "+" + Money(r.SweepAmount), Theme.Gold, Theme.Gold);
             Line(sheet, Loc.T("gameBalance"), Money(r.Chips), Theme.Ivory, null, last: true);
+            // The coached lesson rides on the sheet rather than floating above it, where it lay over the seats.
+            CoachCard.Build(sheet, s, _g, _overlays, onSheet: true);
             Ui.Spacer(sheet, Theme.Sm);
             W.SeatButton(sheet, Loc.T("gameNextHand"), null, W.Finish.Gold, _g.NextHand, true, W.SeatButtonShort + Theme.Xs);
         }

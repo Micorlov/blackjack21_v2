@@ -102,8 +102,10 @@ A Unity (Android) blackjack game with a multi-seat table and a friends race. Fou
   a finished hour's score, and the rebuy offer now appears whenever your stack falls below the
   table minimum rather than only at exactly zero
 - **Three-hand tutorial** — a new player's first three hands are coached by a card above the
-  action panel ("COACH · HAND 1 OF 3" with progress dots), one lesson per hand: playing a hand (bet → hit/stand → result), reading the
-  dealer's up-card and what a push is, then the bigger moves (double/split/surrender) and the
+  action panel ("COACH · HAND 1 OF 3" with progress dots; at the result it moves onto the result sheet
+  so it never covers the seats), one lesson per hand: playing a hand (bet → hit/stand → result), reading the
+  dealer's up-card and what a push is (taught at the result only when the hand actually pushed; any
+  other result repeats the hand-vs-dealer lesson), then the bigger moves (double/split/surrender) and the
   sweep pot. The card changes with the phase, explains insurance whenever the dealer shows an
   Ace, and quotes the real minimum of whichever table you walked into. "Skip" turns it off; the
   progress is saved, so a relaunch resumes at the right lesson and a player who already has
@@ -441,6 +443,22 @@ A Core change is not done until the EditMode suite passes. Check on a device or 
 lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
+
+### 2026-10-15 (1.8.2 release)
+- fix: the coached lesson no longer floats over the result screen's seats — at the result it is drawn
+  inside the result sheet (`CoachCard.Build(..., onSheet: true)`), so the nameplates and the hero's
+  cards stay readable (BUG-03).
+- fix: the settled pot pill ("YOU TAKE $150") quotes the sweep pot, as it did all round, instead of the
+  pot plus the winner's own bet, so it agrees with the "Sweep pot" line on the sheet (BUG-04).
+- fix: the second coached hand teaches "push" at the result only when the hand pushed; any other result
+  shows the hand-vs-dealer lesson, so a "Dealer wins" sheet no longer carries a "Push" card (BUG-05;
+  `Tutorial.TipFor` and `Tutorial.Active` take a `pushed` flag).
+- test: `CoreExtrasTests` covers the push-aware lesson; `Scenarios.cs` gains `table_settlement_coach`
+  (a coached loss), so `RulesAudit` holds the new sheet layout to the design rules.
+- chore: release 1.8.2 (12); `tool/release_notes_en-US.txt` reads "What's new in 1.8.2".
+- Not changed, still open in `BUGS.md`: BUG-02 and BUG-06 are rules decisions, BUG-07/08/09 need a check
+  on a real phone (the screenshot harness piles the seat pills in the middle of the felt, so it cannot
+  judge them), BUG-10 and BUG-11 are notes.
 
 ### 2026-10-15 (1.8.1 release)
 - chore: release 1.8.1 (11) to Google Play **production**, carrying the sound, dealer-box and bot-push

@@ -49,6 +49,25 @@ namespace Blackjack.Core.Tests
         }
 
         [Test]
+        public void TipFor_theSecondLessonResultTeachesPushOnlyWhenTheHandPushed()
+        {
+            Assert.AreEqual("coachPushBody", Tutorial.TipFor(1, RoundPhase.Settlement, pushed: true).BodyKey);
+            Assert.AreEqual("coachDealerBody", Tutorial.TipFor(1, RoundPhase.Settlement, pushed: false).BodyKey);
+        }
+
+        [Test]
+        public void TipFor_pushingDoesNotChangeTheOtherLessons()
+        {
+            foreach (var lesson in new[] { 0, 2 })
+                Assert.AreEqual(Tutorial.TipFor(lesson, RoundPhase.Settlement).BodyKey,
+                    Tutorial.TipFor(lesson, RoundPhase.Settlement, pushed: true).BodyKey);
+        }
+
+        [Test]
+        public void Active_passesThePushThroughToTheCard() =>
+            Assert.AreEqual("coachPushBody", Tutorial.Active(false, true, 1, RoundPhase.Settlement, pushed: true).BodyKey);
+
+        [Test]
         public void TipFor_theBettingCardQuotesTheTableMinimum() =>
             Assert.IsTrue(Tutorial.TipFor(0, RoundPhase.Betting).UsesMinimum);
 

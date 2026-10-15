@@ -211,6 +211,21 @@ namespace Blackjack.PlayTests
                     new SweepContributor("Jordan", 50, "bust"), new SweepContributor("Priya", 100, "lost"),
                 }),
             })),
+            new Scenario("table_settlement_coach", () => Table(Betting() with
+            {
+                Chips = 1062, Bet = 25, Phase = RoundPhase.Settlement, HoleRevealed = true,
+                DealerHand = new[] { C("10", "♦"), C("A", "♣") },
+                Hands = new[] { new Hand(new[] { C("10"), C("8", "♥") }, 25, HandStatus.Stood) },
+                NpcSeats = new[]
+                {
+                    new NpcSeat(25, new[] { C("10"), C("9", "♦") }, "STAND", true),
+                    new NpcSeat(50, new[] { C("10"), C("9", "♥"), C("5", "♣") }, "BUST", true),
+                    new NpcSeat(25, new[] { C("8"), C("9", "♥") }, "STAND", true),
+                    new NpcSeat(100, new[] { C("K", "♦"), C("Q") }, "STAND", true),
+                },
+                Message = "Dealer wins", MessageType = MessageType.Lose, SweepAmount = 0, RoundNet = -25,
+                RoundStake = 25, RoundHandNet = -25,
+            }, tutorialDone: false) with { TutorialRoundsSeen = 1 }),
             new Scenario("table_chat", () => Table(EmptyTable()) with
             {
                 TableChatOpen = true,

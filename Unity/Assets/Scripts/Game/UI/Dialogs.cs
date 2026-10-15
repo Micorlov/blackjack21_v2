@@ -177,17 +177,27 @@ namespace Blackjack.Game.UI
     /// <summary>The coached first hands' card, shown above the active panel until the tutorial is done or skipped.</summary>
     public static class CoachCard
     {
-        public static void Build(RectTransform host, AppState s, GameController g, Overlays overlays)
+        /// <param name="onSheet">
+        /// True when the result sheet draws the lesson on its own surface. The card's own translucent
+        /// background is dropped there: a second card above the sheet floats over the felt, and the seat
+        /// nameplates and the hero's cards read through it.
+        /// </param>
+        public static void Build(RectTransform host, AppState s, GameController g, Overlays overlays, bool onSheet = false)
         {
             var r = s.Round;
-            var tip = Tutorial.Active(s.TutorialDismissed, s.Screen == AppScreen.Table, s.TutorialRoundsSeen, r.Phase);
+            var tip = Tutorial.Active(s.TutorialDismissed, s.Screen == AppScreen.Table, s.TutorialRoundsSeen, r.Phase,
+                r.MessageType == MessageType.Push);
             if (tip == null) return;
+            // At the result the sheet carries the lesson; the panel above it stays empty.
+            if (!onSheet && r.Phase == RoundPhase.Settlement) return;
 
             var minimum = "$" + TableCatalog.FormatChips(r.Stake?.Min ?? TableCatalog.ChipDenoms[0]);
             var body = tip.UsesMinimum ? Loc.T(tip.BodyKey, ("min", minimum)) : Loc.T(tip.BodyKey);
             var lesson = s.TutorialRoundsSeen;
 
-            var card = Ui.Card(host, Color.black.WithAlpha(0.72f), Theme.RadiusMd, Theme.Gold.WithAlpha(0.55f), 1, Ui.Pad(Theme.Md, Theme.Sm), 0, true, "Coach");
+            var card = onSheet
+                ? Ui.VStack(host, 0, Ui.Pad(0, Theme.Sm, 0, 0), TextAnchor.UpperLeft, true, "Coach")
+                : Ui.Card(host, Color.black.WithAlpha(0.72f), Theme.RadiusMd, Theme.Gold.WithAlpha(0.55f), 1, Ui.Pad(Theme.Md, Theme.Sm), 0, true, "Coach");
             var head = Ui.HStack(card, 8, null, TextAnchor.MiddleLeft, false);
             var left = Ui.HStack(head, 8, null, TextAnchor.MiddleLeft, false);
             left.FlexW();
@@ -200,7 +210,7 @@ namespace Blackjack.Game.UI
             Ui.Text(card, Loc.Joined(tip.TitleKeys), 15, Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.TopLeft, true);
             Ui.Spacer(card, 3);
             Ui.Text(card, body, 13, Theme.TextBody, FontKind.Sora, TextAlignmentOptions.TopLeft, true, 0, 6);
-            Ui.Spacer(host, 8);
+            if (!onSheet) Ui.Spacer(host, 8);
         }
 
         /// <summary>A small text link with a full 48x48 hit area around it.</summary>
