@@ -344,10 +344,16 @@ which no longer exists (the earlier `play-publisher@blackjack21-v2` key was dele
 `android/` folder on 2026-10-14).
 
 Its **account permissions** grant "Release apps to testing tracks" but **not** "Release to production,
-exclude devices, and use Play App Signing", so an internal/alpha/beta release works while a
+exclude devices, and use Play App Signing". With only that, an internal/alpha/beta release works while a
 `--track production` run uploads the bundle, stages the release, and then fails the final commit with
 `HttpError 403 … The caller does not have permission`. Play discards the whole edit when that happens, so
-nothing lands and the version code stays free to retry. See below for the tick that fixes it.
+nothing lands and the version code stays free to retry.
+
+Production was unblocked on 2026-10-15 by granting the permission **per app rather than account-wide**:
+**Users and permissions → play-publisher → App permissions → Add app → Blackjack 21 Big Cards Offline →
+Release to production, exclude devices, and use Play App Signing → Apply → Save changes**. Scoping it to
+this app leaves the account's other apps (e.g. `com.eightballs.pool`) on testing-track access only. Take
+care in that picker: `com.blackjackcoach.app` also matches a search for "Blackjack".
 
 It can release to production as of 1.3.0 (4). Until then it could not: a `--track production` run
 uploaded the bundle and staged the release, then failed on the final commit with `HttpError 403 …
@@ -437,9 +443,10 @@ lines show the SDK initialising and the anonymous sign-in.
 ## Changelog
 
 ### 2026-10-15 (1.8.1 release)
-- chore: bump to 1.8.1 (11) and build the signed bundle for a Google Play production release carrying the
-  sound, dealer-box and bot-push fixes. **Not yet on Play**: the commit step returns 403 until the service
-  account is granted the production-release permission (see **Publishing to Google Play**).
+- chore: release 1.8.1 (11) to Google Play **production**, carrying the sound, dealer-box and bot-push
+  fixes. Production moves 1.6.1 (8) → 1.8.1 (11), so the new table design reaches everyone.
+- docs: correct the Play publishing credentials and record the app-level production permission the
+  service account needed (see **Publishing to Google Play**).
 - docs: correct the Play publishing credentials — the service account is now
   `play-publisher@gen-lang-client-0324046629.iam.gserviceaccount.com` with its key at `~/.config/play/key.json`;
   the old `play-publisher@blackjack21-v2` key went with the deleted Flutter `android/` folder.
