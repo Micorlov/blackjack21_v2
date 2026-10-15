@@ -264,6 +264,13 @@ importer hangs headless once the External Dependency Manager starts); the Fireba
 services. Firestore collections and fields (`players`, `groups/{code}/players`, `leaderboard`,
 `config/features`) are unchanged, so a group created on an older build still works.
 
+Google Analytics: the Firebase project `blackjack21-v2` is linked to the GA4 property `blackjack21-v2`
+(property ID 559173540) in the Google Analytics account "Default Account for Firebase" (account
+265592677, owned by micorlov@gmail.com), with an Android and an iOS data stream. The link is made in
+the Firebase console (Project settings → Integrations → Google Analytics), not in code: the game sends
+events through `FirebaseAnalyticsService` as before, and they now appear in that property. Events
+reach it only from builds that include the Firebase SDK and only while Settings → analytics is on.
+
 Not yet verified: Google sign-in (needs an interactive account on a device) and Play in-app review
 (still a no-op).
 
@@ -443,6 +450,11 @@ A Core change is not done until the EditMode suite passes. Check on a device or 
 lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
+
+### 2026-10-15 (Google Analytics link)
+- chore: linked the Firebase project to Google Analytics account 265592677 (new GA4 property
+  `blackjack21-v2`, ID 559173540, Android + iOS streams). Console-side only — no game code or build
+  change, so the app already on the phone starts reporting into it.
 
 ### 2026-10-15 (1.8.2 release)
 - fix: the coached lesson no longer floats over the result screen's seats — at the result it is drawn
