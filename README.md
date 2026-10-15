@@ -451,6 +451,19 @@ lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
 
+### 2026-10-15 (store screenshots)
+- docs: the Play listing's phone, 7-inch and 10-inch screenshots are re-captured from the 1.8.2 build
+  (The Seat look) and replace the ones that still showed the previous design. They came from the
+  `blackjack-qa` emulator (phone 1080×2340, tablets at `wm size` 1200×1920 and 1600×2560), composed with
+  `tool/make_store_shots.py` and uploaded through Play Console → Store listings → Default listing, then
+  saved and sent for review together with the 1.8.2 (12) rollout. Only `en-US` carries screenshots in the
+  API, but the Console propagates the change to every listing language. The Console route was needed
+  because `tool/play_images.py` uploaded the images but its `edits.commit` was refused with `403 The
+  caller does not have permission` for the `play-publisher` service account (see **Publishing to Google
+  Play** for its permissions); the owner account is the Chrome profile at `/console/u/1/` (`u/0` is a
+  different Google account with no developer account). The Friends shot shows the invite code as dots
+  because the emulator build is not signed in.
+
 ### 2026-10-15 (privacy policy)
 - fix: the hosted Privacy Policy (`hosting/privacy-policy.html`, the URL on the Play listing) no longer
   claims the app uses "no analytics or crash-reporting SDK". It now matches the in-app policy: it names
@@ -527,8 +540,8 @@ lines show the SDK initialising and the anonymous sign-in.
   registry and pass the design rules: the table keeps casino order in every language (first base on the
   right) while the text, panels, pills and turn order mirror.
 - docs: `docs/design-concepts/the-seat/` (the ten screens, the overview and the PDF) is tracked as the
-  design reference. The Play screenshots are not refreshed yet: the rule for them is a real session on a
-  device (see **Regenerating the store assets**), and they still show the previous look.
+  design reference. The Play screenshots were not refreshed in this change: the rule for them is a real
+  session on a device (see **Regenerating the store assets**); they were refreshed later on 2026-10-15.
 
 ### 2026-10-14 (The Seat, phase 5: the rest of the app)
 - feat: the lobby, stats, friends, settings, onboarding, the navigation bar, dialogs and sheets move into
