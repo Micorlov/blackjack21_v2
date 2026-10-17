@@ -276,17 +276,28 @@ Not yet verified: Google sign-in (needs an interactive account on a device) and 
 
 ### Regenerating the store assets
 
-Screenshots and the promo come from a real session, never a mockup. Capture on a device or an
+Screenshots and the trailer come from a real session, never a mockup. Capture on a device or an
 emulator (`emulator -avd <name>`), install the release APK, then:
 
 ```bash
 adb exec-out screencap -p > play-assets/raw/<name>.png      # one per screen listed in the script
 python3 tool/make_store_shots.py                             # composes screen-*/tab*-*.png
 
-adb shell screenrecord --size 1080x1920 --time-limit 90 /sdcard/promo.mp4
-adb pull /sdcard/promo.mp4 /tmp/promo-raw.mp4
-python3 tool/make_promo.py /tmp/promo-raw.mp4 play-assets/promo-vertical.mp4
+adb shell screenrecord --bit-rate 16000000 --time-limit 180 /sdcard/trailer.mp4   # play a few hands
+adb pull /sdcard/trailer.mp4 /tmp/trailer-raw.mp4
+python3 tool/make_trailer.py /tmp/trailer-raw.mp4 play-assets/trailer.mp4
 ```
+
+`play-assets/trailer.mp4` is the listing video: 1920×1080, about 36 seconds, loudness-normalised to
+−16 LUFS. The dealer from the app icon (`play-assets/src/icon-master.png`) presents it. She opens and
+closes it full frame, and in between she stands beside a phone that plays the recording and explains
+each beat in a speech bubble: betting, the five-seat table, the goal of 21, hit or stand, beating the
+dealer and sweeping the pot. Her voice is Kokoro `af_heart`, made through `tool/gen_voice.py`, so the
+Kokoro install that file's docstring describes is needed. The bed is the game's own `Sfx/` clips. The
+bubbles repeat every spoken line because Play autoplays the trailer muted. It is landscape because
+Play shows the trailer in a 16:9 banner above the listing, where a portrait video is a thin strip.
+The `SCENES` table in the script holds the recording timestamps for each beat, so a new recording
+needs those times re-read (a 1 fps contact sheet of the capture is the quickest way).
 
 Tablet captures come from the same emulator with `adb shell wm size 1200x1920` (and
 `1600x2560`) plus a matching `wm density`; reset both with `wm size reset` / `wm density reset`
@@ -450,6 +461,14 @@ A Core change is not done until the EditMode suite passes. Check on a device or 
 lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
+
+### 2026-10-17
+- docs: new landscape Play/YouTube trailer (`play-assets/trailer.mp4`, built by `tool/make_trailer.py`).
+  The dealer from the app icon now presents it and explains the game in her own voice and in speech
+  bubbles, over a fresh recording of The Seat table from the `blackjack-qa` emulator. It replaces the
+  31-second portrait promo, which still showed the previous table design and appeared on the listing
+  as a thin strip with black bars either side. `tool/make_promo.py` and `play-assets/promo-vertical.mp4`
+  are removed.
 
 ### 2026-10-15 (store screenshots)
 - docs: the Play listing's phone, 7-inch and 10-inch screenshots are re-captured from the 1.8.2 build
