@@ -321,7 +321,11 @@ phone set is composed at 1344x2688 rather than at the device's own 1344x2992.
 
 Only three things still need the Console UI: the developer name, the app category and tags, and
 the listing video (which must be a public YouTube link, so the MP4 is uploaded to YouTube first
-and the watch URL is then set through the API).
+and the watch URL then goes into the default listing's Video field in the Console; the API route is
+blocked by the same `edits.commit` 403 as the images). Setting it on the default listing changes
+every language, since no other locale carries its own video. Saving asks for an AI asset
+declaration: the icon, the feature graphic and the trailer are labelled as AI-generated, and the
+screenshots, which are real captures, are not.
 
 ### Publishing to Google Play
 
@@ -468,7 +472,9 @@ lines show the SDK initialising and the anonymous sign-in.
   bubbles, over a fresh recording of The Seat table from the `blackjack-qa` emulator. It replaces the
   31-second portrait promo, which still showed the previous table design and appeared on the listing
   as a thin strip with black bars either side. `tool/make_promo.py` and `play-assets/promo-vertical.mp4`
-  are removed.
+  are removed. It is published on YouTube as https://www.youtube.com/watch?v=EnIneRy0u84 and set as
+  the listing video for all 10 listing languages through Play Console. The change was sent for review
+  with the icon, feature graphic and trailer labelled as AI-generated assets.
 
 ### 2026-10-15 (store screenshots)
 - docs: the Play listing's phone, 7-inch and 10-inch screenshots are re-captured from the 1.8.2 build
