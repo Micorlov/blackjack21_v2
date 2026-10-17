@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blackjack 21 — App Design</title>
+<style>
+@font-face{font-family:"Sora";font-weight:400;src:url(fonts/Sora-Regular.ttf)}
+@font-face{font-family:"Sora";font-weight:600;src:url(fonts/Sora-SemiBold.ttf)}
+@font-face{font-family:"Sora";font-weight:700;src:url(fonts/Sora-Bold.ttf)}
+@font-face{font-family:"Instrument Serif";font-style:italic;src:url(fonts/InstrumentSerif-Italic.ttf)}
+@font-face{font-family:"Space Mono";font-weight:400;src:url(fonts/SpaceMono-Regular.ttf)}
+@font-face{font-family:"Space Mono";font-weight:700;src:url(fonts/SpaceMono-Bold.ttf)}
+@font-face{font-family:"Cinzel";font-weight:700;src:url(fonts/Cinzel-Bold.ttf)}
+
+/* Tokens — copied from Unity/Assets/Scripts/Game/UI/Theme.cs and Type.cs */
+:root{
+  --shell-black:#0E0805; --surface:#140A05; --panel:#22120A; --nav-surface:#1A0D06;
+  --border:#3D2618; --border-strong:#9A7A5C;
+  --felt:#175943; --felt-dark:#0E3B2E; --felt-darkest:#0A2018;
+  --text-primary:#F4EBD8; --text-muted:#CFC4AE; --text-label:#C9BDA4; --text-faint:#B3A68E; --text-body:#D8D3C6;
+  --gold-light:#EBD7A0; --gold:#DCBF7A; --gold-dark:#C9A75C; --gold-ink:#1A1408;
+  --win:#4FAE8E; --win-light:#9FE6C9; --lose:#C1503F; --lose-light:#F2B0A5; --lose-soft:#E39084; --push:#C2BEB2; --push-on-felt:#C4C0B4;
+  --card-top:#FFFDF8; --card-bottom:#F0E9D9; --card-red:#A51D28; --card-black:#141210;
+  --scrim:#050302; --google-blue:#1967D2; --silver:#9FB8C9;
+  --room:#1C0F07; --room-deep:#0E0805; --wood:#8A5530; --wood-dark:#4A2812; --leather:#6A321A; --leather-dark:#3A1609;
+  --stitch:#F0D2AA; --brass:#CDA65A; --brass-light:#F2DCA0; --ivory:#F4EBD8; --felt-print:#E6C77A; --pill-ink:#1A1206;
+  --text-faint-on-felt:#CBD4CD; --text-faint-on-panel:#B9C6BD; --lose-on-felt:#FFB4A6; --lose-on-panel:#FF9C8C;
+  --chip-green:#1A6B40; --chip-orange:#D9731E; --chip-black:#151515; --chip-purple:#5B2F86; --chip-yellow:#D9A520; --chip-red:#C4302B;
+  --seat-1:#C86A9E; --seat-2:#4FAE8E; --seat-3:#8A9BB8; --seat-4:#E0A050;
+  --av-1:#17654B; --av-2:#DCBF7A; --av-3:#B23A2E; --av-4:#2F6688; --av-5:#6E4F9C; --av-6:#4FAE8E;
+  --medal-1:#DCBF7A; --medal-2:#C7CCC9; --medal-3:#C98A4B;
+  --sora:"Sora",system-ui,sans-serif; --serif:"Instrument Serif",Georgia,serif; --mono:"Space Mono",ui-monospace,monospace; --cinzel:"Cinzel",serif;
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{background:var(--shell-black);color:var(--text-primary);font:15px/1.5 var(--sora);-webkit-font-smoothing:antialiased}
+a{color:var(--gold);text-decoration:none}
+.wrap{max-width:1200px;margin:0 auto;padding:0 20px}
+
+header.hero{padding:64px 0 32px;border-bottom:1px solid var(--border);background:radial-gradient(900px 400px at 20% -10%,#3a2010 0,transparent 70%),var(--room)}
+.hero h1{font:italic 400 clamp(40px,7vw,72px)/1.05 var(--serif);color:var(--text-primary)}
+.hero p{color:var(--text-muted);max-width:60ch;margin-top:12px}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.badge{border:1px solid var(--border-strong);border-radius:999px;padding:4px 12px;font:600 12px var(--sora);color:var(--gold)}
+
+nav.toc{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--nav-surface) 94%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+nav.toc .wrap{display:flex;gap:4px;overflow-x:auto;padding-top:8px;padding-bottom:8px}
+nav.toc a{padding:8px 12px;border-radius:999px;color:var(--text-muted);font:600 13px var(--sora);white-space:nowrap}
+nav.toc a:hover{background:var(--panel);color:var(--gold)}
+
+section{padding:48px 0;border-bottom:1px solid var(--border);scroll-margin-top:56px}
+h2{font:italic 400 32px/1.15 var(--serif);color:var(--gold-light)}
+.lead{color:var(--text-muted);margin:8px 0 24px;max-width:70ch}
+h3{font:600 12px var(--sora);letter-spacing:.14em;text-transform:uppercase;color:var(--text-label);margin:32px 0 12px}
+code{font-family:var(--mono);font-size:12px;color:var(--gold)}
+
+/* swatches */
+.sw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:12px}
+.sw{background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.sw .chip{height:64px;display:flex;align-items:flex-end;padding:8px;font:700 13px var(--mono);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.sw .meta{padding:8px 12px 12px}
+.sw b{display:block;font:600 13px var(--sora);color:var(--text-primary)}
+.sw small{display:block;font:400 12px var(--sora);color:var(--text-faint);margin-top:2px}
+
+/* type */
+.type-row{display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:baseline;padding:16px 0;border-top:1px solid var(--border)}
+.type-row .tag{font:400 12px var(--mono);color:var(--text-faint)}
+.type-row .tag b{display:block;font:600 13px var(--sora);color:var(--text-primary)}
+@media(max-width:640px){.type-row{grid-template-columns:1fr;gap:4px}}
+
+/* components */
+.comp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:20px}
+.card h4{font:600 12px var(--sora);color:var(--text-label);letter-spacing:.1em;text-transform:uppercase;margin-bottom:16px}
+.cap{font:400 12px var(--mono);color:var(--text-faint);margin-top:12px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.btn{font:700 17px var(--sora);letter-spacing:.012em;border-radius:12px;min-height:48px;padding:0 24px;display:inline-flex;align-items:center;justify-content:center;border:0;cursor:default}
+.btn.gold{background:var(--gold);color:var(--gold-ink)}
+.btn.google{background:#fff;color:#1f1f1f}
+.btn.google i{font:700 17px var(--sora);font-style:normal;color:var(--google-blue);margin-right:12px}
+.btn.outline{background:transparent;color:var(--gold);border:1.5px solid var(--border-strong);border-radius:999px}
+.btn.clear{background:var(--leather-dark);color:var(--text-primary);border:1.5px solid var(--leather)}
+.btn.deal{background:var(--brass);color:var(--pill-ink);box-shadow:0 3px 0 #8a6c33}
+.btn.disabled{opacity:.45}
+.link{color:var(--gold);font:600 15px var(--sora)}
+.pill{display:inline-flex;align-items:center;border-radius:999px;padding:8px 16px;font:600 13px var(--sora);align-self:flex-start}
+.pill.status{background:var(--leather-dark);border:1px solid var(--brass);color:var(--brass-light)}
+.pill.bet{background:var(--brass-light);color:var(--pill-ink);font:700 17px var(--mono)}
+.pill.seat{background:var(--felt-darkest);color:var(--text-primary)}
+.disc{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font:700 16px var(--mono);background:var(--c);border:3px dashed rgba(255,255,255,.55);box-shadow:0 2px 4px rgba(0,0,0,.5)}
+.switch{width:52px;height:32px;border-radius:999px;background:var(--gold);position:relative;display:inline-block;flex:none}
+.switch::after{content:"";position:absolute;right:4px;top:4px;width:24px;height:24px;border-radius:50%;background:var(--gold-ink)}
+.switch.off{background:var(--border)}.switch.off::after{right:auto;left:4px;background:var(--text-faint)}
+.avatar{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font:700 17px var(--sora);background:var(--c);color:var(--ink)}
+.avatar.ring{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--text-primary)}
+.panel-demo{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:16px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+.panel-demo b{font:700 17px var(--sora)}.panel-demo small{display:block;color:var(--text-faint);font-size:13px}
+.playing-card{width:66px;height:96px;border-radius:8px;background:linear-gradient(var(--card-top),var(--card-bottom));color:var(--card-black);font:700 22px/1 var(--sora);padding:8px;box-shadow:0 2px 6px rgba(0,0,0,.5);display:flex;flex-direction:column}
+.playing-card.red{color:var(--card-red)}
+.playing-card.back{background:repeating-linear-gradient(45deg,var(--leather) 0 6px,var(--leather-dark) 6px 12px);border:4px solid var(--card-top)}
+.felt-demo{background:radial-gradient(120% 90% at 50% 0,var(--felt),var(--felt-dark));border-radius:16px;padding:24px;text-align:center}
+.felt-demo .print{font:700 13px var(--cinzel);letter-spacing:12px;text-transform:uppercase;color:var(--felt-print);padding-left:12px}
+.felt-demo .note{font:italic 400 13px var(--serif);color:var(--text-faint-on-felt);margin-top:4px}
+.nav-demo{display:flex;background:var(--nav-surface);border:1px solid var(--border);border-radius:12px;padding:8px}
+.nav-demo div{flex:1;text-align:center;font:600 12px var(--sora);color:var(--text-faint);padding:8px 0}
+.nav-demo div.on{color:var(--gold)}
+.sp{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.sp div{background:var(--gold);width:var(--s);height:32px;border-radius:2px}
+.sp span,.rad-wrap span,.lbl{display:block;font:400 11px var(--mono);color:var(--text-faint);margin-top:4px;text-align:center}
+.rad{width:80px;height:56px;background:var(--panel);border:1.5px solid var(--border-strong);border-radius:var(--r)}
+
+/* contrast table */
+table{width:100%;border-collapse:collapse}
+td,th{padding:10px 12px;text-align:left;border-top:1px solid var(--border);font-size:13px}
+th{font:600 12px var(--sora);letter-spacing:.1em;text-transform:uppercase;color:var(--text-label);border-top:0}
+.sample{display:inline-block;padding:4px 12px;border-radius:8px;font:700 14px var(--sora)}
+.ok{color:var(--win)}.bad{color:var(--lose-soft)}
+
+/* screens */
+.screens{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:24px 20px}
+.screen{display:flex;flex-direction:column;gap:8px}
+.phone{border-radius:28px;padding:6px;background:#000;border:1px solid var(--border-strong);box-shadow:0 12px 32px rgba(0,0,0,.6)}
+.phone img{display:block;width:100%;height:auto;border-radius:22px;aspect-ratio:1080/2340;cursor:zoom-in}
+.screen b{font:600 14px var(--sora);color:var(--text-primary)}
+.screen span{font:400 12px/1.4 var(--sora);color:var(--text-faint)}
+.screen em{font:400 11px var(--mono);font-style:normal;color:var(--gold-dark)}
+dialog{border:0;padding:0;background:transparent;max-width:95vw;max-height:95vh}
+dialog::backdrop{background:rgba(5,3,2,.88)}
+dialog img{max-height:92vh;max-width:92vw;border-radius:24px;display:block}
+footer{padding:32px 0 64px;color:var(--text-faint);font-size:13px}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="badges"><span class="badge">The Seat design language</span><span class="badge">Unity 6000.3 · portrait phone</span><span class="badge">44 real screens</span></div>
+    <h1 style="margin-top:20px">Blackjack 21<br>App design</h1>
+    <p>Every screen, colour, type style and component of the app on one page. Screens are real captures rendered by the game's own PlayMode screenshot test at 1080×2340; tokens are copied from <code>Theme.cs</code> and <code>Type.cs</code>.</p>
+  </div>
+</header>
+
+<nav class="toc"><div class="wrap">
+  <a href="#colors">Colors</a><a href="#type">Typography</a><a href="#tokens">Spacing &amp; radius</a><a href="#components">Components</a><a href="#contrast">Contrast</a>
+  <a href="#flow">Entry &amp; lobby</a><a href="#seat">Table · The Seat</a><a href="#table">Table · other states</a><a href="#tabs">Stats · Friends · Settings</a><a href="#overlays">Dialogs &amp; sheets</a><a href="#rtl">Right-to-left</a>
+</div></nav>
+
+<main class="wrap">
+
+<section id="colors">
+  <h2>Colors</h2>
+  <p class="lead">A dark-leather room around a green felt table, with brass/gold as the single accent. Text that sits on the felt or on a panel has its own lighter tokens so it keeps 4.5:1.</p>
+  <div id="palette"></div>
+</section>
+
+<section id="type">
+  <h2>Typography</h2>
+  <p class="lead">Four faces: <b>Sora</b> for UI and card ranks, <b>Instrument Serif Italic</b> for titles, <b>Space Mono</b> for every number, <b>Cinzel</b> only for the print on the felt (Latin languages). Nothing renders below 12.</p>
+  <div class="type-row"><div class="tag"><b>Display</b>40 · Serif italic</div><div style="font:italic 400 40px/1.1 var(--serif)">Blackjack 21</div></div>
+  <div class="type-row"><div class="tag"><b>H1</b>32 · Serif italic</div><div style="font:italic 400 32px/1.1 var(--serif)">Settings</div></div>
+  <div class="type-row"><div class="tag"><b>H2</b>24 · Serif italic</div><div style="font:italic 400 24px/1.2 var(--serif)">Bronze Table</div></div>
+  <div class="type-row"><div class="tag"><b>Title</b>17 · Sora bold</div><div style="font:700 17px var(--sora)">Daily bonus</div></div>
+  <div class="type-row"><div class="tag"><b>Button</b>17 · Sora bold, +0.2 tracking, caps</div><div style="font:700 17px var(--sora);letter-spacing:.2px">DEAL · HIT · STAND · DOUBLE · SPLIT</div></div>
+  <div class="type-row"><div class="tag"><b>Body</b>15 · Sora</div><div style="font:400 15px var(--sora)">Big, readable cards. Learn as you play, one hand at a time.</div></div>
+  <div class="type-row"><div class="tag"><b>Body small</b>13 · Sora</div><div style="font:400 13px var(--sora);color:var(--text-muted)">$25 – $500 · Maya &amp; Sam are here</div></div>
+  <div class="type-row"><div class="tag"><b>Caption</b>12 · Sora semibold (floor)</div><div style="font:600 12px var(--sora);color:var(--text-label)">Next in 21h 0m</div></div>
+  <div class="type-row"><div class="tag"><b>Numeral</b>≥ 12 · Space Mono bold</div><div style="font:700 24px var(--mono);color:var(--gold)">1,475 &nbsp; $125 &nbsp; 21</div></div>
+  <div class="type-row"><div class="tag"><b>Felt print</b>13 · Cinzel, +12 tracking</div><div class="felt-demo" style="padding:16px"><div class="print">Blackjack pays 3 to 2</div></div></div>
+  <div class="type-row"><div class="tag"><b>Felt note</b>13 · Serif italic</div><div style="font:italic 400 13px var(--serif);color:var(--text-faint-on-felt);background:var(--felt);padding:12px 16px;border-radius:12px">Dealer stands on all 17s</div></div>
+</section>
+
+<section id="tokens">
+  <h2>Spacing, radius &amp; targets</h2>
+  <p class="lead">Only these values are allowed; <code>RulesAudit</code> fails the build on anything else. Every tap target, disabled controls included, is at least 48×48.</p>
+  <h3>Spacing</h3>
+  <div class="sp">
+    <div style="--s:2px"><span>2</span></div><div style="--s:4px"><span>4</span></div><div style="--s:8px"><span>8</span></div><div style="--s:12px"><span>12</span></div>
+    <div style="--s:16px"><span>16</span></div><div style="--s:20px"><span>20</span></div><div style="--s:24px"><span>24</span></div><div style="--s:32px"><span>32</span></div><div style="--s:48px"><span>48</span></div>
+  </div>
+  <h3>Radius</h3>
+  <div class="row">
+    <div class="rad-wrap"><div class="rad" style="--r:8px"></div><span>8 sm</span></div>
+    <div class="rad-wrap"><div class="rad" style="--r:12px"></div><span>12 md</span></div>
+    <div class="rad-wrap"><div class="rad" style="--r:16px"></div><span>16 lg</span></div>
+    <div class="rad-wrap"><div class="rad" style="--r:20px"></div><span>20 xl</span></div>
+    <div class="rad-wrap"><div class="rad" style="--r:24px"></div><span>24 xxl</span></div>
+    <div class="rad-wrap"><div class="rad" style="--r:999px"></div><span>pill</span></div>
+  </div>
+  <h3>Cards</h3>
+  <div class="row" style="align-items:flex-end">
+    <div><div class="playing-card"><span>K</span><span style="margin-top:auto;align-self:flex-end">♠</span></div><span class="lbl">dealer 66×96</span></div>
+    <div><div class="playing-card red" style="width:88px;height:128px"><span>A</span><span style="margin-top:auto;align-self:flex-end">♥</span></div><span class="lbl">hero 88 wide</span></div>
+    <div><div class="playing-card red" style="width:42px;height:60px;font-size:14px;padding:5px"><span>9</span></div><span class="lbl">seats ≥ 42×60</span></div>
+    <div><div class="playing-card back"></div><span class="lbl">hole card</span></div>
+  </div>
+</section>
+
+<section id="components">
+  <h2>Components</h2>
+  <p class="lead">The building blocks the screens are made from, drawn with the same tokens.</p>
+  <div class="comp-grid">
+    <div class="card"><h4>Buttons</h4><div class="stack">
+      <span class="btn gold">Play now</span>
+      <span class="btn google"><i>G</i>Continue with Google</span>
+      <div class="row"><span class="btn clear">CLEAR</span><span class="btn deal">DEAL</span></div>
+      <span class="btn outline">ALL IN</span>
+      <span class="btn gold disabled">Rebuy in 0:42</span>
+      <span class="link">Invite friends</span>
+    </div><div class="cap">GoldButton · SeatButton · OutlinePill · TextLink</div></div>
+
+    <div class="card"><h4>Pills &amp; labels</h4><div class="stack">
+      <span class="pill status">Place your bet</span>
+      <span class="pill bet">$125 your bet</span>
+      <span class="pill seat">Priya $100</span>
+      <span class="pill" style="background:var(--win);color:var(--pill-ink)">WIN +$200</span>
+      <span class="pill" style="background:var(--lose);color:#fff">BUST</span>
+      <span class="pill" style="background:var(--push);color:var(--pill-ink)">PUSH</span>
+    </div><div class="cap">ActionPill · result tags</div></div>
+
+    <div class="card"><h4>Chips</h4><div class="row">
+      <div class="disc" style="--c:var(--chip-green);color:var(--ivory)">25</div>
+      <div class="disc" style="--c:var(--chip-orange);color:var(--pill-ink)">50</div>
+      <div class="disc" style="--c:var(--chip-black);color:var(--ivory)">100</div>
+      <div class="disc" style="--c:var(--chip-purple);color:var(--ivory)">500</div>
+      <div class="disc" style="--c:var(--chip-yellow);color:var(--pill-ink)">1K</div>
+      <div class="disc" style="--c:var(--chip-red);color:var(--ivory)">5K</div>
+    </div><div class="cap">Colour by denomination; ink picked by contrast</div></div>
+
+    <div class="card"><h4>Panel rows</h4><div class="stack">
+      <div class="panel-demo"><div><b>Daily bonus</b><small>Next in 21h 0m</small></div><span style="color:var(--win);font-weight:600">✓ Claimed</span></div>
+      <div class="panel-demo"><div><b>Voice call-outs</b><small>Hand total, results, sweep pot</small></div><span class="switch"></span></div>
+      <div class="panel-demo"><div><b>Haptics</b></div><span class="switch off"></span></div>
+    </div><div class="cap">Panel #22120A · border #3D2618 · radius 16</div></div>
+
+    <div class="card"><h4>Avatars</h4><div class="row">
+      <div class="avatar ring" style="--c:var(--av-1);--ink:var(--ivory)">M</div>
+      <div class="avatar" style="--c:var(--av-2);--ink:var(--pill-ink)">S</div>
+      <div class="avatar" style="--c:var(--av-3);--ink:var(--ivory)">J</div>
+      <div class="avatar" style="--c:var(--av-4);--ink:var(--ivory)">P</div>
+      <div class="avatar" style="--c:var(--av-5);--ink:var(--ivory)">K</div>
+      <div class="avatar" style="--c:var(--av-6);--ink:var(--pill-ink)">T</div>
+    </div><div class="cap">Six swatches; the ring marks the chosen one</div></div>
+
+    <div class="card"><h4>Felt print</h4>
+      <div class="felt-demo"><div class="print">Place your bets</div><div class="note">The dealer waits for every seat</div></div>
+      <div class="cap">Felt #175943 → #0E3B2E</div></div>
+
+    <div class="card"><h4>Bottom navigation</h4>
+      <div class="nav-demo"><div class="on">⌂<br>Home</div><div>▮▮<br>Stats</div><div>☺☺<br>Friends</div><div>⚙<br>Settings</div></div>
+      <div class="cap">NavSurface #1A0D06 · active = Gold</div></div>
+  </div>
+</section>
+
+<section id="contrast">
+  <h2>Contrast</h2>
+  <p class="lead">Computed live from the tokens. Text must reach 4.5:1 and control outlines 3:1.</p>
+  <table id="contrast-table"><thead><tr><th>Pair</th><th>Sample</th><th>Ratio</th><th>Needs</th><th></th></tr></thead><tbody></tbody></table>
+</section>
+
+<section id="flow">
+  <h2>Entry &amp; lobby</h2>
+  <p class="lead">First launch, then the lobby: balance, daily bonus, the three tables and friends who are sitting at them.</p>
+  <div class="screens" data-set="flow"></div>
+</section>
+
+<section id="seat">
+  <h2>Table · The Seat</h2>
+  <p class="lead">The eleven table phases of the design reference, in casino order (first base on the right). Cards, chips, leather rail and brass fittings are drawn in code.</p>
+  <div class="screens" data-set="seat"></div>
+</section>
+
+<section id="table">
+  <h2>Table · other states</h2>
+  <p class="lead">Coach cards for the first three hands, chat, the table menu and the toast.</p>
+  <div class="screens" data-set="table"></div>
+</section>
+
+<section id="tabs">
+  <h2>Stats · Friends · Settings</h2>
+  <div class="screens" data-set="tabs"></div>
+</section>
+
+<section id="overlays">
+  <h2>Dialogs &amp; sheets</h2>
+  <div class="screens" data-set="overlays"></div>
+</section>
+
+<section id="rtl" style="border-bottom:0">
+  <h2>Right-to-left</h2>
+  <p class="lead">Hebrew and Arabic mirror text and panels; the table keeps casino order.</p>
+  <div class="screens" data-set="rtl"></div>
+</section>
+
+</main>
+
+<footer><div class="wrap">Generated from <code>Unity/Assets/Tests/PlayMode/Scenarios.cs</code> (screens) and <code>Theme.cs</code> / <code>Type.cs</code> (tokens). Click any screen to enlarge.</div></footer>
+
+<dialog id="zoom"><img alt=""></dialog>
+
+<script>
+const PALETTE = [
+  ["Shell & surfaces", [
+    ["ShellBlack","#0E0805","App background"],["Surface","#140A05","Screen surface"],["Panel","#22120A","Cards, rows"],["NavSurface","#1A0D06","Bottom bar"],
+    ["Border","#3D2618","Hairlines"],["BorderStrong","#9A7A5C","Control outlines, ≥ 3:1"],["Scrim","#050302","Dialog backdrop"]]],
+  ["Felt", [["Felt","#175943","Table cloth"],["FeltDark","#0E3B2E","Vignette"],["FeltDarkest","#0A2018","Deep shade"],["FeltPrint","#E6C77A","Print on the felt"]]],
+  ["Text", [["TextPrimary","#F4EBD8","Headings, values"],["TextBody","#D8D3C6","Paragraphs"],["TextMuted","#CFC4AE","Secondary"],["TextLabel","#C9BDA4","Section labels"],["TextFaint","#B3A68E","Hints, captions"]]],
+  ["Text on felt / panel", [["TextFaintOnFelt","#CBD4CD","Faint text on felt"],["TextFaintOnPanel","#B9C6BD","Faint text on panel"],["LoseOnFelt","#FFB4A6","Loss text on felt"],["LoseOnPanel","#FF9C8C","Loss text on panel"],["PillInk","#1A1206","Ink on light pills"],["GoldInk","#1A1408","Ink on gold"]]],
+  ["Gold accent", [["GoldLight","#EBD7A0","Highlights"],["Gold","#DCBF7A","Primary buttons, active"],["GoldDark","#C9A75C","Pressed"]]],
+  ["Results", [["Win","#4FAE8E","Win"],["WinLight","#9FE6C9","Win text"],["Lose","#C1503F","Loss"],["LoseLight","#F2B0A5","Loss text"],["LoseSoft","#E39084","Soft loss"],["Push","#C2BEB2","Push"],["PushOnFelt","#C4C0B4","Push on felt"]]],
+  ["Cards", [["CardFaceTop","#FFFDF8","Face gradient top"],["CardFaceBottom","#F0E9D9","Face gradient bottom"],["CardRed","#A51D28","♥ ♦"],["CardBlack","#141210","♠ ♣"]]],
+  ["The Seat — room & fittings", [["Room","#1C0F07","Room"],["RoomDeep","#0E0805","Room edge"],["Wood","#8A5530","Table edge"],["WoodDark","#4A2812","Wood shade"],["Leather","#6A321A","Padded rail"],["LeatherDark","#3A1609","Rail shade"],["Stitch","#F0D2AA","Rail stitching"],["Brass","#CDA65A","Fittings, DEAL"],["BrassLight","#F2DCA0","Highlights"],["Ivory","#F4EBD8","Ivory ink"]]],
+  ["Casino chips", [["ChipGreen","#1A6B40","25"],["ChipOrange","#D9731E","50"],["ChipBlack","#151515","100"],["ChipPurple","#5B2F86","500"],["ChipYellow","#D9A520","1,000"],["ChipRed","#C4302B","Other"]]],
+  ["Seats, avatars & medals", [["Seat 1","#C86A9E","NPC seat"],["Seat 2","#4FAE8E","NPC seat"],["Seat 3","#8A9BB8","NPC seat"],["Seat 4","#E0A050","NPC seat"],
+    ["Avatar 1","#17654B","Default"],["Avatar 2","#DCBF7A",""],["Avatar 3","#B23A2E",""],["Avatar 4","#2F6688",""],["Avatar 5","#6E4F9C",""],["Avatar 6","#4FAE8E",""],
+    ["Medal 1","#DCBF7A","Gold"],["Medal 2","#C7CCC9","Silver"],["Medal 3","#C98A4B","Bronze"],["GoogleBlue","#1967D2","Google button only"],["Silver","#9FB8C9","Silver table mark"]]],
+];
+const lum = h => { const c=[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)/255).map(v=>v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)); return .2126*c[0]+.7152*c[1]+.0722*c[2]; };
+const ratio = (a,b) => { const [x,y]=[lum(a),lum(b)].sort((p,q)=>q-p); return (x+.05)/(y+.05); };
+const inkFor = h => ratio("#F4EBD8",h) >= ratio("#1A1206",h) ? "#F4EBD8" : "#1A1206";
+
+document.getElementById("palette").innerHTML = PALETTE.map(([title, items]) =>
+  `<h3>${title}</h3><div class="sw-grid">` + items.map(([n,h,note]) =>
+    `<div class="sw"><div class="chip" style="background:${h};color:${inkFor(h)}">${h}</div><div class="meta"><b>${n}</b>${note?`<small>${note}</small>`:""}</div></div>`).join("") + `</div>`).join("");
+
+const PAIRS = [
+  ["TextPrimary on Surface","#F4EBD8","#140A05",4.5],["TextMuted on Panel","#CFC4AE","#22120A",4.5],["TextLabel on Panel","#C9BDA4","#22120A",4.5],
+  ["TextFaint on Panel","#B3A68E","#22120A",4.5],["GoldInk on Gold (button)","#1A1408","#DCBF7A",4.5],["Gold on Panel (link)","#DCBF7A","#22120A",4.5],
+  ["Win on Panel","#4FAE8E","#22120A",4.5],["TextFaintOnFelt on Felt","#CBD4CD","#175943",4.5],["LoseOnFelt on Felt","#FFB4A6","#175943",4.5],
+  ["FeltPrint on Felt","#E6C77A","#175943",4.5],["PillInk on BrassLight (bet pill)","#1A1206","#F2DCA0",4.5],["Ivory on LeatherDark (CLEAR)","#F4EBD8","#3A1609",4.5],
+  ["BorderStrong on Panel (outline)","#9A7A5C","#22120A",3],["BorderStrong on Surface (outline)","#9A7A5C","#140A05",3],
+  ["GoogleBlue on white","#1967D2","#FFFFFF",4.5],["CardRed on card face","#A51D28","#FFFDF8",4.5],
+];
+document.querySelector("#contrast-table tbody").innerHTML = PAIRS.map(([n,fg,bg,need]) => {
+  const r = ratio(fg,bg), ok = r >= need;
+  return `<tr><td>${n}</td><td><span class="sample" style="color:${fg};background:${bg};border:1px solid #3D2618">Aa 21</span></td><td style="font-family:var(--mono)">${r.toFixed(2)}:1</td><td>${need}:1</td><td class="${ok?"ok":"bad"}">${ok?"✓ pass":"✗ below"}</td></tr>`;
+}).join("");
+
+const SCREENS = {
+  flow: [
+    ["onboarding","Onboarding","Logo tile, Play now / Continue with Google, voice call-outs switch, legal links."],
+    ["lobby_bonus_ready","Lobby — bonus ready","Balance, daily bonus and the three tables."],
+    ["lobby_claimed_friends","Lobby — claimed, friends seated","Bonus claimed with countdown; friend avatars on each table."],
+  ],
+  seat: [
+    ["seat_01_betting","01 Place your bet","Chips, CLEAR / DEAL, practice-bot seats."],
+    ["seat_02_insurance","02 Insurance","Dealer shows an Ace; INSURE / NO THANKS."],
+    ["seat_03_seat_playing","03 A seat is playing","Bot to act; your hand waits."],
+    ["seat_04_your_turn","04 Your turn","HIT / STAND / DOUBLE / SPLIT with the turn timer."],
+    ["seat_05_double","05 Double down","Doubled bet, one card, stood."],
+    ["seat_06_split","06 Split","Two hands, active hand highlighted."],
+    ["seat_07_dealer","07 Dealer playing","Hole card revealed, dealer draws."],
+    ["seat_08_result","08 Round result","Sweep pot breakdown and net."],
+    ["seat_09_blackjack","09 Blackjack","Natural 21 while seats finish."],
+    ["seat_10_bust","10 Busted","Hero over 21; seats keep playing."],
+    ["seat_11_dealer_long_bust","11 Dealer long bust","Six dealer cards and the widest box label."],
+  ],
+  table: [
+    ["table_betting","Betting","Bet stack and chip rack."],
+    ["table_betting_coach","Coach · bet","Coach card on hand 1 of 3."],
+    ["table_playing","Playing","All seats stood; your turn."],
+    ["table_playing_coach","Coach · play","How HIT and STAND work."],
+    ["table_settlement","Settlement","Win with sweep pot."],
+    ["table_settlement_coach","Coach · result","Loss explained, bet and return separate."],
+    ["table_chat","Table chat","Messages from friends at the table."],
+    ["table_menu","Table menu","Overflow menu from the top bar."],
+    ["table_toast","Toast","Table maximum reached."],
+  ],
+  tabs: [
+    ["stats_recent","Stats — recent","Last hands and session summary."],
+    ["stats_alltime","Stats — all time","Totals, win rate, best streak."],
+    ["friends_empty","Friends — empty","Invite via WhatsApp / share link."],
+    ["friends_live","Friends — live","Leaderboard with daily / hourly period."],
+    ["settings","Settings","Account, avatar colour, language."],
+    ["settings_middle","Settings — middle","Sound, haptics, notifications."],
+    ["settings_bottom","Settings — bottom","Help and About."],
+    ["settings_signedin","Settings — signed in","Account name, sign out, sound off."],
+  ],
+  overlays: [
+    ["dialog_daily_bonus","Daily bonus","Streak day and claim."],
+    ["dialog_confirm_sign_out","Confirm sign out","Destructive confirm dialog."],
+    ["sheet_out_of_chips","Out of chips","Rebuy and ways to get chips."],
+    ["sheet_how_to_play","How to play","Rules, moves, payouts, sweep pot."],
+    ["page_terms","Terms page","Full-screen legal content."],
+  ],
+  rtl: [
+    ["rtl_he_lobby","Hebrew · lobby",""],["rtl_he_table","Hebrew · table",""],["rtl_he_seat_your_turn","Hebrew · your turn",""],["rtl_he_seat_result","Hebrew · result",""],
+    ["rtl_ar_seat_split","Arabic · split",""],["rtl_ar_seat_waiting","Arabic · waiting",""],["rtl_ar_settings","Arabic · settings",""],["rtl_ar_howto","Arabic · how to play",""],
+  ],
+};
+for (const el of document.querySelectorAll(".screens")) {
+  el.innerHTML = SCREENS[el.dataset.set].map(([f,t,d]) =>
+    `<figure class="screen"><div class="phone"><img loading="lazy" src="screens/${f}.jpg" alt="${t}"></div><b>${t}</b>${d?`<span>${d}</span>`:""}<em>${f}</em></figure>`).join("");
+}
+const zoom = document.getElementById("zoom");
+document.addEventListener("click", e => {
+  const img = e.target.closest(".phone img");
+  if (img) { zoom.querySelector("img").src = img.src; zoom.showModal(); }
+  else if (zoom.open) zoom.close();
+});
+</script>
+</body>
+</html>

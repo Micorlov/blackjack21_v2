@@ -216,6 +216,7 @@ Unity/
 │   └── Tests/                 # EditMode (NUnit) and PlayMode (offscreen screenshots)
 ├── tools/                     # install_firebase.sh, unpack_unitypackage.py
 docs/design-concepts/the-seat/ # the design reference: ten table states, the overview and the PDF
+docs/app-design/               # index.html: every screen + colours, type, tokens, components (open in a browser)
 hosting/                       # Firebase Hosting: invite landing page, privacy policy, assetlinks.json
 play-assets/  tool/            # Google Play listing artwork and the store upload scripts
 firestore.rules  firestore.indexes.json  firebase.json  .firebaserc
@@ -467,6 +468,13 @@ lines show the SDK initialising and the anonymous sign-in.
 ## Changelog
 
 ### 2026-10-17
+- docs: new `docs/app-design/index.html`, one page with all 44 app screens (onboarding, lobby, the eleven
+  Seat table phases, coach cards, chat/menu/toast, stats, friends, settings, dialogs and sheets, Hebrew
+  and Arabic right-to-left) beside the colour palette from `Theme.cs`, the type ramp from `Type.cs`,
+  spacing/radius/card tokens, the components and a live contrast table. The screens are real captures
+  from the `ScenarioShots` PlayMode test, downscaled to 540×1170 in `docs/app-design/screens/`; the seven
+  bundled font files are copied next to it so the page works offline. To refresh the screens run the PlayMode
+  command under Testing with `BJ_SHOTS` set, then resize the PNGs into that folder. No app code changed.
 - docs: new landscape Play/YouTube trailer (`play-assets/trailer.mp4`, built by `tool/make_trailer.py`).
   The dealer from the app icon now presents it and explains the game in her own voice and in speech
   bubbles, over a fresh recording of The Seat table from the `blackjack-qa` emulator. It replaces the
