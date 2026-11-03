@@ -415,6 +415,7 @@ on a Play-distributed one. One-time manual steps to fix that:
 | `com.unity.mobile.notifications` | Local daily-bonus and friends-activity notifications (Android channels) |
 | `com.unity.test-framework` | EditMode and PlayMode tests |
 | Firebase Unity SDK 13.17.0 | Auth, Firestore, Analytics, Crashlytics — fetched by `Unity/tools/install_firebase.sh` |
+| `com.google.android.play:review:2.0.2` | Play In-App Review, a Gradle dependency of `BlackjackExtras.androidlib` (no .unitypackage) |
 | External Dependency Manager | Bundled with Firebase; resolves its Android Gradle dependencies |
 
 ## Assets
@@ -468,6 +469,8 @@ lines show the SDK initialising and the anonymous sign-in.
 ## Changelog
 
 ### 2026-11-03
+- feat: the review prompt is now real on Android — it opens Google Play's in-app review sheet
+  (`AndroidReview`); other platforms and the editor stay a no-op. Gating is unchanged.
 - feat: the review prompt now only follows a win in a session with two or more wins, and never in the
   first two days after install (new persisted `firstLaunchAtMs`, stamped at the first settlement).
 

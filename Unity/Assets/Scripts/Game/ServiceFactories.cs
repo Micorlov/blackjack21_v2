@@ -12,6 +12,7 @@ namespace Blackjack.Game
     {
         public static Func<ISocialService> Social = () => new NullSocial();
         public static Func<IAnalytics> Analytics = () => new NullAnalytics();
-        public static Func<IReviewPrompter> Review = () => new NullReview();
+        /// <summary>Play In-App Review on Android devices; <see cref="AndroidReview"/> is a no-op elsewhere.</summary>
+        public static Func<IReviewPrompter> Review = () => new AndroidReview();
     }
 }
