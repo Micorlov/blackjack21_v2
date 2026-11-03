@@ -438,7 +438,7 @@ namespace Blackjack.Game
             ReportScore();
             ScheduleSave();
             LogSettlementAnalytics(prev, next, heroTakesPot);
-            MaybeAskForReview();
+            MaybeAskForReview(next.MessageType == MessageType.Win);
         }
 
         private void LogSettlementAnalytics(RoundState prev, RoundState next, bool heroTakesPot)
@@ -467,11 +467,16 @@ namespace Blackjack.Game
         }
 
         /// <summary>Ask at a quiet settlement after enough play. Only an actual attempt starts the cooldown.</summary>
-        private void MaybeAskForReview()
+        private void MaybeAskForReview(bool won)
         {
-            if (_reviewPending || !FlagEnabled(FeatureFlag.ReviewPrompt)) return;
+            if (State.FirstLaunchAtMs == 0)
+            {
+                Set(s => s with { FirstLaunchAtMs = new DateTimeOffset(_now()).ToUnixTimeMilliseconds() });
+                ScheduleSave();
+            }
+            if (!won || _reviewPending || !FlagEnabled(FeatureFlag.ReviewPrompt)) return;
             if (!ReviewPrompt.ShouldPrompt(State.Round.Stats.HandsPlayed, _now(), State.ReviewLastAttemptAtMs,
-                    State.ReviewRequestCount, State.ReviewLastRequestSucceeded)) return;
+                    State.ReviewRequestCount, State.ReviewLastRequestSucceeded, State.FirstLaunchAtMs, State.Round.Session.Wins)) return;
 
             _reviewPending = true;
             _reviewTimer = After(ReviewPromptDelay, () =>

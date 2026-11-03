@@ -54,6 +54,7 @@ namespace Blackjack.Game.Services
                 ["reviewLastAttemptAtMs"] = g.ReviewLastAttemptAtMs,
                 ["reviewRequestCount"] = g.ReviewRequestCount,
                 ["reviewLastRequestSucceeded"] = g.ReviewLastRequestSucceeded,
+                ["firstLaunchAtMs"] = g.FirstLaunchAtMs,
                 ["tutorialCompletionLogged"] = g.TutorialCompletionLogged,
             };
             return o.ToString(Newtonsoft.Json.Formatting.None);
@@ -106,6 +107,7 @@ namespace Blackjack.Game.Services
                 ReviewLastAttemptAtMs = Long(o["reviewLastAttemptAtMs"], 0),
                 ReviewRequestCount = Int(o["reviewRequestCount"], 0),
                 ReviewLastRequestSucceeded = Bool(o["reviewLastRequestSucceeded"], false),
+                FirstLaunchAtMs = Long(o["firstLaunchAtMs"], 0),
                 TutorialCompletionLogged = Bool(o["tutorialCompletionLogged"], tutorialSeen >= Tutorial.Rounds),
             };
         }

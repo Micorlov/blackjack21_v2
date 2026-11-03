@@ -198,6 +198,7 @@ namespace Blackjack.Game
                 ReviewLastAttemptAtMs = s.ReviewLastAttemptAtMs,
                 ReviewRequestCount = s.ReviewRequestCount,
                 ReviewLastRequestSucceeded = s.ReviewLastRequestSucceeded,
+                FirstLaunchAtMs = s.FirstLaunchAtMs,
                 TutorialCompletionLogged = s.TutorialCompletionLogged,
             };
         }
@@ -241,6 +242,7 @@ namespace Blackjack.Game
                 ReviewLastAttemptAtMs = legacyReview ? new DateTimeOffset(now).ToUnixTimeMilliseconds() : saved.ReviewLastAttemptAtMs,
                 ReviewRequestCount = legacyReview ? 1 : saved.ReviewRequestCount,
                 ReviewLastRequestSucceeded = saved.ReviewLastRequestSucceeded || legacyReview,
+                FirstLaunchAtMs = saved.FirstLaunchAtMs,
                 TutorialCompletionLogged = saved.TutorialCompletionLogged,
             });
             Loc.Use(saved.LanguageOverride);

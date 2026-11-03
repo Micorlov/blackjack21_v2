@@ -42,6 +42,7 @@ namespace Blackjack.Core
         public long ReviewLastAttemptAtMs { get; init; }
         public int ReviewRequestCount { get; init; }
         public bool ReviewLastRequestSucceeded { get; init; }
+        public long FirstLaunchAtMs { get; init; }
         public bool TutorialCompletionLogged { get; init; }
 
         /// <summary>The newest <see cref="HistoryLimit"/> results; older ones are dropped on save.</summary>

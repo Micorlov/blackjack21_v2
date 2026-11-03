@@ -218,15 +218,20 @@ namespace Blackjack.Core.Tests
         public void ReviewPrompt_waitsForTenHandsAndHonoursCooldowns()
         {
             var now = new DateTime(2026, 8, 1, 12, 0, 0);
-            Assert.IsFalse(ReviewPrompt.ShouldPrompt(9, now, 0, 0, false));
-            Assert.IsTrue(ReviewPrompt.ShouldPrompt(10, now, 0, 0, false));
-            Assert.IsFalse(ReviewPrompt.ShouldPrompt(50, now, 0, 3, false), "request cap");
+            var installed = new DateTimeOffset(now.AddDays(-30)).ToUnixTimeMilliseconds();
+            Assert.IsFalse(ReviewPrompt.ShouldPrompt(9, now, 0, 0, false, installed));
+            Assert.IsTrue(ReviewPrompt.ShouldPrompt(10, now, 0, 0, false, installed));
+            Assert.IsFalse(ReviewPrompt.ShouldPrompt(50, now, 0, 3, false, installed), "request cap");
+            Assert.IsFalse(ReviewPrompt.ShouldPrompt(50, now, 0, 0, false, installed, sessionWins: 1), "needs a winning session");
+            Assert.IsFalse(ReviewPrompt.ShouldPrompt(50, now, 0, 0, false, 0), "install date unknown");
+            var fresh = new DateTimeOffset(now.AddDays(-1)).ToUnixTimeMilliseconds();
+            Assert.IsFalse(ReviewPrompt.ShouldPrompt(50, now, 0, 0, false, fresh), "first days of install");
 
             var attempted = new DateTimeOffset(now.AddDays(-3)).ToUnixTimeMilliseconds();
-            Assert.IsFalse(ReviewPrompt.ShouldPrompt(50, now, attempted, 1, false), "7-day failure cooldown");
+            Assert.IsFalse(ReviewPrompt.ShouldPrompt(50, now, attempted, 1, false, installed), "7-day failure cooldown");
             var old = new DateTimeOffset(now.AddDays(-8)).ToUnixTimeMilliseconds();
-            Assert.IsTrue(ReviewPrompt.ShouldPrompt(50, now, old, 1, false));
-            Assert.IsFalse(ReviewPrompt.ShouldPrompt(50, now, old, 1, true), "90-day success cooldown");
+            Assert.IsTrue(ReviewPrompt.ShouldPrompt(50, now, old, 1, false, installed));
+            Assert.IsFalse(ReviewPrompt.ShouldPrompt(50, now, old, 1, true, installed), "90-day success cooldown");
         }
 
         [Test]
