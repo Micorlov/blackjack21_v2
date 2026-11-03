@@ -155,7 +155,8 @@ A Unity (Android) blackjack game with a multi-seat table and a friends race. Fou
   "Sound effects", so muting sound mutes the voice too and the Settings row dims while it is off
 - **Haptics** — selection/light/medium/heavy impact and vibrate feedback, toggleable in settings,
   including a tap for each NPC seat's stand/bust
-- **Respectful review requests** — after ten hands, a quiet settlement can request the Play review
+- **Respectful review requests** — after ten hands, a winning settlement (with at least two wins this
+  session, and at least two days after the first-launch stamp) can request the Play review
   sheet. Failed/unavailable requests wait seven days; completed calls wait 90 days, with a
   three-request cap. Attempts, outcomes and cooldowns survive relaunch. The timing logic is ported
   and tested, but the Unity build's review service is still a no-op: no sheet is shown yet.
@@ -414,6 +415,7 @@ on a Play-distributed one. One-time manual steps to fix that:
 | `com.unity.mobile.notifications` | Local daily-bonus and friends-activity notifications (Android channels) |
 | `com.unity.test-framework` | EditMode and PlayMode tests |
 | Firebase Unity SDK 13.17.0 | Auth, Firestore, Analytics, Crashlytics — fetched by `Unity/tools/install_firebase.sh` |
+| `com.google.android.play:review:2.0.2` | Play In-App Review, a Gradle dependency of `BlackjackExtras.androidlib` (no .unitypackage) |
 | External Dependency Manager | Bundled with Firebase; resolves its Android Gradle dependencies |
 
 ## Assets
@@ -465,6 +467,12 @@ A Core change is not done until the EditMode suite passes. Check on a device or 
 lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
+
+### 2026-11-03
+- feat: the review prompt is now real on Android — it opens Google Play's in-app review sheet
+  (`AndroidReview`); other platforms and the editor stay a no-op. Gating is unchanged.
+- feat: the review prompt now only follows a win in a session with two or more wins, and never in the
+  first two days after install (new persisted `firstLaunchAtMs`, stamped at the first settlement).
 
 ### 2026-10-17
 - docs: new landscape Play/YouTube trailer (`play-assets/trailer.mp4`, built by `tool/make_trailer.py`).

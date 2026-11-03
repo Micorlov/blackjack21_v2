@@ -87,6 +87,7 @@ namespace Blackjack.Game
         public long ReviewLastAttemptAtMs { get; init; }
         public int ReviewRequestCount { get; init; }
         public bool ReviewLastRequestSucceeded { get; init; }
+        public long FirstLaunchAtMs { get; init; }
         public bool TutorialCompletionLogged { get; init; }
 
         public int Chips => Round.Chips;

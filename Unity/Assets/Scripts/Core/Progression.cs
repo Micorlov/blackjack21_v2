@@ -141,13 +141,18 @@ namespace Blackjack.Core
     {
         public const int MinHands = 10;
         public const int MaxRequests = 3;
+        public const int MinSessionWins = 2;
+        public static readonly TimeSpan MinInstallAge = TimeSpan.FromDays(2);
         public static readonly TimeSpan FailureCooldown = TimeSpan.FromDays(7);
         public static readonly TimeSpan SuccessCooldown = TimeSpan.FromDays(90);
 
         public static bool ShouldPrompt(
-            int handsPlayed, DateTime now, long lastAttemptAtMs, int completedRequests, bool lastRequestSucceeded)
+            int handsPlayed, DateTime now, long lastAttemptAtMs, int completedRequests, bool lastRequestSucceeded,
+            long firstLaunchAtMs = 0, int sessionWins = MinSessionWins)
         {
-            if (handsPlayed < MinHands || completedRequests >= MaxRequests) return false;
+            if (handsPlayed < MinHands || completedRequests >= MaxRequests || sessionWins < MinSessionWins) return false;
+            // Unstamped (0) counts as brand new; the install must also be old enough to be past its first session.
+            if (firstLaunchAtMs <= 0 || now - DateTimeOffset.FromUnixTimeMilliseconds(firstLaunchAtMs).LocalDateTime < MinInstallAge) return false;
             if (lastAttemptAtMs <= 0) return true;
             var last = DateTimeOffset.FromUnixTimeMilliseconds(lastAttemptAtMs).LocalDateTime;
             return now - last >= (lastRequestSucceeded ? SuccessCooldown : FailureCooldown);
