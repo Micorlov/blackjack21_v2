@@ -110,8 +110,6 @@ namespace Blackjack.Game.Ads
         private void LoadBanner()
         {
             if (!_started || _banner != null || DateTime.UtcNow < _bannerRetryAt) return;
-            // Until the real unit exists a release would only send requests AdMob rejects.
-            if (AdConfig.BannerUnit == AdConfig.RealBannerPlaceholder) return;
             var size = AdSize.GetCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(AdSize.FullWidth);
             var banner = new BannerView(AdConfig.BannerUnit, size, AdPosition.Bottom);
             _banner = banner;
