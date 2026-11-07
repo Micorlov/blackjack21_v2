@@ -20,7 +20,7 @@ namespace Blackjack.Game.Ads
         private const string TestInterstitial = "ca-app-pub-3940256099942544/1033173712";
         private const string TestRewarded = "ca-app-pub-3940256099942544/5224354917";
 
-        public const string RealBannerPlaceholder = "ca-app-pub-2693008307172998/REPLACE_WITH_BANNER_UNIT";
+        public const string RealBannerPlaceholder = "ca-app-pub-2693008307172998/1350520276";
         private const string RealBanner = RealBannerPlaceholder;
         private const string RealInterstitial = "ca-app-pub-2693008307172998/2053614897";
         private const string RealRewarded = "ca-app-pub-2693008307172998/6844721230";
