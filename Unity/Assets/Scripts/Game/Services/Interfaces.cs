@@ -106,6 +106,9 @@ namespace Blackjack.Game.Services
         /// <summary>Shows a loaded interstitial; returns false, showing nothing, when there is none.</summary>
         bool ShowInterstitial();
 
+        /// <summary>Height in screen pixels of the banner docked at the bottom of the screen; 0 while none is showing.</summary>
+        float BannerHeightPixels { get; }
+
         /// <summary>True where the player must be able to change their consent, which Settings then offers.</summary>
         bool PrivacyOptionsRequired { get; }
 

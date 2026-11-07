@@ -32,6 +32,7 @@ namespace Blackjack.Game.Services
             return InterstitialReady;
         }
 
+        public float BannerHeightPixels => 0;
         public bool PrivacyOptionsRequired => false;
         public void ShowPrivacyOptions() { }
     }

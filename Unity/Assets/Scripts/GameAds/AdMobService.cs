@@ -13,16 +13,12 @@ namespace Blackjack.Game.Ads
     /// </summary>
     public sealed class AdMobService : IAds
     {
-#if ADMOB_TEST_ADS
-        // Google's public sample units. The adb build sits on the developer's phone, and real ads there break AdMob policy.
-        private const string RewardedUnit = "ca-app-pub-3940256099942544/5224354917";
-        private const string InterstitialUnit = "ca-app-pub-3940256099942544/1033173712";
-#else
-        private const string RewardedUnit = "ca-app-pub-2693008307172998/6844721230";
-        private const string InterstitialUnit = "ca-app-pub-2693008307172998/2053614897";
-#endif
+        private static readonly TimeSpan BannerRetry = TimeSpan.FromSeconds(30);
 
         private RewardedAd _rewarded;
+        private BannerView _banner;
+        private float _bannerHeight;
+        private DateTime _bannerRetryAt;
         private InterstitialAd _interstitial;
         private bool _loadingRewarded;
         private bool _loadingInterstitial;
@@ -62,6 +58,7 @@ namespace Blackjack.Game.Ads
             {
                 LoadRewarded();
                 LoadInterstitial();
+                LoadBanner();
             });
         }
 
@@ -79,7 +76,7 @@ namespace Blackjack.Game.Ads
             if (_rewarded != null && !_rewarded.CanShowAd()) { _rewarded.Destroy(); _rewarded = null; }
             if (!_started || _rewarded != null || _loadingRewarded) return;
             _loadingRewarded = true;
-            RewardedAd.Load(RewardedUnit, new AdRequest(), (ad, error) =>
+            RewardedAd.Load(AdConfig.RewardedUnit, new AdRequest(), (ad, error) =>
             {
                 _loadingRewarded = false;
                 if (error != null || ad == null) Debug.LogWarning("Rewarded ad did not load: " + error);
@@ -92,12 +89,42 @@ namespace Blackjack.Game.Ads
             if (_interstitial != null && !_interstitial.CanShowAd()) { _interstitial.Destroy(); _interstitial = null; }
             if (!_started || _interstitial != null || _loadingInterstitial) return;
             _loadingInterstitial = true;
-            InterstitialAd.Load(InterstitialUnit, new AdRequest(), (ad, error) =>
+            InterstitialAd.Load(AdConfig.InterstitialUnit, new AdRequest(), (ad, error) =>
             {
                 _loadingInterstitial = false;
                 if (error != null || ad == null) Debug.LogWarning("Interstitial ad did not load: " + error);
                 else _interstitial = ad;
             });
+        }
+
+        /// <summary>Asked every frame by the UI, which keeps this much room free; a failed banner is retried from here.</summary>
+        public float BannerHeightPixels
+        {
+            get
+            {
+                LoadBanner();
+                return _bannerHeight;
+            }
+        }
+
+        private void LoadBanner()
+        {
+            if (!_started || _banner != null || DateTime.UtcNow < _bannerRetryAt) return;
+            // Until the real unit exists a release would only send requests AdMob rejects.
+            if (AdConfig.BannerUnit == AdConfig.RealBannerPlaceholder) return;
+            var size = AdSize.GetCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(AdSize.FullWidth);
+            var banner = new BannerView(AdConfig.BannerUnit, size, AdPosition.Bottom);
+            _banner = banner;
+            banner.OnBannerAdLoaded += () => _bannerHeight = banner.GetHeightInPixels();
+            banner.OnBannerAdLoadFailed += error =>
+            {
+                Debug.LogWarning("Banner ad did not load: " + error);
+                banner.Destroy();
+                _banner = null;
+                _bannerHeight = 0;
+                _bannerRetryAt = DateTime.UtcNow + BannerRetry;
+            };
+            banner.LoadAd(new AdRequest());
         }
 
         public void ShowRewarded(Action<bool> done)

@@ -17,6 +17,8 @@ namespace Blackjack.Game.UI
         private Overlays _overlays;
         private ToastLayer _toasts;
         private RectTransform _screenHost, _navHost;
+        private LayoutElement _bannerSpace;
+        private float _bannerPx;
         private Dyn _nav;
         private readonly Dictionary<AppScreen, ScreenView> _screens = new Dictionary<AppScreen, ScreenView>();
         private AppScreen? _shown;
@@ -44,6 +46,9 @@ namespace Blackjack.Game.UI
             _navHost = Blackjack.Game.UI.Ui.VStack(column, 0, null, TextAnchor.UpperLeft, true, "Nav");
             _navHost.Ensure<LayoutElement>().flexibleHeight = 0;
             _nav = new Dyn(_navHost);
+            // The AdMob banner is a native view drawn over the canvas, so the bottom of the column is left empty under it.
+            _bannerSpace = Blackjack.Game.UI.Ui.Node("BannerSpace", column).Ensure<LayoutElement>();
+            _bannerSpace.flexibleHeight = 0;
 
             _overlays = new Overlays(_ui.Overlay);
             _toasts = new ToastLayer(_ui.Overlay);
@@ -137,8 +142,20 @@ namespace Blackjack.Game.UI
             if (_rebuildForLanguage) RebuildForLanguage();
             if (_shown.HasValue && _screens.TryGetValue(_shown.Value, out var view)) view.Tick();
             _toasts?.Tick();
+            var bannerPx = _g.Services.Ads.BannerHeightPixels;
+            if (bannerPx != _bannerPx) FitBanner(bannerPx);
             // Android's back button arrives as Escape. At the lobby there is nothing left to close: leave the app.
             if (Input.GetKeyDown(KeyCode.Escape) && !_g.HandleBack()) Application.Quit();
+        }
+
+        private void FitBanner(float px)
+        {
+            _bannerPx = px;
+            var scale = _ui.Canvas.scaleFactor;
+            _bannerSpace.preferredHeight = px / scale;
+            // Sheets, dialogs and toasts are laid out from the very bottom of the screen, so they also clear the gesture bar
+            // in case the banner sits above it.
+            _ui.Overlay.offsetMin = new Vector2(0, px > 0 ? (px + Screen.safeArea.yMin) / scale : 0);
         }
 
         private void OnDestroy()
