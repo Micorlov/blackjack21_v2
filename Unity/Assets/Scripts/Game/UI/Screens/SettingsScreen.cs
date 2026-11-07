@@ -70,6 +70,11 @@ namespace Blackjack.Game.UI
             W.SectionLabel(host, "Privacy");
             Toggles(host, ("Usage & crash reports", s.AnalyticsOn, () => G.SetAnalytics(!s.AnalyticsOn),
                 "Anonymous counts of hands played and crashes, so problems can be found and fixed. Never your name, your group code or your chat.", true));
+            if (G.Services.Ads.PrivacyOptionsRequired)
+            {
+                Ui.Spacer(host, 8);
+                Links(host, null, ("Ad privacy choices", "Change what you agreed to about ads", null, (Action)G.Services.Ads.ShowPrivacyOptions));
+            }
             Ui.Spacer(host, 16);
 
             W.SectionLabel(host, Loc.T("settingsSectionHelp"));

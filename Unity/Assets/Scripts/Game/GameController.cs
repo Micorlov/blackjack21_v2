@@ -27,6 +27,7 @@ namespace Blackjack.Game
         public ILocalNotifier Notifier = new NullNotifier();
         public IAnalytics Analytics = new NullAnalytics();
         public IReviewPrompter Review = new NullReview();
+        public IAds Ads = new NullAds();
         public IPlatform Platform = new NullPlatform();
         public ISocialService Social = new NullSocial();
     }
@@ -193,6 +194,7 @@ namespace Blackjack.Game
                 PlayDayStreak = s.PlayDayStreak,
                 LastPlayDayKey = s.LastPlayDayKey,
                 LastRebuyAtMs = s.LastRebuyAt.HasValue ? new DateTimeOffset(s.LastRebuyAt.Value).ToUnixTimeMilliseconds() : 0,
+                LastAdRewardAtMs = s.LastAdRewardAt.HasValue ? new DateTimeOffset(s.LastAdRewardAt.Value).ToUnixTimeMilliseconds() : 0,
                 AnalyticsOn = s.AnalyticsOn,
                 ReviewPromptShown = s.ReviewPromptShown,
                 ReviewLastAttemptAtMs = s.ReviewLastAttemptAtMs,
@@ -236,6 +238,7 @@ namespace Blackjack.Game
                 PlayDayStreak = saved.PlayDayStreak,
                 LastPlayDayKey = saved.LastPlayDayKey,
                 LastRebuyAt = saved.LastRebuyAtMs == 0 ? (DateTime?)null : DateTimeOffset.FromUnixTimeMilliseconds(saved.LastRebuyAtMs).LocalDateTime,
+                LastAdRewardAt = saved.LastAdRewardAtMs == 0 ? (DateTime?)null : DateTimeOffset.FromUnixTimeMilliseconds(saved.LastAdRewardAtMs).LocalDateTime,
                 AnalyticsOn = saved.AnalyticsOn,
                 ReviewPromptShown = saved.ReviewPromptShown,
                 ReviewLastAttemptAtMs = legacyReview ? new DateTimeOffset(now).ToUnixTimeMilliseconds() : saved.ReviewLastAttemptAtMs,

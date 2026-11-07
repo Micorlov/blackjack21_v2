@@ -36,8 +36,8 @@ namespace Blackjack.Game
 
         public static readonly LegalDoc Privacy = new LegalDoc(
             "Privacy Policy",
-            "Last updated 5 September 2026",
-            "The short version: Blackjack 21 keeps your game on your device, and only sends anything to a server when you sign in, join a friends group, or — unless you turn it off — report an anonymous count of what happened in a hand. There are no ads and no third-party trackers.",
+            "Last updated 7 November 2026",
+            "The short version: Blackjack 21 keeps your game on your device, and only sends anything to a server when you sign in, join a friends group, or — unless you turn it off — report an anonymous count of what happened in a hand. The game shows ads through Google AdMob, as described below.",
             new[]
             {
                 new LegalSection("What stays on your device",
@@ -50,8 +50,8 @@ namespace Blackjack.Game
                     "Notifications are scheduled on your device — a daily-bonus reminder and friends-group activity. They are not sent from a server, and you can turn each type off in Settings or revoke the permission entirely in your system settings."),
                 new LegalSection("Usage and crash reports",
                     "The app reports anonymous counts of what happens in the game — hands played and their result, daily bonuses claimed, missions and achievements completed, levels reached, which screens are opened — and sends a report when it crashes, through Google Firebase Analytics and Crashlytics. These carry no display name, no group code, no account identifier and nothing you type. Turn the whole thing off under Privacy in Settings and nothing further is collected."),
-                new LegalSection("No advertising",
-                    "This build contains no advertising SDK and no third-party trackers. No ad is ever loaded and no ad network sees you."),
+                new LegalSection("Advertising",
+                    "The game shows ads through Google AdMob: an optional video you can watch for free chips, and a full-screen ad between hands from time to time. To choose and measure ads, Google and its ad partners receive your advertising ID, IP address and basic device and usage information. Where the law requires it, the game asks for your consent first, and Ad privacy choices under Privacy in Settings changes that answer later. You can also reset or delete the advertising ID in your Android settings. Ads are never shown on your name, group code or chat."),
                 new LegalSection("Location",
                     "The flags shown beside leaderboard names are decorative. They are derived from a player identifier, not from any location. The app never requests or stores location data."),
                 new LegalSection("Removing your data",

@@ -86,6 +86,29 @@ namespace Blackjack.Core
             Countdown.Label(lastRebuyAt.Add(Cooldown) - now);
     }
 
+    /// <summary>The chips a rewarded video pays. The cooldown keeps it a top-up, smaller and more often than a rebuy.</summary>
+    public static class AdReward
+    {
+        public static readonly TimeSpan Cooldown = TimeSpan.FromHours(1);
+        public const int Chips = 500;
+
+        public static bool IsReady(DateTime? lastRewardAt, DateTime now) =>
+            lastRewardAt == null || now - lastRewardAt.Value >= Cooldown;
+
+        public static string CountdownLabel(DateTime lastRewardAt, DateTime now) =>
+            Countdown.Label(lastRewardAt.Add(Cooldown) - now);
+    }
+
+    /// <summary>When a full-screen ad may break between hands: never during the tutorial, and capped by hands and by time.</summary>
+    public static class AdPacing
+    {
+        public const int HandsBetween = 5;
+        public static readonly TimeSpan MinGap = TimeSpan.FromMinutes(4);
+
+        public static bool IsDue(int handsSinceAd, DateTime? lastAdAt, DateTime now, bool tutorialDone) =>
+            tutorialDone && handsSinceAd >= HandsBetween && (lastAdAt == null || now - lastAdAt.Value >= MinGap);
+    }
+
     public static class Countdown
     {
         /// <summary>"3h 12m" / "45m", rounded up to the minute; empty once the time has passed.</summary>

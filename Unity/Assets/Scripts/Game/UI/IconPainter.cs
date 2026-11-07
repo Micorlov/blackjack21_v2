@@ -142,6 +142,8 @@ namespace Blackjack.Game.UI
                     return d.A(new RoundRect(0, -0.28f, 1.5f, 1.05f, 0.1f)).A(new RoundRect(0, 0.45f, 1.7f, 0.42f, 0.08f))
                         .C(new Stroke(0, -0.8f, 0, 0.75f, 0.16f, false))
                         .A(new Ring(-0.28f, 0.82f, 0.22f, 0.12f)).A(new Ring(0.28f, 0.82f, 0.22f, 0.12f));
+                case "play":
+                    return d.A(new Tri(-0.55f, 0.85f, -0.55f, -0.85f, 0.85f, 0f));
                 case "replay":
                     return d.A(new Ring(0, 0, 0.6f, 0.2f)).C(new Tri(0f, 0.5f, 0.95f, 0.95f, 0.95f, -0.1f))
                         .A(new Tri(0.05f, 0.95f, 0.05f, 0.1f, 0.78f, 0.55f));

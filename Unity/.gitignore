@@ -49,6 +49,15 @@ Builds/
 /Assets/StreamingAssets.meta
 /ProjectSettings/GvhProjectSettings.xml
 
+# Google Mobile Ads plugin — fetched by tools/install_admob.sh, never committed. Only its settings asset is
+# ours: it holds the AdMob app ID and the opt-out from the plugin's own External Dependency Manager package.
+/Assets/GoogleMobileAds/*
+!/Assets/GoogleMobileAds/Resources/
+/Assets/GoogleMobileAds.meta
+/Assets/Plugins/Android/GoogleMobileAdsPlugin.androidlib/
+/Assets/Plugins/Android/GoogleMobileAdsPlugin.androidlib.meta
+/Assets/Plugins/Android/googlemobileads-unity.aar*
+
 # Unity test-runner scratch scenes
 /Assets/InitTestScene*
 /Assets/GeneratedLocalRepo/

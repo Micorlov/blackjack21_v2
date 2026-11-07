@@ -4,6 +4,30 @@ using NUnit.Framework;
 
 namespace Blackjack.Core.Tests
 {
+    public class AdRulesTests
+    {
+        private static readonly DateTime At = new DateTime(2026, 8, 1, 15, 0, 0);
+
+        [Test]
+        public void AdReward_isReadyWhenNeverWatched_andOnlyAfterTheCooldown()
+        {
+            Assert.IsTrue(AdReward.IsReady(null, At));
+            Assert.IsFalse(AdReward.IsReady(At, At + AdReward.Cooldown - TimeSpan.FromSeconds(1)));
+            Assert.IsTrue(AdReward.IsReady(At, At + AdReward.Cooldown));
+        }
+
+        [Test]
+        public void AdPacing_needsTheTutorialDone_enoughHands_andTheGap()
+        {
+            var hands = AdPacing.HandsBetween;
+            Assert.IsTrue(AdPacing.IsDue(hands, null, At, true));
+            Assert.IsFalse(AdPacing.IsDue(hands, null, At, false));
+            Assert.IsFalse(AdPacing.IsDue(hands - 1, null, At, true));
+            Assert.IsFalse(AdPacing.IsDue(hands, At, At + AdPacing.MinGap - TimeSpan.FromSeconds(1), true));
+            Assert.IsTrue(AdPacing.IsDue(hands, At, At + AdPacing.MinGap, true));
+        }
+    }
+
     public class DailyBonusTests
     {
         private static readonly DateTime Claim = new DateTime(2026, 8, 1, 15, 0, 0);

@@ -525,6 +525,7 @@ namespace Blackjack.Game
             });
             // Only the first few hands move this, so veterans pay no extra disk write.
             if (tutorialAdvanced) ScheduleSave();
+            MaybeShowBreakAd();
         }
 
         public static readonly string[] ChatPool = { "Nice hand!", "GG", "So close!", "Let's go!", "Tough beat", "Wow, 21!" };

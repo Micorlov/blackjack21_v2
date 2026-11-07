@@ -79,7 +79,8 @@ namespace Blackjack.EditorTools
             PlayerSettings.Android.applicationEntry = AndroidApplicationEntry.Activity;
             PlayerSettings.SetManagedStrippingLevel(android, ManagedStrippingLevel.Low);
             EditorUserBuildSettings.buildAppBundle = false;
-            ConfigureFirebaseDefine(android);
+            ConfigureDefine(android, "FIREBASE_SDK", "Assets/Firebase/Plugins/Firebase.App.dll");
+            ConfigureDefine(android, "ADMOB_SDK", "Assets/GoogleMobileAds/GoogleMobileAds.dll");
 
             // The Flutter build is signed with the standard debug key; using the same one lets this APK upgrade it in place.
             var keystore = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".android", "debug.keystore");
@@ -94,11 +95,10 @@ namespace Blackjack.EditorTools
             else Debug.LogWarning("No debug keystore at " + keystore + "; Unity will create its own and an in-place upgrade will not work.");
         }
 
-        /// <summary>Turns the Firebase-backed services on only once tools/install_firebase.sh has imported the SDK.</summary>
-        private static void ConfigureFirebaseDefine(NamedBuildTarget target)
+        /// <summary>Turns an optional SDK's services on only once its tools/install_*.sh has imported it.</summary>
+        private static void ConfigureDefine(NamedBuildTarget target, string define, string sdkFile)
         {
-            const string define = "FIREBASE_SDK";
-            var sdkPresent = File.Exists("Assets/Firebase/Plugins/Firebase.App.dll");
+            var sdkPresent = File.Exists(sdkFile);
             PlayerSettings.GetScriptingDefineSymbols(target, out var current);
             var defines = current.Where(d => d != define).ToList();
             if (sdkPresent) defines.Add(define);
@@ -194,6 +194,8 @@ namespace Blackjack.EditorTools
                 locationPathName = path,
                 target = BuildTarget.Android,
                 options = BuildOptions.None,
+                // The adb build shows Google's sample ads; only a Play release may ask for real ones.
+                extraScriptingDefines = appBundle ? null : new[] { "ADMOB_TEST_ADS" },
             };
             var report = BuildPipeline.BuildPlayer(options);
             var summary = report.summary;

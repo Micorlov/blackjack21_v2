@@ -82,6 +82,7 @@ namespace Blackjack.Game
         public int PlayDayStreak { get; init; }
         public string LastPlayDayKey { get; init; } = "";
         public DateTime? LastRebuyAt { get; init; }
+        public DateTime? LastAdRewardAt { get; init; }
         public bool AnalyticsOn { get; init; } = true;
         public bool ReviewPromptShown { get; init; }
         public long ReviewLastAttemptAtMs { get; init; }

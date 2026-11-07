@@ -192,7 +192,7 @@ def title_layer(sub):
     d = ImageDraw.Draw(layer)
     d.text((96, 730), 'Blackjack 21', font=font('InstrumentSerif-Italic.ttf', 140), fill=WHITE)
     d.text((100, 900), sub, font=font('Sora-SemiBold.ttf', 56), fill=GOLD)
-    d.text((100, 980), 'Free  ·  No ads  ·  No real money', font=font('Sora-Regular.ttf', 32),
+    d.text((100, 980), 'Free  ·  No real money', font=font('Sora-Regular.ttf', 32),
            fill=(226, 214, 196))
     return layer
 

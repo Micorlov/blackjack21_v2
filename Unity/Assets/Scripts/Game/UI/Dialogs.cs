@@ -84,6 +84,8 @@ namespace Blackjack.Game.UI
             var now = DateTime.Now;
             var bonusReady = DailyBonus.IsReady(s.LastDailyBonusClaimAt, now);
             var rebuyReady = Core.Rebuy.IsReady(s.LastRebuyAt, now);
+            var adCooled = AdReward.IsReady(s.LastAdRewardAt, now);
+            var adLoaded = g.Services.Ads.RewardedReady;
             g.Services.Analytics.LogEvent(Services.AnalyticsEvent.OutOfChips);
 
             var routes = new List<Route>
@@ -92,6 +94,11 @@ namespace Blackjack.Game.UI
                     rebuyReady ? Loc.Or("routeRebuyReady", "Tops your stack back up to {chips}", ("chips", TableCatalog.FormatChips(Core.Rebuy.Chips)))
                                : Loc.Or("routeReadyIn", "Ready in {time}", ("time", Core.Rebuy.CountdownLabel(s.LastRebuyAt.Value, now))),
                     rebuyReady, Loc.T("rebuyButtonLabel", ("chips", TableCatalog.FormatChips(Core.Rebuy.Chips))), g.Rebuy),
+                new Route("play", Loc.Or("routeWatchAd", "Watch a video"),
+                    !adCooled ? Loc.Or("routeReadyIn", "Ready in {time}", ("time", AdReward.CountdownLabel(s.LastAdRewardAt.Value, now)))
+                    : adLoaded ? Loc.Or("routeWatchAdReady", "A short ad pays {chips} chips", ("chips", TableCatalog.FormatChips(AdReward.Chips)))
+                    : Loc.Or("routeWatchAdNone", "No video right now, try again soon"),
+                    adCooled && adLoaded, Loc.Or("routeWatchAdAction", "Watch a video for {chips} chips", ("chips", TableCatalog.FormatChips(AdReward.Chips))), g.WatchAdForChips),
                 new Route("gift", Loc.Or("dailyBonus", "Daily bonus"),
                     bonusReady ? Loc.Or("routeBonusReady", "Waiting for you in the lobby")
                                : Loc.Or("routeNextIn", "Next in {time}", ("time", DailyBonus.CountdownLabel(s.LastDailyBonusClaimAt.Value, now))),

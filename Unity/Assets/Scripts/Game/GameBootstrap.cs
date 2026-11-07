@@ -61,12 +61,14 @@ namespace Blackjack.Game
                 Social = ServiceFactories.Social(),
                 Analytics = ServiceFactories.Analytics(),
                 Review = ServiceFactories.Review(),
+                Ads = ServiceFactories.Ads(),
             };
             controller.Init(services);
             Loc.Use(controller.State.LanguageOverride);
             Fonts.EnsureScript(Loc.Code);
 
             AppRoot.Attach(UiRoot.Create(), controller);
+            services.Ads.Init();
 
             // Invite links: handle the one that launched the app, and any that arrive while it runs.
             Application.deepLinkActivated += controller.HandleIncomingLink;

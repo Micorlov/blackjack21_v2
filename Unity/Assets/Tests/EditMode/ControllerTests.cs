@@ -17,6 +17,7 @@ namespace Blackjack.Core.Tests
         public readonly NullNotifier Notifier = new NullNotifier();
         public readonly NullAnalytics Analytics = new NullAnalytics();
         public readonly FakeSocial Social = new FakeSocial();
+        public readonly NullAds Ads = new NullAds();
         public double Time;
         public DateTime Now = new DateTime(2026, 8, 10, 14, 0, 0);
 
@@ -27,7 +28,7 @@ namespace Blackjack.Core.Tests
             C.UseClock(() => Time);
             C.Init(new GameServices
             {
-                Sound = Sound, Store = Store, Notifier = Notifier, Analytics = Analytics, Social = Social,
+                Sound = Sound, Store = Store, Notifier = Notifier, Analytics = Analytics, Social = Social, Ads = Ads,
             }, () => Now, new System.Random(seed), boot);
             C.Set(s => s with { Screen = AppScreen.Lobby });
         }
@@ -278,6 +279,68 @@ namespace Blackjack.Core.Tests
         }
 
         [Test]
+        public void WatchAd_paysOnceThenCoolsDown_andTheCooldownSurvivesASave()
+        {
+            _rig = new Rig();
+            _rig.Ads.RewardedReady = true;
+            _rig.C.Set(s => s with { Round = s.Round with { Chips = 10 } });
+            _rig.C.WatchAdForChips();
+            Assert.AreEqual(10 + AdReward.Chips, _rig.Round.Chips);
+            _rig.C.WatchAdForChips();
+            Assert.AreEqual(10 + AdReward.Chips, _rig.Round.Chips);
+            _rig.C.FlushSave();
+            Assert.AreEqual(new DateTimeOffset(_rig.Now).ToUnixTimeMilliseconds(), _rig.Store.Saved.LastAdRewardAtMs);
+            _rig.Now += AdReward.Cooldown;
+            _rig.C.WatchAdForChips();
+            Assert.AreEqual(10 + 2 * AdReward.Chips, _rig.Round.Chips);
+        }
+
+        [Test]
+        public void WatchAd_paysNothing_whenAbandonedOrNotLoaded()
+        {
+            _rig = new Rig();
+            _rig.C.Set(s => s with { Round = s.Round with { Chips = 10 } });
+            _rig.C.WatchAdForChips();
+            Assert.AreEqual(10, _rig.Round.Chips);
+
+            _rig.Ads.RewardedReady = true;
+            _rig.Ads.RewardEarned = false;
+            _rig.C.WatchAdForChips();
+            Assert.AreEqual(10, _rig.Round.Chips);
+            Assert.IsNull(_rig.C.State.LastAdRewardAt, "an abandoned video must not start the cooldown");
+        }
+
+        [Test]
+        public void BreakAd_comesEveryFewHands_butNeverTwiceInsideTheGap()
+        {
+            _rig = new Rig();
+            _rig.Ads.InterstitialReady = true;
+            _rig.C.Set(s => s with { TutorialDismissed = true });
+            for (var i = 1; i < AdPacing.HandsBetween; i++) _rig.C.NextHand();
+            Assert.AreEqual(0, _rig.Ads.InterstitialsShown);
+            _rig.C.NextHand();
+            Assert.AreEqual(1, _rig.Ads.InterstitialsShown);
+
+            for (var i = 0; i < AdPacing.HandsBetween; i++) _rig.C.NextHand();
+            Assert.AreEqual(1, _rig.Ads.InterstitialsShown);
+            _rig.Now += AdPacing.MinGap;
+            _rig.C.NextHand();
+            Assert.AreEqual(2, _rig.Ads.InterstitialsShown);
+        }
+
+        [Test]
+        public void BreakAd_withNothingLoaded_isShownOnceOneIs()
+        {
+            _rig = new Rig();
+            _rig.C.Set(s => s with { TutorialDismissed = true });
+            for (var i = 0; i < AdPacing.HandsBetween; i++) _rig.C.NextHand();
+            Assert.AreEqual(0, _rig.Ads.InterstitialsShown);
+            _rig.Ads.InterstitialReady = true;
+            _rig.C.NextHand();
+            Assert.AreEqual(1, _rig.Ads.InterstitialsShown);
+        }
+
+        [Test]
         public void Rebuy_neverReducesAStackAboveTheTopUp()
         {
             _rig = new Rig();
@@ -396,7 +459,7 @@ namespace Blackjack.Core.Tests
                 Stats = new StatsSummary(12, 7, 4, 1, 2, 3, 5),
                 History = new[] { RoundResult.Win, RoundResult.Loss, RoundResult.Push },
                 RewardedReferralIds = new[] { "a", "b" }, LastRebuyAtMs = 1700000000000, PlayDayStreak = 4,
-                TurnTimerOn = false,
+                TurnTimerOn = false, LastAdRewardAtMs = 1700000000001,
             };
             var back = Blackjack.Game.Services.SavedGameJson.FromJson(Blackjack.Game.Services.SavedGameJson.ToJson(game));
             Assert.AreEqual(777, back.Chips);
@@ -406,6 +469,7 @@ namespace Blackjack.Core.Tests
             CollectionAssert.AreEqual(game.History, back.History);
             CollectionAssert.AreEqual(new[] { "a", "b" }, back.RewardedReferralIds.ToArray());
             Assert.AreEqual(1700000000000, back.LastRebuyAtMs);
+            Assert.AreEqual(1700000000001, back.LastAdRewardAtMs);
             Assert.IsFalse(back.TurnTimerOn);
         }
 

@@ -705,7 +705,7 @@ PlayerSettings:
   webWasm2023: 0
   webEnableSubmoduleStrippingCompatibility: 0
   scriptingDefineSymbols:
-    Android: FIREBASE_SDK
+    Android: FIREBASE_SDK;ADMOB_SDK
   additionalCompilerArguments: {}
   platformArchitecture: {}
   scriptingBackend:

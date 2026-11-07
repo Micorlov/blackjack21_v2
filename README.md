@@ -7,6 +7,11 @@ A Unity (Android) blackjack game with a multi-seat table and a friends race. Fou
 
 ## Features
 
+- **Ads through Google AdMob** — an optional "Watch a video" route in the Out of chips sheet pays 500
+  chips, once an hour, and only for a video watched through. A full-screen ad can appear as a finished
+  hand clears: never in the coached first hands, at most every 5 hands and 4 minutes, and the game simply
+  carries on when none is loaded. Consent comes first where the law requires it (Google's User Messaging
+  Platform), and Settings then offers **Ad privacy choices**.
 - **Play now** — guest entry opens the coached Bronze table directly, with no bet placed.
   Google sign-in stays available.
 - **Activation measurement** — first-hand, ten-hand and tutorial milestones, entry-choice events,
@@ -187,6 +192,9 @@ dialog and the felt — is built in code at runtime, so the scene is empty and t
 # once per checkout: fetch Firebase (~760 MB, not committed) and configure the project
 Unity/tools/install_firebase.sh
 
+# then fetch the Google Mobile Ads plugin (~2 MB, not committed); without it the game simply has no ads
+Unity/tools/install_admob.sh
+
 # build the development APK (signed with the debug key) -> Unity/Builds/Android/blackjack21-unity.apk
 /Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity -batchmode -nographics -quit \
   -projectPath Unity -executeMethod Blackjack.EditorTools.BuildTools.BuildAndroid -logFile /tmp/build.log
@@ -210,11 +218,12 @@ Unity/
 │   │   └── UI/                # runtime UI toolkit + every screen (onboarding, lobby, table, stats,
 │   │                          #   friends, settings), dialogs, overlays, the felt shader view
 │   ├── Scripts/GameFirebase/  # Firebase-backed services, compiled only when FIREBASE_SDK is defined
+│   ├── Scripts/GameAds/       # AdMob service with consent, compiled only when ADMOB_SDK is defined
 │   ├── Scripts/Editor/        # BuildTools (configure + Android build), ProjectSetup, audio import
 │   ├── Resources/             # Locales (10 JSON files), Sfx (+ spoken amounts), Fonts, Felt shader
 │   ├── Plugins/Android/       # BlackjackExtras.androidlib: permissions + invite-link intent filter
 │   └── Tests/                 # EditMode (NUnit) and PlayMode (offscreen screenshots)
-├── tools/                     # install_firebase.sh, unpack_unitypackage.py
+├── tools/                     # install_firebase.sh, install_admob.sh, unpack_unitypackage.py
 docs/design-concepts/the-seat/ # the design reference: ten table states, the overview and the PDF
 hosting/                       # Firebase Hosting: invite landing page, privacy policy, assetlinks.json
 play-assets/  tool/            # Google Play listing artwork and the store upload scripts
@@ -354,10 +363,20 @@ Unity -batchmode -nographics -quit -projectPath Unity \
   -executeMethod Blackjack.EditorTools.BuildTools.BuildAndroidRelease -logFile /tmp/build-release.log
 ```
 
-The release manifest must not carry `com.google.android.gms.permission.AD_ID` (the Play listing declares no
-advertising ID, and Play fails the commit with a 400 otherwise). Firebase Analytics merges it in from a
-dependency, so `Unity/Assets/Plugins/Android/LauncherManifest.xml` (enabled by `useCustomLauncherManifest`)
-removes it with `tools:node="remove"`; a removal marker in a library manifest does not outrank it.
+The release manifest carries `com.google.android.gms.permission.AD_ID`, which AdMob needs. Play fails the
+commit with a 400 unless **App content → Advertising ID** in Play Console says the app uses one, so change
+that declaration (along with **Ads** and **Data safety**) before the first release with ads. Analytics stays
+off the ID through `google_analytics_adid_collection_enabled=false` in the `BlackjackExtras` manifest.
+
+`BuildAndroid` compiles with `ADMOB_TEST_ADS`, which swaps in Google's public sample ad units, because real
+ads on the developer's own phone break AdMob policy. Only `BuildAndroidRelease` requests the real units.
+
+The AdMob app ID sits in two places that must stay equal: `GoogleMobileAdsSettings.asset`, and the
+`BlackjackExtras` manifest. The plugin only writes the first into the build when Unity's active target is
+already Android at startup, which the batch command does not guarantee, and the SDK crashes at launch without
+it. Ads serve only once AdMob approves the account and the app, which needs `hosting/app-ads.txt` deployed. The
+EEA/UK/Swiss consent message lives in AdMob under **Privacy & messaging**; without a published message for this
+app, the consent check fails and no ads start anywhere.
 Keep `tool/release_notes_en-US.txt` under **500 characters**; Play rejects anything longer.
 
 Auth is a Google Cloud service account, `play-publisher@gen-lang-client-0324046629.iam.gserviceaccount.com`,
@@ -414,7 +433,8 @@ on a Play-distributed one. One-time manual steps to fix that:
 | `com.unity.mobile.notifications` | Local daily-bonus and friends-activity notifications (Android channels) |
 | `com.unity.test-framework` | EditMode and PlayMode tests |
 | Firebase Unity SDK 13.17.0 | Auth, Firestore, Analytics, Crashlytics — fetched by `Unity/tools/install_firebase.sh` |
-| External Dependency Manager | Bundled with Firebase; resolves its Android Gradle dependencies |
+| External Dependency Manager | Bundled with Firebase; resolves the Android Gradle dependencies of both SDKs |
+| Google Mobile Ads Unity plugin 11.6.0 | AdMob rewarded and interstitial ads, plus consent (UMP) — fetched by `Unity/tools/install_admob.sh` |
 
 ## Assets
 
@@ -465,6 +485,14 @@ A Core change is not done until the EditMode suite passes. Check on a device or 
 lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
+
+### 2026-11-07
+- feat: **AdMob ads.** A "Watch a video" route in the Out of chips sheet pays 500 chips once an hour, and
+  a full-screen ad can appear between hands, at most every 5 hands and 4 minutes and never during the
+  tutorial. Consent is asked first where required, with **Ad privacy choices** in Settings. Development
+  builds show Google's sample ads; only Play releases request real ones.
+- docs: the in-app and hosted privacy policies, the store listing and the trailer script no longer say
+  the game has no ads, and `hosting/app-ads.txt` authorises the AdMob account for app verification.
 
 ### 2026-10-17
 - docs: new landscape Play/YouTube trailer (`play-assets/trailer.mp4`, built by `tool/make_trailer.py`).

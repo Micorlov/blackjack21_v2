@@ -16,6 +16,26 @@ namespace Blackjack.Game.Services
         public void SilenceVoice() { }
     }
 
+    public sealed class NullAds : IAds
+    {
+        public bool RewardEarned = true;
+        public bool InterstitialReady;
+        public int InterstitialsShown;
+
+        public void Init() { }
+        public bool RewardedReady { get; set; }
+        public void ShowRewarded(Action<bool> done) => done(RewardEarned);
+
+        public bool ShowInterstitial()
+        {
+            if (InterstitialReady) InterstitialsShown++;
+            return InterstitialReady;
+        }
+
+        public bool PrivacyOptionsRequired => false;
+        public void ShowPrivacyOptions() { }
+    }
+
     public sealed class NullHaptics : IHaptics
     {
         public void Selection() { }

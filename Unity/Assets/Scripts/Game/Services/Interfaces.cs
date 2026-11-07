@@ -82,12 +82,34 @@ namespace Blackjack.Game.Services
         public const string InviteShared = "invite_shared";
         public const string OutOfChips = "out_of_chips";
         public const string ReviewPrompted = "review_prompted";
+        public const string AdRewardEarned = "ad_reward_earned";
+        public const string BreakAdShown = "break_ad_shown";
     }
 
     public interface IReviewPrompter
     {
         /// <summary>Asks the store for its review sheet; reports whether the request was actually made.</summary>
         void Request(Action<bool> completed);
+    }
+
+    /// <summary>Full-screen ads. Nothing here may hold the game up: no SDK, no consent or no fill just means no ad.</summary>
+    public interface IAds
+    {
+        /// <summary>Asks for consent where the law requires it, then starts the ad SDK. Call once at launch.</summary>
+        void Init();
+
+        bool RewardedReady { get; }
+
+        /// <summary>Plays a rewarded video; reports, once it closes, whether it was watched through.</summary>
+        void ShowRewarded(Action<bool> done);
+
+        /// <summary>Shows a loaded interstitial; returns false, showing nothing, when there is none.</summary>
+        bool ShowInterstitial();
+
+        /// <summary>True where the player must be able to change their consent, which Settings then offers.</summary>
+        bool PrivacyOptionsRequired { get; }
+
+        void ShowPrivacyOptions();
     }
 
     /// <summary>OS integrations the game reaches for: sharing, links, clipboard, app version.</summary>

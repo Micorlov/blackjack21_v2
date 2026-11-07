@@ -1,0 +1,19 @@
+{
+    "name": "Blackjack.Game.Ads",
+    "rootNamespace": "Blackjack.Game.Ads",
+    "references": ["Blackjack.Game"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "GoogleMobileAds.dll",
+        "GoogleMobileAds.Core.dll",
+        "GoogleMobileAds.Common.dll",
+        "GoogleMobileAds.Ump.dll"
+    ],
+    "autoReferenced": true,
+    "defineConstraints": ["ADMOB_SDK"],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

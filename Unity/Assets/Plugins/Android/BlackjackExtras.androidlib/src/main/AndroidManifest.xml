@@ -5,10 +5,13 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- The game shows no ads and profiles nobody; the Play listing says it uses no advertising ID. -->
-    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove" />
 
     <application>
+        <!-- Set here too: the plugin's own build step is compiled out when batch mode starts on another target, and
+             the SDK crashes at launch without this. Keep it equal to GoogleMobileAdsSettings.asset. -->
+        <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-2693008307172998~5118761930" />
+        <!-- AdMob needs the advertising ID; analytics stays anonymous, as the privacy policy promises. -->
+        <meta-data android:name="google_analytics_adid_collection_enabled" android:value="false" />
         <activity android:name="com.unity3d.player.UnityPlayerActivity" android:exported="true">
             <!-- Invite links: https://blackjack21-v2.web.app/join/CODE opens the game straight to the join. -->
             <intent-filter android:autoVerify="true">

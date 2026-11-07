@@ -67,6 +67,13 @@ Rules logic lives in `Unity/Assets/Scripts/Core` (no `UnityEngine` references) a
 Firebase is **not committed** (~760 MB of native libraries). After a fresh clone run
 `Unity/tools/install_firebase.sh`; without it the `FIREBASE_SDK` define is off and the game falls back
 to the offline Null services, so a build that "loses" sign-in is usually a missing SDK, not a bug.
+The Google Mobile Ads plugin works the same way: `Unity/tools/install_admob.sh` fetches it, the `ADMOB_SDK`
+define turns it on, and without it there are simply no ads. Its one committed file is
+`Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset` (the AdMob app ID, and
+`enableExternalDependencyManager: 0`, because the plugin's own EDM package collides with the copy Firebase
+bundles). The adb build uses Google's sample ad units (`ADMOB_TEST_ADS`, set by `BuildAndroid`); never point a
+development build at the real units, since real ads on Michael's phone break AdMob policy.
+
 Never commit `Assets/Firebase/`, `Assets/ExternalDependencyManager/`, `Assets/GeneratedLocalRepo/` or
 the generated Gradle templates — `.gitignore` covers them.
 
