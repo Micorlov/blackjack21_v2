@@ -4,7 +4,7 @@ namespace Blackjack.Game.Ads
     public static class AdConfig
     {
         /// <summary>Flip to false for a Play release. Builds made with ADMOB_TEST_ADS (the adb APK) stay on test units regardless.</summary>
-        public const bool USE_TEST_ADS = true;
+        public const bool USE_TEST_ADS = false;
 
 #if ADMOB_TEST_ADS
         // The adb build sits on the developer's phone, and real ads there break AdMob policy.
