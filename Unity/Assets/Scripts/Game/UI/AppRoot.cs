@@ -152,10 +152,13 @@ namespace Blackjack.Game.UI
         {
             _bannerPx = px;
             var scale = _ui.Canvas.scaleFactor;
-            _bannerSpace.preferredHeight = px / scale;
-            // Sheets, dialogs and toasts are laid out from the very bottom of the screen, so they also clear the gesture bar
-            // in case the banner sits above it.
-            _ui.Overlay.offsetMin = new Vector2(0, px > 0 ? (px + Screen.safeArea.yMin) / scale : 0);
+            if (scale < 0.01f) scale = 1f;
+            // The column already sits inside the safe area, so only the part of the banner that rises above the
+            // gesture bar needs a gap. Overlays are full-screen and pinned to the bottom edge; they move up by
+            // the banner alone. Adding the gesture inset on top of that would shove every sheet up twice.
+            var intoSafe = px <= 0f ? 0f : Mathf.Max(0f, px - Screen.safeArea.yMin);
+            _bannerSpace.preferredHeight = intoSafe / scale;
+            _ui.Overlay.offsetMin = new Vector2(0f, px <= 0f ? 0f : px / scale);
         }
 
         private void OnDestroy()

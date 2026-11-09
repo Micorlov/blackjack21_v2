@@ -36,7 +36,7 @@ namespace Blackjack.Game
 
         public static readonly LegalDoc Privacy = new LegalDoc(
             "Privacy Policy",
-            "Last updated 7 November 2026",
+            "Last updated 9 November 2026",
             "The short version: Blackjack 21 keeps your game on your device, and only sends anything to a server when you sign in, join a friends group, or — unless you turn it off — report an anonymous count of what happened in a hand. The game shows ads through Google AdMob, as described below.",
             new[]
             {
@@ -57,7 +57,7 @@ namespace Blackjack.Game
                 new LegalSection("Removing your data",
                     "Signing out clears your account details from this device. To have your leaderboard entries removed from a friends group, ask the group to drop your code or contact the developer."),
                 new LegalSection("Children",
-                    "The game is intended for adults aged 18 and over and is not directed at children."),
+                    "The game is intended for adults aged 18 and over and is not directed at children. Advertising is not child-directed."),
                 new LegalSection("Changes",
                     "If this policy changes, the updated date at the top of this page changes with it, and the new version ships inside the app."),
                 new LegalSection("Contact",

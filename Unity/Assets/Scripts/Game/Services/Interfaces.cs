@@ -92,7 +92,7 @@ namespace Blackjack.Game.Services
         void Request(Action<bool> completed);
     }
 
-    /// <summary>Full-screen ads. Nothing here may hold the game up: no SDK, no consent or no fill just means no ad.</summary>
+    /// <summary>Ads. Nothing here may hold the game up: no SDK, no consent or no fill just means no ad.</summary>
     public interface IAds
     {
         /// <summary>Asks for consent where the law requires it, then starts the ad SDK. Call once at launch.</summary>
