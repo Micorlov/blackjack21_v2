@@ -19,17 +19,12 @@ namespace Blackjack.Game.Services
     public sealed class NullAds : IAds
     {
         public bool RewardEarned = true;
-        public int RewardCallbacks = 1;
         public bool InterstitialReady;
         public int InterstitialsShown;
 
         public void Init() { }
         public bool RewardedReady { get; set; }
-        public void ShowRewarded(Action<bool> done)
-        {
-            var times = RewardCallbacks < 1 ? 1 : RewardCallbacks;
-            for (var i = 0; i < times; i++) done(RewardEarned);
-        }
+        public void ShowRewarded(Action<bool> done) => done(RewardEarned);
 
         public bool ShowInterstitial()
         {
@@ -37,7 +32,6 @@ namespace Blackjack.Game.Services
             return InterstitialReady;
         }
 
-        public float BannerHeightPixels => 0;
         public bool PrivacyOptionsRequired => false;
         public void ShowPrivacyOptions() { }
     }

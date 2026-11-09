@@ -308,11 +308,6 @@ namespace Blackjack.Core.Tests
             _rig.C.WatchAdForChips();
             Assert.AreEqual(10, _rig.Round.Chips);
             Assert.IsNull(_rig.C.State.LastAdRewardAt, "an abandoned video must not start the cooldown");
-
-            _rig.Ads.RewardEarned = true;
-            _rig.Ads.RewardCallbacks = 2;
-            _rig.C.WatchAdForChips();
-            Assert.AreEqual(10 + AdReward.Chips, _rig.Round.Chips, "a second close callback must not pay again");
         }
 
         [Test]

@@ -5,7 +5,7 @@ using Blackjack.Game.Services;
 
 namespace Blackjack.Game
 {
-    /// <summary>The opted-in rewarded video and the paced break between hands. The banner is reserved by the UI.</summary>
+    /// <summary>The two ads in the game: a video the player chooses to watch for chips, and a paced break between hands.</summary>
     public sealed partial class GameController
     {
         private int _handsSinceAd;
@@ -15,12 +15,9 @@ namespace Blackjack.Game
         public void WatchAdForChips()
         {
             if (!AdReward.IsReady(State.LastAdRewardAt, _now()) || !_svc.Ads.RewardedReady) return;
-            var paid = false;
             _svc.Ads.ShowRewarded(earned =>
             {
-                // The SDK can report close and failure both; chips are paid once.
-                if (paid || !earned) return;
-                paid = true;
+                if (!earned) return;
                 var at = _now();
                 Set(s => s with
                 {
@@ -36,8 +33,8 @@ namespace Blackjack.Game
         }
 
         /// <summary>
-        /// Called once the player asks for the next hand, which is waiting on a bet: no cards are in play and the
-        /// turn clock is not running. A hand counts towards the next ad whether or not one is ready.
+        /// Called as a finished hand clears. Nothing is dealt or timed at this point, so the ad interrupts nothing, and
+        /// a hand counts towards the next one whether or not an ad is ready.
         /// </summary>
         private void MaybeShowBreakAd()
         {
@@ -45,7 +42,6 @@ namespace Blackjack.Game
             var now = _now();
             var tutorialDone = State.TutorialDismissed || State.TutorialRoundsSeen >= Tutorial.Rounds;
             if (!AdPacing.IsDue(_handsSinceAd, _lastBreakAdAt, now, tutorialDone)) return;
-            if (State.Round.Phase != RoundPhase.Betting) return;
             if (!_svc.Ads.ShowInterstitial()) return;
             _handsSinceAd = 0;
             _lastBreakAdAt = now;

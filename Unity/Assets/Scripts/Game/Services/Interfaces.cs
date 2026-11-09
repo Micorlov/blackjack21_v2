@@ -92,7 +92,7 @@ namespace Blackjack.Game.Services
         void Request(Action<bool> completed);
     }
 
-    /// <summary>Ads. Nothing here may hold the game up: no SDK, no consent or no fill just means no ad.</summary>
+    /// <summary>Full-screen ads. Nothing here may hold the game up: no SDK, no consent or no fill just means no ad.</summary>
     public interface IAds
     {
         /// <summary>Asks for consent where the law requires it, then starts the ad SDK. Call once at launch.</summary>
@@ -105,9 +105,6 @@ namespace Blackjack.Game.Services
 
         /// <summary>Shows a loaded interstitial; returns false, showing nothing, when there is none.</summary>
         bool ShowInterstitial();
-
-        /// <summary>Height in screen pixels of the banner docked at the bottom of the screen; 0 while none is showing.</summary>
-        float BannerHeightPixels { get; }
 
         /// <summary>True where the player must be able to change their consent, which Settings then offers.</summary>
         bool PrivacyOptionsRequired { get; }

@@ -1,18 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- AdMob reads the advertising ID. Do not strip it: Play's advertising-ID declaration has to match the manifest. -->
-    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
 
     <application>
         <!-- Set here too: the plugin's own build step is compiled out when batch mode starts on another target, and
-             the SDK crashes at launch without this. Keep it equal to GoogleMobileAdsSettings.asset and AdConfig.AndroidAppId. -->
+             the SDK crashes at launch without this. Keep it equal to GoogleMobileAdsSettings.asset. -->
         <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-2693008307172998~5118761930" />
-        <!-- Do not read the advertising ID until MobileAds.Initialize, which runs only after UMP consent. -->
-        <meta-data android:name="com.google.android.gms.ads.DELAY_APP_MEASUREMENT_INIT" android:value="true" />
         <!-- AdMob needs the advertising ID; analytics stays anonymous, as the privacy policy promises. -->
         <meta-data android:name="google_analytics_adid_collection_enabled" android:value="false" />
         <activity android:name="com.unity3d.player.UnityPlayerActivity" android:exported="true">

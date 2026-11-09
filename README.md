@@ -7,13 +7,11 @@ A Unity (Android) blackjack game with a multi-seat table and a friends race. Fou
 
 ## Features
 
-- **Ads through Google AdMob** — a banner along the bottom of the screen (the layout leaves it room, and
-  a banner that fails to load leaves no gap), an optional "Watch a video" route in the Out of chips sheet
-  that pays 500 chips, once an hour, and only for a video watched through, and a full-screen ad as the
-  player asks for the next hand: never in the coached first hands, at most every 5 hands and 4 minutes,
-  and only while the table is waiting on a bet. The game carries on when none is loaded. Consent comes
-  first where the law requires it (Google's User Messaging Platform); withdrawing it stops ads, and
-  Settings then offers **Ad privacy choices**. The app is not child-directed, and ad content is capped at Teen.
+- **Ads through Google AdMob** — an optional "Watch a video" route in the Out of chips sheet pays 500
+  chips, once an hour, and only for a video watched through. A full-screen ad can appear as a finished
+  hand clears: never in the coached first hands, at most every 5 hands and 4 minutes, and the game simply
+  carries on when none is loaded. Consent comes first where the law requires it (Google's User Messaging
+  Platform), and Settings then offers **Ad privacy choices**.
 - **Play now** — guest entry opens the coached Bronze table directly, with no bet placed.
   Google sign-in stays available.
 - **Activation measurement** — first-hand, ten-hand and tutorial milestones, entry-choice events,
@@ -176,8 +174,8 @@ A Unity (Android) blackjack game with a multi-seat table and a friends race. Fou
   Chinese, Hebrew and Arabic (10 locales, `Unity/Assets/Resources/Locales/*.json`); Hebrew and
   Arabic render right-to-left, with Arabic letter shaping. Native onboarding benefits and entry buttons
   are translated too. Lobby, social, legal documents and some accessibility copy remain English.
-- **"More games: Video Poker" link** — Settings → About has a row (card icon, "Free video poker",
-  translated into all 10 languages) that opens the developer's Video Poker game on
+- **"More games: Video Poker" link** — Settings → About has a row (card icon, "Free video poker,
+  no ads", translated into all 10 languages) that opens the developer's Video Poker game on
   Google Play in the Play app, tagged `utm_source=blackjack21` so those installs can be traced
   back here. If nothing on the device can open the link, a SnackBar says so instead of the tap
   silently doing nothing
@@ -216,8 +214,7 @@ Unity/
 │   ├── Scripts/Core/          # rules engine as plain C# (Blackjack.Core, no UnityEngine): cards, shoe,
 │   │                          #   round engine, settlement, progression, RTL (ArabicShaper, Bidi)
 │   ├── Scripts/Game/          # GameController (paced NPC/dealer turns, audio/haptic cues, bonus, social),
-│   │   │                      #   services behind interfaces with Null implementations,
-│   │   │                      #   AdConfig.cs (AdMob app id and unit ids; tested without the SDK)
+│   │   │                      #   services behind interfaces with Null implementations
 │   │   └── UI/                # runtime UI toolkit + every screen (onboarding, lobby, table, stats,
 │   │                          #   friends, settings), dialogs, overlays, the felt shader view
 │   ├── Scripts/GameFirebase/  # Firebase-backed services, compiled only when FIREBASE_SDK is defined
@@ -366,24 +363,16 @@ Unity -batchmode -nographics -quit -projectPath Unity \
   -executeMethod Blackjack.EditorTools.BuildTools.BuildAndroidRelease -logFile /tmp/build-release.log
 ```
 
-The release about to ship is **1.8.3 (13)** (`VersionName` / `VersionCode` in `BuildTools.cs`). Play's live
-production build is 1.8.2 (12). Confirm version code 13 is still free on the Play account before uploading.
-
-The release manifest carries `com.google.android.gms.permission.AD_ID`, which AdMob needs, and
-`DELAY_APP_MEASUREMENT_INIT` so that id is not read until `MobileAds.Initialize` (after UMP consent). Play
-fails the commit with a 400 unless **App content → Advertising ID** says the app uses one, so change that
-declaration (along with **Ads** and **Data safety**) before the first release with ads. Analytics stays off
-the ID through `google_analytics_adid_collection_enabled=false` in the `BlackjackExtras` manifest.
+The release manifest carries `com.google.android.gms.permission.AD_ID`, which AdMob needs. Play fails the
+commit with a 400 unless **App content → Advertising ID** in Play Console says the app uses one, so change
+that declaration (along with **Ads** and **Data safety**) before the first release with ads. Analytics stays
+off the ID through `google_analytics_adid_collection_enabled=false` in the `BlackjackExtras` manifest.
 
 `BuildAndroid` compiles with `ADMOB_TEST_ADS`, which swaps in Google's public sample ad units, because real
-ads on the developer's own phone break AdMob policy. `BuildAndroidRelease` and `BuildAndroidUnsignedRelease`
-request the real units. The unsigned entry point signs with the debug key so the release configuration can
-be compiled without the Play upload key; do not upload that `.aab` and do not install it on a phone.
+ads on the developer's own phone break AdMob policy. Only `BuildAndroidRelease` requests the real units.
 
-The AdMob app ID sits in three places that must stay equal: `AdConfig.AndroidAppId`,
-`GoogleMobileAdsSettings.asset`, and the `BlackjackExtras` manifest. The unit ids live only in `AdConfig`;
-EditMode checks that a release build resolves the real ones and that neither manifest nor settings carries
-Google's sample publisher. The plugin only writes the settings asset into the build when Unity's active target is
+The AdMob app ID sits in two places that must stay equal: `GoogleMobileAdsSettings.asset`, and the
+`BlackjackExtras` manifest. The plugin only writes the first into the build when Unity's active target is
 already Android at startup, which the batch command does not guarantee, and the SDK crashes at launch without
 it. Ads serve only once AdMob approves the account and the app, which needs `hosting/app-ads.txt` deployed. The
 EEA/UK/Swiss consent message lives in AdMob under **Privacy & messaging**; without a published message for this
@@ -445,7 +434,7 @@ on a Play-distributed one. One-time manual steps to fix that:
 | `com.unity.test-framework` | EditMode and PlayMode tests |
 | Firebase Unity SDK 13.17.0 | Auth, Firestore, Analytics, Crashlytics — fetched by `Unity/tools/install_firebase.sh` |
 | External Dependency Manager | Bundled with Firebase; resolves the Android Gradle dependencies of both SDKs |
-| Google Mobile Ads Unity plugin 11.6.0 | AdMob banner, rewarded and interstitial ads, plus consent (UMP) — fetched by `Unity/tools/install_admob.sh`. Release requests are not child-directed (`AgeRestrictedTreatment.Unspecified`) and capped at Teen |
+| Google Mobile Ads Unity plugin 11.6.0 | AdMob rewarded and interstitial ads, plus consent (UMP) — fetched by `Unity/tools/install_admob.sh` |
 
 ## Assets
 
@@ -459,8 +448,8 @@ on a Play-distributed one. One-time manual steps to fix that:
   OS fonts are added as fallbacks per language.
 - `Unity/Assets/Icons/` — launcher (adaptive foreground/background, legacy) and notification icons.
 - `hosting/` — `privacy-policy.html` is the Privacy Policy URL the Play listing requires, served at
-  `https://blackjack21-v2.web.app/privacy-policy.html`; `app-ads.txt` authorises AdMob publisher
-  `pub-2693008307172998`; `index.html` is the invite landing page; `og-image.jpg` is the 1200×630 link-preview banner.
+  `https://blackjack21-v2.web.app/privacy-policy.html`; `index.html` is the invite landing page;
+  `og-image.jpg` is the 1200×630 link-preview banner.
 - `play-assets/` — Play Store listing artwork; see **Regenerating the store assets**.
 
 ## Testing
@@ -496,14 +485,6 @@ A Core change is not done until the EditMode suite passes. Check on a device or 
 lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
-
-### 2026-11-09
-- feat: **AdMob is ready to ship as 1.8.3 (13).** Release builds request the real banner, rewarded and
-  interstitial units; the adb APK still shows Google's samples. The bottom banner leaves the felt and the
-  sheets clear of it, and a banner that does not load leaves no empty strip. Consent still comes first,
-  ads stop if it is withdrawn, a video that closes twice pays chips once, and the app tells AdMob it is
-  not child-directed with ads capped at Teen. The manifest keeps the advertising ID and delays ad
-  measurement until after consent.
 
 ### 2026-11-07
 - feat: **AdMob ads.** A "Watch a video" route in the Out of chips sheet pays 500 chips once an hour, and
