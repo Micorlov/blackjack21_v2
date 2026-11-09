@@ -36,7 +36,7 @@ namespace Blackjack.Game
 
         public static readonly LegalDoc Privacy = new LegalDoc(
             "Privacy Policy",
-            "Last updated 7 November 2026",
+            "Last updated 9 November 2026",
             "The short version: Blackjack 21 keeps your game on your device, and only sends anything to a server when you sign in, join a friends group, or — unless you turn it off — report an anonymous count of what happened in a hand. The game shows ads through Google AdMob, as described below.",
             new[]
             {
@@ -51,13 +51,13 @@ namespace Blackjack.Game
                 new LegalSection("Usage and crash reports",
                     "The app reports anonymous counts of what happens in the game — hands played and their result, daily bonuses claimed, missions and achievements completed, levels reached, which screens are opened — and sends a report when it crashes, through Google Firebase Analytics and Crashlytics. These carry no display name, no group code, no account identifier and nothing you type. Turn the whole thing off under Privacy in Settings and nothing further is collected."),
                 new LegalSection("Advertising",
-                    "The game shows ads through Google AdMob: an optional video you can watch for free chips, and a full-screen ad between hands from time to time. To choose and measure ads, Google and its ad partners receive your advertising ID, IP address and basic device and usage information. Where the law requires it, the game asks for your consent first, and Ad privacy choices under Privacy in Settings changes that answer later. You can also reset or delete the advertising ID in your Android settings. Ads are never shown on your name, group code or chat."),
+                    "The game shows ads through Google AdMob: a banner at the bottom of the screen, an optional video you can watch for free chips, and a full-screen ad between hands from time to time. To choose and measure ads, Google and its ad partners receive your advertising ID, IP address and basic device and usage information. Where the law requires it, the game asks for your consent first, and Ad privacy choices under Privacy in Settings changes that answer later. You can also reset or delete the advertising ID in your Android settings. Ads are never shown on your name, group code or chat."),
                 new LegalSection("Location",
                     "The flags shown beside leaderboard names are decorative. They are derived from a player identifier, not from any location. The app never requests or stores location data."),
                 new LegalSection("Removing your data",
                     "Signing out clears your account details from this device. To have your leaderboard entries removed from a friends group, ask the group to drop your code or contact the developer."),
                 new LegalSection("Children",
-                    "The game is intended for adults aged 18 and over and is not directed at children."),
+                    "The game is intended for adults aged 18 and over and is not directed at children. Advertising is not child-directed."),
                 new LegalSection("Changes",
                     "If this policy changes, the updated date at the top of this page changes with it, and the new version ships inside the app."),
                 new LegalSection("Contact",

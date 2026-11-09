@@ -1,5 +1,5 @@
-What's new in 1.8.2
+What's new in 1.8.3
 
-- The coached lesson now sits on the result sheet instead of covering the seats and nameplates.
-- The "You take" pill on the table shows the sweep pot, matching the sheet below it.
-- The second coached hand no longer explains a push when you lost.
+- Watch a short video in Out of chips for 500 chips, once an hour.
+- A full-screen ad can appear between hands, never during the first coached hands.
+- A small banner sits at the bottom and steps aside when it has nothing to show.

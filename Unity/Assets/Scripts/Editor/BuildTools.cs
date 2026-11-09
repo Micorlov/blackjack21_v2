@@ -29,8 +29,8 @@ namespace Blackjack.EditorTools
 
         public const string PackageId = "com.micorlov.blackjack21_v2";
         // Above the Flutter app's versionCode (8) so `adb install -r` upgrades it in place.
-        public const string VersionName = "1.8.2";
-        public const int VersionCode = 12;
+        public const string VersionName = "1.8.3";
+        public const int VersionCode = 13;
 
         public static void Configure()
         {
@@ -155,6 +155,18 @@ namespace Blackjack.EditorTools
         {
             Configure();
             BuildAndExit(ApkName, appBundle: false);
+        }
+
+        /// <summary>
+        /// The release configuration (real AdMob units, this version) signed with the debug key, for a machine
+        /// that does not have the Play upload key. Do not upload the .aab and do not install it on a phone:
+        /// Play rejects the signature, and real units on a development device break AdMob policy.
+        /// Run with <c>-executeMethod Blackjack.EditorTools.BuildTools.BuildAndroidUnsignedRelease</c>.
+        /// </summary>
+        public static void BuildAndroidUnsignedRelease()
+        {
+            Configure();
+            BuildAndExit(AabName, appBundle: true);
         }
 
         /// <summary>

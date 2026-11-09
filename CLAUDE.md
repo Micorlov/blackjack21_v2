@@ -73,6 +73,9 @@ define turns it on, and without it there are simply no ads. Its one committed fi
 `enableExternalDependencyManager: 0`, because the plugin's own EDM package collides with the copy Firebase
 bundles). The adb build uses Google's sample ad units (`ADMOB_TEST_ADS`, set by `BuildAndroid`); never point a
 development build at the real units, since real ads on Michael's phone break AdMob policy.
+`BuildAndroidUnsignedRelease` writes an `.aab` with the real units signed by the debug key, so a machine
+without the Play upload key can still compile the release configuration. Do not upload that `.aab` and do
+not install it on a phone.
 
 Never commit `Assets/Firebase/`, `Assets/ExternalDependencyManager/`, `Assets/GeneratedLocalRepo/` or
 the generated Gradle templates — `.gitignore` covers them.
