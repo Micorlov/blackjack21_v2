@@ -160,10 +160,10 @@ A Unity (Android) blackjack game with a multi-seat table and a friends race. Fou
   "Sound effects", so muting sound mutes the voice too and the Settings row dims while it is off
 - **Haptics** — selection/light/medium/heavy impact and vibrate feedback, toggleable in settings,
   including a tap for each NPC seat's stand/bust
-- **Respectful review requests** — after ten hands, a quiet settlement can request the Play review
-  sheet. Failed/unavailable requests wait seven days; completed calls wait 90 days, with a
-  three-request cap. Attempts, outcomes and cooldowns survive relaunch. The timing logic is ported
-  and tested, but the Unity build's review service is still a no-op: no sheet is shown yet.
+- **Respectful review requests** — from the fifth won hand, a winning settlement can request Google
+  Play's in-app review card (Android only; Play decides whether it shows). Completed requests wait 30
+  days, with a three-request cap; requests that could not be made wait seven days. Attempts, outcomes
+  and cooldowns survive relaunch. A failure does nothing: the store page never opens on its own.
 - **Invite landing page** — https://blackjack21-v2.web.app serves the invite link and the privacy
   policy, auto-deployed by GitHub Actions on every push to `main`
 - **Branded link preview** — sharing the invite URL (WhatsApp, iMessage, Facebook, etc.) shows a
@@ -281,7 +281,7 @@ events through `FirebaseAnalyticsService` as before, and they now appear in that
 reach it only from builds that include the Firebase SDK and only while Settings → analytics is on.
 
 Not yet verified: Google sign-in (needs an interactive account on a device) and Play in-app review
-(still a no-op).
+(the card only appears in a build installed from Google Play, e.g. the internal testing track).
 
 ### Regenerating the store assets
 
@@ -435,6 +435,7 @@ on a Play-distributed one. One-time manual steps to fix that:
 | Firebase Unity SDK 13.17.0 | Auth, Firestore, Analytics, Crashlytics — fetched by `Unity/tools/install_firebase.sh` |
 | External Dependency Manager | Bundled with Firebase; resolves the Android Gradle dependencies of both SDKs |
 | Google Mobile Ads Unity plugin 11.6.0 | AdMob rewarded and interstitial ads, plus consent (UMP) — fetched by `Unity/tools/install_admob.sh` |
+| `com.google.android.play:review` 2.0.2 | Google Play in-app review card — a Gradle dependency of `BlackjackExtras.androidlib` |
 
 ## Assets
 
@@ -485,6 +486,11 @@ A Core change is not done until the EditMode suite passes. Check on a device or 
 lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
+
+### 2026-11-13
+- feat: **Google Play in-app review.** The review request is real now: from the fifth won hand, a winning
+  settlement asks Play for its review card, at most once per 30 days and three times in all. Not yet
+  verified in a build or on a device.
 
 ### 2026-11-07
 - feat: **AdMob ads.** A "Watch a video" route in the Out of chips sheet pays 500 chips once an hour, and

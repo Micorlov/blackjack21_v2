@@ -18,3 +18,8 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 }
+
+dependencies {
+    // In-app review card, called from src/main/java/.../PlayReview.java. Never add the old monolithic play:core.
+    implementation 'com.google.android.play:review:2.0.2'
+}

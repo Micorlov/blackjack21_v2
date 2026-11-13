@@ -162,15 +162,17 @@ namespace Blackjack.Core
 
     public static class ReviewPrompt
     {
-        public const int MinHands = 10;
+        public const int MinWins = 5;
         public const int MaxRequests = 3;
+        // Failure: the store was never asked (no Play, not Android), so nothing was shown and a retry may come sooner.
         public static readonly TimeSpan FailureCooldown = TimeSpan.FromDays(7);
-        public static readonly TimeSpan SuccessCooldown = TimeSpan.FromDays(90);
+        public static readonly TimeSpan SuccessCooldown = TimeSpan.FromDays(30);
 
+        /// <summary>Ask from the 5th won hand, at most once per 30 days and three times in all.</summary>
         public static bool ShouldPrompt(
-            int handsPlayed, DateTime now, long lastAttemptAtMs, int completedRequests, bool lastRequestSucceeded)
+            int wins, DateTime now, long lastAttemptAtMs, int completedRequests, bool lastRequestSucceeded)
         {
-            if (handsPlayed < MinHands || completedRequests >= MaxRequests) return false;
+            if (wins < MinWins || completedRequests >= MaxRequests) return false;
             if (lastAttemptAtMs <= 0) return true;
             var last = DateTimeOffset.FromUnixTimeMilliseconds(lastAttemptAtMs).LocalDateTime;
             return now - last >= (lastRequestSucceeded ? SuccessCooldown : FailureCooldown);

@@ -239,18 +239,20 @@ namespace Blackjack.Core.Tests
         }
 
         [Test]
-        public void ReviewPrompt_waitsForTenHandsAndHonoursCooldowns()
+        public void ReviewPrompt_waitsForFiveWinsAndHonoursCooldowns()
         {
             var now = new DateTime(2026, 8, 1, 12, 0, 0);
-            Assert.IsFalse(ReviewPrompt.ShouldPrompt(9, now, 0, 0, false));
-            Assert.IsTrue(ReviewPrompt.ShouldPrompt(10, now, 0, 0, false));
+            Assert.IsFalse(ReviewPrompt.ShouldPrompt(4, now, 0, 0, false));
+            Assert.IsTrue(ReviewPrompt.ShouldPrompt(5, now, 0, 0, false));
             Assert.IsFalse(ReviewPrompt.ShouldPrompt(50, now, 0, 3, false), "request cap");
 
             var attempted = new DateTimeOffset(now.AddDays(-3)).ToUnixTimeMilliseconds();
             Assert.IsFalse(ReviewPrompt.ShouldPrompt(50, now, attempted, 1, false), "7-day failure cooldown");
             var old = new DateTimeOffset(now.AddDays(-8)).ToUnixTimeMilliseconds();
             Assert.IsTrue(ReviewPrompt.ShouldPrompt(50, now, old, 1, false));
-            Assert.IsFalse(ReviewPrompt.ShouldPrompt(50, now, old, 1, true), "90-day success cooldown");
+            Assert.IsFalse(ReviewPrompt.ShouldPrompt(50, now, old, 1, true), "30-day cooldown after an ask");
+            var month = new DateTimeOffset(now.AddDays(-31)).ToUnixTimeMilliseconds();
+            Assert.IsTrue(ReviewPrompt.ShouldPrompt(50, now, month, 1, true));
         }
 
         [Test]

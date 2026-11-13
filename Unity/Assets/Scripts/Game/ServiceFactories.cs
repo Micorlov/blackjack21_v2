@@ -13,7 +13,7 @@ namespace Blackjack.Game
     {
         public static Func<ISocialService> Social = () => new NullSocial();
         public static Func<IAnalytics> Analytics = () => new NullAnalytics();
-        public static Func<IReviewPrompter> Review = () => new NullReview();
+        public static Func<IReviewPrompter> Review = () => new PlayReview();
         public static Func<IAds> Ads = () => new NullAds();
     }
 }
