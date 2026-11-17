@@ -106,7 +106,7 @@ namespace Blackjack.Core
                 .Select(n => n with { Cards = new[] { shoe.Draw(), shoe.Draw() }, Action = "", Done = false })
                 .ToArray();
             shoe.ReshuffleIfLow();
-            var playerCards = shoe.DrawStartingPair(Comeback.TriesFor(s.Chips, s.Stake, s.History));
+            var playerCards = shoe.DrawStartingPair(Comeback.TriesFor(s.Chips, s.Stake, s.History, s.ComebackOn));
             var dealerCards = new[] { shoe.Draw(), shoe.Draw() };
 
             var chips = s.Chips - bet;

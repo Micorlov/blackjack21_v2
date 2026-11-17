@@ -61,6 +61,7 @@ namespace Blackjack.Game.UI
             _inputBlock.SetActive(false);
             _g.OverlayBack = () => _overlays.CloseTop();
             _g.Changed += OnState;
+            _g.LowChipsOffer += OnLowChipsOffer;
             Loc.Changed += OnLanguageChanged;
             OnState(_g.State);
         }
@@ -166,8 +167,11 @@ namespace Blackjack.Game.UI
             _ui.Overlay.offsetMin = new Vector2(0, px > 0 ? (px + Screen.safeArea.yMin) / scale : 0);
         }
 
+        private void OnLowChipsOffer() => RewardedOfferSheet.Show(_g, _overlays);
+
         private void OnDestroy()
         {
+            if (_g != null) _g.LowChipsOffer -= OnLowChipsOffer;
             Loc.Changed -= OnLanguageChanged;
             if (_g != null) { _g.Changed -= OnState; _g.OverlayBack = null; }
         }

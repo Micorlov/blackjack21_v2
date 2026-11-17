@@ -27,7 +27,7 @@ namespace Blackjack.Game.UI
 
         public override void Refresh(AppState s)
         {
-            var sig = $"{s.SignedIn}|{s.DisplayName}|{s.AvatarColor}|{s.LanguageOverride}|{s.HapticsOn}{s.SoundOn}{s.VoiceOn}{s.TurnTimerOn}"
+            var sig = $"{s.SignedIn}|{s.DisplayName}|{s.AvatarColor}|{s.LanguageOverride}|{s.HapticsOn}{s.SoundOn}{s.VoiceOn}{s.TurnTimerOn}{s.Round.ComebackOn}"
                       + $"{s.NotifSocial}{s.NotifLeaderboard}{s.NotifDaily}{s.AnalyticsOn}{G.AnalyticsCollecting}{G.AnalyticsUsesConsentForm}|{s.HeroUid}|{Loc.Code}";
             _body.Update(sig, host => Build(host, s));
         }
@@ -56,7 +56,9 @@ namespace Blackjack.Game.UI
             Ui.Spacer(host, 16);
 
             W.SectionLabel(host, Loc.T("settingsSectionTable"));
-            Toggles(host, (Loc.T("turnTimerLabel"), s.TurnTimerOn, G.ToggleTurnTimer, Loc.T("turnTimerSublabel"), true));
+            Toggles(host,
+                (Loc.T("turnTimerLabel"), s.TurnTimerOn, G.ToggleTurnTimer, Loc.T("turnTimerSublabel"), true),
+                (Loc.T("comebackLabel"), s.Round.ComebackOn, G.ToggleComeback, Loc.T("comebackSublabel"), true));
             Ui.Spacer(host, 16);
 
             W.SectionLabel(host, Loc.T("settingsSectionNotifications"));
@@ -66,28 +68,26 @@ namespace Blackjack.Game.UI
                 (Loc.T("notifDailyLabel"), s.NotifDaily, G.ToggleNotifDaily, Loc.T("notifDailySublabel"), true));
             Ui.Spacer(host, 16);
 
-            // Its own section: the only switch here that changes what leaves the device. Not localised, as in Flutter.
-            W.SectionLabel(host, "Privacy");
+            // Its own section: the only switch here that changes what leaves the device.
+            W.SectionLabel(host, Loc.T("settingsSectionPrivacy"));
             var viaForm = G.AnalyticsUsesConsentForm;
-            Toggles(host, ("Usage & crash reports", G.AnalyticsCollecting,
+            Toggles(host, (Loc.T("analyticsLabel"), G.AnalyticsCollecting,
                 // Where Google's consent form applies the switch opens it, so there is one place to answer for ads and reports.
                 viaForm ? (Action)G.Services.Ads.ShowPrivacyOptions : () => G.SetAnalytics(!s.AnalyticsOn),
-                viaForm
-                    ? "On unless you opt out. Where you are (the EU, UK or Switzerland) Google's consent form decides: tap to review or change your answer. Counts of hands played and screens opened, and crash reports, go to Google Firebase Analytics and Crashlytics, along with the game's own install and error records. Never your name, group code or chat. It does not cover your leaderboard record."
-                    : "On unless you turn it off. Counts of hands played and screens opened, and crash reports, go to Google Firebase Analytics and Crashlytics so problems can be found and fixed, along with the game's own install and error records. Never your name, group code or chat. It does not cover your leaderboard record.",
+                Loc.T(viaForm ? "analyticsSublabelForm" : "analyticsSublabel"),
                 true));
             if (G.Services.Ads.PrivacyOptionsRequired)
             {
                 Ui.Spacer(host, 8);
-                Links(host, null, ("Privacy choices", "Change what you agreed to about ads and usage reports", null, (Action)G.Services.Ads.ShowPrivacyOptions));
+                Links(host, null, (Loc.T("privacyChoicesLabel"), Loc.T("privacyChoicesSublabel"), null, (Action)G.Services.Ads.ShowPrivacyOptions));
             }
             if (!string.IsNullOrEmpty(s.HeroUid))
             {
                 Ui.Spacer(host, 8);
-                Links(host, null, ("Account ID (tap to copy)", s.HeroUid, null, (Action)(() => CopyAccountId(s.HeroUid))));
+                Links(host, null, (Loc.T("accountIdLabel"), s.HeroUid, null, (Action)(() => CopyAccountId(s.HeroUid))));
             }
             Ui.Spacer(host, 8);
-            Links(host, null, ("Delete account and data", "Remove your online account and records", null, (Action)ConfirmDeleteAccount));
+            Links(host, null, (Loc.T("deleteAccountLabel"), Loc.T("deleteAccountSublabel"), null, (Action)ConfirmDeleteAccount));
             Ui.Spacer(host, 16);
 
             W.SectionLabel(host, Loc.T("settingsSectionHelp"));
@@ -107,16 +107,11 @@ namespace Blackjack.Game.UI
         private void CopyAccountId(string uid)
         {
             G.Services.Platform.SetClipboard(uid);
-            G.ShowToast("Account ID copied");
+            G.ShowToast(Loc.T("accountIdCopied"));
         }
 
-        private void ConfirmDeleteAccount() => ConfirmDialog.Show(Overlays, "Delete account and data?",
-            "This permanently deletes your online account and its records: your leaderboard entry, your name and your place in any "
-            + "friends group. Other players' data is not touched. Your chips, stats and settings on this phone are kept, and a Google "
-            + "sign-in asks you to confirm first. Your Google account itself is not affected. The game starts a new anonymous guest "
-            + "account, with a new leaderboard record, the next time it opens. If the game cannot confirm the result it says so, and "
-            + "running this again is safe. This cannot be undone.",
-            "Delete", () => G.DeleteAccountAndData(), null, true);
+        private void ConfirmDeleteAccount() => ConfirmDialog.Show(Overlays, Loc.T("deleteAccountTitle"), Loc.T("deleteAccountBody"),
+            Loc.T("deleteAccountConfirm"), () => G.DeleteAccountAndData(), null, true);
 
         private void OpenVideoPoker()
         {

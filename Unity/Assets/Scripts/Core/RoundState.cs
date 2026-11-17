@@ -10,6 +10,9 @@ namespace Blackjack.Core
         public TableStake Stake { get; init; }
         public int Bet { get; init; }
 
+        /// <summary>The player's Comeback Boost setting; off means the hero's cards come straight off the shuffled shoe.</summary>
+        public bool ComebackOn { get; init; } = true;
+
         /// <summary>The stake last actually dealt, so the betting panel can offer to deal it again.</summary>
         public int LastBet { get; init; }
 

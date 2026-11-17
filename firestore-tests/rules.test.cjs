@@ -140,6 +140,14 @@ test('a member can still update their own row', async () => {
   await assertSucceeds(updateDoc(doc(as('bob'), 'groups/ABC234/players/bob'), { name: 'Bobby', tableKey: 'bronze' }));
 });
 
+test('the trio and headsup room keys are accepted as presence, and an unknown key is not', async () => {
+  const row = doc(as('bob'), 'groups/ABC234/players/bob');
+  await assertSucceeds(updateDoc(row, { tableKey: 'trio' }));
+  await assertSucceeds(updateDoc(row, { tableKey: 'headsup' }));
+  await assertSucceeds(updateDoc(row, { tableKey: 'vip' }));
+  await assertFails(updateDoc(row, { tableKey: 'poker' }));
+});
+
 test('after deleting, a user can rejoin only through the creator\'s own invite (no retargeting)', async () => {
   const db = as('bob');
   await assertSucceeds(deleteDoc(doc(db, 'groups/ABC234/players/bob')));

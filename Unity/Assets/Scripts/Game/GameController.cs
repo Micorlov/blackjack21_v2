@@ -196,6 +196,9 @@ namespace Blackjack.Game
                 LastPlayDayKey = s.LastPlayDayKey,
                 LastRebuyAtMs = s.LastRebuyAt.HasValue ? new DateTimeOffset(s.LastRebuyAt.Value).ToUnixTimeMilliseconds() : 0,
                 LastAdRewardAtMs = s.LastAdRewardAt.HasValue ? new DateTimeOffset(s.LastAdRewardAt.Value).ToUnixTimeMilliseconds() : 0,
+                AdRewardsToday = s.AdRewardsToday,
+                AdRewardsDayKey = s.AdRewardsDayKey,
+                ComebackOn = s.Round.ComebackOn,
                 AnalyticsOn = s.AnalyticsOn,
                 AnalyticsChoiceMade = s.AnalyticsChoiceMade,
                 ReviewPromptShown = s.ReviewPromptShown,
@@ -220,7 +223,7 @@ namespace Blackjack.Game
             var legacyReview = saved.ReviewPromptShown && saved.ReviewLastAttemptAtMs == 0;
             Set(s => s with
             {
-                Round = s.Round with { Chips = saved.Chips, Stats = saved.Stats, History = saved.History },
+                Round = s.Round with { Chips = saved.Chips, Stats = saved.Stats, History = saved.History, ComebackOn = saved.ComebackOn },
                 // Points from an earlier hour/day are worth nothing now.
                 HeroHourlyPoints = Points.Rolled(saved.HourlyPoints, saved.HourKey, hourKey),
                 HeroDailyPoints = Points.Rolled(saved.DailyPoints, saved.DayKey, dayKey),
@@ -244,6 +247,8 @@ namespace Blackjack.Game
                 LastPlayDayKey = saved.LastPlayDayKey,
                 LastRebuyAt = saved.LastRebuyAtMs == 0 ? (DateTime?)null : DateTimeOffset.FromUnixTimeMilliseconds(saved.LastRebuyAtMs).LocalDateTime,
                 LastAdRewardAt = saved.LastAdRewardAtMs == 0 ? (DateTime?)null : DateTimeOffset.FromUnixTimeMilliseconds(saved.LastAdRewardAtMs).LocalDateTime,
+                AdRewardsToday = saved.AdRewardsToday,
+                AdRewardsDayKey = saved.AdRewardsDayKey,
                 // Only an explicit choice counts. Without one (every save before the switch existed, and the false that 1.8.4 and
                 // 1.8.5 wrote on their own) reports are on, as they are for a new player.
                 AnalyticsOn = !saved.AnalyticsChoiceMade || saved.AnalyticsOn,
@@ -423,10 +428,19 @@ namespace Blackjack.Game
             ScheduleSave();
         }
 
+        /// <summary>Comeback Boost on or off. Off deals the hero straight from the shuffled shoe.</summary>
+        public void ToggleComeback()
+        {
+            var next = !State.Round.ComebackOn;
+            Set(s => s with { Round = s.Round with { ComebackOn = next } });
+            ScheduleSave();
+        }
+
         public void SetLanguage(string code)
         {
             Set(s => s with { LanguageOverride = code });
             Loc.Use(code);
+            SyncEveningGift(); // the pending reminders are in the old language
             ScheduleSave();
         }
 

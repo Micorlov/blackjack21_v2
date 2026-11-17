@@ -1,4 +1,5 @@
 using System;
+using Blackjack.Core;
 using UnityEngine;
 #if UNITY_ANDROID && !UNITY_EDITOR
 using Unity.Notifications.Android;
@@ -16,6 +17,8 @@ namespace Blackjack.Game.Services
         private const int DailyBonusId = 210;
         private const int StreakId = 211;
         private const int EveningGiftId = 212;
+        // The following days' reminders: one id each, so each can carry its own text.
+        private static int EveningGiftIdAt(int i) => i == 0 ? EveningGiftId : 220 + i;
         // The dev-APK test notification (see QaNotifHook). Never scheduled in a release, but a tap on it is read the same way.
         private const int QaEveningGiftId = 213;
         private const string PermissionName = "android.permission.POST_NOTIFICATIONS";
@@ -66,13 +69,12 @@ namespace Blackjack.Game.Services
         }
 
         public void ScheduleDailyBonusReminder(TimeSpan after, int chips) =>
-            Schedule(DailyBonusId, "daily_bonus", "Your daily chips are ready!",
-                $"Claim your free {chips} chips and grab a seat at the table.", after);
+            Schedule(DailyBonusId, "daily_bonus", Loc.T("notifDailyBonusTitle"), Loc.T("notifDailyBonusBody", ("chips", chips)), after);
 
         public void CancelDailyBonusReminder() => Cancel(DailyBonusId);
 
         public void ScheduleStreakReminder(TimeSpan after, int streak) =>
-            Schedule(StreakId, "streak", $"Your {streak}-day streak ends tonight", "Play one hand to keep it going.", after);
+            Schedule(StreakId, "streak", Loc.T("notifStreakTitle", ("days", streak)), Loc.T("notifStreakBody"), after);
 
         public void CancelStreakReminder() => Cancel(StreakId);
 
@@ -81,16 +83,30 @@ namespace Blackjack.Game.Services
             if (!_ready) return;
             try
             {
-                AndroidNotificationCenter.CancelScheduledNotification(EveningGiftId);
-                var n = Build("Your free $500 chips are waiting!",
-                    "Tap to collect your evening gift. Play chips for the game only, no real money.", firstAt);
-                n.RepeatInterval = TimeSpan.FromDays(1);
-                AndroidNotificationCenter.SendNotificationWithExplicitID(n, "evening_gift", EveningGiftId);
+                // shortcut: not repeating, so a player who stays away more than EveningGift.DaysAhead days stops hearing from us;
+                // every launch and resume re-arms the next week.
+                var upcoming = EveningGift.Upcoming(firstAt);
+                for (var i = 0; i < upcoming.Count; i++)
+                {
+                    var (at, variant) = upcoming[i];
+                    var n = Build(Loc.T("eveningTitle" + variant), Loc.T("eveningBody" + variant), at);
+                    AndroidNotificationCenter.CancelScheduledNotification(EveningGiftIdAt(i));
+                    AndroidNotificationCenter.SendNotificationWithExplicitID(n, "evening_gift", EveningGiftIdAt(i));
+                }
             }
             catch (Exception e) { Debug.LogWarning("Evening gift scheduling failed: " + e.Message); }
         }
 
-        public void CancelEveningGift() => Cancel(EveningGiftId);
+        private static bool IsEveningGiftId(int id)
+        {
+            for (var i = 0; i < EveningGift.DaysAhead; i++) if (id == EveningGiftIdAt(i)) return true;
+            return false;
+        }
+
+        public void CancelEveningGift()
+        {
+            for (var i = 0; i < EveningGift.DaysAhead; i++) Cancel(EveningGiftIdAt(i));
+        }
 
         /// <summary>
         /// The notification's tap launches the activity with its id as an intent extra; read it, then replace the activity's
@@ -102,7 +118,7 @@ namespace Blackjack.Game.Services
             try
             {
                 var data = AndroidNotificationCenter.GetLastNotificationIntent();
-                if (data == null || (data.Id != EveningGiftId && data.Id != QaEveningGiftId)) return false;
+                if (data == null || (!IsEveningGiftId(data.Id) && data.Id != QaEveningGiftId)) return false;
                 using var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
                 using var activity = player.GetStatic<AndroidJavaObject>("currentActivity");
                 using var blank = new AndroidJavaObject("android.content.Intent");
@@ -118,8 +134,7 @@ namespace Blackjack.Game.Services
         public void QaScheduleGiftIn(int seconds)
         {
             if (!_ready) return;
-            var n = Build("Your free $500 chips are waiting!",
-                "Tap to collect your evening gift. Play chips for the game only, no real money.", DateTime.Now.AddSeconds(seconds));
+            var n = Build(Loc.T("eveningTitle1"), Loc.T("eveningBody1"), DateTime.Now.AddSeconds(seconds));
             AndroidNotificationCenter.CancelScheduledNotification(QaEveningGiftId);
             AndroidNotificationCenter.SendNotificationWithExplicitID(n, "evening_gift", QaEveningGiftId);
             Debug.Log("[QA] test evening-gift notification scheduled in " + seconds + "s");

@@ -84,7 +84,7 @@ namespace Blackjack.Game.UI
             var now = DateTime.Now;
             var bonusReady = DailyBonus.IsReady(s.LastDailyBonusClaimAt, now);
             var rebuyReady = Core.Rebuy.IsReady(s.LastRebuyAt, now);
-            var adCooled = AdReward.IsReady(s.LastAdRewardAt, now);
+            var adCooled = AdReward.IsAvailable(s.LastAdRewardAt, s.AdRewardsToday, s.AdRewardsDayKey, now);
             var adLoaded = g.Services.Ads.RewardedReady;
             g.Services.Analytics.LogEvent(Services.AnalyticsEvent.OutOfChips);
 
@@ -95,7 +95,8 @@ namespace Blackjack.Game.UI
                                : Loc.Or("routeReadyIn", "Ready in {time}", ("time", Core.Rebuy.CountdownLabel(s.LastRebuyAt.Value, now))),
                     rebuyReady, Loc.T("rebuyButtonLabel", ("chips", TableCatalog.FormatChips(Core.Rebuy.Chips))), g.Rebuy),
                 new Route("play", Loc.Or("routeWatchAd", "Watch a video"),
-                    !adCooled ? Loc.Or("routeReadyIn", "Ready in {time}", ("time", AdReward.CountdownLabel(s.LastAdRewardAt.Value, now)))
+                    !adCooled ? (AdReward.LeftToday(s.AdRewardsToday, s.AdRewardsDayKey, now) == 0 ? Loc.T("rewardCardTomorrow")
+                        : Loc.Or("routeReadyIn", "Ready in {time}", ("time", AdReward.CountdownLabel(s.LastAdRewardAt.Value, now))))
                     : adLoaded ? Loc.Or("routeWatchAdReady", "A short ad pays {chips} chips", ("chips", TableCatalog.FormatChips(AdReward.Chips)))
                     : Loc.Or("routeWatchAdNone", "No video right now, try again soon"),
                     adCooled && adLoaded, Loc.Or("routeWatchAdAction", "Watch a video for {chips} chips", ("chips", TableCatalog.FormatChips(AdReward.Chips))), g.WatchAdForChips),
@@ -134,6 +135,26 @@ namespace Blackjack.Game.UI
                 Ui.Spacer(col, Theme.Xs);
                 if (first != null) W.GoldButton(col, first.Action, () => { close(); first.OnTap(); }, 16, 0, 17);
                 else W.OutlinePill(col, Loc.Or("backToLobby", "Back to the lobby"), () => { close(); g.ExitTable(); });
+            });
+        }
+    }
+
+    /// <summary>The player-chosen "watch a video for chips" offer shown when the stack runs low. Dismissible; nothing plays unless tapped.</summary>
+    public static class RewardedOfferSheet
+    {
+        public static void Show(GameController g, Overlays overlays)
+        {
+            var chips = TableCatalog.FormatChips(AdReward.Chips);
+            overlays.Sheet((sheet, close) =>
+            {
+                var col = Ui.VStack(sheet, 0, Ui.Pad(0, 6, 0, 0), TextAnchor.UpperCenter, true, "RewardedOffer");
+                Ui.Text(col, Loc.T("rewardOfferTitle"), 32, Theme.TextPrimary, FontKind.SerifItalic, TextAlignmentOptions.Center, false);
+                Ui.Spacer(col, 4);
+                Ui.Text(col, Loc.T("rewardOfferBody", ("chips", chips)), 13, Theme.TextMuted, FontKind.Sora, TextAlignmentOptions.Center, true);
+                Ui.Spacer(col, Theme.Lg);
+                W.GoldButton(col, Loc.T("rewardWatchAction", ("chips", chips)), () => { close(); g.WatchAdForChips(); }, 16, 0, 17);
+                Ui.Spacer(col, Theme.Sm);
+                W.OutlinePill(col, Loc.T("rewardNoThanks"), close);
             });
         }
     }

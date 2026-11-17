@@ -18,6 +18,28 @@ namespace Blackjack.Core
             return now < today ? today : today.AddDays(1);
         }
 
+        /// <summary>How many different reminder texts rotate (loc keys <c>eveningTitleN</c> / <c>eveningBodyN</c>, N from 1).</summary>
+        public const int Variants = 5;
+
+        /// <summary>Reminders scheduled ahead, so a player who skips the app for days still gets one per day, each with its own text.</summary>
+        public const int DaysAhead = 7;
+
+        /// <summary>Which text a reminder on <paramref name="day"/>'s local date uses, 1..<see cref="Variants"/>; the same date always gives the same one.</summary>
+        public static int VariantFor(DateTime day) =>
+            (int)(((long)(day.Date - new DateTime(2026, 1, 1)).TotalDays % Variants + Variants) % Variants) + 1;
+
+        /// <summary>The reminders to keep pending: one per local date for <see cref="DaysAhead"/> days from <paramref name="firstAt"/>, each with that date's text.</summary>
+        public static System.Collections.Generic.IReadOnlyList<(DateTime At, int Variant)> Upcoming(DateTime firstAt)
+        {
+            var list = new System.Collections.Generic.List<(DateTime, int)>();
+            for (var i = 0; i < DaysAhead; i++)
+            {
+                var at = firstAt.AddDays(i);
+                list.Add((at, VariantFor(at)));
+            }
+            return list;
+        }
+
         /// <summary>The local calendar date a gift is keyed by.</summary>
         public static string KeyOf(DateTime now) => Points.DayKeyOf(now);
 

@@ -94,7 +94,7 @@ namespace Blackjack.Core
         }
     }
 
-    /// <summary>Comeback dealing — the retention mechanic. See the Flutter <c>utils/comeback.dart</c>.</summary>
+    /// <summary>Comeback dealing — the retention mechanic. Disclosed to the player as "Comeback Boost" and switchable in Settings.</summary>
     public static class Comeback
     {
         public const int Tries = 3;
@@ -107,8 +107,10 @@ namespace Blackjack.Core
             return v == 21 ? 100 : v;
         }
 
-        public static int TriesFor(int chips, TableStake stake, IReadOnlyList<RoundResult> history)
+        /// <summary>Opening pairs looked at for the hero's deal. Always 1 (a straight deal) when the player has Comeback Boost off.</summary>
+        public static int TriesFor(int chips, TableStake stake, IReadOnlyList<RoundResult> history, bool enabled = true)
         {
+            if (!enabled) return 1;
             var minBet = stake?.Min ?? TableCatalog.ChipDenoms[0];
             var shortStack = chips < minBet * MinBetCover;
             var losingStreak = history.Count >= LossStreak;

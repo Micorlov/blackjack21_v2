@@ -13,7 +13,7 @@ namespace Blackjack.Game.UI
         private TextMeshProUGUI _name;
         private CountUpText _balance;
         private RectTransform _avatarHost;
-        private Dyn _avatar, _bonus, _tables;
+        private Dyn _avatar, _bonus, _reward, _tables;
         private AppState _state;
         private float _nextMinuteCheck;
         private string _bonusLabel = "";
@@ -40,6 +40,7 @@ namespace Blackjack.Game.UI
 
             Ui.Spacer(content, 24);
             _bonus = new Dyn(Ui.VStack(content, 0, null, TextAnchor.UpperLeft, true, "Bonus"));
+            _reward = new Dyn(Ui.VStack(content, 0, null, TextAnchor.UpperLeft, true, "Reward"));
             Ui.Spacer(content, 24);
             W.SectionLabel(content, Loc.Or("sectionTables", "Tables"));
             _tables = new Dyn(Ui.VStack(content, 10, null, TextAnchor.UpperLeft, true, "Tables"));
@@ -58,6 +59,16 @@ namespace Blackjack.Game.UI
             _bonusLabel = ready ? "" : DailyBonus.CountdownLabel(s.LastDailyBonusClaimAt.Value, now);
             _bonus.Update($"{ready}|{s.DailyBonusStreakDay}|{_bonusLabel}|{Loc.Code}", host => BuildBonus(host, s, ready));
 
+            // Rewarded video: player-initiated, off the table and away from every gameplay button.
+            var rewardLeft = AdReward.LeftToday(s.AdRewardsToday, s.AdRewardsDayKey, now);
+            var rewardReady = G.RewardedOfferAvailable;
+            var rewardWait = s.LastAdRewardAt.HasValue && !AdReward.IsReady(s.LastAdRewardAt, now) ? AdReward.CountdownLabel(s.LastAdRewardAt.Value, now) : "";
+            var showReward = rewardReady || (s.LastAdRewardAt.HasValue && (rewardLeft == 0 || rewardWait.Length > 0) && AdReward.PaidToday(s.AdRewardsToday, s.AdRewardsDayKey, now) > 0);
+            _reward.Update($"{showReward}|{rewardReady}|{rewardLeft}|{rewardWait}|{Loc.Code}", host =>
+            {
+                if (showReward) BuildReward(host, rewardReady, rewardLeft, rewardWait);
+            });
+
             var here = s.FriendsAreLive ? s.Friends : new Friend[0];
             var recommended = TableRecommendation.For(s.Round.Chips).Key;
             var sig = $"{recommended}|{Loc.Code}|" + string.Join(",", TableCatalog.Tables.Select(t => Roster.AtTable(here, t.Key).Count));
@@ -71,8 +82,22 @@ namespace Blackjack.Game.UI
         public override void Tick()
         {
             if (_state == null || Time.unscaledTime < _nextMinuteCheck) return;
-            _nextMinuteCheck = Time.unscaledTime + 30f;
+            _nextMinuteCheck = Time.unscaledTime + 5f; // short: a rewarded video can finish loading a few seconds after the lobby opens
             Refresh(_state);
+        }
+
+        private void BuildReward(RectTransform host, bool ready, int left, string wait)
+        {
+            Ui.Spacer(host, 12);
+            var card = W.Panel(host, Ui.Pad(16, 14), 0);
+            var row = Ui.HStack(card, 12, null, TextAnchor.MiddleLeft, false);
+            var col = Ui.VStack(row, 2, null, TextAnchor.MiddleLeft, true);
+            col.FlexW();
+            Ui.Text(col, Loc.T("rewardCardTitle"), 17, Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.Left, false);
+            var sub = ready ? Loc.T("rewardCardReady", ("chips", TableCatalog.FormatChips(AdReward.Chips)), ("left", left))
+                : left == 0 ? Loc.T("rewardCardTomorrow") : Loc.T("routeReadyIn", ("time", wait));
+            Ui.Text(col, sub, 13, Theme.TextMuted, FontKind.Sora, TextAlignmentOptions.TopLeft, true);
+            if (ready) W.GoldButton(row, "+" + TableCatalog.FormatChips(AdReward.Chips), G.WatchAdForChips, 12, 18, 15);
         }
 
         private void BuildBonus(RectTransform host, AppState s, bool ready)

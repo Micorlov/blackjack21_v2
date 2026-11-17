@@ -1,5 +1,9 @@
-What's new in 1.8.2
+What's new in 1.8.6
 
-- The coached lesson now sits on the result sheet instead of covering the seats and nameplates.
-- The "You take" pill on the table shows the sweep pot, matching the sheet below it.
-- The second coached hand no longer explains a push when you lost.
+- Privacy choices where required (EU, UK, Switzerland).
+- New rooms: Heads-Up (you vs the dealer) and a 3-player Trio table.
+- You now act last, just before the dealer.
+- A daily 8 PM chip gift, with a fresh reminder text each day.
+- Comeback Boost is now an optional switch in Settings.
+- More frequent between-hand ads, a watch-an-ad chip offer, a lobby banner.
+- Fixes and translation updates.

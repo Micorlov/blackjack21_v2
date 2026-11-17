@@ -65,6 +65,7 @@ namespace Blackjack.Core
             new Section(new[] { "gameSweepPot" }, new[] { "coachPotBody" }),
             new Section(new[] { "guideRoomsTitle" }, new[] { "guideRoomsBody" }),
             new Section(new[] { "gameChipOptions" }, new[] { "guideChipsBody" }),
+            new Section(new[] { "comebackLabel" }, new[] { "guideComebackBody" }),
         };
 
         /// <summary>

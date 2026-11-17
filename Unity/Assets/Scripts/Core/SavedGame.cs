@@ -38,6 +38,10 @@ namespace Blackjack.Core
         public string LastPlayDayKey { get; init; } = "";
         public long LastRebuyAtMs { get; init; }
         public long LastAdRewardAtMs { get; init; }
+        public int AdRewardsToday { get; init; }
+        public string AdRewardsDayKey { get; init; } = "";
+        /// <summary>Comeback Boost (a stronger opening hand when short-stacked or on a losing streak). On unless the player turned it off.</summary>
+        public bool ComebackOn { get; init; } = true;
         public bool AnalyticsOn { get; init; } = true;
         /// <summary>True once the player has used the switch; until then <see cref="AnalyticsOn"/> is just the default (on).</summary>
         public bool AnalyticsChoiceMade { get; init; }

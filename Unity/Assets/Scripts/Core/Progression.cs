@@ -89,11 +89,26 @@ namespace Blackjack.Core
     /// <summary>The chips a rewarded video pays. The cooldown keeps it a top-up, smaller and more often than a rebuy.</summary>
     public static class AdReward
     {
-        public static readonly TimeSpan Cooldown = TimeSpan.FromHours(1);
+        public static readonly TimeSpan Cooldown = TimeSpan.FromMinutes(30);
         public const int Chips = 500;
+
+        /// <summary>Most rewarded videos paid per local calendar day, so the offer cannot be farmed.</summary>
+        public const int DailyCap = 5;
+
+        /// <summary>The low-chips offer appears when the stack falls under this many minimum bets (and is not already empty).</summary>
+        public const int LowChipsBets = 3;
 
         public static bool IsReady(DateTime? lastRewardAt, DateTime now) =>
             lastRewardAt == null || now - lastRewardAt.Value >= Cooldown;
+
+        /// <summary>Videos already paid today: <paramref name="count"/> only counts while <paramref name="dayKey"/> is today's date.</summary>
+        public static int PaidToday(int count, string dayKey, DateTime now) => dayKey == Points.DayKeyOf(now) ? count : 0;
+
+        public static int LeftToday(int count, string dayKey, DateTime now) => Math.Max(0, DailyCap - PaidToday(count, dayKey, now));
+
+        /// <summary>Cooled down and under the daily cap.</summary>
+        public static bool IsAvailable(DateTime? lastRewardAt, int count, string dayKey, DateTime now) =>
+            IsReady(lastRewardAt, now) && LeftToday(count, dayKey, now) > 0;
 
         public static string CountdownLabel(DateTime lastRewardAt, DateTime now) =>
             Countdown.Label(lastRewardAt.Add(Cooldown) - now);
@@ -102,8 +117,9 @@ namespace Blackjack.Core
     /// <summary>When a full-screen ad may break between hands: never during the tutorial, and capped by hands and by time.</summary>
     public static class AdPacing
     {
-        public const int HandsBetween = 5;
-        public static readonly TimeSpan MinGap = TimeSpan.FromMinutes(4);
+        /// <summary>Hands that must be finished since the last full-screen ad. Both limits apply: this many hands AND <see cref="MinGap"/>.</summary>
+        public const int HandsBetween = 3;
+        public static readonly TimeSpan MinGap = TimeSpan.FromSeconds(90);
 
         public static bool IsDue(int handsSinceAd, DateTime? lastAdAt, DateTime now, bool tutorialDone) =>
             tutorialDone && handsSinceAd >= HandsBetween && (lastAdAt == null || now - lastAdAt.Value >= MinGap);

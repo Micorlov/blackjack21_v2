@@ -7,12 +7,17 @@ A Unity (Android) blackjack game with a multi-seat table and a friends race. Fou
 
 ## Features
 
-- **Ads through Google AdMob** — an optional "Watch a video" route in the Out of chips sheet pays 500
-  chips, once an hour, and only for a video watched through. A full-screen ad can appear as a finished
-  hand clears: never in the coached first hands, at most every 5 hands and 4 minutes, and the game simply
-  carries on when none is loaded. The Next Hand tap never opens the ad itself: when one is due and loaded the
-  next hand is dealt, the ad follows after about 1 s, and taps are swallowed until it has closed. Consent comes
-  first where the law requires it (Google's User Messaging Platform), and Settings then offers **Privacy choices**.
+- **Ads through Google AdMob** — every ad is between hands or chosen by the player, never mid-hand, on app open or on exit.
+  **Between-hands ad:** after a finished hand clears, never in the coached first hands, once at least **3 hands** have
+  passed **and** at least **90 seconds** since the last one (both limits apply; constants in `AdPacing`). The Next Hand tap
+  never opens the ad itself: when one is due and loaded the next hand is dealt, the ad follows after **1 second**, and taps
+  are swallowed until it has closed. **Rewarded video for chips:** a lobby card "Watch an ad for free chips" and a route in
+  the Out of chips sheet each pay **500 play chips** for a video watched through, with a **30-minute cooldown** and at most
+  **5 per local day** (`AdReward`). When the stack falls under **3 minimum bets** between hands, a dismissible sheet offers
+  the same video once per dip ("No thanks" closes it; nothing plays unless tapped). **Banner:** one adaptive banner at the
+  bottom of every screen; the layout reserves its height, so it never covers table buttons, room cards or Settings
+  switches. Consent comes first where the law requires it (Google's User Messaging Platform), the Teen ad treatment and
+  rating cap are unchanged, and Settings offers **Privacy choices**. The game simply carries on when no ad is loaded.
 - **Play now** — guest entry opens the coached Bronze table directly, with no bet placed.
   Google sign-in stays available.
 - **Activation measurement** — first-hand, ten-hand and tutorial milestones, entry-choice events,
@@ -124,8 +129,10 @@ A Unity (Android) blackjack game with a multi-seat table and a friends race. Fou
   every 4 hours (with a live countdown while cooling down). Replaces the old free, unlimited
   "Reset bankroll to 1,000" in Settings — without a real cost to running out of chips, there was no
   reason to ever claim the daily bonus or invite anyone to race you
-- **Comeback dealing** — short-stacked or on a two-loss streak, your opening hand is the best of
-  3 candidate pairs from the real shoe instead of one blind draw, so sessions last longer
+- **Comeback Boost (disclosed, optional)** — short-stacked (under six minimum bets) or on a two-loss streak, your opening
+  two cards are the best of 3 candidate pairs from the real shoe instead of one blind draw. It is a Settings switch
+  ("Comeback Boost", **on by default**, saved with the other toggles) with a one-line explanation, and has its own
+  line in How to play. Off deals your cards straight from the shuffled shoe; nothing else is rigged either way.
 - **Social table** — friends, lobby, leaderboard, seat plates with avatars, and a table-chat
   bottom sheet over the dimmed felt: named message bubbles (yours right-aligned in gold) plus
   quick-reply chips (GG, Nice hand, Ouch, One more, Dealer luck) that post a real "You" bubble
@@ -196,8 +203,9 @@ A Unity (Android) blackjack game with a multi-seat table and a friends race. Fou
   requests wait 30 days, with a three-request cap; requests that could not be made wait seven days. Only the
   official Play API is used: no pre-question, no reward, no rating gate. Attempts, outcomes and cooldowns
   survive relaunch. A failure does nothing: the store page never opens on its own.
-- **Evening gift at 8 PM** — a daily local notification ("Your free $500 chips are waiting!") at 20:00 on the
-  device clock. Tapping it opens the app and credits +500 play chips once per local calendar date, with a
+- **Evening gift at 8 PM** — a daily local notification at 20:00 on the device clock. Its text rotates through five
+  play-money variants by local date ("Your free $500 chips are waiting!", "The dealer is on a losing streak", "The sweep pot is
+  up for grabs", "Keep your streak alive", "The table is open"), each localized in all ten languages. Tapping it opens the app and credits +500 play chips once per local calendar date, with a
   toast; a second tap the same day does nothing. It is separate from the daily-bonus ladder and the play
   streak (a tap never claims the ladder). Re-armed on launch, on every resume (so a new day or a time-zone
   change moves it to the next 20:00) and when the Settings → Daily reminder switch changes; off cancels it.
@@ -546,6 +554,23 @@ A Core change is not done until the EditMode suite passes. Check on a device or 
 lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
+
+### 2026-11-17 (comeback disclosure, translations, ads, rotating reminder)
+- feat: **Comeback Boost is now a visible Settings switch** (on by default, saved as `comebackOn`, old saves stay on), with a one-line
+  explanation and a How to play section; off means a straight deal (`Comeback.TriesFor(..., enabled)` returns 1). Localized in all 10 languages.
+- feat: **rotating 8 PM reminder**: five title/body pairs (`eveningTitle1..5`, `eveningBody1..5`) picked by local date
+  (`EveningGift.VariantFor`), one notification per day, the next 7 days scheduled ahead (not repeating, so a player away more than a week
+  stops hearing from us; every launch/resume/language change re-arms). The +$500 once-per-date reward is unchanged. Play-money wording only.
+- fix: the daily-bonus and streak reminders and the whole Settings screen (Privacy, Usage & crash reports, Privacy choices, Account ID,
+  Delete account) are now localized; the stale Daily reminder sublabel is retranslated; chip-gift, Out of chips, lobby and nav strings
+  that were English-only now exist in all 10 languages. Still English-only: Stats, Friends and table-chat labels.
+- feat: **more ads, policy-safe**: between-hands ad every **3 hands and 90 s** (was 5 hands and 4 min); a lobby "Watch an ad for free chips"
+  card (**500 chips, 30-minute cooldown, 5 per day**, was a 1-hour cooldown with no daily cap); a dismissible low-chips offer under
+  3 minimum bets. Banner, UMP, Teen treatment, the 1 s delay and the input block are unchanged.
+- feat: friends' table presence is now reported for every room, including Trio and Heads-Up (the rules were deployed to `blackjack21-v2`).
+- test: EditMode tests for Comeback on/off/default/persistence, the ad constants, between-hands-only, the rewarded cap and day reset,
+  the low-chips offer, missing ads/consent, the reminder rotation and locale coverage; a Firestore rules test for `trio`/`headsup`.
+- docs: `tool/release_notes_en-US.txt` rewritten for 1.8.6.
 
 ### 2026-11-17 (trio and heads-up rooms)
 - feat: **Trio Table** (`trio`, $50-$1,000, you + 2 opponents, sweep pot) and **Heads-Up** (`headsup`, $100-$2,000, you vs the

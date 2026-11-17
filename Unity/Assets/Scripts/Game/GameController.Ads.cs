@@ -11,18 +11,47 @@ namespace Blackjack.Game
         private int _handsSinceAd;
         private DateTime? _lastBreakAdAt;
 
+        /// <summary>True when a rewarded video can be offered right now: cooled down, under the daily cap, and one is loaded.</summary>
+        public bool RewardedOfferAvailable =>
+            AdReward.IsAvailable(State.LastAdRewardAt, State.AdRewardsToday, State.AdRewardsDayKey, _now()) && _svc.Ads.RewardedReady;
+
+        /// <summary>Raised, between hands, when the stack is low and a video could top it up. The UI shows a sheet the player can dismiss.</summary>
+        public event Action LowChipsOffer;
+
+        private bool _lowChipsOffered;
+
+        /// <summary>
+        /// Offers, once per dip, a rewarded video when the stack is under <see cref="AdReward.LowChipsBets"/> minimum bets. Never during
+        /// a hand, never alongside a between-hands ad, never twice until the stack has recovered. Only an offer: nothing plays unless tapped.
+        /// </summary>
+        private void MaybeOfferLowChips(bool adBreakScheduled)
+        {
+            var stake = State.Round.Stake;
+            var minBet = stake?.Min ?? TableCatalog.ChipDenoms[0];
+            var low = State.Round.Chips < minBet * AdReward.LowChipsBets;
+            if (!low) { _lowChipsOffered = false; return; }
+            if (_lowChipsOffered || adBreakScheduled || State.Round.Phase != RoundPhase.Betting) return;
+            if (!RewardedOfferAvailable) return;
+            _lowChipsOffered = true;
+            LowChipsOffer?.Invoke();
+        }
+
         /// <summary>Plays a video and pays out only if the player watched it through.</summary>
         public void WatchAdForChips()
         {
-            if (!AdReward.IsReady(State.LastAdRewardAt, _now()) || !_svc.Ads.RewardedReady) return;
+            var now0 = _now();
+            if (!AdReward.IsAvailable(State.LastAdRewardAt, State.AdRewardsToday, State.AdRewardsDayKey, now0) || !_svc.Ads.RewardedReady) return;
             _svc.Ads.ShowRewarded(earned =>
             {
                 if (!earned) return;
                 var at = _now();
+                var paid = AdReward.PaidToday(State.AdRewardsToday, State.AdRewardsDayKey, at) + 1;
                 Set(s => s with
                 {
                     Round = s.Round with { Chips = s.Round.Chips + AdReward.Chips },
                     LastAdRewardAt = at,
+                    AdRewardsToday = paid,
+                    AdRewardsDayKey = Points.DayKeyOf(at),
                 });
                 ScheduleSave();
                 ShowToast(Loc.Or("toastAdChips", "+{chips} chips", ("chips", TableCatalog.FormatChips(AdReward.Chips))));
@@ -44,14 +73,21 @@ namespace Blackjack.Game
         /// </summary>
         private void MaybeShowBreakAd()
         {
+            var scheduled = TryScheduleBreakAd();
+            MaybeOfferLowChips(scheduled);
+        }
+
+        private bool TryScheduleBreakAd()
+        {
             _handsSinceAd++;
             var now = _now();
             var tutorialDone = State.TutorialDismissed || State.TutorialRoundsSeen >= Tutorial.Rounds;
-            if (!AdPacing.IsDue(_handsSinceAd, _lastBreakAdAt, now, tutorialDone)) return;
-            if (!_svc.Ads.InterstitialReady) return;
+            if (!AdPacing.IsDue(_handsSinceAd, _lastBreakAdAt, now, tutorialDone)) return false;
+            if (!_svc.Ads.InterstitialReady) return false;
             SetAdBreak(true);
             _breakAdSafety = After(BreakAdSafetySeconds, () => SetAdBreak(false));
             _breakAdTimer = After(BreakAdDelaySeconds, ShowBreakAd);
+            return true;
         }
 
         private void ShowBreakAd()
