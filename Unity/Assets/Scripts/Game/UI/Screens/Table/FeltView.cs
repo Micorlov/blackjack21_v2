@@ -7,7 +7,7 @@ namespace Blackjack.Game.UI
 {
     /// <summary>
     /// The Seat felt: one 384 x 520 design canvas (see <see cref="FeltMetrics"/>) scaled to the room it is given,
-    /// holding the table art, the dealer's fixtures and print, the dealer, the four opponents on the curve and the
+    /// holding the table art, the dealer's fixtures and print, the dealer, the opponents on the curve (four, two or none, by room) and the
     /// hero's own place. Built once; refreshed in place so cards animate alone.
     /// </summary>
     public sealed class FeltView
@@ -155,7 +155,8 @@ namespace Blackjack.Game.UI
 
             _dealer.Refresh(_state, m);
             var friends = Roster.TableSeats(_state.Friends, r.Stake?.Key);
-            for (var i = 0; i < _seats.Length; i++) _seats[i].Refresh(_state, m, i < friends.Count ? friends[i] : null);
+            var seatCount = System.Math.Min(TableCatalog.OpponentsFor(r.Stake?.Key), _seats.Length);
+            for (var i = 0; i < _seats.Length; i++) _seats[i].Refresh(_state, m, i < seatCount && i < friends.Count ? friends[i] : null, seatCount);
             _hero.Refresh(_state, m);
             _effects.Refresh(_state, m);
         }

@@ -16,7 +16,21 @@ namespace Blackjack.Core
             new TableStake("bronze", "Bronze Table", 25, 500),
             new TableStake("silver", "Silver Table", 100, 1000),
             new TableStake("vip", "VIP Table", 500, 5000),
+            // Smaller rooms, listed after the classic ladder (which TableRecommendation walks).
+            new TableStake("trio", "Trio Table", 50, 1000, Opponents: 2),
+            new TableStake("headsup", "Heads-Up", 100, 2000, Opponents: 0, SweepPot: false),
         };
+
+        /// <summary>The rooms that make up the classic 5-seat ladder: the ones the lobby recommends from.</summary>
+        public static bool IsClassic(TableStake stake) => stake.Opponents == OpponentSeats;
+
+        public static TableStake ByKey(string key) => Tables.FirstOrDefault(t => t.Key == key);
+
+        /// <summary>Opponent seats at the room with this key; the classic count when there is no room (or an unknown key).</summary>
+        public static int OpponentsFor(string key) => ByKey(key)?.Opponents ?? OpponentSeats;
+
+        /// <summary>Whether the room pools a sweep pot. No stake (tests, tutorial) behaves as a classic room.</summary>
+        public static bool HasSweepPot(TableStake stake) => stake?.SweepPot ?? true;
 
         /// <summary>
         /// The chips a table may offer. A chip worth more than the table maximum can never form a legal

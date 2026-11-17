@@ -7,7 +7,7 @@ using UnityEngine.UI;
 
 namespace Blackjack.Game.UI
 {
-    /// <summary>The lobby: who you are and your balance, the daily bonus, and the three tables.</summary>
+    /// <summary>The lobby: who you are and your balance, the daily bonus, and the tables.</summary>
     public sealed class LobbyScreen : ScreenView
     {
         private TextMeshProUGUI _name;
@@ -106,7 +106,7 @@ namespace Blackjack.Game.UI
         private void BuildTable(RectTransform host, TableStake table, System.Collections.Generic.IReadOnlyList<Friend> here, bool recommended)
         {
             var label = Roster.PresenceLabel(here);
-            var tint = table.Key switch { "bronze" => Theme.Win, "silver" => Theme.Silver, _ => Theme.Gold };
+            var tint = table.Key switch { "bronze" => Theme.Win, "silver" => Theme.Silver, "trio" => Theme.Win, "headsup" => Theme.Silver, _ => Theme.Gold };
             var card = Ui.Card(host, Theme.Panel, Theme.RadiusLg, recommended ? Theme.BorderStrong : Theme.Border, 1, Ui.Pad(14), 0, true, "Table_" + table.Key);
             var shell = (RectTransform)card.parent;
             var row = Ui.HStack(card, 14, null, TextAnchor.MiddleLeft, false);
@@ -115,10 +115,14 @@ namespace Blackjack.Game.UI
             col.FlexW();
             var title = table.Key switch
             {
-                "bronze" => Loc.T("gameBronzeTable"), "silver" => Loc.T("gameSilverTable"), "vip" => Loc.T("gameVipTable"), _ => table.Name,
+                "bronze" => Loc.T("gameBronzeTable"), "silver" => Loc.T("gameSilverTable"), "vip" => Loc.T("gameVipTable"),
+                "trio" => Loc.T("gameTrioTable"), "headsup" => Loc.T("gameHeadsUpTable"), _ => table.Name,
             };
             Ui.Text(col, title, 17, Theme.TextPrimary, FontKind.SoraBold, TextAlignmentOptions.Left, false);
             var range = $"${table.Min} – ${table.Max}";
+            // The smaller rooms say what is different about them; the classic ladder needs no note.
+            var note = table.Key switch { "trio" => Loc.T("lobbyTrioNote"), "headsup" => Loc.T("lobbyHeadsUpNote"), _ => "" };
+            if (note.Length > 0) range += " · " + note;
             Ui.Text(col, label.Length == 0 ? range : range + " · " + label, 13, label.Length == 0 ? Theme.TextMuted : Theme.Gold,
                 FontKind.Sora, TextAlignmentOptions.TopLeft, true);
 

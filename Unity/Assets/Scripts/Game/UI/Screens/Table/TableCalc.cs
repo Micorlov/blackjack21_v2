@@ -64,6 +64,8 @@ namespace Blackjack.Game.UI
             // the pot and not the pot plus the winner's own bet: it is the pot's pill, it has shown the
             // pot all round, and the sheet below it names the round's net separately.
             var value = settled ? "$" + Chips(sweep?.Pot ?? 0) : (pot.IsSweep ? "$" + Chips(pot.Amount) : "");
+            // A room without a sweep pot (heads-up) has nothing to quote at all: no pill, ever.
+            if (!TableCatalog.HasSweepPot(r.Stake)) return new MidRoundPot(false, false, "", "", heroLive);
             return new MidRoundPot(pot.IsSweep, heroLeads, label, value, heroLive);
         }
 

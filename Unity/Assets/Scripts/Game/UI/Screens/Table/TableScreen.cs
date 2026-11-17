@@ -119,6 +119,8 @@ namespace Blackjack.Game.UI
                 "bronze" => Loc.T("gameBronzeTable"),
                 "silver" => Loc.T("gameSilverTable"),
                 "vip" => Loc.T("gameVipTable"),
+                "trio" => Loc.T("gameTrioTable"),
+                "headsup" => Loc.T("gameHeadsUpTable"),
                 _ => stake?.Name ?? "",
             };
             Ui.Text(col, title, Type.H2, Theme.Ivory, TextAlignmentOptions.Center, false).Shrink();

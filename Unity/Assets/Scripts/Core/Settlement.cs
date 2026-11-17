@@ -112,7 +112,7 @@ namespace Blackjack.Core
                 .Append(0)
                 .Max();
             var rivalBest = seatResults.Where(r => !r.Lost).Select(r => r.Total).Append(0).Max();
-            var tablePot = seatResults.Where(r => r.Lost).Sum(r => r.Bet);
+            var tablePot = TableCatalog.HasSweepPot(s.Stake) ? seatResults.Where(r => r.Lost).Sum(r => r.Bet) : 0;
 
             var sweep = 0;
             var heroBlackjack = outcomes.Contains(Blackjack);

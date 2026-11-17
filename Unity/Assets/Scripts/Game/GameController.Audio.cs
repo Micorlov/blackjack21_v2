@@ -119,7 +119,7 @@ namespace Blackjack.Game
             _potTimer = After(TurnVoiceLead, () =>
             {
                 if (!VoiceAllowed) return;
-                var endsAt = _svc.Sound.PlayWords(pot);
+                var endsAt = pot.Count == 0 ? null : _svc.Sound.PlayWords(pot);
                 // The pot line's length depends on the figure, so the pause is measured from when it finishes.
                 var remaining = endsAt.HasValue ? Math.Max(0, endsAt.Value - Clock()) : 0;
                 var lead = (float)remaining + PostPotPause;
@@ -133,6 +133,8 @@ namespace Blackjack.Game
 
         private IReadOnlyList<string> PotWords()
         {
+            // A room without a sweep pot (heads-up) has nothing to call.
+            if (!TableCatalog.HasSweepPot(Round.Stake)) return System.Array.Empty<string>();
             var pot = TablePot.Live(Round);
             if (!pot.IsSweep) return new[] { "no_sweep_pot" };
             var amount = SpokenAmount.Words(pot.Amount);

@@ -210,7 +210,7 @@ namespace Blackjack.Core
         {
             var best = TableCatalog.Tables[0];
             foreach (var t in TableCatalog.Tables)
-                if (chips >= t.Min * HandsOfHeadroom) best = t;
+                if (TableCatalog.IsClassic(t) && chips >= t.Min * HandsOfHeadroom) best = t;
             return best;
         }
     }

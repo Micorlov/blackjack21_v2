@@ -34,6 +34,14 @@ A Unity (Android) blackjack game with a multi-seat table and a friends race. Fou
   surrender or natural on your side goes straight to the dealer; the seats have already played and their
   forfeited bets reach the sweep pot. A dealer natural still ends the hand before anyone acts. The seats
   keep the casino layout (first base on the right of the felt)
+- **Five tables, three seatings** — the lobby lists Bronze ($25-$500), Silver ($100-$1,000) and VIP ($500-$5,000), the
+  classic 5-seat rooms (you plus four opponents, sweep pot), then two smaller rooms: **Trio Table** ($50-$1,000), you plus
+  two opponents (Maya and Jordan, first and third base) with the sweep pot, and **Heads-Up** ($100-$2,000), you against the
+  dealer alone with no sweep pot at all (no pill, no pot call-out, no pot line on the result sheet). The hero still acts
+  last among the seats in every room that has any, then the dealer. A room is a `TableStake` with `Opponents` and
+  `SweepPot`; the lobby only ever *recommends* from the classic three. All rooms are open from the start; the lobby cards
+  and a "Table types" section of How to play describe them in all ten languages. Only the classic rooms are reported as
+  friends' table presence (see the Firestore note in the changelog)
 - **Turn timer** — your turn stands automatically after 20 seconds, as at a casino table; a gold bar
   and the seconds left sit above the action buttons and turn red for the last five. Each split hand
   gets a fresh clock (hitting does not restart it). The clock never runs on a coached tutorial hand
@@ -539,6 +547,19 @@ lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
 
+### 2026-11-17 (trio and heads-up rooms)
+- feat: **Trio Table** (`trio`, $50-$1,000, you + 2 opponents, sweep pot) and **Heads-Up** (`headsup`, $100-$2,000, you vs the
+  dealer, no sweep pot), listed after Bronze/Silver/VIP in the lobby. `TableStake` gains `Opponents` and `SweepPot`;
+  `RoundEngine.RollNpcSeats` and `Roster.TableSeats` take the room's seat count; `TablePot.Live` and `Settlement` pool nothing
+  when the room has no pot; `FeltMetrics.SeatSlot(index, seatCount)` puts two opponents level on first and third base.
+  The turn-order row, the pot pill and the spoken pot call-out are skipped heads-up. Review prompt, evening gift, ad pacing and
+  stats are not tied to a seat count and work unchanged (a heads-up blackjack or 5x win still asks for a review).
+- feat: lobby cards, table titles and a "Table types" How-to-play section, translated in en/de/es/fr/pt/ru/zh/ja/ar/he
+  (`gameTrioTable`, `gameHeadsUpTable`, `lobbyTrioNote`, `lobbyHeadsUpNote`, `guideRoomsTitle`, `guideRoomsBody`).
+- chore: `firestore.rules` accepts `trio`/`headsup` as `tableKey`; until that is deployed the app reports presence only for the
+  classic rooms (an unknown key would be refused and drop the score write). Rules are not deployed by this change.
+- test: `RoomTests.cs` (22 tests): catalog and stakes, classic rooms unchanged, seat counts, act order, heads-up with no pot,
+  trio sweep, felt slots, controller flow, gift and review hooks (266 EditMode tests).
 ### 2026-11-17 (evening gift and big-win review)
 - docs: `docs/engagement-research.md`, a research report on playtime and retention (no code). It records that Comeback dealing is undisclosed in the app and recommends disclosing it or removing it, plus a GA4 and A/B plan.
 - feat: **8 PM evening gift** (1.8.6, same release): a daily local notification at 20:00 device time; tapping it

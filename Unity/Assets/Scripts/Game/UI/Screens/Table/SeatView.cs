@@ -49,19 +49,22 @@ namespace Blackjack.Game.UI
             _ring = new Dyn(_ringHost);
         }
 
-        private bool Lower => _index == 1 || _index == 2;
+        private int _slot;
+        private bool Lower => _slot == 1 || _slot == 2;
         private float CardW => Lower ? LowerCardWidth : FeltMetrics.SeatCardWidth;
         private float CardH => CardW * FeltMetrics.SeatCardHeight / FeltMetrics.SeatCardWidth;
         private float RingWidth => Lower ? LowerRing : UpperRing;
 
-        public void Refresh(AppState s, FeltMetrics m, Friend friend)
+        /// <param name="seatCount">How many opponents sit at this room: it decides which places on the curve are used.</param>
+        public void Refresh(AppState s, FeltMetrics m, Friend friend, int seatCount = TableCatalog.OpponentSeats)
         {
             var r = s.Round;
             var seated = friend != null;
             _root.gameObject.SetActive(seated);
             _pillHost.gameObject.SetActive(seated);
             if (!seated) return;
-            var place = m.SeatSlot(_index);
+            _slot = FeltMetrics.CurveIndex(_index, seatCount);
+            var place = m.SeatSlot(_index, seatCount);
             _root.At(place.X, place.Y);
 
             var npc = _index < r.NpcSeats.Count ? r.NpcSeats[_index] : null;

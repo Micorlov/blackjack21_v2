@@ -168,7 +168,9 @@ namespace Blackjack.Game
             if (!State.SocialReady) return;
             _svc.Social.ReportScore(State.GroupCode, PlayerName, State.Round.Chips, State.HeroHourlyPoints, State.HeroDailyPoints,
                 State.HeroHourKey, State.HeroDayKey,
-                State.Screen == AppScreen.Table ? (Round.Stake?.Key ?? "") : "",
+                // Only the classic rooms are reported as presence: the deployed Firestore rules accept just those keys until the
+                // trio / heads-up keys (already in firestore.rules) are published, and a refused write would drop the score too.
+                State.Screen == AppScreen.Table && Round.Stake != null && TableCatalog.IsClassic(Round.Stake) ? Round.Stake.Key : "",
                 _svc.Platform.AppVersion, _svc.Platform.PlatformName, _svc.Platform.CountryCode,
                 _playTime.TakeSeconds());
         }

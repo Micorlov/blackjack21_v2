@@ -63,6 +63,7 @@ namespace Blackjack.Core
             new Section(new[] { "gameInsure" }, new[] { "coachInsuranceBody" }),
             new Section(new[] { "gameBalance" }, new[] { "guidePayoutsBody" }),
             new Section(new[] { "gameSweepPot" }, new[] { "coachPotBody" }),
+            new Section(new[] { "guideRoomsTitle" }, new[] { "guideRoomsBody" }),
             new Section(new[] { "gameChipOptions" }, new[] { "guideChipsBody" }),
         };
 

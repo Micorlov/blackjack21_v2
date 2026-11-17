@@ -102,7 +102,7 @@ service cloud.firestore {
     }
     function validTableKey() {
       return !('tableKey' in request.resource.data)
-        || request.resource.data.tableKey in ['', 'bronze', 'silver', 'vip'];
+        || request.resource.data.tableKey in ['', 'bronze', 'silver', 'vip', 'trio', 'headsup'];
     }
 
     match /groups/{code} {

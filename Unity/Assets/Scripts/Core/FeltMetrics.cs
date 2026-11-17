@@ -92,10 +92,21 @@ namespace Blackjack.Core
         /// sits: the centre line of its column, the top of its name pill, the tilt of its fan, and its side
         /// (+1 right, -1 left).
         /// </summary>
-        public SeatPlace SeatSlot(int index)
+        public SeatPlace SeatSlot(int index, int seatCount = 4)
         {
-            var (x, y, tilt) = SeatCurve[Math.Clamp(index, 0, SeatCurve.Length - 1)];
+            var (x, y, tilt) = SeatCurve[CurveIndex(index, seatCount)];
             return new SeatPlace(X(x), Y(SeatsTop + y), tilt, Math.Sign(x));
+        }
+
+        /// <summary>
+        /// Which place on the curve opponent <paramref name="index"/> takes when only <paramref name="seatCount"/> sit down: all four
+        /// places for the classic table, first and third base (a balanced pair either side of the hero) for two, and a single seat on first base.
+        /// </summary>
+        public static int CurveIndex(int index, int seatCount)
+        {
+            if (seatCount >= SeatCurve.Length) return Math.Clamp(index, 0, SeatCurve.Length - 1);
+            if (seatCount == 2) return index <= 0 ? 0 : SeatCurve.Length - 1;
+            return 0;
         }
 
         /// <summary>The step between the dealer's cards: the design's 30% overlap, tightened only if a long hand would not fit.</summary>

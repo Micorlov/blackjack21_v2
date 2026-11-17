@@ -116,7 +116,7 @@ namespace Blackjack.Game.UI
             deal.FlexW();
 
             // Practice bots fill the empty seats; say so once, quietly.
-            if (!s.FriendsAreLive)
+            if (!s.FriendsAreLive && TableCatalog.OpponentsFor(stake?.Key) > 0)
             {
                 var wrap = Ui.HStack(col, Theme.Sm, null, TextAnchor.MiddleCenter, false, "Practice");
                 Ui.Text(wrap, Loc.T("gamePracticeBots"), Type.BodySm, Theme.TextBody, TextAlignmentOptions.Center, false);
@@ -233,6 +233,7 @@ namespace Blackjack.Game.UI
         private static void TurnOrder(RectTransform col, AppState s)
         {
             var r = s.Round;
+            if (r.NpcSeats.Count == 0) return; // heads-up: nobody to wait for but the dealer
             var seats = Roster.TableSeats(s.Friends, r.Stake?.Key);
             var row = Ui.HStack(col, Theme.Xs, null, TextAnchor.MiddleCenter, false, "Order");
             var heroDone = r.Phase == RoundPhase.NpcsAfter || r.Phase == RoundPhase.Dealer;

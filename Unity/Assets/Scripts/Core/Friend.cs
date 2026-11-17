@@ -30,18 +30,20 @@ namespace Blackjack.Core
         };
 
         /// <summary>
-        /// The 4 opponents seated for the round. Real friends fill seats first (those actually at this
+        /// The opponents seated for the round (4 in a classic room, 2 at the trio table, none heads-up). Real friends fill seats first (those actually at this
         /// stake before the rest); practice bots pad whatever a small group leaves empty.
         /// </summary>
         public static IReadOnlyList<Friend> TableSeats(IReadOnlyList<Friend> friends, string tableKey)
         {
+            var seats = TableCatalog.OpponentsFor(tableKey);
+            if (seats == 0) return new List<Friend>();
             var real = tableKey == null
                 ? friends.ToList()
                 : friends.OrderBy(f => f.TableKey == tableKey ? 0 : 1).ToList(); // stable
-            if (real.Count >= TableCatalog.OpponentSeats) return real.Take(TableCatalog.OpponentSeats).ToList();
+            if (real.Count >= seats) return real.Take(seats).ToList();
             var seated = real.Select(f => f.Id).ToHashSet();
             return real.Concat(InitialFriends.Where(f => !seated.Contains(f.Id)))
-                .Take(TableCatalog.OpponentSeats).ToList();
+                .Take(seats).ToList();
         }
 
         public static IReadOnlyList<Friend> AtTable(IReadOnlyList<Friend> friends, string tableKey) =>

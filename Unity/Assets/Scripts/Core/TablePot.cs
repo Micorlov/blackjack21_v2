@@ -34,6 +34,7 @@ namespace Blackjack.Core
         {
             int? dealerShown = s.HoleRevealed ? BlackjackRules.HandValue(s.DealerHand) : (int?)null;
             var sweep = 0;
+            if (!TableCatalog.HasSweepPot(s.Stake)) return new TablePot(0);
             foreach (var seat in s.NpcSeats)
             {
                 if (seat.Cards.Count == 0) continue;

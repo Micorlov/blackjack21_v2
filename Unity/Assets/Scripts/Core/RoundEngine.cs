@@ -35,7 +35,7 @@ namespace Blackjack.Core
             TurnDeadline = null,
             Message = "",
             MessageType = MessageType.None,
-            NpcSeats = RollNpcSeats(minBet, rng),
+            NpcSeats = RollNpcSeats(minBet, rng, s.Stake?.Opponents ?? TableCatalog.OpponentSeats),
             SweepAmount = 0,
             RoundNet = 0,
             RoundStake = 0,
@@ -43,8 +43,8 @@ namespace Blackjack.Core
             SweepInfo = null,
         };
 
-        public static IReadOnlyList<NpcSeat> RollNpcSeats(int minBet, Random rng) =>
-            Enumerable.Range(0, TableCatalog.OpponentSeats)
+        public static IReadOnlyList<NpcSeat> RollNpcSeats(int minBet, Random rng, int seats = TableCatalog.OpponentSeats) =>
+            Enumerable.Range(0, seats)
                 .Select(_ => new NpcSeat(Bet: minBet * NpcBetMultipliers[rng.Next(NpcBetMultipliers.Length)]))
                 .ToArray();
 
