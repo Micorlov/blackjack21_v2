@@ -46,6 +46,12 @@ namespace Blackjack.Core
         public int ReviewRequestCount { get; init; }
         public bool ReviewLastRequestSucceeded { get; init; }
         public bool TutorialCompletionLogged { get; init; }
+        /// <summary>When this install first opened; 0 in saves from before it was tracked (those players count as long-standing).</summary>
+        public long FirstSeenAtMs { get; init; }
+        /// <summary>Local date key of the last evening gift taken.</summary>
+        public string EveningGiftKey { get; init; } = "";
+        /// <summary>The notification-permission dialog is only ever offered once.</summary>
+        public bool NotifPermissionAsked { get; init; }
 
         /// <summary>The newest <see cref="HistoryLimit"/> results; older ones are dropped on save.</summary>
         public IReadOnlyList<RoundResult> TrimmedHistory =>

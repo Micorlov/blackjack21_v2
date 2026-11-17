@@ -57,6 +57,91 @@ namespace Blackjack.Game
         private int PlayStreakBonusAt(DateTime now) =>
             PlayStreak.BonusChips(PlayStreak.Live(State.PlayDayStreak, State.LastPlayDayKey, now));
 
+        // ---- the 8 PM evening gift (separate from the claim ladder above) ----------------------------
+
+        /// <summary>
+        /// Keeps one repeating 8 PM notification pending, first firing at the next 20:00 on the device clock, or none when the
+        /// Daily reminder switch is off. Run on launch, on every resume (which catches a new day, a time-zone change or a moved
+        /// clock) and when the switch flips; the fixed id makes it replace whatever was pending.
+        /// </summary>
+        private void SyncEveningGift()
+        {
+            if (!State.NotifDaily) { _svc.Notifier.CancelEveningGift(); return; }
+            _svc.Notifier.ScheduleEveningGift(EveningGift.NextFire(_now()));
+        }
+
+        /// <summary>If the app was opened from the gift notification, pay it (once a day) and re-arm the next one.</summary>
+        private void CheckEveningGiftTap()
+        {
+            // A beat after launch or resume: the clock and the UI have not settled yet, and a toast raised at that instant
+            // would expire before its first frame.
+            Cancel(ref _giftTapTimer);
+            _giftTapTimer = After(EveningGiftTapDelay, () =>
+            {
+                if (_svc.Notifier.ConsumeEveningGiftTap()) ClaimEveningGift();
+            });
+        }
+
+        private const float EveningGiftTapDelay = 0.8f;
+        private TimerHandle _giftTapTimer;
+
+        /// <summary>+500 play chips once per local calendar date; a second tap the same day does nothing.</summary>
+        public bool ClaimEveningGift()
+        {
+            var now = _now();
+            if (!EveningGift.CanGrant(State.EveningGiftKey, now))
+            {
+                UnityEngine.Debug.Log("[Notif] evening gift already taken for " + EveningGift.KeyOf(now) + ", no credit");
+                return false;
+            }
+            UnityEngine.Debug.Log("[Notif] evening gift credited +" + EveningGift.Chips + " for " + EveningGift.KeyOf(now)
+                + " (balance " + State.Round.Chips + " -> " + (State.Round.Chips + EveningGift.Chips) + ")");
+            Set(s => s with
+            {
+                Round = s.Round with { Chips = s.Round.Chips + EveningGift.Chips },
+                EveningGiftKey = EveningGift.KeyOf(now),
+            });
+            ScheduleSave();
+            ShowToast(Loc.Or("toastEveningGift", "+${chips} play chips — your evening gift!", ("chips", EveningGift.Chips)));
+            PlaySfx(GameSfx.Win);
+            HapticMedium();
+            _svc.Analytics.LogEvent(AnalyticsEvent.EveningGiftClaimed);
+            SyncEveningGift();
+            return true;
+        }
+
+        /// <summary>
+        /// After a won hand (never on first launch) offers the system notification dialog once, so the 8 PM gift can be delivered.
+        /// Skipped while the review request is pending so two prompts never stack.
+        /// </summary>
+        private void MaybeAskNotifPermission()
+        {
+            if (_reviewPending) return;
+            if (!NotifPermissionPrompt.ShouldAsk(true, State.Round.Stats.HandsPlayed, State.NotifPermissionAsked,
+                    _svc.Notifier.HasPermission, State.NotifDaily)) return;
+            Set(s => s with { NotifPermissionAsked = true });
+            ScheduleSave();
+            UnityEngine.Debug.Log("[Notif] asking for notification permission after a win");
+            _svc.Analytics.LogEvent(AnalyticsEvent.NotifPermissionAsked);
+            _svc.Notifier.RequestPermission(ok =>
+            {
+                if (ok) SyncEveningGift();
+            });
+        }
+
+        /// <summary>Dev APK only (set by <c>QaNotifHook</c>, read under <c>BJ_QA_NOTIF</c>): every won hand counts as big. Always declared so the script layout matches across builds.</summary>
+        [System.NonSerialized] public bool QaForceBigWin;
+
+#if BJ_QA_NOTIF
+        /// <summary>Dev APK only: pretend this install is three days old so the review prompt's first-day rule is out of the way.</summary>
+        public void QaMakeSeasoned()
+        {
+            Set(s => s with { FirstSeenAtMs = new DateTimeOffset(_now().AddDays(-3)).ToUnixTimeMilliseconds() });
+            ScheduleSave();
+            UnityEngine.Debug.Log("[QA] install treated as 3 days old");
+        }
+#endif
+
         public void ClaimDailyBonus()
         {
             var now = _now();

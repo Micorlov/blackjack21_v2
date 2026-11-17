@@ -93,6 +93,9 @@ namespace Blackjack.Game
         public int ReviewRequestCount { get; init; }
         public bool ReviewLastRequestSucceeded { get; init; }
         public bool TutorialCompletionLogged { get; init; }
+        public long FirstSeenAtMs { get; init; }
+        public string EveningGiftKey { get; init; } = "";
+        public bool NotifPermissionAsked { get; init; }
 
         public int Chips => Round.Chips;
     }

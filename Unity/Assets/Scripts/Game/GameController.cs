@@ -203,6 +203,9 @@ namespace Blackjack.Game
                 ReviewRequestCount = s.ReviewRequestCount,
                 ReviewLastRequestSucceeded = s.ReviewLastRequestSucceeded,
                 TutorialCompletionLogged = s.TutorialCompletionLogged,
+                FirstSeenAtMs = s.FirstSeenAtMs,
+                EveningGiftKey = s.EveningGiftKey,
+                NotifPermissionAsked = s.NotifPermissionAsked,
             };
         }
 
@@ -250,6 +253,10 @@ namespace Blackjack.Game
                 ReviewRequestCount = legacyReview ? 1 : saved.ReviewRequestCount,
                 ReviewLastRequestSucceeded = saved.ReviewLastRequestSucceeded || legacyReview,
                 TutorialCompletionLogged = saved.TutorialCompletionLogged,
+                // A save from before the first-open time was tracked belongs to a long-standing player.
+                FirstSeenAtMs = saved.FirstSeenAtMs != 0 ? saved.FirstSeenAtMs : 1,
+                EveningGiftKey = saved.EveningGiftKey,
+                NotifPermissionAsked = saved.NotifPermissionAsked,
             });
             Loc.Use(saved.LanguageOverride);
             ApplyAnalytics();
@@ -263,8 +270,18 @@ namespace Blackjack.Game
             Hydrate();
             // A new player has no save to hydrate from; reports and consent mode still need their first answer.
             ApplyAnalytics();
+            if (State.FirstSeenAtMs == 0)
+            {
+                Set(s => s with { FirstSeenAtMs = new DateTimeOffset(_now()).ToUnixTimeMilliseconds() });
+                ScheduleSave();
+            }
             _svc.Notifier.Init();
             RestoreDailyBonus();
+            SyncEveningGift();
+            CheckEveningGiftTap();
+#if BJ_QA_NOTIF
+            QaNotifHook.Apply(this, _svc.Notifier);
+#endif
             InitSocial();
         }
 
@@ -279,6 +296,9 @@ namespace Blackjack.Game
         {
             _appInBackground = false;
             _playTime.Resume();
+            // Re-arm the 8 PM gift (a new day, a new time zone, a moved clock) and honour a tap that brought the app back.
+            SyncEveningGift();
+            CheckEveningGiftTap();
             if (!State.SocialReady) return;
             Heartbeat();
             SyncDailyBonusReminder();
@@ -444,6 +464,7 @@ namespace Blackjack.Game
                 // Off cancels both pending reminders; on re-arms whichever applies.
                 SyncDailyBonusReminder();
                 SyncStreakReminder();
+                SyncEveningGift();
                 ScheduleSave();
             }
             if (State.NotifDaily) Flip(); else EnsureNotifPermission(Flip);

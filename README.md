@@ -182,10 +182,19 @@ A Unity (Android) blackjack game with a multi-seat table and a friends race. Fou
   "Sound effects", so muting sound mutes the voice too and the Settings row dims while it is off
 - **Haptics** — selection/light/medium/heavy impact and vibrate feedback, toggleable in settings,
   including a tap for each NPC seat's stand/bust
-- **Respectful review requests** — from the fifth won hand, a winning settlement can request Google
-  Play's in-app review card (Android only; Play decides whether it shows). Completed requests wait 30
-  days, with a three-request cap; requests that could not be made wait seven days. Attempts, outcomes
-  and cooldowns survive relaunch. A failure does nothing: the store page never opens on its own.
+- **Respectful review requests** — after a *big win* (you take the Sweet Pot, hold a natural blackjack, or
+  net at least 5x your stake, 3:2 and the pot included) the game can request Google Play's in-app review
+  card (Android only; Play decides whether it shows). Never in the first 24 hours after install. Completed
+  requests wait 30 days, with a three-request cap; requests that could not be made wait seven days. Only the
+  official Play API is used: no pre-question, no reward, no rating gate. Attempts, outcomes and cooldowns
+  survive relaunch. A failure does nothing: the store page never opens on its own.
+- **Evening gift at 8 PM** — a daily local notification ("Your free $500 chips are waiting!") at 20:00 on the
+  device clock. Tapping it opens the app and credits +500 play chips once per local calendar date, with a
+  toast; a second tap the same day does nothing. It is separate from the daily-bonus ladder and the play
+  streak (a tap never claims the ladder). Re-armed on launch, on every resume (so a new day or a time-zone
+  change moves it to the next 20:00) and when the Settings → Daily reminder switch changes; off cancels it.
+  The Android notification permission is requested once, after a won hand (at least 5 hands played), never
+  at first launch; the Daily reminder switch asks it too. Play chips only, no real money.
 - **Invite landing page** — https://blackjack21-v2.web.app serves the invite link and the privacy
   policy, auto-deployed by GitHub Actions on every push to `main`
 - **Branded link preview** — sharing the invite URL (WhatsApp, iMessage, Facebook, etc.) shows a
@@ -530,6 +539,18 @@ lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
 
+### 2026-11-17 (evening gift and big-win review)
+- feat: **8 PM evening gift** (1.8.6, same release): a daily local notification at 20:00 device time; tapping it
+  credits +500 play chips once per local date (separate from the claim ladder), shows a toast, and reschedules the
+  next 8 PM. Rescheduled on launch/resume/time-zone change and by the Daily reminder switch (off cancels).
+  Notification permission is now requested after a won hand instead of only from Settings, never on first launch.
+  Settings sublabel reworded (English). The dev APK alone carries a QA hook (`BJ_QA_NOTIF`) for a one-minute test
+  notification; the release bundle does not.
+- feat: **review request after a big win** instead of the fifth win: Sweet Pot, natural blackjack or net >= 5x stake;
+  never in the first 24 hours; the 30-day/7-day cooldowns and the three-request cap are unchanged. Logs
+  `[Review] big win: requesting the Google Play in-app review`.
+- test: `ReviewPrompt` big-win/first-day/cooldown/cap, `EveningGift` next-fire and date key, permission timing, and
+  controller tests for the tap, the switch and the ladder staying separate (244 EditMode tests).
 ### 2026-11-17
 - fix: **you now act last among the seats** (1.8.6, same release). Since 1.8.5 Maya and Jordan played before you and
   Sam and Priya after, so you decided before two rivals and could not see their busts when going for the "Closest to

@@ -162,17 +162,39 @@ namespace Blackjack.Core
 
     public static class ReviewPrompt
     {
-        public const int MinWins = 5;
         public const int MaxRequests = 3;
+        /// <summary>A hand whose net win is at least this many times the stake is a "big win".</summary>
+        public const int BigWinMultiple = 5;
         // Failure: the store was never asked (no Play, not Android), so nothing was shown and a retry may come sooner.
         public static readonly TimeSpan FailureCooldown = TimeSpan.FromDays(7);
         public static readonly TimeSpan SuccessCooldown = TimeSpan.FromDays(30);
+        /// <summary>Never in the first session: the player must have been around for a full day first.</summary>
+        public static readonly TimeSpan MinAge = TimeSpan.FromHours(24);
 
-        /// <summary>Ask from the 5th won hand, at most once per 30 days and three times in all.</summary>
-        public static bool ShouldPrompt(
-            int wins, DateTime now, long lastAttemptAtMs, int completedRequests, bool lastRequestSucceeded)
+        /// <summary>
+        /// A settled hand worth being happy about: the hero took the sweep pot, had a natural blackjack, or netted at least
+        /// <see cref="BigWinMultiple"/> times the stake. <c>RoundNet</c> already includes the 3:2 on a natural and any sweep pot,
+        /// and <c>RoundStake</c> is the hero's bets plus insurance.
+        /// </summary>
+        public static bool IsBigWin(RoundState before, RoundState settled)
         {
-            if (wins < MinWins || completedRequests >= MaxRequests) return false;
+            if (settled.Phase != RoundPhase.Settlement || settled.MessageType != MessageType.Win) return false;
+            if (settled.SweepAmount > 0 && settled.SweepInfo != null && settled.SweepInfo.HeroTook) return true;
+            if (settled.Stats.Blackjacks > before.Stats.Blackjacks) return true;
+            return settled.RoundStake > 0 && settled.RoundNet >= BigWinMultiple * settled.RoundStake;
+        }
+
+        /// <summary>
+        /// Ask after a big win, once the player is past their first day, at most once per 30 days after Play was asked and
+        /// three times in all. Only the official Play in-app review is ever used: no pre-question, no reward, no rating gate.
+        /// </summary>
+        public static bool ShouldPrompt(
+            bool bigWin, DateTime now, long firstSeenAtMs, long lastAttemptAtMs, int completedRequests, bool lastRequestSucceeded)
+        {
+            if (!bigWin || completedRequests >= MaxRequests) return false;
+            if (firstSeenAtMs <= 0) return false;
+            var first = DateTimeOffset.FromUnixTimeMilliseconds(firstSeenAtMs).LocalDateTime;
+            if (now - first < MinAge) return false;
             if (lastAttemptAtMs <= 0) return true;
             var last = DateTimeOffset.FromUnixTimeMilliseconds(lastAttemptAtMs).LocalDateTime;
             return now - last >= (lastRequestSucceeded ? SuccessCooldown : FailureCooldown);

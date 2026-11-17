@@ -439,7 +439,15 @@ namespace Blackjack.Game
             ReportScore();
             ScheduleSave();
             LogSettlementAnalytics(prev, next, heroTakesPot);
-            if (next.MessageType == MessageType.Win) MaybeAskForReview();
+            if (next.MessageType == MessageType.Win)
+            {
+                var big = ReviewPrompt.IsBigWin(prev, next);
+#if BJ_QA_NOTIF
+                big |= QaForceBigWin;
+#endif
+                MaybeAskForReview(big);
+                MaybeAskNotifPermission();
+            }
         }
 
         private void LogSettlementAnalytics(RoundState prev, RoundState next, bool heroTakesPot)
@@ -467,11 +475,11 @@ namespace Blackjack.Game
             }
         }
 
-        /// <summary>Ask once a won hand's result has been on screen a moment. Only an actual attempt starts the cooldown.</summary>
-        private void MaybeAskForReview()
+        /// <summary>Ask once a big win's result has been on screen a moment. Only an actual attempt starts the cooldown.</summary>
+        private void MaybeAskForReview(bool bigWin)
         {
             if (_reviewPending || !FlagEnabled(FeatureFlag.ReviewPrompt)) return;
-            if (!ReviewPrompt.ShouldPrompt(State.Round.Stats.Wins, _now(), State.ReviewLastAttemptAtMs,
+            if (!ReviewPrompt.ShouldPrompt(bigWin, _now(), State.FirstSeenAtMs, State.ReviewLastAttemptAtMs,
                     State.ReviewRequestCount, State.ReviewLastRequestSucceeded)) return;
 
             _reviewPending = true;
@@ -484,6 +492,7 @@ namespace Blackjack.Game
                     ReviewLastRequestSucceeded = false,
                 });
                 _svc.Store.Save(Snapshot());
+                UnityEngine.Debug.Log("[Review] big win: requesting the Google Play in-app review");
                 _svc.Analytics.LogEvent(AnalyticsEvent.ReviewPrompted, new Dictionary<string, object> { ["hands"] = State.Round.Stats.HandsPlayed });
                 _svc.Review.Request(completed =>
                 {

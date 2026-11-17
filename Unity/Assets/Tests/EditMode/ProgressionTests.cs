@@ -238,21 +238,92 @@ namespace Blackjack.Core.Tests
             Assert.AreEqual("vip", TableRecommendation.For(2000).Key);
         }
 
-        [Test]
-        public void ReviewPrompt_waitsForFiveWinsAndHonoursCooldowns()
-        {
-            var now = new DateTime(2026, 8, 1, 12, 0, 0);
-            Assert.IsFalse(ReviewPrompt.ShouldPrompt(4, now, 0, 0, false));
-            Assert.IsTrue(ReviewPrompt.ShouldPrompt(5, now, 0, 0, false));
-            Assert.IsFalse(ReviewPrompt.ShouldPrompt(50, now, 0, 3, false), "request cap");
+        private static long Ms(DateTime t) => new DateTimeOffset(t).ToUnixTimeMilliseconds();
 
-            var attempted = new DateTimeOffset(now.AddDays(-3)).ToUnixTimeMilliseconds();
-            Assert.IsFalse(ReviewPrompt.ShouldPrompt(50, now, attempted, 1, false), "7-day failure cooldown");
-            var old = new DateTimeOffset(now.AddDays(-8)).ToUnixTimeMilliseconds();
-            Assert.IsTrue(ReviewPrompt.ShouldPrompt(50, now, old, 1, false));
-            Assert.IsFalse(ReviewPrompt.ShouldPrompt(50, now, old, 1, true), "30-day cooldown after an ask");
-            var month = new DateTimeOffset(now.AddDays(-31)).ToUnixTimeMilliseconds();
-            Assert.IsTrue(ReviewPrompt.ShouldPrompt(50, now, month, 1, true));
+        private static RoundState Settled(int bet, int net, int sweep = 0, bool heroTook = false, int blackjacks = 0,
+            MessageType type = MessageType.Win) =>
+            new RoundState
+            {
+                Phase = RoundPhase.Settlement,
+                MessageType = type,
+                RoundStake = bet,
+                RoundNet = net,
+                SweepAmount = sweep,
+                SweepInfo = sweep > 0 ? new SweepInfo(sweep, bet, sweep + bet, heroTook ? "You" : "Ann", 20, heroTook, new SweepContributor[0]) : null,
+                Stats = new StatsSummary(Blackjacks: blackjacks),
+            };
+
+        [Test]
+        public void ReviewPrompt_bigWin_isSweepNaturalOrFiveTimesTheStake()
+        {
+            var before = new RoundState();
+            Assert.IsFalse(ReviewPrompt.IsBigWin(before, Settled(100, 100)), "an ordinary win");
+            Assert.IsFalse(ReviewPrompt.IsBigWin(before, Settled(100, 499)), "just under 5x");
+            Assert.IsTrue(ReviewPrompt.IsBigWin(before, Settled(100, 500)), "exactly 5x net");
+            Assert.IsTrue(ReviewPrompt.IsBigWin(before, Settled(100, 250, sweep: 100, heroTook: true)), "hero took the sweep pot");
+            Assert.IsFalse(ReviewPrompt.IsBigWin(before, Settled(100, 100, sweep: 100, heroTook: false)), "a rival took the pot");
+            Assert.IsTrue(ReviewPrompt.IsBigWin(before, Settled(100, 150, blackjacks: 1)), "natural blackjack, 3:2");
+            Assert.IsFalse(ReviewPrompt.IsBigWin(Settled(100, 150, blackjacks: 1), Settled(100, 100, blackjacks: 1)),
+                "an old natural in the stats does not count again");
+            Assert.IsFalse(ReviewPrompt.IsBigWin(before, Settled(100, 900, type: MessageType.Lose)), "only a won hand");
+            Assert.IsFalse(ReviewPrompt.IsBigWin(before, Settled(0, 0)), "no stake, no big win");
+        }
+
+        [Test]
+        public void ReviewPrompt_neverInTheFirstDay_andHonoursCooldownsAndCap()
+        {
+            var now = new DateTime(2026, 8, 10, 12, 0, 0);
+            var firstDayOld = Ms(now.AddHours(-23));
+            var seasoned = Ms(now.AddDays(-2));
+            Assert.IsFalse(ReviewPrompt.ShouldPrompt(true, now, 0, 0, 0, false), "unknown first-open time");
+            Assert.IsFalse(ReviewPrompt.ShouldPrompt(true, now, firstDayOld, 0, 0, false), "first session / first day");
+            Assert.IsTrue(ReviewPrompt.ShouldPrompt(true, now, Ms(now.AddHours(-24)), 0, 0, false), "a full day in");
+            Assert.IsFalse(ReviewPrompt.ShouldPrompt(false, now, seasoned, 0, 0, false), "not a big win");
+            Assert.IsTrue(ReviewPrompt.ShouldPrompt(true, now, seasoned, 0, 0, false));
+            Assert.IsFalse(ReviewPrompt.ShouldPrompt(true, now, seasoned, 0, ReviewPrompt.MaxRequests, true), "request cap");
+
+            var longAgo = Ms(now.AddDays(-90));
+            var attempted = Ms(now.AddDays(-3));
+            Assert.IsFalse(ReviewPrompt.ShouldPrompt(true, now, longAgo, attempted, 1, false), "7-day failure cooldown");
+            var old = Ms(now.AddDays(-8));
+            Assert.IsTrue(ReviewPrompt.ShouldPrompt(true, now, longAgo, old, 1, false), "retry after a failed launch");
+            Assert.IsFalse(ReviewPrompt.ShouldPrompt(true, now, longAgo, old, 1, true), "30-day cooldown after an ask");
+            Assert.IsTrue(ReviewPrompt.ShouldPrompt(true, now, longAgo, Ms(now.AddDays(-31)), 1, true));
+        }
+
+        [Test]
+        public void EveningGift_nextFire_isTodayBefore8pm_otherwiseTomorrow()
+        {
+            Assert.AreEqual(new DateTime(2026, 8, 10, 20, 0, 0), EveningGift.NextFire(new DateTime(2026, 8, 10, 9, 30, 0)));
+            Assert.AreEqual(new DateTime(2026, 8, 10, 20, 0, 0), EveningGift.NextFire(new DateTime(2026, 8, 10, 19, 59, 59)));
+            Assert.AreEqual(new DateTime(2026, 8, 11, 20, 0, 0), EveningGift.NextFire(new DateTime(2026, 8, 10, 20, 0, 0)), "at 20:00 sharp it has fired");
+            Assert.AreEqual(new DateTime(2026, 8, 11, 20, 0, 0), EveningGift.NextFire(new DateTime(2026, 8, 10, 23, 30, 0)));
+            Assert.AreEqual(new DateTime(2027, 1, 1, 20, 0, 0), EveningGift.NextFire(new DateTime(2026, 12, 31, 21, 0, 0)), "year end");
+            // Flying east after 8 PM: the same instant reads 02:00 local, so tonight's 20:00 is the next one again.
+            Assert.AreEqual(new DateTime(2026, 8, 11, 20, 0, 0), EveningGift.NextFire(new DateTime(2026, 8, 11, 2, 0, 0)));
+        }
+
+        [Test]
+        public void EveningGift_isKeyedByLocalDate()
+        {
+            var day = new DateTime(2026, 8, 10, 20, 5, 0);
+            Assert.IsTrue(EveningGift.CanGrant("", day));
+            var key = EveningGift.KeyOf(day);
+            Assert.AreEqual("2026-08-10", key);
+            Assert.IsFalse(EveningGift.CanGrant(key, day.AddHours(3)), "the same day");
+            Assert.IsTrue(EveningGift.CanGrant(key, day.AddDays(1)), "the next day");
+            Assert.AreEqual(500, EveningGift.Chips);
+        }
+
+        [Test]
+        public void NotifPermission_asksAfterAWin_notOnFirstLaunch()
+        {
+            Assert.IsFalse(NotifPermissionPrompt.ShouldAsk(false, 50, false, false, true), "no win");
+            Assert.IsFalse(NotifPermissionPrompt.ShouldAsk(true, 1, false, false, true), "a first-minute win");
+            Assert.IsFalse(NotifPermissionPrompt.ShouldAsk(true, 50, true, false, true), "already asked once");
+            Assert.IsFalse(NotifPermissionPrompt.ShouldAsk(true, 50, false, true, true), "already allowed");
+            Assert.IsFalse(NotifPermissionPrompt.ShouldAsk(true, 50, false, false, false), "reminder switched off");
+            Assert.IsTrue(NotifPermissionPrompt.ShouldAsk(true, NotifPermissionPrompt.MinHands, false, false, true));
         }
 
         [Test]

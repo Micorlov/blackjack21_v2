@@ -57,6 +57,13 @@ namespace Blackjack.Game.Services
         void CancelDailyBonusReminder();
         void ScheduleStreakReminder(TimeSpan after, int streak);
         void CancelStreakReminder();
+
+        /// <summary>Schedules the daily 8 PM evening-gift notification (replacing the pending one) first firing at <paramref name="firstAt"/>.</summary>
+        void ScheduleEveningGift(DateTime firstAt);
+        void CancelEveningGift();
+
+        /// <summary>True once if the app was opened by tapping the evening-gift notification; the tap is consumed so it cannot count twice.</summary>
+        bool ConsumeEveningGiftTap();
     }
 
     public interface IAnalytics
@@ -79,6 +86,8 @@ namespace Blackjack.Game.Services
         public const string ReviewRequestResult = "review_request_result";
         public const string HandPlayed = "hand_played";
         public const string DailyBonusClaimed = "daily_bonus_claimed";
+        public const string EveningGiftClaimed = "evening_gift_claimed";
+        public const string NotifPermissionAsked = "notif_permission_asked";
         public const string TableEntered = "table_entered";
         public const string Rebuy = "rebuy";
         public const string InviteShared = "invite_shared";

@@ -71,14 +71,21 @@ namespace Blackjack.Game.Services
         public TimeSpan? DailyAfter;
         public int DailyChips;
 
-        public bool HasPermission => true;
+        public bool HasPermission { get; set; } = true;
         public void Init() { }
-        public void RequestPermission(Action<bool> granted) => granted(true);
+        public void RequestPermission(Action<bool> granted) { PermissionRequests++; HasPermission = true; granted(true); }
         public bool Show(string title, string body) { Shown.Add(title + "|" + body); return true; }
         public void ScheduleDailyBonusReminder(TimeSpan after, int chips) { DailyAfter = after; DailyChips = chips; }
         public void CancelDailyBonusReminder() => DailyAfter = null;
         public void ScheduleStreakReminder(TimeSpan after, int streak) { }
         public void CancelStreakReminder() { }
+
+        public DateTime? GiftAt;
+        public int GiftSchedules, GiftCancels, PermissionRequests;
+        public bool GiftTapped;
+        public void ScheduleEveningGift(DateTime firstAt) { GiftAt = firstAt; GiftSchedules++; }
+        public void CancelEveningGift() { GiftAt = null; GiftCancels++; }
+        public bool ConsumeEveningGiftTap() { var tapped = GiftTapped; GiftTapped = false; return tapped; }
     }
 
     public sealed class NullAnalytics : IAnalytics

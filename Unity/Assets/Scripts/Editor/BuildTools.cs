@@ -249,8 +249,8 @@ namespace Blackjack.EditorTools
                 locationPathName = path,
                 target = BuildTarget.Android,
                 options = BuildOptions.None,
-                // The adb build shows Google's sample ads; only a Play release may ask for real ones.
-                extraScriptingDefines = appBundle ? null : new[] { "ADMOB_TEST_ADS" },
+                // The adb build shows Google's sample ads and carries the QA test-notification hook; only a Play release may ask for real ads, and it has neither.
+                extraScriptingDefines = appBundle ? null : new[] { "ADMOB_TEST_ADS", "BJ_QA_NOTIF" },
             };
             var report = BuildPipeline.BuildPlayer(options);
             var summary = report.summary;
