@@ -540,6 +540,7 @@ lines show the SDK initialising and the anonymous sign-in.
 ## Changelog
 
 ### 2026-11-17 (evening gift and big-win review)
+- docs: `docs/engagement-research.md`, a research report on playtime and retention (no code). It records that Comeback dealing is undisclosed in the app and recommends disclosing it or removing it, plus a GA4 and A/B plan.
 - feat: **8 PM evening gift** (1.8.6, same release): a daily local notification at 20:00 device time; tapping it
   credits +500 play chips once per local date (separate from the claim ladder), shows a toast, and reschedules the
   next 8 PM. Rescheduled on launch/resume/time-zone change and by the Daily reminder switch (off cancels).
