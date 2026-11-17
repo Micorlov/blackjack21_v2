@@ -35,3 +35,36 @@
 - On a real EEA device before UMP answers, collection is denied (region list); in an EEA country the device region may differ (e.g. travelling) and then UMP decides.
 - Ads treatment is Teen everywhere (previously Child in EEA); this is conservative for a 13+ game.
 - Privacy policy HTML is not deployed.
+
+## Turn-order fix: hero acts last (same 1.8.6 / vc18)
+
+**Root cause.** Not a regression: 1.8.5 deliberately seated the hero in the "middle chair" (`TableCatalog.SeatsBeforeHero = 2`).
+Maya and Jordan acted in `RoundPhase.Npcs`, then the hero, then Sam and Priya in `NpcsAfter`. So the hero decided blind
+against two rivals who had not played yet.
+
+**Why that hurts the Sweet Pot.** The pot goes to the best surviving hand; seats that bust or lose to the dealer forfeit
+their bets into it. Acting last, the hero sees who has busted and who stands on what, and can hit or stand to take the pot.
+Acting before two seats, the hero commits first and those seats can then play to beat the hero's total.
+
+**Fix.** `RoundEngine.SeatsActingIn(Npcs)` now returns every opponent seat, `NpcsAfter` returns none (enum value kept, unused),
+`SeatsBeforeHero` is removed. Flow: all seats, then hero, then dealer. Bust, surrender and natural go straight to the dealer
+(seats already played); a dealer natural still ends the hand first. Turn-order strip puts "You" last; the note above the
+buttons now says "you play last" (key `turnYouPlayLast`, 10 languages; it said "you play third"). Felt layout is unchanged.
+Files: Core/RoundEngine.cs, Enums.cs, TableCatalog.cs, FeltMetrics.cs (comment), GameController.Round.cs (comment),
+TablePanels.cs, TurnTimerView.cs (comment), Resources/Locales/*.json, README.md, tests (RoundFlowTests, ControllerTests, SettlementTests comment).
+Tutorial first hands: no special path touches seat order, covered by existing tests.
+
+**Tests.** EditMode 232/232 passed (`/tmp/bj186-order-edit.log`, `.xml`). New cases: all seats act before the hero, dealer
+follows the hero directly, hero sees earlier busts, bust/surrender/natural go to the dealer. PlayMode RulesAudit not run.
+
+**Builds (1.8.6 / vc18).**
+- AAB: `Unity/Builds/Android/blackjack21-unity-1.8.6-vc18.aab` (jarsigner: jar verified; also `blackjack21-unity.aab`)
+- Debug test-ads APK: `Unity/Builds/Android/blackjack21-unity-1.8.6-vc18-debug-testads.apk` (also `blackjack21-unity.apk`)
+- 1.8.5 artifacts untouched. QA files are `#if BJ_FIREBASE_EMULATOR`/editor-only and uncommitted.
+
+**Emulator (emulator-5554, PSK_Pixel_8_API_36), new APK installed with `adb install -r`.** Silver table, one hand: Maya, then Sam
+played with the hero buttons absent, then "Your turn" with all four seats done, then the dealer. Screenshots:
+`~/grokshots/bj186_order_01_npcs_acting.png`, `_02_more_npcs.png`, `_03_hero_turn.png`, `_04_dealer.png`.
+
+**Skipped / caveats.** Not installed on the physical phone (per instructions). Only one hand was watched on the emulator; the
+hero hand timed out and auto-stood on the turn timer. Seats act right-to-left across the felt, so Priya (far left) is last.

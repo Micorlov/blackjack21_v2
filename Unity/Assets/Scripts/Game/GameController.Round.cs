@@ -226,8 +226,8 @@ namespace Blackjack.Game
         // ---- opponent seats -------------------------------------------------------------------------
 
         /// <summary>
-        /// Paces the seats of the current phase one decision at a time, in casino order: the first-base seats
-        /// before the hero (<see cref="RoundPhase.Npcs"/>), the third-base seats after (<see cref="RoundPhase.NpcsAfter"/>).
+        /// Paces the seats of the current phase one decision at a time: every opponent seat plays in
+        /// <see cref="RoundPhase.Npcs"/>, before the hero, who acts last (<see cref="RoundPhase.NpcsAfter"/> is empty).
         /// </summary>
         private void StartSeatTurns()
         {

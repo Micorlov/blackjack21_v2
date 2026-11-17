@@ -186,7 +186,7 @@
 "actionKeep": "{amount} 戻る",
 "actionTwoCardsOnly": "最初の2枚のみ",
 "actionNotAfterSplit": "スプリット後は不可",
-"turnYouPlayThird": "あなたは3番目",
+"turnYouPlayLast": "あなたは最後",
 "turnStandsAutomatically": "自動でスタンド",
 "turnHandOf": "ハンド {hand}/{total}",
 "turnDoubled": "ダブル · {total}",

@@ -155,9 +155,7 @@ namespace Blackjack.Core.Tests
             Assert.IsTrue(_rig.AdvanceUntil(() => _rig.Round.Phase == RoundPhase.Playing));
 
             c.PlayerStand();
-            Assert.AreEqual(RoundPhase.NpcsAfter, _rig.Round.Phase, "the seats on the hero's left play before the dealer");
-            Assert.IsFalse(_rig.Round.HoleRevealed);
-            Assert.IsTrue(_rig.AdvanceUntil(() => _rig.Round.Phase == RoundPhase.Dealer));
+            Assert.AreEqual(RoundPhase.Dealer, _rig.Round.Phase, "the hero acts last: the dealer is next");
             Assert.IsTrue(_rig.Round.HoleRevealed);
             Assert.AreEqual(2, _rig.Round.DealerHand.Count, "no card is drawn on the reveal beat");
 
@@ -594,7 +592,7 @@ namespace Blackjack.Core.Tests
 
             _rig.Advance(1.5);
             Assert.AreEqual(HandStatus.Stood, _rig.Round.Hands[0].Status);
-            Assert.AreEqual(RoundPhase.NpcsAfter, _rig.Round.Phase);
+            Assert.AreEqual(RoundPhase.Dealer, _rig.Round.Phase);
             Assert.IsNull(_rig.Round.TurnDeadline, "no clock outside the hero's turn");
             StringAssert.Contains("you stand", _rig.C.State.Toast);
         }

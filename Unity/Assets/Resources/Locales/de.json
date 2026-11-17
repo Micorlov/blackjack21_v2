@@ -186,7 +186,7 @@
 "actionKeep": "behalte {amount}",
 "actionTwoCardsOnly": "erste zwei Karten",
 "actionNotAfterSplit": "nicht nach Split",
-"turnYouPlayThird": "du spielst als Dritter",
+"turnYouPlayLast": "du spielst zuletzt",
 "turnStandsAutomatically": "steht automatisch",
 "turnHandOf": "Hand {hand} von {total}",
 "turnDoubled": "Verdoppelt · {total}",

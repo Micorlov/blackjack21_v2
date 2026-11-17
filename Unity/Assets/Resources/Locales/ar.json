@@ -186,7 +186,7 @@
 "actionKeep": "تحتفظ بـ {amount}",
 "actionTwoCardsOnly": "أول ورقتين",
 "actionNotAfterSplit": "ليس بعد التقسيم",
-"turnYouPlayThird": "تلعب ثالثًا",
+"turnYouPlayLast": "تلعب أخيرًا",
 "turnStandsAutomatically": "يقف تلقائيًا",
 "turnHandOf": "اليد {hand} من {total}",
 "turnDoubled": "مضاعفة · {total}",

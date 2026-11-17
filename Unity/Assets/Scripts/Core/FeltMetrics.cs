@@ -88,7 +88,7 @@ namespace Blackjack.Core
         public float X(float designOffset) => CentreX + designOffset * ContentWidth / ReferenceWidth;
 
         /// <summary>
-        /// Where opponent seat <paramref name="index"/> (casino order: 0 and 1 act before the hero, 2 and 3 after)
+        /// Where opponent seat <paramref name="index"/> (seats 0-3 act in that order, all before the hero)
         /// sits: the centre line of its column, the top of its name pill, the tilt of its fan, and its side
         /// (+1 right, -1 left).
         /// </summary>

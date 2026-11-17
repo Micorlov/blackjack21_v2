@@ -210,7 +210,7 @@ namespace Blackjack.Game.UI
             var col = Column(host, "Waiting");
             if (r.Phase == RoundPhase.Dealer) DealerNote(col, r);
             else TurnTimerView.Build(col, _g, Loc.T("gameSeatPlaying", ("name", ActingName(s))),
-                r.Phase == RoundPhase.Npcs ? Loc.T("turnYouPlayThird") : "");
+                r.Phase == RoundPhase.Npcs ? Loc.T("turnYouPlayLast") : "");
             TurnOrder(col, s);
             QuickChat(col);
             if (s.FriendsAreLive) Standings(col, s);
@@ -229,7 +229,7 @@ namespace Blackjack.Game.UI
             Ui.Text(info, Loc.T("dealerRule"), Type.Caption.WithFont(FontKind.Sora), Theme.TextBody, TextAlignmentOptions.Center);
         }
 
-        /// <summary>Who plays in what order, in casino order with the hero in the middle chair.</summary>
+        /// <summary>Who plays in what order, the hero last, just before the dealer.</summary>
         private static void TurnOrder(RectTransform col, AppState s)
         {
             var r = s.Round;
@@ -238,11 +238,10 @@ namespace Blackjack.Game.UI
             var heroDone = r.Phase == RoundPhase.NpcsAfter || r.Phase == RoundPhase.Dealer;
             for (var i = 0; i < r.NpcSeats.Count; i++)
             {
-                if (i == TableCatalog.SeatsBeforeHero) OrderChip(row, Loc.T("orderYou"), heroDone, false, true);
                 var name = i < seats.Count ? seats[i].FirstName : "";
                 OrderChip(row, name, r.NpcSeats[i].Done, r.ActingSeat == i, false);
             }
-            if (r.NpcSeats.Count <= TableCatalog.SeatsBeforeHero) OrderChip(row, Loc.T("orderYou"), heroDone, false, true);
+            OrderChip(row, Loc.T("orderYou"), heroDone, false, true);
         }
 
         private static void OrderChip(RectTransform row, string name, bool done, bool now, bool me)

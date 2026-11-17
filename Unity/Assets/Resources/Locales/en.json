@@ -186,7 +186,7 @@
 "actionKeep": "keep {amount}",
 "actionTwoCardsOnly": "first two cards",
 "actionNotAfterSplit": "not after split",
-"turnYouPlayThird": "you play third",
+"turnYouPlayLast": "you play last",
 "turnStandsAutomatically": "stands automatically",
 "turnHandOf": "Hand {hand} of {total}",
 "turnDoubled": "Doubled · {total}",

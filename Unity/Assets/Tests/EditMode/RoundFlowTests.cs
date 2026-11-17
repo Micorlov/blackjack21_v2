@@ -102,7 +102,7 @@ namespace Blackjack.Core.Tests
                 var dealt = RoundEngine.Deal(s, new Shoe(rng), T.Names);
 
                 CollectionAssert.Contains(
-                    new[] { RoundPhase.Insurance, RoundPhase.Npcs, RoundPhase.NpcsAfter, RoundPhase.Dealer, RoundPhase.Settlement }, dealt.Phase);
+                    new[] { RoundPhase.Insurance, RoundPhase.Npcs, RoundPhase.Dealer, RoundPhase.Settlement }, dealt.Phase);
                 if (dealt.Phase != RoundPhase.Settlement) Assert.AreEqual(4975, dealt.Chips);
             }
         }
@@ -143,7 +143,7 @@ namespace Blackjack.Core.Tests
         }
     }
 
-    /// <summary>Casino seat order: Maya and Jordan act before the hero, Sam and Priya after, then the dealer.</summary>
+    /// <summary>Turn order: every opponent seat acts first, the hero acts last among the player seats, then the dealer.</summary>
     public class TurnOrderTests
     {
         private static NpcSeat Seat(params string[] cards) => new NpcSeat(50, T.Cards(cards));
@@ -157,57 +157,72 @@ namespace Blackjack.Core.Tests
         };
 
         [Test]
-        public void SeatsActingIn_splitsTheTableAroundTheHero()
+        public void EveryOpponentSeatActsBeforeTheHero()
         {
-            CollectionAssert.AreEqual(new[] { 0, 1 }, RoundEngine.SeatsActingIn(RoundPhase.Npcs, 4));
-            CollectionAssert.AreEqual(new[] { 2, 3 }, RoundEngine.SeatsActingIn(RoundPhase.NpcsAfter, 4));
+            CollectionAssert.AreEqual(new[] { 0, 1, 2, 3 }, RoundEngine.SeatsActingIn(RoundPhase.Npcs, 4));
             CollectionAssert.AreEqual(new[] { 0 }, RoundEngine.SeatsActingIn(RoundPhase.Npcs, 1));
-            CollectionAssert.IsEmpty(RoundEngine.SeatsActingIn(RoundPhase.NpcsAfter, 1));
+            CollectionAssert.IsEmpty(RoundEngine.SeatsActingIn(RoundPhase.NpcsAfter, 4), "nobody acts after the hero");
             CollectionAssert.IsEmpty(RoundEngine.SeatsActingIn(RoundPhase.Playing, 4));
         }
 
         [Test]
-        public void TheHeroActsAfterFirstBase_andBeforeThirdBase()
+        public void TheHeroActsLast_afterEverySeat_andBeforeTheDealer()
         {
             var shoe = T.Stacked();
-            var s = RoundEngine.HandOverAfterSeats(RoundEngine.PlaySeats(FullTable(new[] { "10", "6" }), shoe, RoundPhase.Npcs));
+            var s = FullTable(new[] { "10", "6" });
+            Assert.AreEqual(RoundPhase.Npcs, s.Phase);
+            Assert.IsTrue(s.NpcSeats.All(n => !n.Done), "no seat has played yet, so the hero has not been asked");
 
+            s = RoundEngine.HandOverAfterSeats(RoundEngine.PlaySeats(s, shoe, RoundPhase.Npcs));
             Assert.AreEqual(RoundPhase.Playing, s.Phase);
-            Assert.IsTrue(s.NpcSeats[0].Done && s.NpcSeats[1].Done, "first base has played");
-            Assert.IsFalse(s.NpcSeats[2].Done || s.NpcSeats[3].Done, "third base waits for the hero");
+            Assert.IsTrue(s.NpcSeats.All(n => n.Done), "all four seats have played before the hero decides");
 
             s = RoundEngine.Stand(s);
-            Assert.AreEqual(RoundPhase.NpcsAfter, s.Phase);
-            Assert.IsFalse(s.HoleRevealed, "the dealer waits for the seats after the hero");
-
-            s = RoundEngine.HandOverToDealer(RoundEngine.PlaySeats(s, shoe, RoundPhase.NpcsAfter));
-            Assert.AreEqual(RoundPhase.Dealer, s.Phase);
-            Assert.IsTrue(s.NpcSeats.All(n => n.Done));
+            Assert.AreEqual(RoundPhase.Dealer, s.Phase, "no opponent is left: the dealer plays straight after the hero");
+            Assert.IsTrue(s.HoleRevealed);
         }
 
         [Test]
-        public void ABustHeroStillWatchesThirdBasePlay_andTheirBetsReachTheSweep()
+        public void StartNpcTurns_startsWithTheSeats_notTheHero()
         {
-            var s = FullTable(new[] { "10", "6" }, Seat("10", "8"), Seat("10", "8"), Seat("10", "8"), Seat("10", "4")) with { Phase = RoundPhase.Playing };
-            s = s with { NpcSeats = s.NpcSeats.Take(2).Select(n => n with { Action = "STAND", Done = true }).Concat(s.NpcSeats.Skip(2)).ToArray() };
-            // The hero busts on the K; seat 3 then hits 14 with a 9 and busts too.
-            var shoe = T.Stacked("K", "9");
-            s = RoundEngine.Hit(s, shoe);
-            Assert.AreEqual(RoundPhase.NpcsAfter, s.Phase);
+            var s = RoundEngine.StartNpcTurns(FullTable(new[] { "10", "6" }) with { Phase = RoundPhase.Insurance });
+            Assert.AreEqual(RoundPhase.Npcs, s.Phase);
+        }
 
+        [Test]
+        public void ABustHeroGoesStraightToTheDealer_theSeatsAlreadyPlayed()
+        {
+            var s = FullTable(new[] { "10", "6" }, Seat("10", "8"), Seat("10", "8"), Seat("10", "8"), Seat("10", "4"));
+            var shoe = T.Stacked("9", "K");
+            s = RoundEngine.HandOverAfterSeats(RoundEngine.PlaySeats(s, shoe, RoundPhase.Npcs));
+            Assert.AreEqual("BUST", s.NpcSeats[3].Action, "Priya hit 14 and busted before the hero acted");
+            Assert.AreEqual(RoundPhase.Playing, s.Phase);
+
+            s = RoundEngine.Hit(s, shoe);
+            Assert.AreEqual(RoundPhase.Dealer, s.Phase);
             var settled = RoundEngine.RunToSettlement(s, shoe, T.Names);
-            Assert.AreEqual("BUST", settled.NpcSeats[3].Action, "Priya acted after the hero");
-            Assert.AreEqual(RoundPhase.Settlement, settled.Phase);
             Assert.IsTrue(settled.SweepInfo.Contributors.Any(c => c.Name == T.Names[3] && c.Reason == "bust"));
         }
 
         [Test]
-        public void ANaturalLetsBothSidesPlay()
+        public void TheHeroSeesEarlierBustsBeforeDeciding()
+        {
+            // Three seats bust, one stands on 18. A hero on 17 can stand and still look at every other hand first.
+            var s = FullTable(new[] { "10", "7" }, Seat("10", "4"), Seat("10", "4"), Seat("10", "8"), Seat("10", "4"));
+            var shoe = T.Stacked("K", "K", "K");
+            s = RoundEngine.HandOverAfterSeats(RoundEngine.PlaySeats(s, shoe, RoundPhase.Npcs));
+            Assert.AreEqual(RoundPhase.Playing, s.Phase);
+            Assert.AreEqual(3, s.NpcSeats.Count(n => n.Action == "BUST"), "the hero decides with the busts already on the table");
+            Assert.AreEqual("STAND", s.NpcSeats[2].Action);
+        }
+
+        [Test]
+        public void ANaturalGoesStraightToTheDealerAfterTheSeats()
         {
             var s = FullTable(new[] { "A", "K" }) with { Hands = new[] { new Hand(T.Cards("A", "K"), 100, HandStatus.Blackjack) } };
             var shoe = T.Stacked();
             s = RoundEngine.HandOverAfterSeats(RoundEngine.PlaySeats(s, shoe, RoundPhase.Npcs));
-            Assert.AreEqual(RoundPhase.NpcsAfter, s.Phase, "nothing for the hero to decide: third base plays on");
+            Assert.AreEqual(RoundPhase.Dealer, s.Phase, "nothing for the hero to decide");
             var settled = RoundEngine.RunToSettlement(s, shoe, T.Names);
             Assert.IsTrue(settled.NpcSeats.All(n => n.Done));
             Assert.AreEqual("Blackjack! You win", settled.Message);
@@ -229,11 +244,11 @@ namespace Blackjack.Core.Tests
         }
 
         [Test]
-        public void SurrenderHandsOverToThirdBase_notStraightToTheDealer()
+        public void SurrenderHandsStraightToTheDealer()
         {
             var s = FullTable(new[] { "10", "6" }) with { Phase = RoundPhase.Playing };
             s = RoundEngine.Surrender(s);
-            Assert.AreEqual(RoundPhase.NpcsAfter, s.Phase);
+            Assert.AreEqual(RoundPhase.Dealer, s.Phase);
         }
     }
 }

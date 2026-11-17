@@ -186,7 +186,7 @@
 "actionKeep": "garde {amount}",
 "actionTwoCardsOnly": "deux premières cartes",
 "actionNotAfterSplit": "pas après séparation",
-"turnYouPlayThird": "vous jouez en 3e",
+"turnYouPlayLast": "vous jouez en dernier",
 "turnStandsAutomatically": "reste automatiquement",
 "turnHandOf": "Main {hand} sur {total}",
 "turnDoubled": "Doublée · {total}",

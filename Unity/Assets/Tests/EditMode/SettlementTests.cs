@@ -29,7 +29,7 @@ namespace Blackjack.Core.Tests
                 {
                     new NpcSeat(50, T.Cards("10", "8"), "STAND", true),       // first base, beats the dealer
                     new NpcSeat(50, T.Cards("10", "7"), "STAND", true),       // first base, ties: a push, keeps the bet
-                    new NpcSeat(25, T.Cards("10", "5", "9"), "BUST", true),   // third base, acted after the hero
+                    new NpcSeat(25, T.Cards("10", "5", "9"), "BUST", true),   // third base
                     new NpcSeat(100, T.Cards("10", "6"), "STAND", true),      // third base, under the dealer
                 },
             }, T.Names);

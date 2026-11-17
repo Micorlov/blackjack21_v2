@@ -186,7 +186,7 @@
 "actionKeep": "вернёт {amount}",
 "actionTwoCardsOnly": "первые две карты",
 "actionNotAfterSplit": "не после сплита",
-"turnYouPlayThird": "вы ходите третьим",
+"turnYouPlayLast": "вы ходите последним",
 "turnStandsAutomatically": "стоп автоматически",
 "turnHandOf": "Рука {hand} из {total}",
 "turnDoubled": "Удвоено · {total}",

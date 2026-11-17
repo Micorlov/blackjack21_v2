@@ -6,7 +6,7 @@ namespace Blackjack.Game.UI
     /// <summary>
     /// The turn row above the action buttons: a gold label ("Your turn", "Maya is playing"), then either the
     /// hero's clock (a gold bar emptying over <see cref="GameController.TurnSeconds"/> and the seconds left) or a
-    /// quiet note ("you play third"). It reads the controller every frame instead of joining the panel's rebuild
+    /// quiet note ("you play last"). It reads the controller every frame instead of joining the panel's rebuild
     /// signature, so the panel is not rebuilt sixty times a second.
     /// </summary>
     public sealed class TurnTimerView : MonoBehaviour

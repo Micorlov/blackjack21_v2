@@ -186,7 +186,7 @@
 "actionKeep": "recuperas {amount}",
 "actionTwoCardsOnly": "dos primeras cartas",
 "actionNotAfterSplit": "no tras dividir",
-"turnYouPlayThird": "juegas tercero",
+"turnYouPlayLast": "juegas el último",
 "turnStandsAutomatically": "se planta solo",
 "turnHandOf": "Mano {hand} de {total}",
 "turnDoubled": "Doblada · {total}",

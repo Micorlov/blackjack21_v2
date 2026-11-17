@@ -186,7 +186,7 @@
 "actionKeep": "שומר {amount}",
 "actionTwoCardsOnly": "שני קלפים ראשונים",
 "actionNotAfterSplit": "לא אחרי פיצול",
-"turnYouPlayThird": "אתה משחק שלישי",
+"turnYouPlayLast": "אתה משחק אחרון",
 "turnStandsAutomatically": "עומד אוטומטית",
 "turnHandOf": "יד {hand} מתוך {total}",
 "turnDoubled": "הוכפל · {total}",

@@ -29,10 +29,11 @@ A Unity (Android) blackjack game with a multi-seat table and a friends race. Fou
   (`docs/design-concepts/the-seat/`): a dark room with warm lamps, a wooden dealer's edge, green felt with
   its print curved along the table, a stitched leather rail, the dealer's tray, shoe and discard holder, and
   every screen in the same browns, brass gold and ivory. Portrait only
-- **Casino seat order** — the table plays the way a real one does: the two seats on your right (first
-  base, Maya and Jordan) act before you, the two on your left (Sam and Priya) after you, then the
-  dealer. A bust, surrender or natural on your side still lets the seats after you play, and their
-  forfeited bets reach the sweep pot. A dealer natural still ends the hand before anyone acts
+- **Hero acts last** — every opponent seat (Maya, Jordan, Sam and Priya, right to left across the felt)
+  plays before you, then you decide with their busts and totals on the table, then the dealer. A bust,
+  surrender or natural on your side goes straight to the dealer; the seats have already played and their
+  forfeited bets reach the sweep pot. A dealer natural still ends the hand before anyone acts. The seats
+  keep the casino layout (first base on the right of the felt)
 - **Turn timer** — your turn stands automatically after 20 seconds, as at a casino table; a gold bar
   and the seconds left sit above the action buttons and turn red for the last five. Each split hand
   gets a fresh clock (hitting does not restart it). The clock never runs on a coached tutorial hand
@@ -261,15 +262,15 @@ its `assets/` and `android/` output paths; point them at `Unity/Assets/Resources
 - `Unity/Assets/Scripts/Core/` — the rules engine as plain C# (`Blackjack.Core` assembly, no Unity
   references). Every step is a pure function from one immutable `RoundState` to the next; timing is left
   to the caller (`GameController`).
-- `Unity/Assets/Tests/EditMode/` — 172 NUnit tests (rules, betting, settlement, progression, controller,
+- `Unity/Assets/Tests/EditMode/` — 232 NUnit tests (rules, betting, settlement, progression, controller,
   RTL, contrast, turn order, turn timer). `Unity/Assets/Tests/PlayMode/` holds the scenario registry (`Scenarios.cs`), the
   screenshot test (`ScenarioShots`) and the design-rules audit (`RulesAudit` + `rules-baseline.txt`).
 - `Unity/Assets/Scripts/Game/UI/Type.cs` — the type ramp (`Type.Display` … `Type.Caption`, `Type.Numeral`)
   and `Type.Floor` (12); `TextFloor` keeps a label at the floor however its parents are scaled;
   `Core/Contrast.cs` is the WCAG luminance/ratio maths the audit uses. A `FloorScope` on the felt gives
   every label created under it a `TextFloor` automatically (the hero area opts out until its redesign).
-- Turn order lives in `RoundEngine`: `SeatsActingIn(phase)` splits the seats around the hero
-  (`TableCatalog.SeatsBeforeHero` = 2), `RoundPhase.NpcsAfter` is the third-base turn, and
+- Turn order lives in `RoundEngine`: `SeatsActingIn(phase)` puts the hero last
+  (every seat acts in `RoundPhase.Npcs`, before the hero; `RoundPhase.NpcsAfter` is kept but empty), and
   `FeltMetrics.SeatSlot(i)` places each seat on the curve of the felt in that order (first base on the
   right in every language). The turn clock is `GameController.TurnTimer.cs` (`RoundState.TurnDeadline`)
   and `TurnTimerView` draws it.
@@ -530,6 +531,11 @@ lines show the SDK initialising and the anonymous sign-in.
 ## Changelog
 
 ### 2026-11-17
+- fix: **you now act last among the seats** (1.8.6, same release). Since 1.8.5 Maya and Jordan played before you and
+  Sam and Priya after, so you decided before two rivals and could not see their busts when going for the "Closest to
+  21" sweep pot. Now all four opponents play first, then you, then the dealer; `SeatsActingIn(Npcs)` covers every seat,
+  `NpcsAfter` is empty and `TableCatalog.SeatsBeforeHero` is gone. Seat placement on the felt is unchanged; the
+  turn-order strip puts "You" last and the note above the action buttons now reads "you play last" (was "you play third", all 10 languages). Turn-order tests rewritten.
 - fix: **Analytics and Crashlytics are on again** outside Europe. 1.8.4/1.8.5 switched them off in the manifest and
   defaulted the switch off; the manifest flags are gone, `AnalyticsOn` defaults to true, and a save with no explicit
   choice loads as on (it used to reset to off, and 1.8.4/1.8.5 wrote that off back to the save). An explicit opt-out is kept.

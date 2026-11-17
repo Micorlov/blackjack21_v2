@@ -182,19 +182,15 @@ namespace Blackjack.Core
 
         // ---- opponent seats ---------------------------------------------------------------------
 
-        /// <summary>The seats that act in <paramref name="phase"/>: first base before the hero, third base after.</summary>
-        public static IEnumerable<int> SeatsActingIn(RoundPhase phase, int seatCount)
-        {
-            var split = Math.Min(TableCatalog.SeatsBeforeHero, seatCount);
-            return phase switch
-            {
-                RoundPhase.Npcs => Enumerable.Range(0, split),
-                RoundPhase.NpcsAfter => Enumerable.Range(split, seatCount - split),
-                _ => Enumerable.Empty<int>(),
-            };
-        }
+        /// <summary>
+        /// The seats that act in <paramref name="phase"/>. The hero acts last among the player seats: every
+        /// opponent plays in <see cref="RoundPhase.Npcs"/>, then the hero, then the dealer.
+        /// <see cref="RoundPhase.NpcsAfter"/> is kept in the enum but no seat acts in it any more.
+        /// </summary>
+        public static IEnumerable<int> SeatsActingIn(RoundPhase phase, int seatCount) =>
+            phase == RoundPhase.Npcs ? Enumerable.Range(0, seatCount) : Enumerable.Empty<int>();
 
-        /// <summary>The first-base seats take their turns, or the hero does straight away when there are none.</summary>
+        /// <summary>The opponent seats take their turns, or the hero does straight away when there are none.</summary>
         public static RoundState StartNpcTurns(RoundState s) =>
             SeatsActingIn(RoundPhase.Npcs, s.NpcSeats.Count).Any() ? s with { Phase = RoundPhase.Npcs } : HandOverAfterSeats(s);
 
@@ -227,8 +223,8 @@ namespace Blackjack.Core
         }
 
         /// <summary>
-        /// Action passes to the hero once the first-base seats have played — unless there is nothing left to
-        /// decide (a natural), in which case the third-base seats go next.
+        /// Action passes to the hero once every opponent seat has played — unless there is nothing left to
+        /// decide (a natural), in which case the dealer goes next.
         /// </summary>
         public static RoundState HandOverAfterSeats(RoundState s)
         {
@@ -238,13 +234,13 @@ namespace Blackjack.Core
                 : cleared with { Phase = RoundPhase.Playing };
         }
 
-        /// <summary>Once the hero is done the third-base seats play; the dealer goes last.</summary>
+        /// <summary>Once the hero is done the dealer goes (no seat is left to act; <see cref="SeatsActingIn"/>).</summary>
         public static RoundState AfterHero(RoundState s) =>
             SeatsActingIn(RoundPhase.NpcsAfter, s.NpcSeats.Count).Any(i => !s.NpcSeats[i].Done)
                 ? s with { Phase = RoundPhase.NpcsAfter, ActingSeat = null }
                 : BeginDealer(s);
 
-        /// <summary>The third-base seats are done: the dealer turns the hole card.</summary>
+        /// <summary>No seat is left to act: the dealer turns the hole card.</summary>
         public static RoundState HandOverToDealer(RoundState s) => BeginDealer(s with { ActingSeat = null });
 
         // ---- hero actions -----------------------------------------------------------------------
@@ -321,8 +317,7 @@ namespace Blackjack.Core
         {
             if (s.ActiveHandIndex < s.Hands.Count - 1) return s with { ActiveHandIndex = s.ActiveHandIndex + 1 };
             if (s.Hands.Any(h => h.Status == HandStatus.Active)) return s;
-            // The table always plays out, even if every hero hand surrendered or bust: the seats after the hero
-            // still act, and their sweep-pot bets settle against the dealer's final total.
+            // The seats have already played, so the dealer plays out even if every hero hand surrendered or bust.
             return AfterHero(s);
         }
 

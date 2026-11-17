@@ -3,8 +3,8 @@ namespace Blackjack.Core
     public enum AppScreen { Onboarding, Lobby, Table, Stats, Friends, Settings }
 
     /// <summary>
-    /// The round in casino seat order: the seats on the hero's right (first base) act in <see cref="Npcs"/>, the
-    /// hero in <see cref="Playing"/>, the seats on the hero's left (third base) in <see cref="NpcsAfter"/>.
+    /// The round: every opponent seat acts in <see cref="Npcs"/>, then the hero (last of the player seats) in
+    /// <see cref="Playing"/>, then the dealer. <see cref="NpcsAfter"/> is unused since 1.8.6 (no seat acts after the hero).
     /// </summary>
     public enum RoundPhase { Betting, Insurance, Npcs, Playing, NpcsAfter, Dealer, Settlement }
 
