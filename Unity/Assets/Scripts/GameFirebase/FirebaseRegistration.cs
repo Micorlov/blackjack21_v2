@@ -25,11 +25,21 @@ namespace Blackjack.Game.Firebase
             ServiceFactories.Social = () => _social;
             ServiceFactories.Analytics = () => new FirebaseAnalyticsService();
             Application.logMessageReceived += OnLog;
+#if BJ_FIREBASE_EMULATOR
+            // QA builds run on synthetic accounts: keep them out of the live project's analytics and crash reports.
+            try
+            {
+                global::Firebase.Analytics.FirebaseAnalytics.SetAnalyticsCollectionEnabled(false);
+                global::Firebase.Crashlytics.Crashlytics.IsCrashlyticsCollectionEnabled = false;
+            }
+            catch (Exception e) { Debug.LogWarning("BJ_EMULATOR: could not disable analytics: " + e.Message); }
+#endif
         }
 
         internal static void ReportInstallOnce()
         {
-            if (_installReported || _social == null || !_social.Available) return;
+            // Diagnostics follow the usage-and-crash-reports switch and the region rule, like Analytics and Crashlytics do.
+            if (_installReported || _social == null || !_social.Available || !FirebaseAnalyticsService.CollectionAllowed) return;
             _installReported = true;
             Write("installs", new Dictionary<string, object>
             {
@@ -41,7 +51,7 @@ namespace Blackjack.Game.Firebase
 
         private static void OnLog(string message, string stack, LogType type)
         {
-            if (type != LogType.Exception || _social == null || !_social.Available) return;
+            if (type != LogType.Exception || _social == null || !_social.Available || !FirebaseAnalyticsService.CollectionAllowed) return;
             Write("errors", new Dictionary<string, object>
             {
                 ["message"] = Truncate(message, MaxMessageLength),

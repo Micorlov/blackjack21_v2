@@ -59,10 +59,22 @@ namespace Blackjack.Core.Tests
 
     internal sealed class FakeSocial : ISocialService
     {
-        public bool Available => true;
+        public bool Available { get; set; } = true;
         public string Uid { get; set; } = "hero-uid";
         public Action<IReadOnlyList<Friend>> Watcher;
         public readonly List<string> Reports = new List<string>();
+
+        // Account and data deletion: what the fake answers, and what the controller asked of it, in order.
+        public bool GoogleLinked;
+        public bool ReauthOk = true;
+        public CloudDeleteResult CloudResult = CloudDeleteResult.Done;
+        public DeleteStep AuthResult = DeleteStep.Done;
+        public bool StartCommit = true;            // whether the fake reports "commit started" before answering
+        public bool DeferCloud;
+        public Action<CloudDeleteResult> PendingCloud;
+        public bool DeferAuth;
+        public Action<DeleteStep> PendingAuth;
+        public readonly List<string> Calls = new List<string>();
 
         public void EnsureSignedIn(Action<bool> done) => done(true);
         public void FetchMyGroupCode(Action<string> done) => done("ABC234");
@@ -76,9 +88,24 @@ namespace Blackjack.Core.Tests
         public void EnsureCreatedAtStamped() { }
         public IDisposable WatchMembers(string code, Action<IReadOnlyList<Friend>> onUpdate) { Watcher = onUpdate; return new Stop(); }
         public void SignInWithGoogle(Action<GoogleProfile, string> done) => done(new GoogleProfile("Maya Test", null), null);
-        public void SignOut(Action done) => done();
+        public void SignOut(Action done) { Calls.Add("signout"); done(); }
         public void LoadFeatureFlags(Action<IReadOnlyDictionary<string, bool>> done) => done(new Dictionary<string, bool>());
         public GoogleProfile RestoredProfile() => null;
+        public bool IsGoogleLinked => GoogleLinked;
+        public void Reauthenticate(Action<bool> done) { Calls.Add("reauth"); done(ReauthOk); }
+        public void DeleteCloudRecords(string groupCode, Action commitStarted, Action<CloudDeleteResult> done)
+        {
+            Calls.Add("cloud:" + groupCode);
+            if (StartCommit && CloudResult != CloudDeleteResult.NothingDeleted) commitStarted();
+            if (DeferCloud) PendingCloud = done; else done(CloudResult);
+        }
+        public void DeleteAuthUser(Action<DeleteStep> done)
+        {
+            Calls.Add("auth");
+            if (DeferAuth) { PendingAuth = done; return; }
+            if (AuthResult == DeleteStep.Done) Uid = null;      // the account is really gone
+            done(AuthResult);
+        }
         private sealed class Stop : IDisposable { public void Dispose() { } }
     }
 
@@ -310,22 +337,65 @@ namespace Blackjack.Core.Tests
             Assert.IsNull(_rig.C.State.LastAdRewardAt, "an abandoned video must not start the cooldown");
         }
 
+        // Plays one hand's worth of "next hand", letting any between-hands ad come and go.
+        private void NextHandAndLetAdPass()
+        {
+            _rig.C.NextHand();
+            _rig.Advance(GameController.BreakAdDelaySeconds + 0.2);
+            _rig.Ads.PendingClose?.Invoke();
+            _rig.Ads.PendingClose = null;
+        }
+
         [Test]
         public void BreakAd_comesEveryFewHands_butNeverTwiceInsideTheGap()
         {
             _rig = new Rig();
             _rig.Ads.InterstitialReady = true;
             _rig.C.Set(s => s with { TutorialDismissed = true });
-            for (var i = 1; i < AdPacing.HandsBetween; i++) _rig.C.NextHand();
+            for (var i = 1; i < AdPacing.HandsBetween; i++) NextHandAndLetAdPass();
             Assert.AreEqual(0, _rig.Ads.InterstitialsShown);
-            _rig.C.NextHand();
+            NextHandAndLetAdPass();
             Assert.AreEqual(1, _rig.Ads.InterstitialsShown);
 
-            for (var i = 0; i < AdPacing.HandsBetween; i++) _rig.C.NextHand();
+            for (var i = 0; i < AdPacing.HandsBetween; i++) NextHandAndLetAdPass();
             Assert.AreEqual(1, _rig.Ads.InterstitialsShown);
             _rig.Now += AdPacing.MinGap;
-            _rig.C.NextHand();
+            NextHandAndLetAdPass();
             Assert.AreEqual(2, _rig.Ads.InterstitialsShown);
+        }
+
+        [Test]
+        public void BreakAd_isNotShownInTheTapThatCausedIt_andInputIsBlockedUntilItCloses()
+        {
+            _rig = new Rig();
+            _rig.Ads.InterstitialReady = true;
+            _rig.C.Set(s => s with { TutorialDismissed = true });
+            for (var i = 1; i < AdPacing.HandsBetween; i++) NextHandAndLetAdPass();
+
+            _rig.C.NextHand();
+            Assert.AreEqual(0, _rig.Ads.InterstitialsShown, "not in the same tap");
+            Assert.IsTrue(_rig.C.State.AdBreakActive, "input is blocked during the wait");
+            _rig.Advance(GameController.BreakAdDelaySeconds - 0.3);
+            Assert.AreEqual(0, _rig.Ads.InterstitialsShown, "still waiting");
+            _rig.Advance(0.5);
+            Assert.AreEqual(1, _rig.Ads.InterstitialsShown);
+            Assert.IsTrue(_rig.C.State.AdBreakActive, "and while it is showing");
+            var before = _rig.C.State;
+            _rig.C.NextHand();
+            Assert.AreSame(before, _rig.C.State, "taps are ignored meanwhile");
+
+            _rig.Ads.PendingClose();
+            Assert.IsFalse(_rig.C.State.AdBreakActive);
+        }
+
+        [Test]
+        public void NextHand_withNoAdDue_isNotDelayed()
+        {
+            _rig = new Rig();
+            _rig.Ads.InterstitialReady = true;
+            _rig.C.Set(s => s with { TutorialDismissed = true });
+            _rig.C.NextHand();
+            Assert.IsFalse(_rig.C.State.AdBreakActive);
         }
 
         [Test]
@@ -333,10 +403,11 @@ namespace Blackjack.Core.Tests
         {
             _rig = new Rig();
             _rig.C.Set(s => s with { TutorialDismissed = true });
-            for (var i = 0; i < AdPacing.HandsBetween; i++) _rig.C.NextHand();
+            for (var i = 0; i < AdPacing.HandsBetween; i++) NextHandAndLetAdPass();
             Assert.AreEqual(0, _rig.Ads.InterstitialsShown);
+            Assert.IsFalse(_rig.C.State.AdBreakActive, "no ad ready, so nothing waits");
             _rig.Ads.InterstitialReady = true;
-            _rig.C.NextHand();
+            NextHandAndLetAdPass();
             Assert.AreEqual(1, _rig.Ads.InterstitialsShown);
         }
 

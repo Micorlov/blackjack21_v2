@@ -32,9 +32,15 @@ namespace Blackjack.Game
             });
         }
 
+        /// <summary>Pause between the Next Hand tap and the ad, so the ad never opens under the player's finger.</summary>
+        public const double BreakAdDelaySeconds = 1.0;
+        private const double BreakAdSafetySeconds = 120;
+        private TimerHandle _breakAdTimer, _breakAdSafety;
+
         /// <summary>
-        /// Called as a finished hand clears. Nothing is dealt or timed at this point, so the ad interrupts nothing, and
-        /// a hand counts towards the next one whether or not an ad is ready.
+        /// Called as a finished hand clears. A hand counts towards the next ad whether or not one is ready. When an ad is due
+        /// and loaded, the next hand is still dealt at once, but the ad waits <see cref="BreakAdDelaySeconds"/> and input is
+        /// swallowed until it has closed. With no ad due or ready nothing is delayed.
         /// </summary>
         private void MaybeShowBreakAd()
         {
@@ -42,10 +48,29 @@ namespace Blackjack.Game
             var now = _now();
             var tutorialDone = State.TutorialDismissed || State.TutorialRoundsSeen >= Tutorial.Rounds;
             if (!AdPacing.IsDue(_handsSinceAd, _lastBreakAdAt, now, tutorialDone)) return;
-            if (!_svc.Ads.ShowInterstitial()) return;
+            if (!_svc.Ads.InterstitialReady) return;
+            SetAdBreak(true);
+            _breakAdSafety = After(BreakAdSafetySeconds, () => SetAdBreak(false));
+            _breakAdTimer = After(BreakAdDelaySeconds, ShowBreakAd);
+        }
+
+        private void ShowBreakAd()
+        {
+            _breakAdTimer = null;
+            if (!_svc.Ads.ShowInterstitial(() => SetAdBreak(false)))
+            {
+                SetAdBreak(false);
+                return;
+            }
             _handsSinceAd = 0;
-            _lastBreakAdAt = now;
+            _lastBreakAdAt = _now();
             _svc.Analytics.LogEvent(AnalyticsEvent.BreakAdShown);
+        }
+
+        private void SetAdBreak(bool on)
+        {
+            if (!on) { Cancel(ref _breakAdTimer); Cancel(ref _breakAdSafety); }
+            if (State.AdBreakActive != on) Set(s => s with { AdBreakActive = on });
         }
     }
 }

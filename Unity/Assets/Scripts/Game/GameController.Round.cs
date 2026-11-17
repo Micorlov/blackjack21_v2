@@ -113,6 +113,7 @@ namespace Blackjack.Game
 
         public void DealRound()
         {
+            if (State.AdBreakActive) return;
             if (!RoundEngine.CanDeal(Round)) return;
             var prev = Round;
             var next = RoundEngine.Deal(prev, _shoe, SeatNames());
@@ -504,6 +505,7 @@ namespace Blackjack.Game
 
         public void NextHand()
         {
+            if (State.AdBreakActive) return;
             // The tutorial advances here rather than at settlement, so the last card of a hand is still the recap.
             var tutorialSeen = Math.Min(State.TutorialRoundsSeen + 1, Tutorial.Rounds);
             var tutorialAdvanced = tutorialSeen != State.TutorialRoundsSeen;

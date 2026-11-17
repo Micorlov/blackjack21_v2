@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="index, follow">
+  <title>Delete your account and data — Blackjack 21</title>
+  <link rel="icon" type="image/png" href="favicon.png"/>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0c1a12;
+      --surface: #12261a;
+      --border: #2a4535;
+      --gold: #e8c574;
+      --text: #f2ede1;
+      --text-dim: #b9c3ba;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at 50% -10%, #17301f 0%, var(--bg) 55%);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+    }
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 5rem;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 2rem;
+    }
+    .brand img { width: 40px; height: 40px; border-radius: 10px; }
+    .brand span { font-weight: 700; font-size: 1.1rem; letter-spacing: 0.02em; }
+    h1 {
+      font-size: 1.9rem;
+      margin: 0 0 0.25rem;
+      color: var(--gold);
+    }
+    .updated { color: var(--text-dim); font-size: 0.9rem; margin-bottom: 2.5rem; }
+    h2 {
+      font-size: 1.15rem;
+      color: var(--gold);
+      margin-top: 2.5rem;
+      border-top: 1px solid var(--border);
+      padding-top: 1.5rem;
+    }
+    p, li { color: var(--text); }
+    ul { padding-left: 1.25rem; }
+    a { color: var(--gold); }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+      margin-top: 1rem;
+    }
+    footer { margin-top: 3rem; color: var(--text-dim); font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand">
+      <img src="favicon.png" alt="">
+      <span>Blackjack 21</span>
+    </div>
+
+    <h1>Delete your account and data</h1>
+    <p class="updated">Last updated: November 8, 2026</p>
+
+    <p>You can ask us to delete your Blackjack 21 online account and the records
+      the game keeps about you. There is no form that deletes anything
+      automatically on this page: a request is an email that we read and act on
+      ourselves, and we will delete the records we can match to it within 30 days.</p>
+
+    <h2>Fastest: delete it in the app</h2>
+    <p>In version 1.8.4 and later: <strong>Settings</strong> &rarr;
+      <strong>Privacy</strong> &rarr; <strong>Delete account and data</strong>.
+      This deletes your own online records and account straight away, and it also removes your ID from the group and invite pointers that name you. See the
+      <a href="/privacy-policy.html#data-deletion">privacy policy</a> for exactly
+      what it removes.</p>
+
+    <h2>Or ask us by email</h2>
+    <p>Use this if you cannot open the app, or have uninstalled it.</p>
+    <div class="card">
+      <a href="mailto:micorlov@gmail.com?subject=Delete%20my%20Blackjack%2021%20account%20and%20data&amp;body=Please%20delete%20my%20Blackjack%2021%20online%20account%20and%20data.%0A%0AMy%20Account%20ID%20(Settings%20%3E%20Privacy%20%3E%20Account%20ID)%3A%20%0A%0AIf%20I%20cannot%20get%20it%2C%20my%20name%20as%20shown%20on%20the%20leaderboard%20(for%20a%20guest%2C%20something%20like%20%22Guest%20AB12%22%2C%20or%20your%20Google%20display%20name)%3A%20%0A%0AMy%20friends-group%20code%20(6%20characters%2C%20if%20I%20joined%20or%20made%20a%20group)%3A%20%0A%0AIf%20I%20signed%20in%20with%20Google%2C%20the%20Google%20account%20email%3A%20%0A">Email a deletion request to micorlov@gmail.com</a>
+    </div>
+    <p>Please include, in this order of preference:</p>
+    <ul>
+      <li>your <strong>Account ID</strong>: open the app, then Settings &rarr; Privacy &rarr;
+        <em>Account ID</em> and tap it to copy (it is a random identifier for your online
+        account, so share it only for this request);</li>
+      <li>if you cannot open the app, the name that shows for you on the leaderboard (a guest
+        shows as &ldquo;Guest&rdquo; followed by four letters or digits; a Google user shows
+        their Google display name) and your 6-character friends-group code, if you joined or
+        created one;</li>
+      <li>if you signed in with Google, the email address of that Google account, so we can
+        find the sign-in record.</li>
+    </ul>
+    <p>Do not send passwords or payment details: the game has none of them. We can
+      only delete records we can match to what you send. If we cannot find a record
+      we will reply and say so.</p>
+
+    <h2>What is deleted, and what is not</h2>
+    <ul>
+      <li><strong>Deleted:</strong> your leaderboard record, your player record,
+        your member row in your friends group, and your Firebase Authentication
+        account (including the Google email held there). Your ID is also removed from
+        the group record of a group you created and from other members' invite pointers
+        (replaced by &ldquo;deleted&rdquo;).</li>
+      <li><strong>Not deleted:</strong> your save file on your phone (uninstalling
+        the app removes it); the record of a friends group you created, which keeps
+        its code and creation time (with your ID replaced by &ldquo;deleted&rdquo;), and other
+        members' records; install
+        and error records, which contain no name or account ID and so cannot be
+        matched to you; and data Google holds for Analytics, Crashlytics and
+        AdMob, which is handled under Google's policies.</li>
+    </ul>
+
+    <p>Back to the <a href="/privacy-policy.html">privacy policy</a>.</p>
+
+    <footer>Blackjack 21 · <a href="/">blackjack21-v2.web.app</a></footer>
+  </main>
+</body>
+</html>

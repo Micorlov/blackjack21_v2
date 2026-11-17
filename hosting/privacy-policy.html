@@ -71,7 +71,7 @@
     </div>
 
     <h1>Privacy Policy</h1>
-    <p class="updated">Last updated: November 7, 2026</p>
+    <p class="updated">Last updated: November 17, 2026</p>
 
     <p>
       Blackjack 21 ("the app") is a free, virtual-chip card game. It does not involve
@@ -80,30 +80,53 @@
       This page explains what data the app collects and how it is used.
     </p>
 
-    <h2>Account & sign-in</h2>
+    <h2>Account &amp; sign-in</h2>
     <p>You can play in two ways:</p>
     <ul>
-      <li><strong>Guest play</strong> — the app creates an anonymous account for
-        your device via Firebase Authentication. No personal information is
-        collected.</li>
-      <li><strong>Google Sign-In (optional)</strong> — if you choose to sign in
-        with Google, the app receives your Google account's display name and
-        profile photo. This is used only to show your name/avatar to other
-        players in leaderboards and friend groups.</li>
+      <li><strong>Guest play</strong> &mdash; the first time the app opens it
+        automatically creates an anonymous account for your device through
+        Firebase Authentication. You do not type a name or email address. The
+        account is identified by a random user ID, and Google's Firebase services
+        process technical data such as your IP address to run and secure the
+        service.</li>
+      <li><strong>Google Sign-In (optional)</strong> &mdash; if you choose to sign
+        in with Google, the app asks Google for the &ldquo;email&rdquo; and
+        &ldquo;profile&rdquo; information and Google passes your display name,
+        profile photo and email address to Firebase Authentication, which keeps
+        them in your account record. Your display name is then used as your name
+        in the game. The app itself does not read or save your email address, and
+        your profile photo is shown on your device only: the app does not upload
+        it to its game database. Signing in is linked to your guest account where possible; if your Google account already has a game account, you are signed into that one instead.</li>
     </ul>
 
-    <h2>What we store</h2>
-    <p>The app stores game data in Firebase (Firestore), tied to your account id:</p>
+    <h2>What stays on your device and what goes to the cloud</h2>
+    <p><strong>On your device.</strong> Your chips, statistics, settings and other
+      progress are saved in the app's own storage on your device. The app does not
+      upload that save file and has no cloud save.</p>
+    <p><strong>In the cloud.</strong> Whether you are a guest or signed in, the
+      app stores the following in Firebase (Cloud Firestore), tied to your account's
+      user ID. It publishes these when the app starts, after rounds, and about once a
+      minute while the app is open:</p>
     <ul>
-      <li>Your display name and avatar (visible to other players in your friend
-        group and on leaderboards)</li>
-      <li>Your chip balance, stats, and leaderboard score</li>
-      <li>Friend-group membership (a 6-character code shared with people you
-        invite)</li>
+      <li>Your display name (your Google name, or a generated name such as
+        &ldquo;Guest AB12&rdquo; for a guest)</li>
+      <li>Your chip balance and your hourly and daily leaderboard points</li>
+      <li>How many seconds you have played</li>
+      <li>The app version and platform (Android)</li>
+      <li>A country code taken from your device's region setting &mdash; not from
+        GPS or any location service</li>
+      <li>If you create or join a friends group: the 6-character group code, your
+        membership of the group, the stake table you are sitting at, and which
+        player's invite you joined through (used for referral rewards)</li>
     </ul>
-    <p>We do not collect your email address, phone number, precise location, or
-      payment information — the app has no in-app purchases or payment features
-      of any kind.</p>
+    <p>Leaderboard and friends-group records can be read by other players of the
+      app, and anyone who holds a group's code can look the group up and see its
+      members, so treat your display name and these scores as visible within the
+      game.</p>
+    <p>The app does not ask for your phone number, precise location or payment
+      information, and it has no in-app purchases or payment features of any kind.
+      The only email address involved is the one Firebase Authentication holds if you
+      sign in with Google, as described above.</p>
 
     <h2>Notifications</h2>
     <p>If you allow notifications, the app schedules them <strong>entirely on
@@ -112,16 +135,29 @@
       and no notification content is transmitted off your device.</p>
 
     <h2>Usage and crash reports</h2>
-    <p>The app reports anonymous counts of what happens in the game &mdash; hands
-      played and their result, daily bonuses claimed, missions and achievements
-      completed, levels reached, which screens are opened &mdash; and sends a
-      report when it crashes. This is done through Google Firebase Analytics
-      (Google Analytics for Firebase) and Firebase Crashlytics. Crash reports
-      also include basic device and app information such as the device model,
-      Android version and app version. These reports carry no display name, no
-      group code, no account identifier and nothing you type. You can turn all
-      of it off under <strong>Privacy</strong> in the app's Settings, after
-      which nothing further is collected.</p>
+    <p>These are <strong>on by default</strong> and you can turn them off under
+      <strong>Settings &rarr; Privacy &rarr; Usage &amp; crash reports</strong>. The app reports
+      counts of what happens in the game &mdash; hands played and their result, daily
+      bonuses claimed, missions and achievements completed, levels reached, which
+      screens are opened &mdash; and sends a report when it crashes, through Google
+      Firebase Analytics (Google Analytics for Firebase) and Firebase Crashlytics.
+      Crash reports include basic device and app information such as the device model,
+      Android version and app version, and, as these Google services normally do, they
+      use identifiers that Google assigns to the app installation. Firebase Analytics is
+      set not to read your advertising ID. The app does not attach your display name,
+      group code or anything you type to these reports.</p>
+    <p>The same switch also controls the app's own <strong>install and error
+      records</strong> (an install/launch record with app version, platform and time, and
+      an error record with a shortened error message and stack trace, app version,
+      platform and time). They have no name or account ID field.</p>
+    <p><strong>European Economic Area, United Kingdom and Switzerland.</strong> There the
+      app uses Google's User Messaging Platform to ask for your consent first, and
+      nothing in this section is collected unless you agree. Your answer is passed on to
+      Google Analytics and Google's ad services as consent signals (analytics storage,
+      ad storage, ad user data, ad personalization). In those places the Usage &amp; crash
+      reports switch opens the same form, so you can review or change your answer at any
+      time. Your leaderboard record (below) is separate and is not controlled by this
+      switch.</p>
 
     <h2>Advertising</h2>
     <p>The app shows ads through Google AdMob: a banner at the bottom of the
@@ -131,28 +167,75 @@
       described in
       <a href="https://policies.google.com/technologies/partner-sites">how Google
       uses information from apps that use its services</a>. Where the law
-      requires it, such as in the EEA, the UK and Switzerland, the app asks for
-      your consent first, and <strong>Ad privacy choices</strong> under
+      requires it, such as in the EEA, the UK and Switzerland, the app uses
+      Google's User Messaging Platform to ask for your consent first, and the app
+      does not request ads until that consent allows it. Where that applies,
+      <strong>Privacy choices</strong> under
       <strong>Privacy</strong> in the app's Settings changes that answer later.
       You can also reset or delete the advertising ID in your Android settings.
-      Your display name, group code and chat are never used for ads.</p>
+      The app does not pass your display name, group code or chat to the ad
+      service.</p>
+    <p>The app is for people aged 13 and over, including teenagers, and does not
+      ask your age, so ads are age-restricted for everyone and nobody is shown
+      personalised ads or remarketing by default. Every ad request uses Google's
+      <em>teen</em> ad treatment (personalised ads and remarketing off, teen ad-serving
+      protections on), and the app asks for ads rated Teen or lower. In the EEA, the UK
+      and Switzerland, Google's consent form asks for your consent before the app requests
+      ads or starts analytics. The app does not tell the consent platform that you are under
+      the age of consent, so it is shown to everyone it applies to.</p>
 
     <h2>Data sharing</h2>
     <p>We do not sell your data. Data is shared with Google (Firebase and Google
       Analytics), our backend and analytics provider, to operate the app
       (authentication, database, hosting, usage and crash reports), and with
-      Google AdMob and its ad partners to show ads, as described above. It is not
-      shared with anyone else.</p>
+      Google AdMob and its ad partners to show ads, as described above. Other
+      players of the app can see the leaderboard and friends-group records
+      described above. It is not shared with anyone else.</p>
 
-    <h2>Data deletion</h2>
-    <p>To request deletion of your account and associated data, email us at
-      the address below with your in-app display name or friend-group code so
-      we can locate your record. We will delete it within 30 days.</p>
+    <h2 id="data-deletion">Data deletion</h2>
+    <p><strong>In the app.</strong> In version 1.8.4 and later, open
+      <strong>Settings</strong> &rarr; <strong>Privacy</strong> &rarr;
+      <strong>Delete account and data</strong> and confirm. The app then, in this order:
+      stops sending your records and waits for anything already queued to finish; asks
+      you to sign in with Google again if you signed in with Google (and deletes nothing if
+      that fails); replaces your ID with the word &ldquo;deleted&rdquo; in the invite
+      pointer of any other member's row that names you, and in the record of any friends
+      group you created; deletes your own member rows, your player record and your
+      leaderboard record in one step; and finally deletes your Firebase Authentication
+      account (including the Google email address held there, if you signed in with
+      Google). Your own records are deleted by your own account, and the app can only
+      change the pointers that name you, never anything else in other people's records.
+      Your save file on your phone (chips, statistics, settings) is kept and is not reset;
+      uninstalling the app removes it. Your Google account itself is not affected. The next
+      time the app starts it creates a new anonymous guest account, as on a first install,
+      and that new account publishes a new leaderboard record under a new ID, as described
+      above.</p>
+    <p>If the app cannot confirm the result in time, it says so, keeps online sync
+      paused (so nothing is written back) and asks you to run the deletion again, which
+      is safe to repeat. A request that could not start (for example offline) deletes
+      nothing and says so.</p>
+    <p><strong>By request.</strong> If you cannot use the app, use the
+      <a href="/delete-account.html">deletion request page</a> or email us at the address
+      below with your <strong>Account ID</strong> (shown in the app under Settings &rarr;
+      Privacy &rarr; <em>Account ID</em>; it is a random identifier for your online account,
+      so share it only for this purpose) or, if you cannot get it, your in-app display name
+      and friend-group code, so we can locate your record. We will delete it within 30 days
+      of receiving a request that lets us find your record.</p>
+    <p><strong>What deletion does not remove.</strong> The record of a friends group you
+      created keeps its code and creation time, with your ID replaced by
+      &ldquo;deleted&rdquo;, and other members' records stay. The install and error
+      records described above contain no name or account ID, so we cannot match them to
+      you. Data already held by Google for Analytics, Crashlytics and AdMob is handled
+      under Google's own policies and is not removed by the app's delete button. A person
+      who joins one of your groups in the instant while the deletion runs, or an older app
+      version still signed in to the same account on another device, could add a record
+      the deletion did not see. Signing out does not delete anything.</p>
 
     <h2>Children</h2>
-    <p>Blackjack 21 is not directed at children and simulates casino-style
-      betting with virtual chips; it is not intended for users who do not meet
-      the minimum age required by their app store's content rating.</p>
+    <p>Blackjack 21 is intended for people aged 13 and over, including teenagers,
+      and is not directed at children under 13. It simulates casino-style betting
+      with virtual chips only. If you believe a child under 13 has used the app,
+      contact us at the address below and we will delete their records.</p>
 
     <h2>Changes to this policy</h2>
     <p>If this policy changes, the "Last updated" date above will change and,

@@ -24,6 +24,7 @@ namespace Blackjack.Game.UI
         private AppScreen? _shown;
         private AppState _state;
         private bool _rebuildForLanguage;
+        private GameObject _inputBlock;
 
         public GameController Controller => _g;
         public UiRoot Ui => _ui;
@@ -52,6 +53,12 @@ namespace Blackjack.Game.UI
 
             _overlays = new Overlays(_ui.Overlay);
             _toasts = new ToastLayer(_ui.Overlay);
+            // Swallows every tap while the between-hands ad is pending or showing, so nothing is pressed under it.
+            _inputBlock = Blackjack.Game.UI.Ui.Node("AdInputBlock", _ui.Overlay).Fill().gameObject;
+            var blockImage = _inputBlock.AddComponent<Image>();
+            blockImage.color = new Color(0, 0, 0, 0);
+            blockImage.raycastTarget = true;
+            _inputBlock.SetActive(false);
             _g.OverlayBack = () => _overlays.CloseTop();
             _g.Changed += OnState;
             Loc.Changed += OnLanguageChanged;
@@ -72,6 +79,7 @@ namespace Blackjack.Game.UI
         private void OnState(AppState s)
         {
             _state = s;
+            _inputBlock.SetActive(s.AdBreakActive);
             if (_shown != s.Screen)
             {
                 if (_shown.HasValue && _screens.TryGetValue(_shown.Value, out var old)) old.Root.gameObject.SetActive(false);

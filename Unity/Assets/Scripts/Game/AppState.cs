@@ -83,7 +83,11 @@ namespace Blackjack.Game
         public string LastPlayDayKey { get; init; } = "";
         public DateTime? LastRebuyAt { get; init; }
         public DateTime? LastAdRewardAt { get; init; }
+        /// <summary>Usage and crash reports. On unless the player switched them off; see <see cref="AnalyticsChoiceMade"/>.</summary>
         public bool AnalyticsOn { get; init; } = true;
+        /// <summary>True from the Next Hand tap until the between-hands ad is gone; the UI swallows taps meanwhile.</summary>
+        public bool AdBreakActive { get; init; }
+        public bool AnalyticsChoiceMade { get; init; }
         public bool ReviewPromptShown { get; init; }
         public long ReviewLastAttemptAtMs { get; init; }
         public int ReviewRequestCount { get; init; }

@@ -1,7 +1,7 @@
 {
     "name": "Blackjack.Game.Ads",
     "rootNamespace": "Blackjack.Game.Ads",
-    "references": ["Blackjack.Game"],
+    "references": ["Blackjack.Game", "Blackjack.Core"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

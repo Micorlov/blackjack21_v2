@@ -362,5 +362,163 @@ namespace Blackjack.Game
             Set(s => s with { SignedIn = false, DisplayName = "Guest", PhotoUrl = null });
             ShowToast(Loc.Or("toastSignedOut", "Signed out"));
         });
+
+        // ---- account and data deletion ----------------------------------------------------------------
+
+        private bool _deleting;
+        private int _deleteGeneration;
+        private bool _deleteMayHaveStarted;
+        private bool _syncWasOn;
+
+        // How long each phase may stay silent. Before the first change a silence means "offline, nothing deleted"; after it, the
+        // outcome is unknown. Firestore transactions fail instead of queueing when offline, and the Auth call may still land late.
+        private const float DeletePrepSeconds = 25f;
+        private const float DeleteCommitSeconds = 60f;
+        private const float DeleteAccountSeconds = 30f;
+
+        /// <summary>
+        /// Deletes the player's own online records, every reference to their uid, and their Firebase account, after the Settings
+        /// dialog has confirmed. Order and safety:
+        /// 1. everything that writes under the uid is stopped (heartbeat, group listener, SocialReady off) and queued writes drain;
+        /// 2. a Google user signs in again first (Firebase insists on a recent sign-in);
+        /// 3. the service clears the uid from other members' invitedBy and, in one atomic transaction, tombstones groups the player
+        ///    created and deletes their own rows (see <see cref="ISocialService.DeleteCloudRecords"/>);
+        /// 4. the Auth user is deleted.
+        /// A step that never answers is NOT treated as cancelled: before the first change it means nothing was deleted and syncing
+        /// resumes; afterwards the outcome is reported as unknown, syncing stays paused (resuming could write the rows back) and a
+        /// retry, which is idempotent, settles it. Callbacks from an abandoned attempt are ignored. The save on this device (chips,
+        /// stats, settings) is kept; only the online identity is reset.
+        /// </summary>
+        public void DeleteAccountAndData(Action<DeleteOutcome> done = null)
+        {
+            if (_deleting) return;
+            var social = _svc.Social;
+
+            void Report(DeleteOutcome outcome)
+            {
+                ShowToast(DeleteMessage(outcome));
+                done?.Invoke(outcome);
+            }
+
+            if (!social.Available) { Report(DeleteOutcome.Unavailable); return; }
+            if (string.IsNullOrEmpty(social.Uid))
+            {
+                // An earlier attempt that never reported back may have removed the account after all.
+                if (_deleteMayHaveStarted) { FinishLocalDeletion(); Report(DeleteOutcome.Deleted); return; }
+                Report(DeleteOutcome.Unavailable);
+                return;
+            }
+
+            _deleting = true;
+            var generation = ++_deleteGeneration;
+            var code = State.GroupCode;
+            if (!_deleteMayHaveStarted) _syncWasOn = State.SocialReady;
+            _heartbeatTimer?.Cancel();
+            _groupSub?.Dispose();
+            _groupSub = null;
+            Set(s => s with { SocialReady = false });
+
+            TimerHandle watchdog = null;
+            bool Current() => _deleting && generation == _deleteGeneration;
+            void Arm(float seconds, Action onSilence) { watchdog?.Cancel(); watchdog = After(seconds, () => { if (Current()) onSilence(); }); }
+            void Disarm() => watchdog?.Cancel();
+
+            // Nothing of the player's own was deleted: normal syncing resumes, unless an earlier attempt may still land.
+            void Resume(DeleteOutcome outcome)
+            {
+                _deleting = false;
+                if (_syncWasOn && !_deleteMayHaveStarted)
+                {
+                    Set(s => s with { SocialReady = true });
+                    if (code != null) SubscribeGroup(code);
+                    ScheduleHeartbeat();
+                }
+                Report(outcome);
+            }
+
+            // The outcome is not known: stay paused; running the deletion again settles it.
+            void GiveUp()
+            {
+                _deleteMayHaveStarted = true;
+                _deleting = false;
+                Report(DeleteOutcome.Unknown);
+            }
+
+            void RemoveAccount()
+            {
+                _deleteMayHaveStarted = true;   // from here the account may disappear at any moment
+                Arm(DeleteAccountSeconds, GiveUp);
+                social.DeleteAuthUser(step =>
+                {
+                    if (!Current()) return;
+                    Disarm();
+                    _deleting = false;
+                    if (step == DeleteStep.Done) { FinishLocalDeletion(); Report(DeleteOutcome.Deleted); return; }
+                    // The cloud rows are already gone. Do not resume syncing: it would write them back.
+                    if (step == DeleteStep.RecentLoginNeeded && !social.IsGoogleLinked)
+                    {
+                        // A guest has nothing to sign in with again. Drop the session so the next launch starts a fresh guest.
+                        _deleteMayHaveStarted = false;
+                        social.SignOut(() =>
+                        {
+                            Set(s => s with { HeroUid = null, GroupCode = null, FriendsAreLive = false, Friends = Roster.InitialFriends });
+                            ScheduleSave();
+                            Report(DeleteOutcome.RecordsDeletedAccountKept);
+                        });
+                        return;
+                    }
+                    Report(DeleteOutcome.RecordsDeletedAccountKept);
+                });
+            }
+
+            void RemoveCloud()
+            {
+                Arm(DeletePrepSeconds, () => Resume(DeleteOutcome.CloudFailed));
+                social.DeleteCloudRecords(code,
+                    () => { if (Current()) Arm(DeleteCommitSeconds, GiveUp); },
+                    result =>
+                    {
+                        if (!Current()) return;
+                        Disarm();
+                        if (result == CloudDeleteResult.Done) RemoveAccount();
+                        else if (result == CloudDeleteResult.NothingDeleted) Resume(DeleteOutcome.CloudFailed);
+                        else GiveUp();
+                    });
+            }
+
+            if (social.IsGoogleLinked)
+                social.Reauthenticate(ok =>
+                {
+                    if (!Current()) return;
+                    if (!ok) { Resume(DeleteOutcome.SignInFailed); return; }
+                    RemoveCloud();
+                });
+            else
+                RemoveCloud();
+        }
+
+        private void FinishLocalDeletion()
+        {
+            _deleting = false;
+            _deleteMayHaveStarted = false;
+            // SocialReady stays off: no heartbeat or score write may recreate a row this session. The next launch signs in as a
+            // brand new anonymous guest, as on a first install.
+            Set(s => s with
+            {
+                SignedIn = false, DisplayName = "Guest", PhotoUrl = null, GroupCode = null, HeroUid = null,
+                HeroHourlyPoints = 0, HeroDailyPoints = 0, FriendsAreLive = false, Friends = Roster.InitialFriends,
+            });
+            ScheduleSave();
+        }
+
+        private static string DeleteMessage(DeleteOutcome outcome) => outcome switch
+        {
+            DeleteOutcome.Deleted => "Your online account and data were deleted.",
+            DeleteOutcome.Unavailable => "Can't reach the server. Connect to the internet and try again.",
+            DeleteOutcome.SignInFailed => "Sign in again with Google to confirm. Nothing was deleted.",
+            DeleteOutcome.CloudFailed => "Couldn't delete your online data. Nothing was deleted. Check your connection and try again.",
+            DeleteOutcome.Unknown => "We couldn't confirm the deletion finished. Online sync is paused. Choose Delete account and data again to check: trying again is safe.",
+            _ => "Your online data was deleted, but the sign-in record couldn't be removed. Try again, or email us your account ID.",
+        };
     }
 }

@@ -20,6 +20,10 @@ namespace Blackjack.Game.Services
         {
             get
             {
+#if BJ_FIREBASE_EMULATOR
+                var qaRegion = QaOverrides.Extra("bj_region");
+                if (qaRegion != null) return qaRegion;
+#endif
                 try { return RegionInfo.CurrentRegion.TwoLetterISORegionName; }
                 catch (Exception) { return ""; }
             }

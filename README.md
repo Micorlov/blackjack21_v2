@@ -10,8 +10,9 @@ A Unity (Android) blackjack game with a multi-seat table and a friends race. Fou
 - **Ads through Google AdMob** — an optional "Watch a video" route in the Out of chips sheet pays 500
   chips, once an hour, and only for a video watched through. A full-screen ad can appear as a finished
   hand clears: never in the coached first hands, at most every 5 hands and 4 minutes, and the game simply
-  carries on when none is loaded. Consent comes first where the law requires it (Google's User Messaging
-  Platform), and Settings then offers **Ad privacy choices**.
+  carries on when none is loaded. The Next Hand tap never opens the ad itself: when one is due and loaded the
+  next hand is dealt, the ad follows after about 1 s, and taps are swallowed until it has closed. Consent comes
+  first where the law requires it (Google's User Messaging Platform), and Settings then offers **Privacy choices**.
 - **Play now** — guest entry opens the coached Bronze table directly, with no bet placed.
   Google sign-in stays available.
 - **Activation measurement** — first-hand, ten-hand and tutorial milestones, entry-choice events,
@@ -48,6 +49,26 @@ A Unity (Android) blackjack game with a multi-seat table and a friends race. Fou
   hero is never asked to act; the hand is marked `Blackjack!` from the deal and the table plays
   on around it. A *dealer* natural still ends everything before anyone acts — no bet can be
   forfeited to a pot when no seat has played
+- **Delete account and data** — Settings → Privacy → *Delete account and data* (a destructive dialog) removes the
+  signed-in user's own online records and Firebase account and every reference to their uid, using only writes the
+  security rules allow a user on their own data: it stops all online writes and drains queued ones, has a Google user
+  sign in again first, clears their uid from other members' `invitedBy` (to `"deleted"`), then in one atomic Firestore
+  transaction tombstones groups they created (`createdBy` → `"deleted"`) and deletes their member rows, `players/{uid}`
+  and `leaderboard/{uid}`, verifies, and deletes the Auth user. A step that goes silent is never called "cancelled":
+  before the first change it means nothing was deleted and sync resumes; afterwards the outcome is reported as
+  **unknown**, sync stays paused, and running it again (idempotent) settles it. *Account ID* (Settings → Privacy) shows
+  the uid so a deletion request can name it. The save on the phone is not reset; the next launch starts a new anonymous
+  guest. `hosting/delete-account.html` is the matching web request page (email, answered within 30 days).
+  **Needs `firestore.rules` deployed first** (see `deploy-staging/` in the release package).
+- **Age and consent** — the game is for ages 13+ and asks no age; it never sets UMP's under-age tag (that would
+  suppress the form). Google's UMP decides from the device's location whether to ask (EEA, UK, Switzerland) and shows
+  its form on first launch only there; ads and Analytics wait for it (`CanRequestAds`). Ads always use Teen treatment,
+  never personalised ads or remarketing; rating cap Teen. The answer is mapped to Firebase consent mode
+  (`analytics_storage`, `ad_storage`, `ad_user_data`, `ad_personalization`, from the IAB TCF purpose consents UMP stores).
+  Elsewhere Firebase Analytics and Crashlytics collect from launch (the manifest no longer disables them) and the
+  Settings → Privacy "Usage & crash reports" switch opts out. In the EEA/UK/CH (`ConsentRegions`; an empty region is
+  not restricted) nothing is collected until UMP has answered and the switch opens the UMP privacy options form
+  instead of locking. The game's install/error records follow the same decision.
 - **Enforced table limits** — each table's posted `$min – $max` is a real rule: the betting tray
   only offers chips a table can legally take (no $1,000 chip at a $500 table), a chip that would
   push the bet past the maximum is refused, and DEAL stays locked until the bet reaches the minimum
@@ -449,7 +470,9 @@ on a Play-distributed one. One-time manual steps to fix that:
   OS fonts are added as fallbacks per language.
 - `Unity/Assets/Icons/` — launcher (adaptive foreground/background, legacy) and notification icons.
 - `hosting/` — `privacy-policy.html` is the Privacy Policy URL the Play listing requires, served at
-  `https://blackjack21-v2.web.app/privacy-policy.html`; `index.html` is the invite landing page;
+  `https://blackjack21-v2.web.app/privacy-policy.html`; `delete-account.html` is the account-deletion
+  request page (`/delete-account.html`, the URL for Play's Data safety "delete account" field);
+  `index.html` is the invite landing page;
   `og-image.jpg` is the 1200×630 link-preview banner.
 - `play-assets/` — Play Store listing artwork; see **Regenerating the store assets**.
 
@@ -461,6 +484,25 @@ EditMode (rules, betting, settlement, progression, controller, RTL — no graphi
 /Applications/Unity/Hub/Editor/6000.3.25f1/Unity.app/Contents/MacOS/Unity -batchmode -nographics \
   -projectPath Unity -runTests -testPlatform EditMode -testResults /tmp/unity-results.xml
 ```
+
+Firestore rules (`firestore.rules`) are tested on the **local emulator only**, with synthetic users and
+nothing deployed: `firestore-tests/rules.test.cjs` covers deleting your own records, and refuses
+cross-user, creator, admin and unauthenticated deletes. It needs a JDK 21 and Node:
+
+```bash
+cd /tmp && mkdir -p bj-rules-run && cd bj-rules-run && npm init -y && npm i @firebase/rules-unit-testing firebase
+# a firebase.json whose "firestore.rules" points at this repo's firestore.rules, emulators on localhost
+NODE_PATH=/tmp/bj-rules-run/node_modules npx firebase-tools emulators:exec --only firestore \
+  --project demo-bj21-rules --config <that firebase.json> "node --test firestore-tests/rules.test.cjs"
+```
+
+A QA-only APK for the deletion test points Firebase at the Auth and Firestore emulators on this Mac
+(`BuildTools.BuildAndroidEmulatorQA`, env `BJ_QA_CLEARTEXT=1`, define `BJ_FIREBASE_EMULATOR`); it never
+ships and never touches the live project.
+
+`firestore-tests/legacy-payloads.test.cjs` replays every shipped client's real writes and queries (run it against the
+previous rules and the new ones: both must pass), `rules.test.cjs` and `rules.hardening.test.cjs` are the adversarial
+suites (set `RULES_FILE` for the legacy replay to test another rules file).
 
 PlayMode tests render offscreen (needs graphics, so no `-nographics`); set `BJ_SHOTS` to the output
 folder:
@@ -487,10 +529,57 @@ lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
 
+### 2026-11-17
+- fix: **Analytics and Crashlytics are on again** outside Europe. 1.8.4/1.8.5 switched them off in the manifest and
+  defaulted the switch off; the manifest flags are gone, `AnalyticsOn` defaults to true, and a save with no explicit
+  choice loads as on (it used to reset to off, and 1.8.4/1.8.5 wrote that off back to the save). An explicit opt-out is kept.
+- feat: **Google UMP consent form** in the EEA, UK and Switzerland. The under-age tag (and Child treatment) is no longer
+  forced there and for an empty region, which suppressed the form; UMP decides, ads start only when `CanRequestAds`, and the
+  answer is passed to Firebase consent mode. The Settings switch opens the privacy options form there instead of locking;
+  privacy policy and in-app text updated.
+- fix: **no accidental interstitial clicks**: the between-hands ad no longer opens in the Next Hand tap; it follows
+  about a second later (only when due and loaded) with input blocked until it closes.
+- chore: version 1.8.6, versionCode 18. R8 and library updates not attempted (see `BJ186_REPORT.md`).
 ### 2026-11-13
 - feat: **Google Play in-app review.** The review request is real now: from the fifth won hand, a winning
   settlement asks Play for its review card, at most once per 30 days and three times in all. Not yet
   verified in a build or on a device.
+
+### 2026-11-08
+- feat: **Deletion removes every reference to the uid.** `firestore.rules` lets a creator tombstone their own group
+  (`createdBy` → `"deleted"`) and an inviter clear their own uid from others' `invitedBy`, nothing else; the client
+  uses chunked transactions and one atomic final transaction after draining queued writes, with an **unknown** outcome
+  when a step goes silent (sync stays paused, retry is idempotent), and an *Account ID* row for web requests.
+- feat: **Firestore rules hardened** (default deny, per-collection validators for keys, types, bounds and immutability,
+  admin = verified Google address, bounded leaderboard lists, member rows only in existing groups, bounded diagnostics),
+  proven backward compatible by replaying the real write/query shapes of Flutter 1.2.0–1.6.1 and Unity 1.8.0–1.8.2 against
+  the old and new rules (`firestore-tests/legacy-payloads.test.cjs`).
+- feat: **Teen/EEA handling**: under-age tag for UMP and Child ad treatment in the EEA/UK/Switzerland/unknown region, Teen
+  elsewhere; Analytics, Crashlytics and the install/error records are opt-in (default off, forced off in those regions).
+- fix: dates in the policy, deletion page, in-app text and README now say 8 November 2026 (an earlier pass wrote the 9th).
+- chore: version 1.8.4, versionCode 16.
+- feat: **Delete account and data** in Settings → Privacy, with a destructive confirmation. It deletes the user's own
+  group row, `players` and `leaderboard` documents and the Firebase account, after stopping every online write,
+  re-authenticating Google users first, with a 30 s timeout per step and a clear message on failure. The save on the
+  device is kept. Rules: `firestore.rules` now lets a member delete **only their own** group row (undeployed here).
+- feat: `hosting/delete-account.html`, a web deletion-request page (email request, answered within 30 days), linked from
+  the privacy policy.
+- feat: ads for ages 13+: every ad request uses Google's **teen** age treatment (no personalised ads or remarketing) and a
+  Teen max content rating. Privacy policy and in-app Terms/Privacy now say 13+ (not 18+), describe deletion, the teen ad
+  treatment, and that consent covers ads only.
+- fix: the Settings "Usage & crash reports" text now says the switch does not cover the leaderboard, install and error
+  records; removed the unused stale `LegalContent.AppVersionLabel`.
+- test: 10 EditMode tests for the deletion flow (ordering, failures, timeouts, no write-back); 16 Firestore-rules tests on
+  the local emulator, run against the old and new rules; deletion exercised on an Android emulator against the Auth and
+  Firestore emulators.
+- fix: **Privacy policy wording** (`hosting/privacy-policy.html` and the in-app copy in `Game/LegalContent.cs`) now matches
+  what the code does: an automatic anonymous guest account and a cloud leaderboard record (name, chips, points, play
+  time, app version, platform, device-region country) for guests too, the Google email/profile scopes, local-only full
+  saves, the Analytics/Crashlytics switch not covering the Firestore install/error records, and consent gating ads only.
+  Source only: the hosted page changes when `hosting/` is deployed, the in-app text only in a signed build above vc 14.
+- chore: versionCode 13 → 14 (`BuildTools.VersionCode` + `ProjectSettings.asset`) so the AdMob release can be
+  uploaded as a new bundle; no gameplay or ad code changed. The ad flow was re-checked on an emulator with
+  Google's sample ads (banner, interstitial after hand 5, rewarded +500 chips, offline launch).
 
 ### 2026-11-07
 - feat: **AdMob ads.** A "Watch a video" route in the Out of chips sheet pays 500 chips once an hour, and

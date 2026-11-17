@@ -58,7 +58,7 @@ namespace Blackjack.Game.UI
         public static RectTransform SectionLabel(Transform parent, string text)
         {
             var box = Ui.VStack(parent, 0, Ui.Pad(2, 4, 2, 10));
-            Ui.Text(box, text, Type.BodySm.WithFont(FontKind.SoraSemiBold), Theme.TextFaint);
+            Ui.Text(box, text, Type.BodySm.WithFont(FontKind.SoraSemiBold), Theme.TextMuted);
             return box;
         }
 

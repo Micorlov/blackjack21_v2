@@ -1,0 +1,7 @@
+{
+  "name": "blackjack21-firestore-rules-tests",
+  "private": true,
+  "description": "Local-emulator tests for firestore.rules (account and data deletion). Not deployed anywhere.",
+  "scripts": { "test": "node --test rules.test.cjs" },
+  "devDependencies": { "@firebase/rules-unit-testing": "^6.0.0", "firebase": "^13.0.0" }
+}

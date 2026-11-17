@@ -39,6 +39,8 @@ namespace Blackjack.Core
         public long LastRebuyAtMs { get; init; }
         public long LastAdRewardAtMs { get; init; }
         public bool AnalyticsOn { get; init; } = true;
+        /// <summary>True once the player has used the switch; until then <see cref="AnalyticsOn"/> is just the default (on).</summary>
+        public bool AnalyticsChoiceMade { get; init; }
         public bool ReviewPromptShown { get; init; }
         public long ReviewLastAttemptAtMs { get; init; }
         public int ReviewRequestCount { get; init; }

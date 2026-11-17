@@ -72,6 +72,7 @@ namespace Blackjack.Game
             _now = now ?? _now;
             _rng = rng ?? _rng;
             _shoe = new Shoe(_rng);
+            if (_svc.Ads != null) _svc.Ads.ConsentChanged += OnConsentChanged;
             if (boot) Boot();
         }
 
@@ -196,6 +197,7 @@ namespace Blackjack.Game
                 LastRebuyAtMs = s.LastRebuyAt.HasValue ? new DateTimeOffset(s.LastRebuyAt.Value).ToUnixTimeMilliseconds() : 0,
                 LastAdRewardAtMs = s.LastAdRewardAt.HasValue ? new DateTimeOffset(s.LastAdRewardAt.Value).ToUnixTimeMilliseconds() : 0,
                 AnalyticsOn = s.AnalyticsOn,
+                AnalyticsChoiceMade = s.AnalyticsChoiceMade,
                 ReviewPromptShown = s.ReviewPromptShown,
                 ReviewLastAttemptAtMs = s.ReviewLastAttemptAtMs,
                 ReviewRequestCount = s.ReviewRequestCount,
@@ -239,7 +241,10 @@ namespace Blackjack.Game
                 LastPlayDayKey = saved.LastPlayDayKey,
                 LastRebuyAt = saved.LastRebuyAtMs == 0 ? (DateTime?)null : DateTimeOffset.FromUnixTimeMilliseconds(saved.LastRebuyAtMs).LocalDateTime,
                 LastAdRewardAt = saved.LastAdRewardAtMs == 0 ? (DateTime?)null : DateTimeOffset.FromUnixTimeMilliseconds(saved.LastAdRewardAtMs).LocalDateTime,
-                AnalyticsOn = saved.AnalyticsOn,
+                // Only an explicit choice counts. Without one (every save before the switch existed, and the false that 1.8.4 and
+                // 1.8.5 wrote on their own) reports are on, as they are for a new player.
+                AnalyticsOn = !saved.AnalyticsChoiceMade || saved.AnalyticsOn,
+                AnalyticsChoiceMade = saved.AnalyticsChoiceMade,
                 ReviewPromptShown = saved.ReviewPromptShown,
                 ReviewLastAttemptAtMs = legacyReview ? new DateTimeOffset(now).ToUnixTimeMilliseconds() : saved.ReviewLastAttemptAtMs,
                 ReviewRequestCount = legacyReview ? 1 : saved.ReviewRequestCount,
@@ -247,7 +252,7 @@ namespace Blackjack.Game
                 TutorialCompletionLogged = saved.TutorialCompletionLogged,
             });
             Loc.Use(saved.LanguageOverride);
-            _svc.Analytics.SetEnabled(saved.AnalyticsOn);
+            ApplyAnalytics();
             if (legacyReview) _svc.Store.Save(Snapshot());
         }
 
@@ -256,6 +261,8 @@ namespace Blackjack.Game
         private void Boot()
         {
             Hydrate();
+            // A new player has no save to hydrate from; reports and consent mode still need their first answer.
+            ApplyAnalytics();
             _svc.Notifier.Init();
             RestoreDailyBonus();
             InitSocial();
@@ -444,9 +451,32 @@ namespace Blackjack.Game
 
         public void SetAnalytics(bool on)
         {
-            Set(s => s with { AnalyticsOn = on });
-            _svc.Analytics.SetEnabled(on);
+            Set(s => s with { AnalyticsOn = on, AnalyticsChoiceMade = true });
+            ApplyAnalytics();
             ScheduleSave();
+        }
+
+        /// <summary>True where Google's consent form (EEA, UK, Switzerland) governs reports, so the Settings switch opens it instead of flipping.</summary>
+        public bool AnalyticsUsesConsentForm =>
+            ConsentRegions.IsConsentRestricted(_svc.Platform?.CountryCode) && (_svc.Ads?.PrivacyOptionsRequired ?? false);
+
+        /// <summary>Whether usage and crash reports are being collected right now (the switch and, where it applies, the consent answer).</summary>
+        public bool AnalyticsCollecting =>
+            AnalyticsPolicy.Allowed(State.AnalyticsOn, _svc.Platform?.CountryCode, _svc.Ads?.Consent?.AnalyticsStorage);
+
+        private void OnConsentChanged()
+        {
+            ApplyAnalytics();
+            Set(s => s);
+        }
+
+        private void ApplyAnalytics()
+        {
+            var region = _svc.Platform?.CountryCode;
+            var consent = _svc.Ads?.Consent
+                ?? (ConsentRegions.IsConsentRestricted(region) ? ConsentSignals.AllDenied : ConsentSignals.AllGranted);
+            _svc.Analytics.SetConsent(consent);
+            _svc.Analytics.SetEnabled(AnalyticsCollecting);
         }
 
         public void SetStatsTab(StatsTab tab) => Set(s => s with { StatsTab = tab });

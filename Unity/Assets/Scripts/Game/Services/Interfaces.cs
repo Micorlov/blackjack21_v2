@@ -62,6 +62,8 @@ namespace Blackjack.Game.Services
     public interface IAnalytics
     {
         void SetEnabled(bool enabled);
+        /// <summary>Passes the player's consent answer on as Google consent mode (analytics_storage, ad_storage, ad_user_data, ad_personalization).</summary>
+        void SetConsent(ConsentSignals consent);
         void LogEvent(string name, IReadOnlyDictionary<string, object> parameters = null);
         void LogScreen(string screen);
     }
@@ -103,8 +105,17 @@ namespace Blackjack.Game.Services
         /// <summary>Plays a rewarded video; reports, once it closes, whether it was watched through.</summary>
         void ShowRewarded(Action<bool> done);
 
-        /// <summary>Shows a loaded interstitial; returns false, showing nothing, when there is none.</summary>
-        bool ShowInterstitial();
+        /// <summary>Shows a loaded interstitial; returns false, showing nothing, when there is none. <paramref name="closed"/> runs once it is dismissed or fails.</summary>
+        bool ShowInterstitial(Action closed = null);
+
+        /// <summary>True while an interstitial is loaded and can be shown.</summary>
+        bool InterstitialReady { get; }
+
+        /// <summary>The player's answer to Google's consent platform; null until it has answered (or where the SDK is absent).</summary>
+        ConsentSignals? Consent { get; }
+
+        /// <summary>Raised when <see cref="Consent"/> may have changed: after the launch check and after the privacy options form.</summary>
+        event Action ConsentChanged;
 
         /// <summary>Height in screen pixels of the banner docked at the bottom of the screen; 0 while none is showing.</summary>
         float BannerHeightPixels { get; }
@@ -129,7 +140,32 @@ namespace Blackjack.Game.Services
 
     public enum JoinResult { NotFound, Joined, AlreadyMember, Failed }
 
+    /// <summary>How "Delete account and data" ended.</summary>
+    public enum DeleteOutcome
+    {
+        Deleted, Unavailable, SignInFailed,
+        /// <summary>Nothing of the player's own was deleted; it is safe to try again.</summary>
+        CloudFailed,
+        /// <summary>The cloud records are gone but the sign-in record is still there.</summary>
+        RecordsDeletedAccountKept,
+        /// <summary>The deletion did not report back in time, so it may or may not have happened. Trying again is safe.</summary>
+        Unknown,
+    }
+
+    /// <summary>How removing the player's online records ended.</summary>
+    public enum CloudDeleteResult
+    {
+        Done,
+        /// <summary>It stopped before the player's own records were touched (offline, refused, or a failed transaction, which writes nothing).</summary>
+        NothingDeleted,
+        /// <summary>The player's own records may already be gone: the outcome could not be confirmed.</summary>
+        MaybeDeleted,
+    }
+
     public sealed record GoogleProfile(string DisplayName, string PhotoUrl);
+
+    /// <summary>How the last step of deleting the sign-in record ended.</summary>
+    public enum DeleteStep { Done, RecentLoginNeeded, Failed }
 
     /// <summary>The live friends group and leaderboard. All members of the group, never the hero.</summary>
     public interface ISocialService
@@ -158,6 +194,26 @@ namespace Blackjack.Game.Services
         void SignOut(Action done);
         void LoadFeatureFlags(Action<IReadOnlyDictionary<string, bool>> done);
         GoogleProfile RestoredProfile();
+
+        // ---- account and data deletion ------------------------------------------------------------
+
+        /// <summary>True when the current account is signed in with Google (not the anonymous guest account).</summary>
+        bool IsGoogleLinked { get; }
+
+        /// <summary>Asks the Google user to sign in again, which Firebase requires shortly before an account is deleted.</summary>
+        void Reauthenticate(Action<bool> done);
+
+        /// <summary>
+        /// Removes the signed-in user's own online records and every reference to their uid, using only writes the security rules
+        /// allow a user on their own data: clears their uid from other members' invitedBy (set to "deleted"), then in one atomic
+        /// transaction replaces createdBy of groups they created with "deleted" and deletes their member rows, players/{uid} and
+        /// leaderboard/{uid}. It first waits for queued writes so none can land afterwards. Idempotent, so a retry is always safe.
+        /// <paramref name="commitStarted"/> fires just before the first change; until then nothing has been touched.
+        /// </summary>
+        void DeleteCloudRecords(string groupCode, Action commitStarted, Action<CloudDeleteResult> done);
+
+        /// <summary>Deletes the Firebase Authentication user itself. Run after <see cref="DeleteCloudRecords"/>.</summary>
+        void DeleteAuthUser(Action<DeleteStep> done);
     }
 
     public static class FeatureFlag

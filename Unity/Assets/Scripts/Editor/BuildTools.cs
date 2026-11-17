@@ -29,8 +29,8 @@ namespace Blackjack.EditorTools
 
         public const string PackageId = "com.micorlov.blackjack21_v2";
         // Above the Flutter app's versionCode (8) so `adb install -r` upgrades it in place.
-        public const string VersionName = "1.8.2";
-        public const int VersionCode = 13;
+        public const string VersionName = "1.8.6";
+        public const int VersionCode = 18;
 
         public static void Configure()
         {
@@ -155,6 +155,61 @@ namespace Blackjack.EditorTools
         {
             Configure();
             BuildAndExit(ApkName, appBundle: false);
+        }
+
+        /// <summary>
+        /// A QA APK for the deletion tests: Google's sample ads, and Firebase Auth/Firestore pointed at the emulators on this Mac
+        /// (<c>BJ_FIREBASE_EMULATOR</c>, see <c>FirebaseSocialService.UseLocalEmulators</c>). Never uploaded and never a release.
+        /// Run with <c>-executeMethod Blackjack.EditorTools.BuildTools.BuildAndroidEmulatorQA</c>.
+        /// </summary>
+        public static void BuildAndroidEmulatorQA()
+        {
+            Configure();
+            Directory.CreateDirectory(OutputDir);
+            var path = Path.Combine(OutputDir, "blackjack21-unity-emulator-qa.apk");
+            EditorUserBuildSettings.buildAppBundle = false;
+            var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+            {
+                scenes = new[] { ScenePath },
+                locationPathName = path,
+                target = BuildTarget.Android,
+                options = BuildOptions.None,
+                extraScriptingDefines = new[] { "ADMOB_TEST_ADS", "BJ_FIREBASE_EMULATOR" },
+            });
+            Debug.Log($"QA build {report.summary.result} -> {path}");
+            EditorApplication.Exit(report.summary.result == BuildResult.Succeeded ? 0 : 1);
+        }
+
+        /// <summary>
+        /// A QA APK for a PHYSICAL test phone: everything <see cref="BuildAndroidEmulatorQA"/> does, but Firebase is reached at the
+        /// phone's own localhost (<c>BJ_QA_PHYSICAL</c>, via <c>adb reverse</c> to the emulators on this Mac, never 10.0.2.2), the
+        /// app is labelled "Blackjack 21 QA" and versioned "-qa" for this build only, and the product name and version are put back
+        /// afterwards. Same package id, debug-signed, Google's sample ads. Never uploaded.
+        /// Run with <c>-executeMethod Blackjack.EditorTools.BuildTools.BuildAndroidPhoneQA</c> and <c>BJ_QA_CLEARTEXT=1</c> set.
+        /// </summary>
+        public static void BuildAndroidPhoneQA()
+        {
+            Configure();
+            var productName = PlayerSettings.productName;
+            var bundleVersion = PlayerSettings.bundleVersion;
+            PlayerSettings.productName = "Blackjack 21 QA";
+            PlayerSettings.bundleVersion = bundleVersion + "-qa";
+            Directory.CreateDirectory(OutputDir);
+            var path = Path.Combine(OutputDir, "blackjack21-unity-phone-qa.apk");
+            EditorUserBuildSettings.buildAppBundle = false;
+            var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
+            {
+                scenes = new[] { ScenePath },
+                locationPathName = path,
+                target = BuildTarget.Android,
+                options = BuildOptions.None,
+                extraScriptingDefines = new[] { "ADMOB_TEST_ADS", "BJ_FIREBASE_EMULATOR", "BJ_QA_PHYSICAL" },
+            });
+            PlayerSettings.productName = productName;
+            PlayerSettings.bundleVersion = bundleVersion;
+            AssetDatabase.SaveAssets();
+            Debug.Log($"Phone QA build {report.summary.result} -> {path}");
+            EditorApplication.Exit(report.summary.result == BuildResult.Succeeded ? 0 : 1);
         }
 
         /// <summary>

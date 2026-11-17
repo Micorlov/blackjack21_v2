@@ -19,22 +19,28 @@ namespace Blackjack.Game.Services
     public sealed class NullAds : IAds
     {
         public bool RewardEarned = true;
-        public bool InterstitialReady;
+        public bool InterstitialReady { get; set; }
         public int InterstitialsShown;
+        public ConsentSignals? Consent { get; set; }
+        public event Action ConsentChanged;
+        public bool PrivacyOptionsShown;
+        public void RaiseConsentChanged() => ConsentChanged?.Invoke();
 
         public void Init() { }
         public bool RewardedReady { get; set; }
         public void ShowRewarded(Action<bool> done) => done(RewardEarned);
 
-        public bool ShowInterstitial()
+        public Action PendingClose;
+
+        public bool ShowInterstitial(Action closed = null)
         {
-            if (InterstitialReady) InterstitialsShown++;
+            if (InterstitialReady) { InterstitialsShown++; PendingClose = closed; }
             return InterstitialReady;
         }
 
         public float BannerHeightPixels => 0;
-        public bool PrivacyOptionsRequired => false;
-        public void ShowPrivacyOptions() { }
+        public bool PrivacyOptionsRequired { get; set; }
+        public void ShowPrivacyOptions() => PrivacyOptionsShown = true;
     }
 
     public sealed class NullHaptics : IHaptics
@@ -78,7 +84,10 @@ namespace Blackjack.Game.Services
     public sealed class NullAnalytics : IAnalytics
     {
         public readonly List<string> Events = new List<string>();
-        public void SetEnabled(bool enabled) { }
+        public bool? Enabled;
+        public ConsentSignals? LastConsent;
+        public void SetEnabled(bool enabled) => Enabled = enabled;
+        public void SetConsent(ConsentSignals consent) => LastConsent = consent;
         public void LogEvent(string name, IReadOnlyDictionary<string, object> parameters = null) => Events.Add(name);
         public void LogScreen(string screen) { }
     }
@@ -119,6 +128,10 @@ namespace Blackjack.Game.Services
         public void SignOut(Action done) => done();
         public void LoadFeatureFlags(Action<IReadOnlyDictionary<string, bool>> done) => done(new Dictionary<string, bool>());
         public GoogleProfile RestoredProfile() => null;
+        public bool IsGoogleLinked => false;
+        public void Reauthenticate(Action<bool> done) => done(false);
+        public void DeleteCloudRecords(string groupCode, Action commitStarted, Action<CloudDeleteResult> done) => done(CloudDeleteResult.NothingDeleted);
+        public void DeleteAuthUser(Action<DeleteStep> done) => done(DeleteStep.Failed);
 
         private sealed class Nop : IDisposable { public void Dispose() { } }
     }

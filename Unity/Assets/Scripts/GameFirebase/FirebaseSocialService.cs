@@ -42,6 +42,11 @@ namespace Blackjack.Game.Firebase
             FirebaseApp.CheckAndFixDependenciesAsync().ContinueWithOnMainThread(task =>
             {
                 var ok = task.IsCompletedSuccessfully && task.Result == DependencyStatus.Available;
+#if BJ_FIREBASE_EMULATOR
+                // QA builds only (BuildTools.BuildAndroidEmulatorQA): synthetic users on this Mac's emulators. If the switch does
+                // not take, stay offline rather than touch the live project.
+                if (ok) ok = UseLocalEmulators();
+#endif
                 if (ok)
                 {
                     _auth = FirebaseAuth.DefaultInstance;
@@ -55,6 +60,36 @@ namespace Blackjack.Game.Firebase
                 foreach (var cb in callbacks) cb(ok);
             });
         }
+
+#if BJ_FIREBASE_EMULATOR
+        // The Android emulator reaches this Mac at 10.0.2.2. A physical phone (BJ_QA_PHYSICAL) must never use that address: it
+        // reaches the Mac's emulators through `adb reverse`, i.e. its own localhost.
+#if BJ_QA_PHYSICAL
+        private const string QaHost = "127.0.0.1";
+#else
+        private const string QaHost = "10.0.2.2";
+#endif
+        private static bool UseLocalEmulators()
+        {
+            try
+            {
+                using (var auth = new AndroidJavaClass("com.google.firebase.auth.FirebaseAuth"))
+                using (var instance = auth.CallStatic<AndroidJavaObject>("getInstance"))
+                    instance.Call("useEmulator", QaHost, 9095);
+                var settings = FirebaseFirestore.DefaultInstance.Settings;
+                settings.Host = QaHost + ":8095";
+                settings.SslEnabled = false;
+                settings.PersistenceEnabled = false;
+                Debug.Log("BJ_EMULATOR: Auth " + QaHost + ":9095, Firestore " + QaHost + ":8095");
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("BJ_EMULATOR: could not switch to the emulators, staying offline: " + e.Message);
+                return false;
+            }
+        }
+#endif
 
         public void EnsureSignedIn(Action<bool> done) => WhenReady(ok =>
         {
@@ -262,12 +297,20 @@ namespace Blackjack.Game.Firebase
         public void SignInWithGoogle(Action<GoogleProfile, string> done) => WhenReady(ok =>
         {
             if (!ok) { done(null, "unavailable"); return; }
-            var provider = new FederatedOAuthProvider();
-            provider.SetProviderData(new FederatedOAuthProviderData
-            {
-                ProviderId = "google.com",
-                Scopes = new List<string> { "email", "profile" },
-            });
+#if BJ_FIREBASE_EMULATOR
+            // QA builds only: the Auth emulator accepts a JSON "id token" for google.com, so the linked-account paths can be run
+            // without a real Google account. The release build has no such branch.
+            var qaCurrent = _auth.CurrentUser;
+            var qa = GoogleAuthProvider.GetCredential(QaGoogleToken, null);
+            if (qaCurrent != null && qaCurrent.IsAnonymous)
+                qaCurrent.LinkWithCredentialAsync(qa).ContinueWithOnMainThread(link =>
+                    { if (link.IsCompletedSuccessfully) Finish(link.Result.User, done); else done(null, "failed"); });
+            else
+                _auth.SignInWithCredentialAsync(qa).ContinueWithOnMainThread(signIn =>
+                    { if (signIn.IsCompletedSuccessfully) Finish(signIn.Result, done); else done(null, "failed"); });
+            return;
+#else
+            var provider = GoogleProvider();
 
             var current = _auth.CurrentUser;
             if (current != null && current.IsAnonymous)
@@ -286,7 +329,24 @@ namespace Blackjack.Game.Firebase
                 return;
             }
             _auth.SignInWithProviderAsync(provider).ContinueWithOnMainThread(signIn => Complete(signIn, done));
+#endif
         });
+
+#if BJ_FIREBASE_EMULATOR
+        private const string QaGoogleToken =
+            "{\"sub\": \"qa-google-teen-1\", \"email\": \"qa.teen@example.com\", \"email_verified\": true, \"name\": \"QA Teen\"}";
+#endif
+
+        private static FederatedOAuthProvider GoogleProvider()
+        {
+            var provider = new FederatedOAuthProvider();
+            provider.SetProviderData(new FederatedOAuthProviderData
+            {
+                ProviderId = "google.com",
+                Scopes = new List<string> { "email", "profile" },
+            });
+            return provider;
+        }
 
         private static void Complete(System.Threading.Tasks.Task<AuthResult> task, Action<GoogleProfile, string> done)
         {
@@ -308,6 +368,176 @@ namespace Blackjack.Game.Firebase
         {
             if (_ready) _auth.SignOut();
             done();
+        }
+
+        // ---- account and data deletion ----------------------------------------------------------------
+
+        public bool IsGoogleLinked
+        {
+            get
+            {
+                var user = _ready ? _auth.CurrentUser : null;
+                return user != null && !user.IsAnonymous;
+            }
+        }
+
+        /// <summary>Firebase refuses to delete an account that signed in long ago; a Google user signs in again to prove it is them.</summary>
+        public void Reauthenticate(Action<bool> done)
+        {
+            var user = _ready ? _auth.CurrentUser : null;
+            if (user == null) { done(false); return; }
+#if BJ_FIREBASE_EMULATOR
+            // QA builds only: the same re-authentication step with the emulator credential.
+            user.ReauthenticateAsync(GoogleAuthProvider.GetCredential(QaGoogleToken, null)).ContinueWithOnMainThread(task =>
+            {
+                if (!task.IsCompletedSuccessfully) Log("reauthenticate(qa)", task);
+                done(task.IsCompletedSuccessfully);
+            });
+            return;
+#endif
+            user.ReauthenticateWithProviderAsync(GoogleProvider()).ContinueWithOnMainThread(task =>
+            {
+                if (!task.IsCompletedSuccessfully) Log("reauthenticate", task);
+                done(task.IsCompletedSuccessfully);
+            });
+        }
+
+        private const int TransactionChunk = 100;
+        private const string Tombstone = "deleted";
+
+        public void DeleteCloudRecords(string groupCode, Action commitStarted, Action<CloudDeleteResult> done)
+        {
+            var uid = Uid;
+            if (uid == null) { done(CloudDeleteResult.NothingDeleted); return; }
+            // Nothing queued earlier (a heartbeat written while offline, say) may land after the deletion, so drain first. While
+            // the phone is offline this never answers and the controller's watchdog reports "nothing was deleted".
+            _db.WaitForPendingWritesAsync().ContinueWithOnMainThread(drain =>
+            {
+                if (!drain.IsCompletedSuccessfully) { Log("waitForPendingWrites", drain); done(CloudDeleteResult.NothingDeleted); return; }
+                var player = _db.Collection("players").Document(uid);
+                // The server's own record of the group is authoritative: this device's copy may be stale or missing.
+                player.GetSnapshotAsync(Source.Server).ContinueWithOnMainThread(read =>
+                {
+                    if (!read.IsCompletedSuccessfully) { Log("deleteCloudRecords/player", read); done(CloudDeleteResult.NothingDeleted); return; }
+                    var codes = new List<string>();
+                    AddCode(codes, groupCode);
+                    if (read.Result.TryGetValue("groupCode", out string stored)) AddCode(codes, stored);
+                    _db.Collection("groups").WhereEqualTo("createdBy", uid).GetSnapshotAsync(Source.Server).ContinueWithOnMainThread(created =>
+                    {
+                        if (!created.IsCompletedSuccessfully) { Log("deleteCloudRecords/created", created); done(CloudDeleteResult.NothingDeleted); return; }
+                        var createdGroups = created.Result.Documents.Select(d => d.Reference).ToList();
+                        foreach (var g in createdGroups) AddCode(codes, g.Id);
+                        FindReferences(codes, uid, references =>
+                        {
+                            if (references == null) { done(CloudDeleteResult.NothingDeleted); return; }
+                            Debug.Log($"Delete: commit started (references to clear: {references.Count}, groups created: {createdGroups.Count})");
+                            commitStarted();
+                            // Clearing a reference only touches someone else's invitedBy where it names this user, and is harmless
+                            // if the rest then fails: a retry simply finds fewer. Own records are still intact at this point.
+                            ClearReferences(references, 0, cleared =>
+                            {
+                                if (!cleared) { done(CloudDeleteResult.NothingDeleted); return; }
+                                RemoveOwnRecords(uid, codes, createdGroups, player, done);
+                            });
+                        });
+                    });
+                });
+            });
+        }
+
+        private static void AddCode(List<string> codes, string code)
+        {
+            if (!string.IsNullOrEmpty(code) && !codes.Contains(code)) codes.Add(code);
+        }
+
+        /// <summary>Member rows, in the given groups, whose invitedBy names the user. Null means a query failed.</summary>
+        private void FindReferences(List<string> codes, string uid, Action<List<DocumentReference>> done)
+        {
+            var found = new List<DocumentReference>();
+            void Next(int i)
+            {
+                if (i >= codes.Count) { done(found); return; }
+                _db.Collection("groups").Document(codes[i]).Collection("players").WhereEqualTo("invitedBy", uid)
+                    .GetSnapshotAsync(Source.Server).ContinueWithOnMainThread(q =>
+                    {
+                        if (!q.IsCompletedSuccessfully) { Log("findReferences", q); done(null); return; }
+                        found.AddRange(q.Result.Documents.Select(d => d.Reference));
+                        Next(i + 1);
+                    });
+            }
+            Next(0);
+        }
+
+        private void ClearReferences(List<DocumentReference> rows, int start, Action<bool> done)
+        {
+            if (start >= rows.Count) { done(true); return; }
+            var chunk = rows.Skip(start).Take(TransactionChunk).ToList();
+            _db.RunTransactionAsync(tx =>
+            {
+                foreach (var row in chunk) tx.Update(row, new Dictionary<string, object> { ["invitedBy"] = Tombstone });
+                return System.Threading.Tasks.Task.CompletedTask;
+            }).ContinueWithOnMainThread(t =>
+            {
+                if (!t.IsCompletedSuccessfully) { Log("clearReferences", t); done(false); return; }
+                ClearReferences(rows, start + chunk.Count, done);
+            });
+        }
+
+        // One atomic transaction: a failed transaction writes nothing, and a transaction never queues while offline.
+        private void RemoveOwnRecords(string uid, List<string> codes, List<DocumentReference> createdGroups,
+            DocumentReference player, Action<CloudDeleteResult> done)
+        {
+            var board = _db.Collection("leaderboard").Document(uid);
+            Debug.Log("Delete: final transaction started");
+            _db.RunTransactionAsync(tx =>
+            {
+                foreach (var g in createdGroups) tx.Update(g, new Dictionary<string, object> { ["createdBy"] = Tombstone });
+                foreach (var c in codes) tx.Delete(_db.Collection("groups").Document(c).Collection("players").Document(uid));
+                tx.Delete(player);
+                tx.Delete(board);
+                return System.Threading.Tasks.Task.CompletedTask;
+            }).ContinueWithOnMainThread(t =>
+            {
+                if (!t.IsCompletedSuccessfully)
+                {
+                    Log("removeOwnRecords", t);
+                    // Only a network-class failure can hide a commit that did happen; anything else wrote nothing.
+                    done(IsAmbiguous(t) ? CloudDeleteResult.MaybeDeleted : CloudDeleteResult.NothingDeleted);
+                    return;
+                }
+                Debug.Log("Delete: final transaction committed");
+                // Verify against the server, then sweep for a reference that appeared while this ran.
+                player.GetSnapshotAsync(Source.Server).ContinueWithOnMainThread(p =>
+                    board.GetSnapshotAsync(Source.Server).ContinueWithOnMainThread(b =>
+                    {
+                        if (!p.IsCompletedSuccessfully || !b.IsCompletedSuccessfully || p.Result.Exists || b.Result.Exists)
+                        { done(CloudDeleteResult.MaybeDeleted); return; }
+                        FindReferences(codes, uid, late =>
+                        {
+                            if (late == null) { done(CloudDeleteResult.MaybeDeleted); return; }
+                            if (late.Count == 0) { done(CloudDeleteResult.Done); return; }
+                            ClearReferences(late, 0, ok => done(ok ? CloudDeleteResult.Done : CloudDeleteResult.MaybeDeleted));
+                        });
+                    }));
+            });
+        }
+
+        private static bool IsAmbiguous(System.Threading.Tasks.Task task) =>
+            task.Exception?.Flatten().InnerExceptions.OfType<FirestoreException>().Any(e =>
+                e.ErrorCode == FirestoreError.Unavailable || e.ErrorCode == FirestoreError.DeadlineExceeded
+                || e.ErrorCode == FirestoreError.Unknown || e.ErrorCode == FirestoreError.Internal) == true
+            || (task.Exception != null && !task.Exception.Flatten().InnerExceptions.OfType<FirestoreException>().Any());
+
+        public void DeleteAuthUser(Action<DeleteStep> done)
+        {
+            var user = _ready ? _auth.CurrentUser : null;
+            if (user == null) { done(DeleteStep.Done); return; }
+            user.DeleteAsync().ContinueWithOnMainThread(task =>
+            {
+                if (task.IsCompletedSuccessfully) { done(DeleteStep.Done); return; }
+                Log("deleteUser", task);
+                done(IsError(task, AuthError.RequiresRecentLogin) ? DeleteStep.RecentLoginNeeded : DeleteStep.Failed);
+            });
         }
 
         // ---- feature flags ---------------------------------------------------------------------------

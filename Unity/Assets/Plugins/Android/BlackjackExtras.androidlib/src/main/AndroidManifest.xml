@@ -12,6 +12,8 @@
         <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-2693008307172998~5118761930" />
         <!-- AdMob needs the advertising ID; analytics stays anonymous, as the privacy policy promises. -->
         <meta-data android:name="google_analytics_adid_collection_enabled" android:value="false" />
+        <!-- Analytics and Crashlytics collect from launch (so first_open is counted). The game turns them off at runtime when the
+             player opts out or, in the EEA, UK and Switzerland, Google's consent form is declined. See FirebaseAnalyticsService. -->
         <activity android:name="com.unity3d.player.UnityPlayerActivity" android:exported="true">
             <!-- Invite links: https://blackjack21-v2.web.app/join/CODE opens the game straight to the join. -->
             <intent-filter android:autoVerify="true">

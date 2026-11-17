@@ -1,4 +1,6 @@
 using System;
+using System.Globalization;
+using Blackjack.Core;
 using Blackjack.Game.Services;
 using GoogleMobileAds.Api;
 using GoogleMobileAds.Common;
@@ -23,6 +25,83 @@ namespace Blackjack.Game.Ads
         private bool _loadingRewarded;
         private bool _loadingInterstitial;
         private bool _started;
+        private bool _consentChecked;
+
+        public event Action ConsentChanged;
+
+        /// <summary>
+        /// Google consent mode from what UMP recorded: nothing to ask means everything is allowed; once answered, the IAB TCF
+        /// purpose consents decide (purpose 1 is storage, 3 and 4 personalisation, 7 measurement); required but unanswered means denied.
+        /// Null until the launch check has run.
+        /// </summary>
+        public ConsentSignals? Consent
+        {
+            get
+            {
+                if (!_consentChecked) return null;
+                switch (ConsentInformation.ConsentStatus)
+                {
+                    case ConsentStatus.NotRequired: return ConsentSignals.AllGranted;
+                    case ConsentStatus.Required: return ConsentSignals.AllDenied;
+                    case ConsentStatus.Obtained:
+                        var p = ReadPurposeConsents();
+                        if (p == null) return ConsentSignals.AllDenied;
+                        bool P(int n) => p.Length >= n && p[n - 1] == '1';
+                        return new ConsentSignals(analyticsStorage: P(1), adStorage: P(1), adUserData: P(1) && P(7),
+                            adPersonalization: P(1) && P(3) && P(4));
+                    default: return null;
+                }
+            }
+        }
+
+        /// <summary>The TCF purpose consent string UMP stores in the app's default preferences, e.g. "1010000011"; null when absent.</summary>
+        private static string ReadPurposeConsents()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            try
+            {
+                using (var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+                using (var activity = player.GetStatic<AndroidJavaObject>("currentActivity"))
+                using (var manager = new AndroidJavaClass("android.preference.PreferenceManager"))
+                using (var prefs = manager.CallStatic<AndroidJavaObject>("getDefaultSharedPreferences", activity))
+                {
+                    var tcf = prefs.Call<string>("getString", "IABTCF_PurposeConsents", "");
+                    return string.IsNullOrEmpty(tcf) ? null : tcf;
+                }
+            }
+            catch (Exception e) { Debug.LogWarning("Consent: could not read TCF purposes: " + e.Message); }
+#endif
+            return null;
+        }
+
+        /// <summary>Device region (ISO 3166-1 alpha-2), the only location signal the game has; empty when unknown.</summary>
+        private static string Region
+        {
+            get
+            {
+#if BJ_FIREBASE_EMULATOR
+                var qa = QaOverrides.Extra("bj_region");
+                if (qa != null) return qa;
+#endif
+                try { return RegionInfo.CurrentRegion.TwoLetterISORegionName; }
+                catch (Exception) { return ""; }
+            }
+        }
+
+        /// <summary>
+        /// Never set from the region: the game is for ages 13 and over, and the under-age tag would stop UMP from asking anyone.
+        /// Only QA builds can set it, from a launch extra, to observe the SDK.
+        /// </summary>
+        private static bool UnderAgeOfConsent
+        {
+            get
+            {
+#if BJ_FIREBASE_EMULATOR
+                if (QaOverrides.Extra("bj_tfua") == "on") return true;
+#endif
+                return false;
+            }
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Register() => ServiceFactories.Ads = () => new AdMobService();
@@ -35,17 +114,31 @@ namespace Blackjack.Game.Ads
             MobileAdsEventExecutor.Initialize();
             // Consent given on an earlier launch still counts, so ads need not wait for this launch's check.
             StartIfAllowed();
-            ConsentInformation.Update(new ConsentRequestParameters(), updateError =>
+            // Google's consent platform decides from the device's location whether to ask (EEA, UK, Switzerland) and does nothing
+            // elsewhere. The game is for ages 13 and over, so it never sets the under-age tag, which would suppress the form.
+            var parameters = new ConsentRequestParameters { TagForUnderAgeOfConsent = UnderAgeOfConsent };
+#if BJ_FIREBASE_EMULATOR
+            // QA builds only: force a geography and flip the tag from launch extras to observe the SDK. Never in a release.
+            if (QaOverrides.Extra("bj_geo") == "eea")
+                parameters.ConsentDebugSettings = new ConsentDebugSettings { DebugGeography = DebugGeography.EEA };
+#endif
+            Debug.Log($"UMP: asking with region={Region} tagForUnderAgeOfConsent={parameters.TagForUnderAgeOfConsent}");
+            ConsentInformation.Update(parameters, updateError =>
             {
                 if (updateError != null)
                 {
                     Debug.LogWarning("Ad consent check failed: " + updateError.Message);
+                    ConsentChanged?.Invoke();
                     return;
                 }
+                _consentChecked = true;
+                Debug.Log($"UMP: updated, status={ConsentInformation.ConsentStatus} canRequestAds={ConsentInformation.CanRequestAds()} privacyOptions={ConsentInformation.PrivacyOptionsRequirementStatus}");
                 ConsentForm.LoadAndShowConsentFormIfRequired(formError =>
                 {
                     if (formError != null) Debug.LogWarning("Ad consent form failed: " + formError.Message);
+                    Debug.Log($"UMP: form step finished, status={ConsentInformation.ConsentStatus} canRequestAds={ConsentInformation.CanRequestAds()} privacyOptions={ConsentInformation.PrivacyOptionsRequirementStatus}");
                     StartIfAllowed();
+                    ConsentChanged?.Invoke();
                 });
             });
         }
@@ -54,6 +147,15 @@ namespace Blackjack.Game.Ads
         {
             if (_started || !ConsentInformation.CanRequestAds()) return;
             _started = true;
+            // The game is for ages 13 and up, minors included, and has no age screen. Every ad request is age-restricted, and the
+            // treatment is Teen everywhere (Child only in a QA build that sets the under-age tag). Teen allows no
+            // personalised ads or remarketing. The rating cap asks for ads rated Teen or lower. Must precede MobileAds.Initialize.
+            MobileAds.SetRequestConfiguration(new RequestConfiguration
+            {
+                AgeRestrictedTreatment = UnderAgeOfConsent ? AgeRestrictedTreatment.Child : AgeRestrictedTreatment.Teen,
+                MaxAdContentRating = MaxAdContentRating.T,
+            });
+            Debug.Log($"Ads: region={Region} ageTreatment={(UnderAgeOfConsent ? "Child" : "Teen")} maxRating=T canRequestAds={ConsentInformation.CanRequestAds()}");
             MobileAds.Initialize(_ =>
             {
                 LoadRewarded();
@@ -144,7 +246,16 @@ namespace Blackjack.Game.Ads
             ad.Show(_ => earned = true);
         }
 
-        public bool ShowInterstitial()
+        public bool InterstitialReady
+        {
+            get
+            {
+                LoadInterstitial();
+                return _interstitial != null;
+            }
+        }
+
+        public bool ShowInterstitial(Action closed = null)
         {
             LoadInterstitial();
             var ad = _interstitial;
@@ -155,6 +266,7 @@ namespace Blackjack.Game.Ads
             {
                 ad.Destroy();
                 LoadInterstitial();
+                closed?.Invoke();
             }
             ad.OnAdFullScreenContentClosed += Finish;
             ad.OnAdFullScreenContentFailed += _ => Finish();
@@ -169,6 +281,7 @@ namespace Blackjack.Game.Ads
         {
             if (error != null) Debug.LogWarning("Ad privacy form failed: " + error.Message);
             StartIfAllowed();
+            ConsentChanged?.Invoke();
         });
     }
 }

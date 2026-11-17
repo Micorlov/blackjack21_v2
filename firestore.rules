@@ -1,107 +1,187 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // The web admin panel (github.com/Micorlov/blackjack21-admin) signs in
-    // with Google under this email and gets read-only visibility across all
-    // groups and players. Keep in sync with ADMIN_EMAILS in that repo's
-    // src/lib/config.ts.
+
+    // ---------------------------------------------------------------------------------------------------------
+    // Hardened rules. Compatibility contract: every write and query the shipped clients make (Flutter 1.2.0 (3) to
+    // 1.6.1 (8), Unity 1.8.0 (10), 1.8.1 (11), 1.8.2 (12) and the current build) is replayed by
+    // firestore-tests/legacy-payloads.test.cjs against both the previous and these rules. Validation looks at the keys a
+    // write CHANGES (diff().affectedKeys()), so documents written long ago with an unexpected key can still be updated.
+    // Everything not matched below is denied.
+    // ---------------------------------------------------------------------------------------------------------
+
+    // ---- identity ----------------------------------------------------------------------------------------
+    function signedIn() { return request.auth != null; }
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+
+    // The admin panel signs in with Google. Trusting the email claim alone would let anyone who can register that
+    // address with an unverified provider in, so the address must be verified AND come from Google.
     function isAdmin() {
-      return request.auth != null && request.auth.token.email == 'micorlov@gmail.com';
+      return signedIn()
+        && request.auth.token.get('email', '') == 'micorlov@gmail.com'
+        && request.auth.token.get('email_verified', false) == true
+        && request.auth.token.firebase.sign_in_provider == 'google.com';
     }
 
-    // `invitedBy` credits whoever the joiner's referral reward goes to. It is
-    // write-once (set only when the row is created, by the joiner, pointing
-    // at the group's own creator) and never the writer's own uid, so
-    // self-referral is impossible and no client can retarget an existing
-    // credit later.
+    // ---- value validators ----------------------------------------------------------------------------------
+    function okStr(v, max) { return v is string && v.size() <= max; }
+    function okInt(v, lo, hi) { return v is int && v >= lo && v <= hi; }
+    function okCode(c) { return c.matches('[A-Za-z0-9]{4,12}'); }
+
+    // Keys this write sets or changes: on create every key, on update only the ones that differ.
+    function touchedOnCreate() { return request.resource.data.keys().toSet(); }
+    function touchedOnUpdate() { return request.resource.data.diff(resource.data).affectedKeys(); }
+
+    // The scoreboard fields shared by leaderboard/{uid} and groups/{code}/players/{uid}.
+    function okBoard(d, a) {
+      return (!('name' in a) || okStr(d.name, 128))
+        && (!('chips' in a) || okInt(d.chips, 0, 10000000000))
+        && (!('hourly' in a) || okInt(d.hourly, -10000000000, 10000000000))
+        && (!('daily' in a) || okInt(d.daily, -10000000000, 10000000000))
+        && (!('hourKey' in a) || okStr(d.hourKey, 20))
+        && (!('dayKey' in a) || okStr(d.dayKey, 20))
+        && (!('updatedAt' in a) || d.updatedAt is timestamp)
+        && (!('appVersion' in a) || okStr(d.appVersion, 32))
+        && (!('platform' in a) || okStr(d.platform, 16))
+        && (!('country' in a) || okStr(d.country, 8));
+    }
+
+    // ---- players/{uid}: private pointer to the player's group -------------------------------------------------
+    function okPlayer(d, a) {
+      return a.hasOnly(['groupCode', 'name'])
+        && (!('groupCode' in a) || (okStr(d.groupCode, 12) && okCode(d.groupCode)))
+        && (!('name' in a) || okStr(d.name, 128));
+    }
+    match /players/{uid} {
+      allow get: if isOwner(uid) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(uid) && okPlayer(request.resource.data, touchedOnCreate());
+      allow update: if isOwner(uid) && okPlayer(request.resource.data, touchedOnUpdate());
+      allow delete: if isOwner(uid);
+    }
+
+    // The admin panel pulls every group's scoreboard at once via a collectionGroup('players') query.
+    match /{path=**}/players/{uid} {
+      allow list: if isAdmin();
+    }
+
+    // ---- leaderboard/{uid}: the world standings --------------------------------------------------------------
+    // Flutter 1.2.0 to 1.6.1 list this collection (where hourKey/dayKey == period, orderBy, limit 10), so reads stay open to
+    // signed-in players, but only as bounded lists and by id for the owner: one query can no longer dump the table.
+    function okLeaderboard(d, a) {
+      return a.hasOnly(['name', 'chips', 'hourly', 'daily', 'hourKey', 'dayKey', 'updatedAt', 'appVersion',
+                        'platform', 'country', 'playSeconds', 'createdAt'])
+        && okBoard(d, a)
+        && (!('playSeconds' in a) || okInt(d.playSeconds, 0, 1000000000))
+        && (!('createdAt' in a) || d.createdAt is timestamp);
+    }
+    match /leaderboard/{uid} {
+      allow get: if isOwner(uid) || isAdmin();
+      allow list: if isAdmin() || (signedIn() && request.query.get('limit', 1000) <= 100);
+      allow create: if isOwner(uid) && okLeaderboard(request.resource.data, touchedOnCreate())
+        && (!('playSeconds' in request.resource.data) || request.resource.data.playSeconds <= 604800);
+      allow update: if isOwner(uid) && okLeaderboard(request.resource.data, touchedOnUpdate())
+        // createdAt is stamped once; playSeconds only ever grows, by at most a week of play per write.
+        && (!('createdAt' in touchedOnUpdate()) || !('createdAt' in resource.data))
+        && (!('playSeconds' in touchedOnUpdate())
+            || (request.resource.data.playSeconds >= resource.data.get('playSeconds', 0)
+                && request.resource.data.playSeconds - resource.data.get('playSeconds', 0) <= 604800));
+      allow delete: if isOwner(uid);
+    }
+
+    // ---- groups/{code} ---------------------------------------------------------------------------------------
+    // `invitedBy` credits whoever the joiner's referral reward goes to. It is write-once (set when the row is created, by the
+    // joiner, pointing at the group's own creator and never the writer) so no client can retarget an existing credit.
     function validInvitedBy(code) {
       return !('invitedBy' in request.resource.data)
         || (request.resource.data.invitedBy is string
+            && request.resource.data.invitedBy.size() <= 128
             && request.resource.data.invitedBy != request.auth.uid
             && request.resource.data.invitedBy
                  == get(/databases/$(database)/documents/groups/$(code)).data.createdBy);
     }
-
-    // Real table presence: which stake table (if any) this member currently
-    // sits at.
     function validTableKey() {
       return !('tableKey' in request.resource.data)
         || request.resource.data.tableKey in ['', 'bronze', 'silver', 'vip'];
     }
 
-    // Each player's membership pointer — private to its owner, readable by
-    // the admin panel.
-    match /players/{uid} {
-      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
-      allow write: if request.auth != null && request.auth.uid == uid;
-      allow list: if isAdmin();
-    }
-
-    // The admin panel pulls every group's scoreboard at once via a
-    // collectionGroup('players') query (top-level players/{uid} plus every
-    // groups/{code}/players/{uid}). The path-specific rules above and below
-    // individually grant the admin access at each location, but Firestore
-    // requires a recursive-wildcard rule to authorize the query itself.
-    match /{path=**}/players/{uid} {
-      allow list: if isAdmin();
-    }
-
-    // Global leaderboard — every player publishes their own row; anyone
-    // signed in can read the standings.
-    match /leaderboard/{uid} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == uid;
-    }
-
-    // Friends groups. Codes are shared over WhatsApp; any signed-in player
-    // holding a code may look the group up and read its scoreboard, but a
-    // member row can only be written by the player it belongs to. The admin
-    // panel can additionally list every group.
     match /groups/{code} {
-      allow get: if request.auth != null;
-      allow list: if isAdmin();
-      allow create: if request.auth != null && request.resource.data.createdBy == request.auth.uid;
+      allow get: if signedIn();
+      // The admin panel lists every group; a creator may list the groups they created (account deletion).
+      allow list: if isAdmin() || (signedIn() && resource.data.createdBy == request.auth.uid);
+      allow create: if signedIn() && okCode(code)
+        && request.resource.data.keys().hasOnly(['createdBy', 'createdAt'])
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt is timestamp;
+      // Account deletion: the creator replaces their own uid with the constant 'deleted'. Nothing else about the group can
+      // change, nobody else can touch it, and the constant cannot be changed back (the creator test then fails).
+      allow update: if signedIn() && resource.data.createdBy == request.auth.uid
+        && touchedOnUpdate().hasOnly(['createdBy'])
+        && request.resource.data.createdBy == 'deleted';
 
+      // Member rows. A row is the scoreboard fields plus presence and the write-once referral pointer.
+      function okMember(d, a) {
+        return a.hasOnly(['name', 'updatedAt', 'tableKey', 'invitedBy', 'chips', 'hourly', 'daily', 'hourKey',
+                          'dayKey', 'appVersion', 'platform', 'country'])
+          && okBoard(d, a);
+      }
       match /players/{uid} {
-        allow read: if request.auth != null;
+        // Reading a group needs its code; a stranger cannot list groups, only a group they hold the code for.
+        allow read: if signedIn();
 
-        allow create: if request.auth != null && request.auth.uid == uid
+        allow create: if isOwner(uid)
+          && exists(/databases/$(database)/documents/groups/$(code))
+          && okMember(request.resource.data, touchedOnCreate())
           && validInvitedBy(code) && validTableKey();
 
-        // `invitedBy` is write-once: an update must either omit it or repeat
-        // exactly what is already stored (rows written before this field
-        // existed have none, hence the `get(..., null)` default).
-        allow update: if request.auth != null && request.auth.uid == uid
-          && (!('invitedBy' in request.resource.data)
-              || request.resource.data.invitedBy == resource.data.get('invitedBy', null))
-          && validTableKey();
+        allow update: if
+          (isOwner(uid)
+            && okMember(request.resource.data, touchedOnUpdate())
+            && (!('invitedBy' in request.resource.data)
+                || request.resource.data.invitedBy == resource.data.get('invitedBy', null))
+            && validTableKey())
+          // Account deletion: the person a row points at (its invitedBy) may replace that pointer, in someone else's row,
+          // with 'deleted'. Only that one field of rows that name them; no other field, no other value.
+          || (signedIn() && resource.data.get('invitedBy', null) == request.auth.uid
+            && touchedOnUpdate().hasOnly(['invitedBy'])
+            && request.resource.data.invitedBy == 'deleted');
 
-        allow delete: if false;
+        // A member may remove only their own row (leaving a group, account deletion).
+        allow delete: if isOwner(uid);
       }
     }
 
-    // Remote feature toggles — the app reads this at startup to decide
-    // whether a feature is on; only the admin panel may change it.
+    // ---- config/features: remote switches --------------------------------------------------------------------
     match /config/features {
-      allow read: if request.auth != null;
+      allow read: if signedIn();
       allow write: if isAdmin();
     }
 
-    // Fatal-error mirror for the admin panel's Health tab (Crashlytics itself
-    // has no client-readable API). Write-only from the app, append-only
-    // overall — a report is evidence and is never edited after the fact.
+    // ---- errors and installs: append-only diagnostics, bounded, with no uid in them ---------------------------
+    function okDiagnostic(d, keys) {
+      return d.keys().hasOnly(keys)
+        && (!('appVersion' in d) || okStr(d.appVersion, 32))
+        && (!('platform' in d) || okStr(d.platform, 16))
+        && (!('message' in d) || okStr(d.message, 1000))
+        && (!('stack' in d) || d.stack == null || okStr(d.stack, 4000))
+        && (!('at' in d) || d.at is timestamp);
+    }
     match /errors/{id} {
-      allow create: if request.auth != null;
+      allow create: if signedIn() && id.size() <= 40
+        && okDiagnostic(request.resource.data, ['message', 'stack', 'appVersion', 'platform', 'at']);
+      allow get, list: if isAdmin();
+      allow update, delete: if false;
+    }
+    match /installs/{id} {
+      allow create: if signedIn() && id.size() <= 40
+        && okDiagnostic(request.resource.data, ['appVersion', 'platform', 'at']);
       allow get, list: if isAdmin();
       allow update, delete: if false;
     }
 
-    // One ping per cold start, so the admin panel can chart installs/opens by
-    // app version and platform.
-    match /installs/{id} {
-      allow create: if request.auth != null;
-      allow get, list: if isAdmin();
-      allow update, delete: if false;
+    // Default deny.
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
