@@ -557,6 +557,11 @@ lines show the SDK initialising and the anonymous sign-in.
 ## Changelog
 
 ### 2026-11-20
+- docs: `TASKS.md` now holds the plan for everything still open after 1.8.7: device checks, the measurements to repeat once
+  1.8.7 is live, and the items waiting on Google or Michael.
+- chore: **Play's current app-signing key registered in Firebase** (SHA-1 `5F:47:26:BE…`, SHA-256 `F4:57:DB:FA…`), so
+  Google sign-in keeps working on installs Play signs with it. `google-services.json` was not refreshed: the app reads only
+  `default_web_client_id` from it, which is unchanged.
 - fix: **the rewarded video can be chosen on the Out of chips sheet while a rebuy is ready.** The sheet has one gold button,
   for the first available route, and the free rebuy comes first, so the video row had no button at all unless the rebuy was
   cooling down (AdMob: 353 rewarded requests and 5 impressions in a week). When the video is ready but not first it now gets
