@@ -408,8 +408,8 @@ rejects a bundle whose version code is already on the account. `BuildAndroid` wr
 signed with the Play **upload key**, read from environment variables so no password is in the repo:
 
 ```bash
-export BJ21_UPLOAD_KEYSTORE=~/AndroidKeys/.android-keys/blackjack21_v2_upload.jks
-export BJ21_UPLOAD_ALIAS=upload BJ21_UPLOAD_STORE_PASS=... BJ21_UPLOAD_KEY_PASS=...   # from ~/AndroidKeys/blackjack21_v2/android/key.properties
+export BJ21_UPLOAD_KEYSTORE=~/keys/blackjack21-v2-upload.jks
+export BJ21_UPLOAD_ALIAS=upload BJ21_UPLOAD_STORE_PASS=... BJ21_UPLOAD_KEY_PASS=...   # the upload key's passwords; never commit them
 Unity -batchmode -nographics -quit -projectPath Unity \
   -executeMethod Blackjack.EditorTools.BuildTools.BuildAndroidRelease -logFile /tmp/build-release.log
 ```
@@ -561,6 +561,9 @@ lines show the SDK initialising and the anonymous sign-in.
 ## Changelog
 
 ### 2026-11-20
+- chore: **bumped to 1.8.8 (20)** for the next Play release, carrying the video-only Out of chips offer; release notes in
+  `tool/release_notes_en-US.txt`. The README's upload-key path now points at `~/keys/blackjack21-v2-upload.jks`, where
+  the key is; the old `~/AndroidKeys/...` path no longer exists.
 - feat: **out of chips offers the rewarded video and nothing else.** With a video loaded and off cooldown, the table's
   broke button is "Watch a video for 500 chips" and the Out of chips sheet shows only that route and one gold button. The
   free rebuy, daily bonus and invite routes are now the fallback for when no video can play. The table rechecks every

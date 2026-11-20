@@ -1,5 +1,4 @@
-What's new in 1.8.7
+What's new in 1.8.8
 
-- Google sign-in works again, including on a new phone or after a reinstall.
-- When you run out of chips you can now choose the video offer even when a free rebuy is ready.
+- Out of chips? One tap on "Watch a video" puts 500 chips back in your stack.
 - Fixes.
