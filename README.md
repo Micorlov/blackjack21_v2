@@ -83,7 +83,10 @@ A Unity (Android) blackjack game with a multi-seat table and a friends race. Fou
   never personalised ads or remarketing; rating cap Teen. The answer is mapped to Firebase consent mode
   (`analytics_storage`, `ad_storage`, `ad_user_data`, `ad_personalization`, from the IAB TCF purpose consents UMP stores).
   Elsewhere Firebase Analytics and Crashlytics collect from launch (the manifest no longer disables them) and the
-  Settings → Privacy "Usage & crash reports" switch opts out. In the EEA/UK/CH (`ConsentRegions`; an empty region is
+  Settings → Privacy "Usage & crash reports" switch opts out. **The first screen asks once** (`AnalyticsAskSheet`):
+  "Allow" and "Not now" are the same size and either is one tap; the answer is saved like the switch, and closing the
+  sheet without answering leaves the default (on) and asks again next launch until onboarding is done. It is not shown
+  where Google's consent form governs reports (`ShouldAskAnalytics`), so nobody is asked twice. In the EEA/UK/CH (`ConsentRegions`; an empty region is
   not restricted) nothing is collected until UMP has answered and the switch opens the UMP privacy options form
   instead of locking. The game's install/error records follow the same decision.
 - **Enforced table limits** — each table's posted `$min – $max` is a real rule: the betting tray
@@ -559,6 +562,13 @@ A Core change is not done until the EditMode suite passes. Check on a device or 
 lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
+
+### 2026-11-21
+- feat: **the first screen asks about usage and crash reports.** A sheet on the welcome screen explains what the reports
+  are for and what they never carry, with "Allow" (gold) and "Not now" (same size, outlined). Either answer is kept and can
+  be changed in Settings; "Not now" stops collection at once. Skipped where Google's consent form already asks. Strings in
+  all ten languages; two PlayMode scenarios (English, Hebrew) put the sheet through `RulesAudit`, and two EditMode tests
+  cover when it is asked and that both answers stick.
 
 ### 2026-11-20
 - chore: **bumped to 1.8.8 (20)** for the next Play release, carrying the video-only Out of chips offer; release notes in

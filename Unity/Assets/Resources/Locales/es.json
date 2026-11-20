@@ -285,5 +285,9 @@
 "routeInviteAction": "Invitar por WhatsApp",
 "outOfChips": "Sin fichas",
 "outOfChipsHint": "Estas son todas las formas de volver a la mesa.",
-"backToLobby": "Volver al vestíbulo"
+"backToLobby": "Volver al vestíbulo",
+"analyticsAskTitle": "Ayúdanos a mejorar el juego",
+"analyticsAskBody": "Permite informes de uso y de fallos para ver qué disfrutan los jugadores y arreglar lo que falla. No llevan nombre, ni mensajes, ni nada de lo que escribes. Puedes cambiarlo cuando quieras en Ajustes.",
+"analyticsAllow": "Permitir",
+"analyticsNotNow": "Ahora no"
 }

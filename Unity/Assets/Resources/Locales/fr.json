@@ -285,5 +285,9 @@
 "routeInviteAction": "Inviter sur WhatsApp",
 "outOfChips": "Plus de jetons",
 "outOfChipsHint": "Voici toutes les façons de revenir à la table.",
-"backToLobby": "Retour au hall"
+"backToLobby": "Retour au hall",
+"analyticsAskTitle": "Aide-nous à améliorer le jeu",
+"analyticsAskBody": "Autorise les rapports d'utilisation et de plantage pour que nous voyions ce que les joueurs aiment et corrigions ce qui ne marche pas. Ils ne contiennent ni nom, ni messages, ni rien de ce que tu tapes. Tu peux changer ça à tout moment dans les Réglages.",
+"analyticsAllow": "Autoriser",
+"analyticsNotNow": "Pas maintenant"
 }

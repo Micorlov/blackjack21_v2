@@ -285,5 +285,9 @@
 "routeInviteAction": "WhatsAppで招待",
 "outOfChips": "チップがありません",
 "outOfChipsHint": "テーブルに戻る方法はこちらです。",
-"backToLobby": "ロビーに戻る"
+"backToLobby": "ロビーに戻る",
+"analyticsAskTitle": "ゲームをより良くするためにご協力ください",
+"analyticsAskBody": "利用状況とクラッシュレポートを許可すると、プレイヤーが楽しんでいることを把握し、不具合を修正できます。名前、メッセージ、入力内容は含まれません。設定からいつでも変更できます。",
+"analyticsAllow": "許可する",
+"analyticsNotNow": "今はしない"
 }

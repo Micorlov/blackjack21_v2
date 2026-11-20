@@ -285,5 +285,9 @@
 "routeInviteAction": "Per WhatsApp einladen",
 "outOfChips": "Keine Chips mehr",
 "outOfChipsHint": "So kommst du zurück an den Tisch.",
-"backToLobby": "Zurück zur Lobby"
+"backToLobby": "Zurück zur Lobby",
+"analyticsAskTitle": "Hilf uns, das Spiel besser zu machen",
+"analyticsAskBody": "Erlaube Nutzungs- und Absturzberichte, damit wir sehen, was Spielern gefällt, und beheben, was kaputtgeht. Sie enthalten keinen Namen, keine Nachrichten und nichts, was du eingibst. Du kannst das jederzeit in den Einstellungen ändern.",
+"analyticsAllow": "Erlauben",
+"analyticsNotNow": "Nicht jetzt"
 }

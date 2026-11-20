@@ -142,7 +142,8 @@ namespace Blackjack.PlayTests
 
         private static Scenario[] Screens() => new[]
         {
-            new Scenario("onboarding", () => new AppState { Screen = AppScreen.Onboarding }),
+            new Scenario("onboarding", () => new AppState { Screen = AppScreen.Onboarding, AnalyticsChoiceMade = true }),
+            new Scenario("sheet_analytics_ask", () => new AppState { Screen = AppScreen.Onboarding }),
             new Scenario("lobby_bonus_ready", () => new AppState { Screen = AppScreen.Lobby, DisplayName = "Michael", Round = History() }),
             new Scenario("lobby_claimed_friends", () => new AppState
             {
@@ -252,7 +253,7 @@ namespace Blackjack.PlayTests
                 (g, o) => { ((Blackjack.Game.Services.NullAds)g.Services.Ads).RewardedReady = true; OutOfChipsSheet.Show(g, o); }),
             new Scenario("sheet_how_to_play", () => new AppState { Screen = AppScreen.Settings, Round = History() },
                 (g, o) => HowToPlaySheet.Show(o)),
-            new Scenario("page_terms", () => new AppState { Screen = AppScreen.Onboarding },
+            new Scenario("page_terms", () => new AppState { Screen = AppScreen.Onboarding, AnalyticsChoiceMade = true },
                 (g, o) => LegalPage.Show(o, LegalContent.Terms)),
         };
 
@@ -266,6 +267,7 @@ namespace Blackjack.PlayTests
             new Scenario("rtl_he_lobby", () => new AppState { Screen = AppScreen.Lobby, DisplayName = "Michael", Round = History() }, null, "he"),
             new Scenario("rtl_he_table", () => Table(Betting()), null, "he"),
             new Scenario("rtl_ar_settings", () => new AppState { Screen = AppScreen.Settings, Round = History() }, null, "ar"),
+            new Scenario("rtl_he_analytics_ask", () => new AppState { Screen = AppScreen.Onboarding }, null, "he"),
             new Scenario("rtl_ar_howto", () => new AppState { Screen = AppScreen.Settings, Round = History() }, (g, o) => HowToPlaySheet.Show(o), "ar"),
         };
 

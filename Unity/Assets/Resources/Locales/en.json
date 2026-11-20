@@ -285,5 +285,9 @@
 "routeInviteAction": "Invite on WhatsApp",
 "outOfChips": "Out of chips",
 "outOfChipsHint": "Here is every way to get back to the table.",
-"backToLobby": "Back to the lobby"
+"backToLobby": "Back to the lobby",
+"analyticsAskTitle": "Help us make the game better",
+"analyticsAskBody": "Allow usage and crash reports so we can see what players enjoy and fix what breaks. They carry no name, no messages and nothing you type. You can change this anytime in Settings.",
+"analyticsAllow": "Allow",
+"analyticsNotNow": "Not now"
 }

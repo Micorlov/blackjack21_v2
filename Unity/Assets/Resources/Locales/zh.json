@@ -285,5 +285,9 @@
 "routeInviteAction": "通过 WhatsApp 邀请",
 "outOfChips": "筹码用完了",
 "outOfChipsHint": "这些方法都能让你回到牌桌。",
-"backToLobby": "返回大厅"
+"backToLobby": "返回大厅",
+"analyticsAskTitle": "帮助我们把游戏做得更好",
+"analyticsAskBody": "允许发送使用情况和崩溃报告，让我们了解玩家喜欢什么并修复问题。报告不含姓名、消息或你输入的任何内容。你可以随时在设置中更改。",
+"analyticsAllow": "允许",
+"analyticsNotNow": "以后再说"
 }

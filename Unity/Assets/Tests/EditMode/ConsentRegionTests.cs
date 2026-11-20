@@ -63,6 +63,33 @@ namespace Blackjack.Core.Tests
         }
 
         [Test]
+        public void TheFirstScreenAsks_untilAnswered_andEitherAnswerIsKept()
+        {
+            var rig = BootWith(new SavedGame());
+            Assert.IsTrue(rig.C.ShouldAskAnalytics, "a new player is asked");
+            rig.C.SetAnalytics(false);
+            Assert.IsFalse(rig.C.ShouldAskAnalytics, "asked once");
+            Assert.IsFalse(rig.C.State.AnalyticsOn);
+            Assert.AreEqual(false, rig.Analytics.Enabled, "Not now stops collection at once");
+            rig.C.SetAnalytics(true);
+            Assert.IsTrue(rig.C.State.AnalyticsOn);
+            Assert.AreEqual(true, rig.Analytics.Enabled);
+            rig.Dispose();
+
+            var answered = BootWith(new SavedGame { AnalyticsOn = false, AnalyticsChoiceMade = true });
+            Assert.IsFalse(answered.C.ShouldAskAnalytics, "an answer from an earlier launch is not asked again");
+            answered.Dispose();
+        }
+
+        [Test]
+        public void WhereGooglesConsentFormAsks_theGameDoesNotAskAgain()
+        {
+            var rig = BootWith(new SavedGame(), "DE", null, true);
+            Assert.IsFalse(rig.C.ShouldAskAnalytics);
+            rig.Dispose();
+        }
+
+        [Test]
         public void ASaveWithNoExplicitChoice_isOn_evenWhenOldVersionsSavedFalse()
         {
             var rig = BootWith(new SavedGame { AnalyticsOn = false, AnalyticsChoiceMade = false, OnboardingDone = true });

@@ -11,6 +11,7 @@ namespace Blackjack.Game.UI
         private Dyn _body;
         private RectTransform _host;
         private ScrollRect _scroll;
+        private bool _askedAnalytics;
 
         public OnboardingScreen(GameController g, Overlays o) : base(g, o) { }
 
@@ -48,6 +49,11 @@ namespace Blackjack.Game.UI
         {
             var sig = $"{s.VoiceOn}|{Loc.Code}";
             _body.Update(sig, host => BuildBody(host, s));
+            if (!_askedAnalytics && G.ShouldAskAnalytics)
+            {
+                _askedAnalytics = true;
+                AnalyticsAskSheet.Show(G, Overlays);
+            }
         }
 
         private void BuildBody(RectTransform host, AppState s)
@@ -112,6 +118,36 @@ namespace Blackjack.Game.UI
             card.MakePressable(G.ToggleVoice);
             card.GetComponent<Image>().raycastTarget = true;
             return card;
+        }
+    }
+
+    /// <summary>
+    /// The usage-reports question on the first screen. Fair by design: "Allow" and "Not now" are the same size, either answer
+    /// is one tap and is kept, and closing the sheet leaves the setting as it was (on, as described in the Privacy Policy).
+    /// </summary>
+    public static class AnalyticsAskSheet
+    {
+        public static void Show(GameController g, Overlays overlays)
+        {
+            overlays.Sheet((sheet, close) =>
+            {
+                var col = Ui.VStack(sheet, 0, Ui.Pad(0, Theme.Sm, 0, 0), TextAnchor.UpperCenter, true, "AnalyticsAsk");
+                var disc = W.Dot(col, 48, Theme.Gold.WithAlpha(0.12f));
+                var icon = W.Icon(disc.transform, "bar_chart", 24, Theme.Gold);
+                icon.rectTransform.PinCentre(Vector2.zero, new Vector2(24, 24));
+                icon.rectTransform.IgnoreLayout();
+                Ui.Spacer(col, Theme.Md);
+                Ui.Text(col, Loc.Or("analyticsAskTitle", "Help us make the game better"), Type.H1, Theme.TextPrimary,
+                    TextAlignmentOptions.Center, true);
+                Ui.Spacer(col, Theme.Sm);
+                Ui.Text(col, Loc.Or("analyticsAskBody", "Allow usage and crash reports so we can see what players enjoy and fix what breaks. They carry no name, no messages and nothing you type. You can change this anytime in Settings."),
+                    Type.Body, Theme.TextMuted, TextAlignmentOptions.Center, true);
+                Ui.Spacer(col, Theme.Xl);
+                W.GoldButton(col, Loc.Or("analyticsAllow", "Allow"), () => { close(); g.SetAnalytics(true); }, 16, 0, Type.Button.Size);
+                Ui.Spacer(col, Theme.Sm);
+                W.OutlinePill(col, Loc.Or("analyticsNotNow", "Not now"), () => { close(); g.SetAnalytics(false); }, 16, Type.Button.Size,
+                    neutral: true);
+            });
         }
     }
 

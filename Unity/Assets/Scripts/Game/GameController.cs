@@ -491,6 +491,12 @@ namespace Blackjack.Game
             ScheduleSave();
         }
 
+        /// <summary>
+        /// Ask about usage reports on the first screen until the player has answered, except where Google's consent form
+        /// already governs them (EEA, UK, Switzerland): one question there is enough.
+        /// </summary>
+        public bool ShouldAskAnalytics => !State.AnalyticsChoiceMade && !AnalyticsUsesConsentForm;
+
         /// <summary>True where Google's consent form (EEA, UK, Switzerland) governs reports, so the Settings switch opens it instead of flipping.</summary>
         public bool AnalyticsUsesConsentForm =>
             ConsentRegions.IsConsentRestricted(_svc.Platform?.CountryCode) && (_svc.Ads?.PrivacyOptionsRequired ?? false);

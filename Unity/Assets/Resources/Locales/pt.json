@@ -285,5 +285,9 @@
 "routeInviteAction": "Convidar pelo WhatsApp",
 "outOfChips": "Sem fichas",
 "outOfChipsHint": "Veja todas as formas de voltar à mesa.",
-"backToLobby": "Voltar ao lobby"
+"backToLobby": "Voltar ao lobby",
+"analyticsAskTitle": "Ajude-nos a melhorar o jogo",
+"analyticsAskBody": "Permita relatórios de uso e de falhas para vermos do que os jogadores gostam e corrigirmos o que quebra. Eles não levam nome, mensagens nem nada do que você digita. Você pode mudar isso a qualquer momento nas Configurações.",
+"analyticsAllow": "Permitir",
+"analyticsNotNow": "Agora não"
 }
