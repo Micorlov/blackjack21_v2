@@ -87,7 +87,9 @@ namespace Blackjack.Core.Tests
         public void AddPlayTime(int seconds) { }
         public void EnsureCreatedAtStamped() { }
         public IDisposable WatchMembers(string code, Action<IReadOnlyList<Friend>> onUpdate) { Watcher = onUpdate; return new Stop(); }
-        public void SignInWithGoogle(Action<GoogleProfile, string> done) => done(new GoogleProfile("Maya Test", null), null);
+        public string SignInError;
+        public void SignInWithGoogle(Action<GoogleProfile, string> done) =>
+            done(SignInError == null ? new GoogleProfile("Maya Test", null) : null, SignInError);
         public void SignOut(Action done) { Calls.Add("signout"); done(); }
         public void LoadFeatureFlags(Action<IReadOnlyDictionary<string, bool>> done) => done(new Dictionary<string, bool>());
         public GoogleProfile RestoredProfile() => null;
@@ -462,6 +464,21 @@ namespace Blackjack.Core.Tests
             Assert.AreEqual("bronze", _rig.Round.Stake.Key);
             Assert.AreEqual(0, _rig.Round.Bet);
             CollectionAssert.Contains(_rig.Analytics.Events, AnalyticsEvent.OnboardingComplete);
+        }
+
+        [Test]
+        public void SignInGoogle_logsLoginOnSuccess_andSignInFailedOtherwise()
+        {
+            _rig = new Rig();
+            _rig.C.SignInGoogle();
+            CollectionAssert.Contains(_rig.Analytics.Events, AnalyticsEvent.Login);
+            CollectionAssert.DoesNotContain(_rig.Analytics.Events, AnalyticsEvent.SignInFailed);
+
+            _rig.Analytics.Events.Clear();
+            _rig.Social.SignInError = "canceled";
+            _rig.C.SignInGoogle();
+            CollectionAssert.Contains(_rig.Analytics.Events, AnalyticsEvent.SignInFailed);
+            CollectionAssert.DoesNotContain(_rig.Analytics.Events, AnalyticsEvent.Login);
         }
 
         [Test]

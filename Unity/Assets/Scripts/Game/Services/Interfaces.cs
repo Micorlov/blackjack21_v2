@@ -95,6 +95,9 @@ namespace Blackjack.Game.Services
         public const string ReviewPrompted = "review_prompted";
         public const string AdRewardEarned = "ad_reward_earned";
         public const string BreakAdShown = "break_ad_shown";
+        /// <summary>GA4's recommended name for a completed sign-in.</summary>
+        public const string Login = "login";
+        public const string SignInFailed = "sign_in_failed";
     }
 
     public interface IReviewPrompter

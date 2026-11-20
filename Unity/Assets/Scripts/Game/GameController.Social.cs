@@ -306,9 +306,13 @@ namespace Blackjack.Game
             {
                 if (profile == null)
                 {
+                    // reason is one of the service's fixed codes (canceled, failed, unavailable), never free text.
+                    _svc.Analytics.LogEvent(AnalyticsEvent.SignInFailed,
+                        new Dictionary<string, object> { ["method"] = "google", ["reason"] = error ?? "failed" });
                     if (error != "canceled") ShowToast(Loc.Or("toastSignInFailed", "Google sign-in failed. Please try again."));
                     return;
                 }
+                _svc.Analytics.LogEvent(AnalyticsEvent.Login, new Dictionary<string, object> { ["method"] = "google" });
                 var completingOnboarding = State.Screen == AppScreen.Onboarding;
                 Set(s => s with
                 {

@@ -557,6 +557,9 @@ lines show the SDK initialising and the anonymous sign-in.
 ## Changelog
 
 ### 2026-11-20
+- feat: **Google sign-in is now measurable.** `GameController.SignInGoogle` logs `login` (`method=google`) when it succeeds and
+  `sign_in_failed` (`method=google`, `reason` = `canceled`, `failed` or `unavailable`) when it does not, so the Firebase Events
+  report shows the success rate. Same 1.8.7 (19) build; covered by one EditMode test (286 in all).
 - fix: **Google sign-in works on devices.** It failed at once ("Google sign-in failed") because Firebase's generic browser
   OAuth provider, which the Unity port used, does not support `google.com` on Android. Sign-in, linking a guest and the
   re-authentication before deletion now use Android's Credential Manager account picker (`GoogleIdToken.java`) for a Google
