@@ -2,5 +2,4 @@ What's new in 1.8.7
 
 - Google sign-in works again, including on a new phone or after a reinstall.
 - When you run out of chips you can now choose the video offer even when a free rebuy is ready.
-- Invite links open the game directly.
 - Fixes.

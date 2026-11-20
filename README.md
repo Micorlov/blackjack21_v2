@@ -564,7 +564,10 @@ lines show the SDK initialising and the anonymous sign-in.
 - fix: **invite links can open the Play-installed app.** `hosting/.well-known/assetlinks.json` listed only the debug key; it now
   also lists both Play app-signing keys (the current one, `F4:57:DB:FA…`, and the previous one, `9B:24:EB:B2…`, which still
   signs every install). Live once `main` is pushed, since the hosting workflow deploys `hosting/`.
-- docs: `tool/release_notes_en-US.txt` rewritten for 1.8.7.
+- docs: `tool/release_notes_en-US.txt` rewritten for 1.8.7, exactly as sent to Play (the invite-link line is left out until
+  the new `assetlinks.json` is deployed).
+- chore: **1.8.7 (19) sent to Play production** as a full rollout, signed with the upload key; in Google review on
+  2026-11-20, and live after approval since managed publishing is off.
 - fix: **a Google account that already has a player can sign in from a guest again.** Linking the account onto the guest fails
   with "This credential is already associated with a different user account", and the fallback that then signs into the
   existing account never ran: the SDK reports the collision as `FirebaseAccountLinkException`, which is not a
