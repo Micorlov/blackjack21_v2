@@ -412,7 +412,8 @@ signed with the Play **upload key**, read from environment variables so no passw
 
 ```bash
 export BJ21_UPLOAD_KEYSTORE=~/keys/blackjack21-v2-upload.jks
-export BJ21_UPLOAD_ALIAS=upload BJ21_UPLOAD_STORE_PASS=... BJ21_UPLOAD_KEY_PASS=...   # the upload key's passwords; never commit them
+export BJ21_UPLOAD_ALIAS=upload BJ21_UPLOAD_STORE_PASS=... BJ21_UPLOAD_KEY_PASS=...   # never commit them
+# ~/keys/blackjack21-v2-upload.env holds them as BLACKJACK21_V2_KEYSTORE(_PASSWORD), _KEY_ALIAS and _KEY_PASSWORD
 Unity -batchmode -nographics -quit -projectPath Unity \
   -executeMethod Blackjack.EditorTools.BuildTools.BuildAndroidRelease -logFile /tmp/build-release.log
 ```
@@ -564,6 +565,10 @@ lines show the SDK initialising and the anonymous sign-in.
 ## Changelog
 
 ### 2026-11-21
+- chore: **1.8.8 (20) sent to Play production** as a full rollout, signed with the upload key, replacing 1.8.7 (19) in
+  review (Play restarted the review). Carries the video-only Out of chips offer and the first-screen analytics question.
+  Play's quick check flagged the required `android.hardware.screen.portrait` feature (the game is portrait-only, as 1.8.7
+  was; no device lost) and it was waived. The PlayMode audit was not run on this build.
 - feat: **the first screen asks about usage and crash reports.** A sheet on the welcome screen explains what the reports
   are for and what they never carry, with "Allow" (gold) and "Not now" (same size, outlined). Either answer is kept and can
   be changed in Settings; "Not now" stops collection at once. Skipped where Google's consent form already asks. Strings in

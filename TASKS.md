@@ -38,8 +38,8 @@ AdMob and Play Console for Oct 23 – Nov 19, 2026, unless an item says otherwis
 
 ## Waiting On
 
-- **Google review of 1.8.7 (19):** submitted to production on Nov 20 as a full rollout; managed publishing is off, so it
-  goes live on approval. After that, watch Play Console → Production for the install base moving to 1.8.7.
+- **Google review of 1.8.8 (20):** sent to production on Nov 21 as a full rollout, replacing 1.8.7 (19), which never went
+  live. Managed publishing is off, so it goes live on approval. Items 3–5 now count from 1.8.8, not 1.8.7.
 - **AdMob → Firebase data:** linked on Nov 20; AdMob says metrics can take up to 48 hours. Then check that Firebase shows
   `ad_impression` revenue and that AdMob shows Ads ARPU.
 - **Trader status (Michael):** Play Console asks for it by **Feb 1, 2027**. It needs Michael's own legal details, so it
