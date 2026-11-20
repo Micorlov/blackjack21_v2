@@ -268,7 +268,7 @@ Unity/
 │   ├── Scripts/GameAds/       # AdMob service with consent, compiled only when ADMOB_SDK is defined
 │   ├── Scripts/Editor/        # BuildTools (configure + Android build), ProjectSetup, audio import
 │   ├── Resources/             # Locales (10 JSON files), Sfx (+ spoken amounts), Fonts, Felt shader
-│   ├── Plugins/Android/       # BlackjackExtras.androidlib: permissions + invite-link intent filter
+│   ├── Plugins/Android/       # BlackjackExtras.androidlib: permissions, invite-link intent filter, GoogleIdToken.java (Google account picker)
 │   └── Tests/                 # EditMode (NUnit) and PlayMode (offscreen screenshots)
 ├── tools/                     # install_firebase.sh, install_admob.sh, unpack_unitypackage.py
 docs/design-concepts/the-seat/ # the design reference: ten table states, the overview and the PDF
@@ -482,6 +482,7 @@ on a Play-distributed one. One-time manual steps to fix that:
 | Firebase Unity SDK 13.17.0 | Auth, Firestore, Analytics, Crashlytics — fetched by `Unity/tools/install_firebase.sh` |
 | External Dependency Manager | Bundled with Firebase; resolves the Android Gradle dependencies of both SDKs |
 | Google Mobile Ads Unity plugin 11.6.0 | AdMob rewarded and interstitial ads, plus consent (UMP) — fetched by `Unity/tools/install_admob.sh` |
+| `androidx.credentials` 1.3.0 + `googleid` 1.1.1 | Native Google sign-in: Credential Manager's account picker returns the ID token Firebase signs in with (Gradle dependencies of `BlackjackExtras.androidlib`) |
 | `com.google.android.play:review` 2.0.2 | Google Play in-app review card — a Gradle dependency of `BlackjackExtras.androidlib` |
 
 ## Assets
@@ -554,6 +555,16 @@ A Core change is not done until the EditMode suite passes. Check on a device or 
 lines show the SDK initialising and the anonymous sign-in.
 
 ## Changelog
+
+### 2026-11-20
+- fix: **Google sign-in works on devices.** It failed at once ("Google sign-in failed") because Firebase's generic browser
+  OAuth provider, which the Unity port used, does not support `google.com` on Android. Sign-in, linking a guest and the
+  re-authentication before deletion now use Android's Credential Manager account picker (`GoogleIdToken.java`) for a Google
+  ID token and hand it to Firebase as a Google credential. Also registered the debug keystore's SHA-1 `CF:7C:EA:D8…` and
+  SHA-256 on the Firebase Android app (they were missing), and **Google Play's app-signing key** (SHA-1 `4C:00:D6:A2…`, which
+  signs every copy installed from Play and was also missing, so sign-in could not work in the Play version), and refreshed
+  `Assets/google-services.json`. The app-signing key is in Play Console → Setup → App signing; register it again if it ever changes.
+- chore: version 1.8.7, versionCode 19.
 
 ### 2026-11-17 (comeback disclosure, translations, ads, rotating reminder)
 - feat: **Comeback Boost is now a visible Settings switch** (on by default, saved as `comebackOn`, old saves stay on), with a one-line

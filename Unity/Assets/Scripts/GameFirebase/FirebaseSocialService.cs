@@ -291,78 +291,98 @@ namespace Blackjack.Game.Firebase
         // ---- Google sign-in ----------------------------------------------------------------------------
 
         /// <summary>
-        /// Sign in with Google through Firebase's own OAuth flow. A guest keeps their identity: the Google account is
-        /// linked onto the anonymous user, or — if that account already exists elsewhere — signed into directly.
+        /// Sign in with Google: Android's account picker (Credential Manager) returns a Google ID token, which becomes a Firebase
+        /// credential. Firebase's generic browser OAuth flow is not used: it does not support google.com on Android and failed
+        /// at once on devices. A guest keeps their identity: the Google account is linked onto the anonymous user, or, if that
+        /// account already has its own user, signed into directly.
         /// </summary>
         public void SignInWithGoogle(Action<GoogleProfile, string> done) => WhenReady(ok =>
         {
             if (!ok) { done(null, "unavailable"); return; }
-#if BJ_FIREBASE_EMULATOR
-            // QA builds only: the Auth emulator accepts a JSON "id token" for google.com, so the linked-account paths can be run
-            // without a real Google account. The release build has no such branch.
-            var qaCurrent = _auth.CurrentUser;
-            var qa = GoogleAuthProvider.GetCredential(QaGoogleToken, null);
-            if (qaCurrent != null && qaCurrent.IsAnonymous)
-                qaCurrent.LinkWithCredentialAsync(qa).ContinueWithOnMainThread(link =>
-                    { if (link.IsCompletedSuccessfully) Finish(link.Result.User, done); else done(null, "failed"); });
-            else
-                _auth.SignInWithCredentialAsync(qa).ContinueWithOnMainThread(signIn =>
-                    { if (signIn.IsCompletedSuccessfully) Finish(signIn.Result, done); else done(null, "failed"); });
-            return;
-#else
-            var provider = GoogleProvider();
-
-            var current = _auth.CurrentUser;
-            if (current != null && current.IsAnonymous)
+            GoogleIdToken().ContinueWithOnMainThread(token =>
             {
-                current.LinkWithProviderAsync(provider).ContinueWithOnMainThread(link =>
+                if (!token.IsCompletedSuccessfully) { done(null, token.IsCanceled ? "canceled" : "failed"); return; }
+                var current = _auth.CurrentUser;
+                if (current != null && current.IsAnonymous)
                 {
-                    if (link.IsCompletedSuccessfully) { Finish(link.Result.User, done); return; }
-                    // This Google account already has its own uid: sign into it, then the controller re-adopts its group.
-                    if (IsError(link, AuthError.CredentialAlreadyInUse) || IsError(link, AuthError.EmailAlreadyInUse))
+                    current.LinkWithCredentialAsync(GoogleAuthProvider.GetCredential(token.Result, null)).ContinueWithOnMainThread(link =>
                     {
-                        _auth.SignInWithProviderAsync(provider).ContinueWithOnMainThread(signIn => Complete(signIn, done));
-                        return;
-                    }
-                    done(null, IsCancelled(link) ? "canceled" : "failed");
-                });
-                return;
-            }
-            _auth.SignInWithProviderAsync(provider).ContinueWithOnMainThread(signIn => Complete(signIn, done));
-#endif
+                        if (link.IsCompletedSuccessfully) { Finish(link.Result.User, done); return; }
+                        // This Google account already has its own uid: sign into it, then the controller re-adopts its group.
+                        if (IsError(link, AuthError.CredentialAlreadyInUse) || IsError(link, AuthError.EmailAlreadyInUse))
+                        {
+                            SignInWithToken(token.Result, done);
+                            return;
+                        }
+                        Log("linkGoogle", link);
+                        done(null, "failed");
+                    });
+                    return;
+                }
+                SignInWithToken(token.Result, done);
+            });
         });
+
+        private void SignInWithToken(string idToken, Action<GoogleProfile, string> done) =>
+            _auth.SignInWithCredentialAsync(GoogleAuthProvider.GetCredential(idToken, null)).ContinueWithOnMainThread(signIn =>
+            {
+                if (signIn.IsCompletedSuccessfully) { Finish(signIn.Result, done); return; }
+                Log("signInGoogle", signIn);
+                done(null, "failed");
+            });
+
+        /// <summary>A Google ID token from the account picker; cancelled when the player backs out, faulted on any other failure.</summary>
+        private static System.Threading.Tasks.Task<string> GoogleIdToken()
+        {
+#if BJ_FIREBASE_EMULATOR
+            // QA builds only: the Auth emulator accepts this JSON "id token" for google.com, so the linked-account paths run
+            // without a real Google account. The release build has no such branch.
+            return System.Threading.Tasks.Task.FromResult(QaGoogleToken);
+#else
+            var tcs = new System.Threading.Tasks.TaskCompletionSource<string>();
+            try
+            {
+                using var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                using var activity = player.GetStatic<AndroidJavaObject>("currentActivity");
+                using var picker = new AndroidJavaClass("com.micorlov.blackjack21_v2.extras.GoogleIdToken");
+                picker.CallStatic("request", activity, new IdTokenCallback(tcs));
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning("Google account picker unavailable: " + e.Message);
+                tcs.TrySetException(e);
+            }
+            return tcs.Task;
+#endif
+        }
+
+        /// <summary>The Java side's answer, on whatever thread it arrives; the task hands it back to the main thread.</summary>
+        private sealed class IdTokenCallback : AndroidJavaProxy
+        {
+            private readonly System.Threading.Tasks.TaskCompletionSource<string> _tcs;
+
+            public IdTokenCallback(System.Threading.Tasks.TaskCompletionSource<string> tcs)
+                : base("com.micorlov.blackjack21_v2.extras.GoogleIdToken$Callback") => _tcs = tcs;
+
+            // Called from Java by name.
+            public void onResult(string idToken, string error)
+            {
+                if (!string.IsNullOrEmpty(idToken)) _tcs.TrySetResult(idToken);
+                else if (error == "canceled") _tcs.TrySetCanceled();
+                else _tcs.TrySetException(new Exception("Google ID token: " + error));
+            }
+        }
 
 #if BJ_FIREBASE_EMULATOR
         private const string QaGoogleToken =
             "{\"sub\": \"qa-google-teen-1\", \"email\": \"qa.teen@example.com\", \"email_verified\": true, \"name\": \"QA Teen\"}";
 #endif
 
-        private static FederatedOAuthProvider GoogleProvider()
-        {
-            var provider = new FederatedOAuthProvider();
-            provider.SetProviderData(new FederatedOAuthProviderData
-            {
-                ProviderId = "google.com",
-                Scopes = new List<string> { "email", "profile" },
-            });
-            return provider;
-        }
-
-        private static void Complete(System.Threading.Tasks.Task<AuthResult> task, Action<GoogleProfile, string> done)
-        {
-            if (task.IsCompletedSuccessfully) Finish(task.Result.User, done);
-            else done(null, IsCancelled(task) ? "canceled" : "failed");
-        }
-
         private static void Finish(FirebaseUser user, Action<GoogleProfile, string> done) =>
             done(new GoogleProfile(user?.DisplayName, user?.PhotoUrl?.ToString()), null);
 
         private static bool IsError(System.Threading.Tasks.Task task, AuthError error) =>
             task.Exception?.Flatten().InnerExceptions.OfType<FirebaseException>().Any(e => e.ErrorCode == (int)error) == true;
-
-        private static bool IsCancelled(System.Threading.Tasks.Task task) =>
-            task.IsCanceled || task.Exception?.Flatten().InnerExceptions.OfType<FirebaseException>()
-                .Any(e => e.ErrorCode == (int)AuthError.WebContextCancelled) == true;
 
         public void SignOut(Action done)
         {
@@ -386,19 +406,14 @@ namespace Blackjack.Game.Firebase
         {
             var user = _ready ? _auth.CurrentUser : null;
             if (user == null) { done(false); return; }
-#if BJ_FIREBASE_EMULATOR
-            // QA builds only: the same re-authentication step with the emulator credential.
-            user.ReauthenticateAsync(GoogleAuthProvider.GetCredential(QaGoogleToken, null)).ContinueWithOnMainThread(task =>
+            GoogleIdToken().ContinueWithOnMainThread(token =>
             {
-                if (!task.IsCompletedSuccessfully) Log("reauthenticate(qa)", task);
-                done(task.IsCompletedSuccessfully);
-            });
-            return;
-#endif
-            user.ReauthenticateWithProviderAsync(GoogleProvider()).ContinueWithOnMainThread(task =>
-            {
-                if (!task.IsCompletedSuccessfully) Log("reauthenticate", task);
-                done(task.IsCompletedSuccessfully);
+                if (!token.IsCompletedSuccessfully) { done(false); return; }
+                user.ReauthenticateAsync(GoogleAuthProvider.GetCredential(token.Result, null)).ContinueWithOnMainThread(task =>
+                {
+                    if (!task.IsCompletedSuccessfully) Log("reauthenticate", task);
+                    done(task.IsCompletedSuccessfully);
+                });
             });
         }
 

@@ -14,11 +14,27 @@
       },
       "oauth_client": [
         {
+          "client_id": "445894203200-086nj70v8rv2j23h7oginlnna3d5cvh3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.micorlov.blackjack21_v2",
+            "certificate_hash": "4c00d6a2fa7dea125358423e06f9805a77fee08a"
+          }
+        },
+        {
           "client_id": "445894203200-c7g2u6rl24t12rqgj1bv8c41ggshc92q.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.micorlov.blackjack21_v2",
             "certificate_hash": "a67066fe5a8de5a95a23b2ced09ed461822cbd93"
+          }
+        },
+        {
+          "client_id": "445894203200-egj6nqiq03k05ablc6ii0u88rf01sk6m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.micorlov.blackjack21_v2",
+            "certificate_hash": "cf7cead8fc70987bae5ca03d4fef40375f5cc16b"
           }
         },
         {
