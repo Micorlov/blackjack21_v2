@@ -1,11 +1,15 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.micorlov.blackjack21_v2",
       "sha256_cert_fingerprints": [
-        "03:2B:AF:04:FB:D0:CE:98:EC:C9:AE:F1:3E:DF:48:36:03:1B:DD:5F:47:C0:30:F6:DE:D9:02:B8:3A:58:77:25"
+        "03:2B:AF:04:FB:D0:CE:98:EC:C9:AE:F1:3E:DF:48:36:03:1B:DD:5F:47:C0:30:F6:DE:D9:02:B8:3A:58:77:25",
+        "9B:24:EB:B2:4A:BF:12:BC:D8:10:19:06:01:85:07:AE:1C:72:74:63:C0:9D:F1:C2:C8:26:0D:95:E1:20:8F:61",
+        "F4:57:DB:FA:88:A4:5D:12:59:C9:B3:E2:4F:BB:27:2F:D4:31:EE:F9:A4:04:FB:6A:8E:DF:24:9F:9A:FE:EE:74"
       ]
     }
   }

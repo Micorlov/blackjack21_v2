@@ -459,9 +459,9 @@ overview. Anything else already sitting in **Changes in review** rides along wit
 
 ### Verifying the invite deep link (Android App Links)
 
-`hosting/.well-known/assetlinks.json` currently lists only the local debug keystore's SHA-256
-fingerprint, so an invite link opens the app directly on a debug/`adb install`ed build but not yet
-on a Play-distributed one. One-time manual steps to fix that:
+`hosting/.well-known/assetlinks.json` lists the local debug keystore's SHA-256 fingerprint and, since
+2026-11-20, both Play app-signing keys, so an invite link opens the app directly on an `adb install`ed
+build and on a Play-distributed one. If Play's signing key ever changes, repeat these steps:
 
 1. Play Console → **Setup → App signing** → copy the **App signing key certificate**'s SHA-256 (not
    the upload key — Play re-signs the bundle with this one).
@@ -557,6 +557,14 @@ lines show the SDK initialising and the anonymous sign-in.
 ## Changelog
 
 ### 2026-11-20
+- fix: **the rewarded video can be chosen on the Out of chips sheet while a rebuy is ready.** The sheet has one gold button,
+  for the first available route, and the free rebuy comes first, so the video row had no button at all unless the rebuy was
+  cooling down (AdMob: 353 rewarded requests and 5 impressions in a week). When the video is ready but not first it now gets
+  its own outline button under the gold one. Not seen on a device with an ad loaded; the PlayMode audit runs without ads.
+- fix: **invite links can open the Play-installed app.** `hosting/.well-known/assetlinks.json` listed only the debug key; it now
+  also lists both Play app-signing keys (the current one, `F4:57:DB:FA…`, and the previous one, `9B:24:EB:B2…`, which still
+  signs every install). Live once `main` is pushed, since the hosting workflow deploys `hosting/`.
+- docs: `tool/release_notes_en-US.txt` rewritten for 1.8.7.
 - fix: **a Google account that already has a player can sign in from a guest again.** Linking the account onto the guest fails
   with "This credential is already associated with a different user account", and the fallback that then signs into the
   existing account never ran: the SDK reports the collision as `FirebaseAccountLinkException`, which is not a

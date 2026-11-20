@@ -110,6 +110,10 @@ namespace Blackjack.Game.UI
             };
             // Exactly one gold button, and only when something is available right now.
             var first = routes.FirstOrDefault(r => r.Ready);
+            // The video sits behind the free rebuy, so it used to be untappable whenever a rebuy was ready: it gets its own
+            // quieter button then, and the player picks.
+            var video = routes[1];
+            var videoToo = video.Ready && first != video;
 
             overlays.Sheet((sheet, close) =>
             {
@@ -135,6 +139,11 @@ namespace Blackjack.Game.UI
                 Ui.Spacer(col, Theme.Xs);
                 if (first != null) W.GoldButton(col, first.Action, () => { close(); first.OnTap(); }, 16, 0, 17);
                 else W.OutlinePill(col, Loc.Or("backToLobby", "Back to the lobby"), () => { close(); g.ExitTable(); });
+                if (videoToo)
+                {
+                    Ui.Spacer(col, Theme.Sm);
+                    W.OutlinePill(col, video.Action, () => { close(); video.OnTap(); });
+                }
             });
         }
     }
