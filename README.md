@@ -557,6 +557,11 @@ lines show the SDK initialising and the anonymous sign-in.
 ## Changelog
 
 ### 2026-11-20
+- docs: `TASKS.md` records the first pass through the post-1.8.7 plan: the phone runs the current build, C# exceptions are
+  proven to reach Crashlytics and Firestore, the `IN2025` traffic is named (automated runs outside Play) with a GA4
+  comparison that excludes it, and the missing Play ratings are explained (the 1.8.2 review prompt was a stub). Two items
+  were added: an unexplained rebuy from the outline "Watch a video" button, and a later re-measure of review prompts.
+- docs: `CLAUDE.md` says what to do when adb loses the phone to a second adb server.
 - docs: `TASKS.md` now holds the plan for everything still open after 1.8.7: device checks, the measurements to repeat once
   1.8.7 is live, and the items waiting on Google or Michael.
 - chore: **Play's current app-signing key registered in Firebase** (SHA-1 `5F:47:26:BE…`, SHA-256 `F4:57:DB:FA…`), so

@@ -36,6 +36,12 @@ Hebrew input is normal — it is never a request to switch reply language.
    against the APK's build time. If the install fails (device offline, unauthorized, locked
    screen), say so explicitly — never report a change as delivered when it was only committed.
 
+   **If adb cannot see the phone while macOS can** (`ioreg -p IOUSB -l | grep R5GYB2NHR5D` finds it, `adb devices` is
+   empty), another adb server owns its USB interface. List them with `pgrep -fl "adb.*fork-server"`; a server on a port
+   other than 5037 (seen on 5093, started outside this project, probably by Maestro) is the one holding the phone. Use it
+   by running the same commands with `ANDROID_ADB_SERVER_PORT=<port>` set, rather than killing a server another tool
+   may be using.
+
    **iOS delivery is unavailable** and should not be attempted: Xcode has no Apple ID signed in.
    Ask Michael to sign in under Xcode → Settings → Accounts before ever building for iPhone.
 
