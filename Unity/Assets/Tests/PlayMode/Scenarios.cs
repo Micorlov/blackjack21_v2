@@ -243,6 +243,13 @@ namespace Blackjack.PlayTests
             new Scenario("sheet_out_of_chips",
                 () => Table(EmptyTable(12)) with { LastRebuyAt = DateTime.Now.AddHours(-1) },
                 (g, o) => OutOfChipsSheet.Show(g, o)),
+            // With a video ready, out of chips offers the video and nothing else: on the table and in the sheet.
+            new Scenario("table_out_of_chips_video",
+                () => Table(EmptyTable(12)),
+                (g, o) => { ((Blackjack.Game.Services.NullAds)g.Services.Ads).RewardedReady = true; g.Force(g.State with { }); }),
+            new Scenario("sheet_out_of_chips_video",
+                () => Table(EmptyTable(12)),
+                (g, o) => { ((Blackjack.Game.Services.NullAds)g.Services.Ads).RewardedReady = true; OutOfChipsSheet.Show(g, o); }),
             new Scenario("sheet_how_to_play", () => new AppState { Screen = AppScreen.Settings, Round = History() },
                 (g, o) => HowToPlaySheet.Show(o)),
             new Scenario("page_terms", () => new AppState { Screen = AppScreen.Onboarding },

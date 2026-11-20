@@ -15,6 +15,10 @@ AdMob and Play Console for Oct 23 – Nov 19, 2026, unless an item says otherwis
 - **Baseline:** "Rewarded chips" had 353 requests and 5 impressions in the week to Nov 20; `ad_reward_earned` never fired.
 - **Steps:** after one week on 1.8.7, compare AdMob rewarded impressions and the `ad_reward_earned` event.
 - **Done when:** impressions are clearly up. If they are not, look at the lobby card and the low-chips offer next.
+- **Note:** 1.8.7 has the two-button Out of chips sheet (gold rebuy, outline video). On Nov 20 one tap in the centre of the
+  outline button on the Samsung did a rebuy and showed no ad; the code path looks right and it was seen once, so it is
+  unexplained. If uptake on 1.8.7 stays flat, suspect that first. `main` no longer has that layout: out of chips now offers
+  only the video while one can play (next release), so measure again one week after that release too.
 
 ### 5. Re-measure the onboarding funnel
 - **Baseline:** `first_open` 285 → `onboarding_entry_selected` 226 (79%) → `first_hand_completed` 195 (68%) →
@@ -24,18 +28,6 @@ AdMob and Play Console for Oct 23 – Nov 19, 2026, unless an item says otherwis
   and almost nothing after it, so they sit in the baseline's first step and inflate the drop.
 - **Done when:** the numbers after one week on 1.8.7 are recorded here, and any step still losing more than 20% has an
   owner.
-
-### 8. Re-test the outline "Watch a video" button while a rebuy is ready
-- **Why:** on Nov 20 at 23:25, on the Samsung, the Out of chips sheet showed both buttons (gold "Rebuy 1,000 chips", outline
-  "Watch a video for 500 chips"). One tap in the centre of the outline button (538, 2036 on the 1080×2340 screen) closed the
-  sheet and the balance went to 1,000 with no ad: a rebuy, not a video. The code path looks right (`OutOfChipsSheet` calls
-  `g.WatchAdForChips` for that button) and this was a single observation, so it is unexplained, not proven. With the rebuy
-  on cooldown the same sheet shows the video as its one gold button, and that plays the test ad and pays 500 chips.
-- **Steps:** repeat on the phone once the rebuy is ready again (4 hours after the last one). Add a `Scenarios.cs` entry with
-  the rebuy ready and `RewardedReady = true`: today's `sheet_out_of_chips` scenario has the rebuy on cooldown and no ad, so
-  the two-button layout is not drawn by `ScenarioShots` or checked by `RulesAudit`.
-- **Done when:** the outline button is shown to open the video with a rebuy ready, or the cause is fixed. This decides
-  whether item 4 can measure anything.
 
 ### 9. Re-measure review prompts and ratings on 1.8.6 and later
 - **Baseline:** only 3 `review_prompted` events from 2 users came from a build that really asks Play (1.8.6); see Done.
@@ -68,6 +60,8 @@ AdMob and Play Console for Oct 23 – Nov 19, 2026, unless an item says otherwis
 
 ## Done
 
+- 2026-11-20: Out of chips offers only the rewarded video while one can play, on the table and in the sheet; the rebuy and
+  the other routes are the fallback. On `main`, not in 1.8.7.
 - 2026-11-20: Samsung runs the current `main` (installed 23:15:44). The Out of chips sheet shows the outline "Watch a video"
   button under the gold rebuy button, and the test rewarded ad plays and pays 500 chips. adb was losing the phone because a
   second, orphaned adb server on port 5093 held its USB interface; see the Delivery Rule in `CLAUDE.md`.

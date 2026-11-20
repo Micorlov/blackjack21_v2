@@ -59,6 +59,8 @@ namespace Blackjack.Game.UI
             _chat = new Dyn(_chatHost);
         }
 
+        private float _nextAdCheck;
+
         public override void Refresh(AppState s)
         {
             _state = s;
@@ -82,6 +84,12 @@ namespace Blackjack.Game.UI
         {
             _felt.Tick();
             if (_state == null) return;
+            // A rewarded video can finish loading after the table is drawn; the broke button switches to it when it does.
+            if (Time.unscaledTime >= _nextAdCheck)
+            {
+                _nextAdCheck = Time.unscaledTime + 5f;
+                _panels.Refresh(_state);
+            }
             // The controls are capped at a share of the screen and scroll from the bottom if they ever outgrow it.
             var total = _content.rect.height;
             var settled = _state.Round.Phase == RoundPhase.Settlement;

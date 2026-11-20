@@ -42,7 +42,7 @@ namespace Blackjack.Game.UI
             var r = s.Round;
             switch (r.Phase)
             {
-                case RoundPhase.Betting: _dyn.Update(BettingSignature(s), h => Betting(h, s)); break;
+                case RoundPhase.Betting: _dyn.Update(BettingSignature(s, _g), h => Betting(h, s)); break;
                 case RoundPhase.Insurance: _dyn.Update($"ins{r.InsuranceBet}|{Loc.Code}", h => Insurance(h, s)); break;
                 case RoundPhase.Playing: _dyn.Update(PlayingSignature(s), h => Playing(h, s)); break;
                 case RoundPhase.Npcs:
@@ -69,11 +69,13 @@ namespace Blackjack.Game.UI
 
         // ---- betting --------------------------------------------------------------------------------
 
-        private static string BettingSignature(AppState s)
+        private static string BettingSignature(AppState s, GameController g)
         {
             var r = s.Round;
             var rebuyReady = Core.Rebuy.IsReady(s.LastRebuyAt, DateTime.Now);
-            return $"bet{r.Bet}|{r.Chips}|{r.Stake?.Key}|{r.LastBet}|{s.FriendsAreLive}|{rebuyReady}|{Loc.Code}";
+            // Only when short does the video decide the button; a video finishing its load must redraw it then.
+            var video = r.Chips < (r.Stake?.Min ?? TableCatalog.StartingChips) && g.RewardedOfferAvailable;
+            return $"bet{r.Bet}|{r.Chips}|{r.Stake?.Key}|{r.LastBet}|{s.FriendsAreLive}|{rebuyReady}|{video}|{Loc.Code}";
         }
 
         private void Betting(RectTransform host, AppState s)
@@ -125,6 +127,13 @@ namespace Blackjack.Game.UI
 
             // Below the table minimum the rebuy must appear before the stack hits zero.
             if (r.Chips >= (stake?.Min ?? TableCatalog.StartingChips)) return;
+            // Out of chips offers the video and nothing else; the rebuy and the other routes are the fallback when none can play.
+            if (_g.RewardedOfferAvailable)
+            {
+                W.SeatButton(col, Loc.Or("routeWatchAdAction", "Watch a video for {chips} chips", ("chips", TableCatalog.FormatChips(AdReward.Chips))),
+                    null, W.Finish.Gold, _g.WatchAdForChips, true, W.SeatButtonShort);
+                return;
+            }
             var ready = Core.Rebuy.IsReady(s.LastRebuyAt, DateTime.Now);
             W.SeatButton(col, ready ? Loc.T("rebuyButtonLabel", ("chips", 1000)) : Loc.T("gameChipOptions"), null, W.Finish.Gold,
                 ready ? (Action)_g.Rebuy : () => OutOfChipsSheet.Show(_g, _overlays), true, W.SeatButtonShort);

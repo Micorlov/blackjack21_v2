@@ -13,7 +13,10 @@ A Unity (Android) blackjack game with a multi-seat table and a friends race. Fou
   never opens the ad itself: when one is due and loaded the next hand is dealt, the ad follows after **1 second**, and taps
   are swallowed until it has closed. **Rewarded video for chips:** a lobby card "Watch an ad for free chips" and a route in
   the Out of chips sheet each pay **500 play chips** for a video watched through, with a **30-minute cooldown** and at most
-  **5 per local day** (`AdReward`). When the stack falls under **3 minimum bets** between hands, a dismissible sheet offers
+  **5 per local day** (`AdReward`). **Out of chips means the video and nothing else:** while a video can play, the table's
+  button under the chips and the Out of chips sheet each show one gold "Watch a video for 500 chips" button; the free rebuy,
+  daily bonus and invite routes appear only when no video can play (none loaded, cooling down, or the daily cap is reached),
+  so a player is never left without a way back. When the stack falls under **3 minimum bets** between hands, a dismissible sheet offers
   the same video once per dip ("No thanks" closes it; nothing plays unless tapped). **Banner:** one adaptive banner at the
   bottom of every screen; the layout reserves its height, so it never covers table buttons, room cards or Settings
   switches. Consent comes first where the law requires it (Google's User Messaging Platform), the Teen ad treatment and
@@ -126,7 +129,8 @@ A Unity (Android) blackjack game with a multi-seat table and a friends race. Fou
   notification quoting the right amount fires the moment it unlocks — even if the app is closed.
   Honors the Settings → Daily reminder toggle
 - **Rebuy, on a cooldown** — dropping below a table's minimum offers a Rebuy to 1,000 chips, once
-  every 4 hours (with a live countdown while cooling down). Replaces the old free, unlimited
+  every 4 hours (with a live countdown while cooling down), whenever no rewarded video can play; with a video ready the
+  video is the only offer. Replaces the old free, unlimited
   "Reset bankroll to 1,000" in Settings — without a real cost to running out of chips, there was no
   reason to ever claim the daily bonus or invite anyone to race you
 - **Comeback Boost (disclosed, optional)** — short-stacked (under six minimum bets) or on a two-loss streak, your opening
@@ -557,6 +561,13 @@ lines show the SDK initialising and the anonymous sign-in.
 ## Changelog
 
 ### 2026-11-20
+- feat: **out of chips offers the rewarded video and nothing else.** With a video loaded and off cooldown, the table's
+  broke button is "Watch a video for 500 chips" and the Out of chips sheet shows only that route and one gold button. The
+  free rebuy, daily bonus and invite routes are now the fallback for when no video can play. The table rechecks every
+  5 seconds, so the button switches to the video by itself when one finishes loading or its cooldown ends. This removes the two-button
+  sheet added earlier today (gold rebuy plus outline video), on which one tap on the outline button did a rebuy on the
+  Samsung. Not in 1.8.7 (19), which was already in review; it ships with the next release.
+- test: two PlayMode scenarios draw the video-only table button and sheet, so `RulesAudit` checks them.
 - docs: `TASKS.md` records the first pass through the post-1.8.7 plan: the phone runs the current build, C# exceptions are
   proven to reach Crashlytics and Firestore, the `IN2025` traffic is named (automated runs outside Play) with a GA4
   comparison that excludes it, and the missing Play ratings are explained (the 1.8.2 review prompt was a stub). Two items

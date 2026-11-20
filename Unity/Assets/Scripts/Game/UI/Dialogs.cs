@@ -108,19 +108,19 @@ namespace Blackjack.Game.UI
                     Loc.Or("routeInviteDetail", "They join your race, you both get chips"), true,
                     Loc.Or("routeInviteAction", "Invite on WhatsApp"), g.ShareInviteWhatsApp),
             };
+            // Out of chips offers the video and nothing else. The free routes are only the fallback for when no video can
+            // play (none loaded, cooling down, daily cap), so the player is never left without a way back.
+            if (routes[1].Ready) routes = new List<Route> { routes[1] };
             // Exactly one gold button, and only when something is available right now.
             var first = routes.FirstOrDefault(r => r.Ready);
-            // The video sits behind the free rebuy, so it used to be untappable whenever a rebuy was ready: it gets its own
-            // quieter button then, and the player picks.
-            var video = routes[1];
-            var videoToo = video.Ready && first != video;
 
             overlays.Sheet((sheet, close) =>
             {
                 var col = Ui.VStack(sheet, 0, Ui.Pad(0, 6, 0, 0), TextAnchor.UpperCenter, true, "OutOfChips");
                 Ui.Text(col, Loc.Or("outOfChips", "Out of chips"), 32, Theme.TextPrimary, FontKind.SerifItalic, TextAlignmentOptions.Center, false);
                 Ui.Spacer(col, 4);
-                Ui.Text(col, Loc.Or("outOfChipsHint", "Here is every way to get back to the table."), 13, Theme.TextMuted, FontKind.Sora, TextAlignmentOptions.Center, true);
+                if (routes.Count > 1)
+                    Ui.Text(col, Loc.Or("outOfChipsHint", "Here is every way to get back to the table."), 13, Theme.TextMuted, FontKind.Sora, TextAlignmentOptions.Center, true);
                 Ui.Spacer(col, Theme.Lg);
                 foreach (var route in routes)
                 {
@@ -139,11 +139,6 @@ namespace Blackjack.Game.UI
                 Ui.Spacer(col, Theme.Xs);
                 if (first != null) W.GoldButton(col, first.Action, () => { close(); first.OnTap(); }, 16, 0, 17);
                 else W.OutlinePill(col, Loc.Or("backToLobby", "Back to the lobby"), () => { close(); g.ExitTable(); });
-                if (videoToo)
-                {
-                    Ui.Spacer(col, Theme.Sm);
-                    W.OutlinePill(col, video.Action, () => { close(); video.OnTap(); });
-                }
             });
         }
     }
