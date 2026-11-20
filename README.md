@@ -557,6 +557,11 @@ lines show the SDK initialising and the anonymous sign-in.
 ## Changelog
 
 ### 2026-11-20
+- fix: **a Google account that already has a player can sign in from a guest again.** Linking the account onto the guest fails
+  with "This credential is already associated with a different user account", and the fallback that then signs into the
+  existing account never ran: the SDK reports the collision as `FirebaseAccountLinkException`, which is not a
+  `FirebaseException`, so `IsError` did not see its code. `IsError` now reads the code from both types, and the sign-in
+  warning in the log names the exception type and code. This hit every reinstall and every second device.
 - feat: **Google sign-in is now measurable.** `GameController.SignInGoogle` logs `login` (`method=google`) when it succeeds and
   `sign_in_failed` (`method=google`, `reason` = `canceled`, `failed` or `unavailable`) when it does not, so the Firebase Events
   report shows the success rate. Same 1.8.7 (19) build; covered by one EditMode test (286 in all).

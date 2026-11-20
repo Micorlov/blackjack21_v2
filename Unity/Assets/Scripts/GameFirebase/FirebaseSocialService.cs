@@ -382,7 +382,16 @@ namespace Blackjack.Game.Firebase
             done(new GoogleProfile(user?.DisplayName, user?.PhotoUrl?.ToString()), null);
 
         private static bool IsError(System.Threading.Tasks.Task task, AuthError error) =>
-            task.Exception?.Flatten().InnerExceptions.OfType<FirebaseException>().Any(e => e.ErrorCode == (int)error) == true;
+            task.Exception?.Flatten().InnerExceptions.Any(e => CodeOf(e) == (int)error) == true;
+
+        // A link collision arrives as FirebaseAccountLinkException, which carries its own ErrorCode and was missed when only
+        // FirebaseException was matched: a Google account that already had a user could then never sign in from a guest.
+        private static int CodeOf(Exception e) => e switch
+        {
+            FirebaseAccountLinkException link => link.ErrorCode,
+            FirebaseException firebase => firebase.ErrorCode,
+            _ => 0,
+        };
 
         public void SignOut(Action done)
         {
@@ -571,6 +580,7 @@ namespace Blackjack.Game.Firebase
         }
 
         private static void Log(string what, System.Threading.Tasks.Task task) =>
-            Debug.LogWarning($"Firebase {what} failed: {task.Exception?.GetBaseException().Message}");
+            Debug.LogWarning($"Firebase {what} failed: {task.Exception?.GetBaseException().Message}" +
+                $" [{task.Exception?.GetBaseException().GetType().Name} {(task.Exception == null ? 0 : CodeOf(task.Exception.GetBaseException()))}]");
     }
 }
